@@ -3,8 +3,11 @@
 #pragma once
 #include "codestream/modular/storage_plan.h"
 namespace gjxl::modular_internal {
-// Internal handoff from the RGB8 workflow: plan/tokens have canonical provenance.
-// Consumes tokens; frees them before assembly. Caller owns admission/publication.
+// Internal handoff: plan/tokens have canonical provenance. Consumes either CPU
+// tokens or completed GPU-owned split views; joins all entropy workers before
+// releasing the owner, before assembly, also on failure after consumption.
+// Argument validation failures leave tokens alone. Caller owns admission and
+// atomic publication; GPU continuation needs its own composed storage bound.
 [[nodiscard]] Status EncodeModularFrame(const codec_internal::ImageMetadata &metadata,
                                         const ModularStreamPlan &layout,
                                         PreparedModularTokens &&tokens, EntropyCodingMode mode,

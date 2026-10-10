@@ -4,6 +4,7 @@
 #include "codec/modular/frame.h"
 #include "codestream/entropy.h"
 #include "codestream/modular/stream_plan.h"
+#include "gpu/ops/modular_tokenization.h"
 
 namespace gjxl::modular_internal {
 inline constexpr std::array<EntropyToken, 5> kGradientTreeTokens{
@@ -12,9 +13,23 @@ struct PreparedModularTokens {
   std::array<EntropyToken, 5 * kMaximumTreeNodes> tree_tokens{};
   size_t tree_token_count = 0, context_count = 1;
   ModularCodingPolicy policy;
+  // Exactly one backing representation is populated by a producer. A completed
+  // GPU owner keeps borrowed split views alive without copying or recharging
+  // its arena. The backend must outlive this object and all joined consumers.
+  std::unique_ptr<modular_gpu_internal::PreparedGpuModularTokens> gpu_backing;
   codestream_internal::Storage<EntropyToken> tokens;
+  // Declared last so views are destroyed before either backing representation.
   codestream_internal::Storage<EntropyTokenStreamView> streams;
+  PreparedModularTokens() = default;
+  PreparedModularTokens(const PreparedModularTokens &) = delete;
+  PreparedModularTokens &operator=(const PreparedModularTokens &) = delete;
+  PreparedModularTokens(PreparedModularTokens &&) noexcept = default;
+  PreparedModularTokens &operator=(PreparedModularTokens &&) noexcept = default;
 };
+// Shared scalar/GPU wire metadata, with no sample tokens or allocations. Caller
+// supplies a validated policy and its ValidateTree result.
+[[nodiscard]] PreparedModularTokens PrepareModularTokenHeader(
+    const ModularCodingPolicy &policy, const TreeLayout &layout);
 // Plan must be the canonical BuildModularStreamPlan result for this frame.
 // Views refer to the moved token backing. Output replacement is atomic.
 [[nodiscard]] Status TokenizeIdentity(const ModularEncoderFrame &frame,

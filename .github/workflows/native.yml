@@ -67,6 +67,7 @@ jobs:
           gjxl_modular_stream_test gjxl_modular_foundation_test
           gjxl_modular_gpu_input_test
           gjxl_modular_gpu_token_plan_test
+          gjxl_modular_gpu_token_handoff_test
           gjxl_modular_gpu_preparation_test
           gjxl_modular_gpu_workflow_test
           gjxl_modular_workflow_test gjxl_modular_capture

@@ -349,6 +349,7 @@ add_library(
   src/codestream/modular/tree_codec.cpp
   src/codestream/modular/stream_plan.cpp
   src/codestream/modular/gpu_token_plan.cpp
+  src/codestream/modular/gpu_token_handoff.cpp
   src/codestream/modular/search.cpp
   src/codestream/modular/tokenization.cpp
   src/codestream/modular/storage_plan.cpp
@@ -2346,6 +2347,11 @@ if(GJXL_BUILD_TESTS)
   target_link_libraries(gjxl_modular_gpu_token_plan_test PRIVATE gjxl_codestream)
   add_test(NAME modular_gpu_token_plan COMMAND gjxl_modular_gpu_token_plan_test)
   set_tests_properties(modular_gpu_token_plan PROPERTIES TIMEOUT 30)
+
+  add_executable(gjxl_modular_gpu_token_handoff_test tests/modular_gpu_token_handoff_test.cpp)
+  target_link_libraries(gjxl_modular_gpu_token_handoff_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_gpu_token_handoff COMMAND gjxl_modular_gpu_token_handoff_test)
+  set_tests_properties(modular_gpu_token_handoff PROPERTIES TIMEOUT 120)
 
   add_executable(gjxl_modular_gpu_preparation_test tests/modular_gpu_preparation_test.cpp)
   target_link_libraries(gjxl_modular_gpu_preparation_test PRIVATE gjxl_gpu_ops)

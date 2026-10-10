@@ -1,9 +1,10 @@
 # GPU-resident prescribed prediction and token generation
 
-Status: step 1 (private operation, eligibility and storage contract) is
-implemented; steps 2–6 remain planned. This follows the
+Status: steps 1–2 (private contract and CPU consumer/ownership boundary) are
+implemented; steps 3–6 remain planned. This follows the
 [unpack/RCT performance qualification](modular-gpu-performance.md). No backend
-implements token generation yet, and the consumer/encoder paths are unchanged.
+implements token generation yet. The scalar encoder remains the active path;
+the new private handoff is qualified with a CPU-backed completed-token owner.
 
 The next slice should consume unpacked/RCT planes directly on the GPU and hand
 completed token buffers to the existing CPU entropy encoder. Completed shared
@@ -118,22 +119,57 @@ qualify the contract and metadata planner, not a GPU token producer.
 
 ## 2. Establish the CPU consumer and ownership boundary
 
-Adapt
-[`PreparedModularTokens`](../src/codestream/modular/tokenization.h)
-to carry a move-only backing owner alongside its stream views. Preserve the
-scalar producer and use `EntropyTokenStreamView::Split` for GPU output. The CPU
-continuation should consume the same values and contexts regardless of producer.
+[`PreparedModularTokens`](../src/codestream/modular/tokenization.h) is now
+explicitly move-only. It retains either scalar interleaved storage or a completed
+`PreparedGpuModularTokens` owner alongside the stream views. Both producers use
+the same allocation-free tree-header builder, preserving policy serialization
+and breadth-first contexts.
 
-Metal's completed-buffer borrowing can avoid an explicit token memcpy. Publish
-host-readable views only after successful completion and validation. The owner
-must remain alive through model selection and every entropy worker, then release
-before assembly. Borrowing a view must not duplicate its backing charge or imply
-that arbitrary device buffers are CPU-accessible.
+The private [handoff](../src/codestream/modular/gpu_token_handoff.h),
+`AdoptGpuModularTokens`, accepts the canonical plan used by the producer and its
+completed owner. It validates policy, counts, stream coverage and borrowed host
+view sizes before allocating one vector of `EntropyTokenStreamView::Split`
+records. It transfers the owner only after all fallible work succeeds. Failed
+borrowing, malformed ranges, allocation failures and insufficient reservations
+preserve both the incoming owner and any previous output. Borrowing does not
+map arbitrary device ranges or fall back to a token copy. Token contents and
+successful device completion/status validation remain the producer's contract.
 
-Qualify this ownership change independently before adding the shader. Verify
-move/lifetime behavior, CPU output equivalence, replacement failure and resource
-release through the existing
-[`EncodeModularFrame`](../src/codestream/modular/frame_encoder.cpp) consumer.
+`ComputeGpuModularTokenHandoffStorageBound` accounts for the fresh stream-view
+vector only. Add it to the already-live plan and token arena; the arena keeps
+its original charge, and old output remains separately charged during replacement.
+Step 1's preparation/retention bounds exclude this new view vector. Complete
+GPU-call admission, including CPU modeling/emission, remains step 4 work; the
+scalar workflow reservation is not a GPU continuation reservation.
+
+The existing [`EncodeModularFrame`](../src/codestream/modular/frame_encoder.cpp)
+scope keeps either backing representation alive through model selection and
+every joined entropy worker, then releases it before assembly. Failures after
+consumption also release the owner after joining; initial argument-validation
+failures leave it with the caller. Prefix and ANS consumers need no new token
+representation or emission algorithm.
+
+The CPU-only `modular_gpu_token_handoff` target is registered in native CI. Its
+completed-owner stand-in uses one managed arena with the actual compact layout;
+borrowing retains pointer identity and adds only the view-vector charge. It
+checks moves, cross-thread destruction, both scalar/GPU replacement directions,
+rejection before allocation, live-old-output budget pressure, model failures,
+partial worker-launch failures, assembly/publication failures and recovery.
+The real frame consumer produces byte-identical results for 202 cases covering
+all six formats, global/grouped and clipped layouts, prescribed split/maximal
+trees, leaf multipliers, prefix/ANS, and one/four CPU participants. This qualifies
+the consumer boundary independently of a Metal token kernel.
+
+Local qualification on 2026-10-10 uses frozen base `710d291` (including CPU RCT
+selection) plus the eight step-2 code/build files. The C++20 Release checks passed
+11 focused tests, including the pinned-libjxl oracle, conformance, policy and
+transform suites. The existing workflow test also passed with allocation-failure
+shard `0/64`; that run does not claim the full 64-shard sweep. Five CPU-only
+C++23 ASan/UBSan tests passed with leak detection
+disabled on this Apple toolchain. The Metal library and handoff test also built
+and passed. Source hashes and logs are retained locally in
+`build/modular-token-handoff-qualification/`; no GPU production or performance
+claim follows from these consumer checks.
 
 ## 3. Implement and qualify the Metal token kernel
 

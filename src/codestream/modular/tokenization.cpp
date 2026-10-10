@@ -6,6 +6,28 @@
 #include "codestream/modular/parallel.h"
 
 namespace gjxl::modular_internal {
+PreparedModularTokens PrepareModularTokenHeader(const ModularCodingPolicy &policy,
+                                                const TreeLayout &layout) {
+  PreparedModularTokens result;
+  result.policy = policy;
+  result.context_count = layout.leaves;
+  auto tree_token = [&](uint32_t context, uint32_t value) {
+    result.tree_tokens[result.tree_token_count++] = {context, value};
+  };
+  for (size_t i = 0; i < policy.tree.size; ++i) {
+    const auto &node = policy.tree.nodes[layout.breadth_first[i]];
+    tree_token(1, node.property + 1);
+    if (node.property == -1) {
+      tree_token(2, static_cast<uint32_t>(node.predictor));
+      tree_token(3, PackSigned(node.offset));
+      const unsigned shift = std::countr_zero(node.multiplier);
+      tree_token(4, shift);
+      tree_token(5, (node.multiplier >> shift) - 1);
+    } else
+      tree_token(0, PackSigned(node.split));
+  }
+  return result;
+}
 Status TokenizeIdentity(const ModularEncoderFrame &frame, const ModularStreamPlan &plan,
                         PreparedModularTokens *out) {
   return TokenizeModular(frame, plan, {}, out);
@@ -30,24 +52,7 @@ Status TokenizeModular(const ModularEncoderFrame &frame, const ModularStreamPlan
   TreeLayout tree_layout;
   if (auto s = ValidateTree(policy.tree, &tree_layout); !s.ok())
     return s;
-  PreparedModularTokens result;
-  result.policy = policy;
-  result.context_count = tree_layout.leaves;
-  auto tree_token = [&](uint32_t context, uint32_t value) {
-    result.tree_tokens[result.tree_token_count++] = {context, value};
-  };
-  for (size_t i = 0; i < policy.tree.size; ++i) {
-    const auto &node = policy.tree.nodes[tree_layout.breadth_first[i]];
-    tree_token(1, node.property + 1);
-    if (node.property == -1) {
-      tree_token(2, static_cast<uint32_t>(node.predictor));
-      tree_token(3, PackSigned(node.offset));
-      const unsigned shift = std::countr_zero(node.multiplier);
-      tree_token(4, shift);
-      tree_token(5, (node.multiplier >> shift) - 1);
-    } else
-      tree_token(0, PackSigned(node.split));
-  }
+  auto result = PrepareModularTokenHeader(policy, tree_layout);
   result.tokens.resize(total);
   result.streams.resize(plan.streams.size());
   codestream_internal::Storage<size_t> offsets(plan.streams.size() + 1, 0);
