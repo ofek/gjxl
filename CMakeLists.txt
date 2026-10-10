@@ -2353,6 +2353,9 @@ if(GJXL_BUILD_TESTS)
   add_executable(gjxl_modular_workflow_test tests/modular_workflow_test.cpp)
   target_link_libraries(gjxl_modular_workflow_test PRIVATE gjxl_codestream)
   add_test(NAME modular_workflow COMMAND gjxl_modular_workflow_test)
+  # Exhaustive allocation injection repeats the bounded context search at every
+  # allocation boundary. Keep full coverage beyond the CI default of 600 s.
+  set_tests_properties(modular_workflow PROPERTIES TIMEOUT 7200)
 
   add_executable(gjxl_modular_capture tools/modular_oracle/capture.cpp src/io/pnm.cpp)
   target_link_libraries(gjxl_modular_capture PRIVATE gjxl_codestream)

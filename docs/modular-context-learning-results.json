@@ -1,0 +1,637 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-10",
+  "milestone": "CPU Modular context learning",
+  "base_revision_at_start": "e36b20de3859b9ef3c02c2097a22cf82ff69f1c5",
+  "head_at_record": "1b46e6a604331835710402460cda7953db44e6a8",
+  "source_state": "Uncommitted CPU context-learning changes; source hashes and source.patch identify implementation. Concurrent Metal work is excluded from CPU builds.",
+  "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "compiler": "AppleClang 21.0.0, native arm64",
+  "libjxl_revision": "e8ff09762481785938d8e4e01333ed3917571161",
+  "build": {
+    "type": "Release",
+    "metal": false,
+    "cuda": false,
+    "public_reference_backend": false,
+    "oracle_build": "/Users/yunhocho/GitHub/gjxl/build/pinned-libjxl"
+  },
+  "source_sha256": {
+    "src/codec/modular/tree_learning.h": "c1399a2c3a908ad2006d038642efd231ec3b80b5c4a215d08669837bd5a527f8",
+    "src/codec/modular/tree_learning.cpp": "edeb09c5ef6ee6b01006b4c5d2d794487f789fdac78a8dd7016cd1dcdbc55f8c",
+    "src/codestream/modular/search.h": "7ea4857f9ea09fac1d9e4b914121013d5ce20c8dcdbe772fba961dc587a1a848",
+    "src/codestream/modular/search.cpp": "82cc3fbd134fda28842fcf2d8067b2a3cbf9b38ebdf6f24479e5cf4837dbe498",
+    "src/codestream/modular/workflow.cpp": "af217409591bfac57c067878a49722ba5c45ac5752ea1a75d94e95aa7066f344",
+    "tests/modular_foundation_test.cpp": "6c055d0377862d99b31c097622a22332d534cc06f7483c437bcdf983d57bc619",
+    "tests/modular_policy_test.cpp": "58f3f1ab5046578da963a411ba13072de7ca381589d54fdf7f5903bdb8169f2a"
+  },
+  "final_frozen_libraries_sha256": {
+    "libgjxl_codestream.a": "59f32f69d9059913a9fcb0e245cc969e32e4ea04bb3e60bcd29c837d80448340",
+    "libgjxl_gpu_ops.a": "33e1627934cad5465fe23277c081de34695085d3ccdffd82caf6d8693e326a0a",
+    "libgjxl_codec.a": "6c26becfc9dff26d9233c554d1edbcaeb1f2fe8defa43113ea5db88cd330e2c1",
+    "libgjxl_gpu.a": "93de4855c0cd90e37ca77d752af1f8d89d8fc33ae0c17fbaa68b5b70ba9e9c52"
+  },
+  "validation": {
+    "focused_ctest": {
+      "passed": 8,
+      "failed": 0,
+      "tests": [
+        "modular_foundation",
+        "modular_stream",
+        "modular_oracle",
+        "modular_policy",
+        "modular_conformance",
+        "modular_transform",
+        "modular_api",
+        "modular_frozen_oracle"
+      ]
+    },
+    "final_source_direct_tests": {
+      "foundation": "passed",
+      "policy": "passed",
+      "prescribed_stage_cases": 811,
+      "complete_policy_files": 1682
+    },
+    "workflow_allocation_sweep": {
+      "passed": true,
+      "elapsed_seconds": 2530.07,
+      "cases": 44,
+      "failure_points": 88836,
+      "search_failure_points": 70489,
+      "case_counts": [
+        {
+          "case": "prefix format 1 1x1 policy baseline",
+          "failure_points": 292
+        },
+        {
+          "case": "prefix format 1 17x19 policy baseline",
+          "failure_points": 319
+        },
+        {
+          "case": "prefix format 1 257x3 policy baseline",
+          "failure_points": 324
+        },
+        {
+          "case": "prefix format 0 17x19 policy baseline",
+          "failure_points": 315
+        },
+        {
+          "case": "prefix format 0 257x3 policy baseline",
+          "failure_points": 299
+        },
+        {
+          "case": "prefix format 3 17x19 policy baseline",
+          "failure_points": 306
+        },
+        {
+          "case": "prefix format 3 257x3 policy baseline",
+          "failure_points": 311
+        },
+        {
+          "case": "prefix format 4 17x19 policy baseline",
+          "failure_points": 324
+        },
+        {
+          "case": "prefix format 4 257x3 policy baseline",
+          "failure_points": 331
+        },
+        {
+          "case": "prefix format 2 17x19 policy baseline",
+          "failure_points": 322
+        },
+        {
+          "case": "prefix format 2 257x3 policy baseline",
+          "failure_points": 329
+        },
+        {
+          "case": "prefix format 5 17x19 policy baseline",
+          "failure_points": 327
+        },
+        {
+          "case": "prefix format 5 257x3 policy baseline",
+          "failure_points": 334
+        },
+        {
+          "case": "ANS format 1 1x1 policy baseline",
+          "failure_points": 428
+        },
+        {
+          "case": "ANS format 1 17x19 policy baseline",
+          "failure_points": 455
+        },
+        {
+          "case": "ANS format 1 257x3 policy baseline",
+          "failure_points": 461
+        },
+        {
+          "case": "ANS format 0 17x19 policy baseline",
+          "failure_points": 454
+        },
+        {
+          "case": "ANS format 0 257x3 policy baseline",
+          "failure_points": 435
+        },
+        {
+          "case": "ANS format 3 17x19 policy baseline",
+          "failure_points": 442
+        },
+        {
+          "case": "ANS format 3 257x3 policy baseline",
+          "failure_points": 445
+        },
+        {
+          "case": "ANS format 4 17x19 policy baseline",
+          "failure_points": 464
+        },
+        {
+          "case": "ANS format 4 257x3 policy baseline",
+          "failure_points": 469
+        },
+        {
+          "case": "ANS format 2 17x19 policy baseline",
+          "failure_points": 462
+        },
+        {
+          "case": "ANS format 2 257x3 policy baseline",
+          "failure_points": 467
+        },
+        {
+          "case": "ANS format 5 17x19 policy baseline",
+          "failure_points": 467
+        },
+        {
+          "case": "ANS format 5 257x3 policy baseline",
+          "failure_points": 469
+        },
+        {
+          "case": "prefix format 5 17x19 policy prescribed",
+          "failure_points": 756
+        },
+        {
+          "case": "prefix format 5 257x3 policy prescribed",
+          "failure_points": 782
+        },
+        {
+          "case": "prefix format 5 17x19 policy search",
+          "failure_points": 12920
+        },
+        {
+          "case": "prefix format 5 257x3 policy search",
+          "failure_points": 12958
+        },
+        {
+          "case": "ANS format 5 17x19 policy prescribed",
+          "failure_points": 1284
+        },
+        {
+          "case": "ANS format 5 257x3 policy prescribed",
+          "failure_points": 1308
+        },
+        {
+          "case": "ANS format 5 17x19 policy search",
+          "failure_points": 21685
+        },
+        {
+          "case": "ANS format 5 257x3 policy search",
+          "failure_points": 22926
+        },
+        {
+          "case": "prefix format 5 17x19 policy prescribed",
+          "failure_points": 330
+        },
+        {
+          "case": "prefix format 5 257x3 policy prescribed",
+          "failure_points": 340
+        },
+        {
+          "case": "prefix format 5 17x19 policy prescribed",
+          "failure_points": 354
+        },
+        {
+          "case": "prefix format 5 257x3 policy prescribed",
+          "failure_points": 355
+        },
+        {
+          "case": "prefix format 5 17x19 policy prescribed",
+          "failure_points": 337
+        },
+        {
+          "case": "ANS format 5 17x19 policy prescribed",
+          "failure_points": 477
+        },
+        {
+          "case": "ANS format 5 257x3 policy prescribed",
+          "failure_points": 480
+        },
+        {
+          "case": "ANS format 5 17x19 policy prescribed",
+          "failure_points": 503
+        },
+        {
+          "case": "ANS format 5 257x3 policy prescribed",
+          "failure_points": 503
+        },
+        {
+          "case": "ANS format 5 17x19 policy prescribed",
+          "failure_points": 487
+        }
+      ],
+      "snapshot": "Original isolated CPU context-learning implementation; combined-source follow-up tests are recorded separately."
+    },
+    "address_undefined_sanitizers": {
+      "passed": 2,
+      "failed": 0,
+      "build_type": "Debug",
+      "flags": "-fsanitize=address,undefined -fno-omit-frame-pointer",
+      "tests": [
+        "modular_foundation",
+        "modular_policy"
+      ],
+      "elapsed_seconds": 356.45
+    },
+    "corpus": {
+      "inputs": 16,
+      "independently_decoded_outputs": 64,
+      "unchanged_default_outputs": 32,
+      "nonregressing_search_outputs": 32,
+      "final_source_repeat_identical_outputs": 64
+    },
+    "byte_regression": {
+      "default_files_unchanged": 2802,
+      "transform_files_unchanged": 626,
+      "frozen_artifacts_and_manifest_unchanged": 287,
+      "baseline": "build/modular-ci-arm64"
+    },
+    "sanitizer_scope": "Native code instrumented; pinned libjxl binaries are not rebuilt with sanitizers; existing reference test targets disable vptr checks because pinned internal archives omit RTTI.",
+    "workflow_ci_timeout_seconds": 7200,
+    "workflow_ci_timeout_check": "Confirmed explicit TIMEOUT=7200 with ctest --show-only=json-v1 --timeout 600."
+  },
+  "compression": {
+    "mode": "search + ANS",
+    "comparison": "Sum of complete raw JXL bytes; exact samples; no ancillary metadata; libjxl lossless e9 with keep_invisible=1",
+    "groups": {
+      "all-16": {
+        "before_sa_bytes": 10820068,
+        "after_sa_bytes": 9453745,
+        "change_percent": -12.627674798346922,
+        "libjxl_e9_bytes": 8511250,
+        "gap_to_e9_percent": 11.073520340725507
+      },
+      "non-synthetic-11": {
+        "before_sa_bytes": 9874064,
+        "after_sa_bytes": 8598720,
+        "change_percent": -12.91610019947207,
+        "libjxl_e9_bytes": 7673910,
+        "gap_to_e9_percent": 12.05135322149986
+      },
+      "rgb-photos-4": {
+        "before_sa_bytes": 4055266,
+        "after_sa_bytes": 3600658,
+        "change_percent": -11.210312714381743,
+        "libjxl_e9_bytes": 3238540,
+        "gap_to_e9_percent": 11.181520067684826
+      },
+      "rgba-photos-2": {
+        "before_sa_bytes": 4858400,
+        "after_sa_bytes": 4338611,
+        "change_percent": -10.698769142104393,
+        "libjxl_e9_bytes": 3943782,
+        "gap_to_e9_percent": 10.011430652099929
+      },
+      "gray-photo-1": {
+        "before_sa_bytes": 117256,
+        "after_sa_bytes": 94001,
+        "change_percent": -19.832673807736924,
+        "libjxl_e9_bytes": 90153,
+        "gap_to_e9_percent": 4.268299446496515
+      },
+      "graphics-4": {
+        "before_sa_bytes": 843142,
+        "after_sa_bytes": 565450,
+        "change_percent": -32.935377433457234,
+        "libjxl_e9_bytes": 401435,
+        "gap_to_e9_percent": 40.8571748850997
+      },
+      "synthetic-5": {
+        "before_sa_bytes": 946004,
+        "after_sa_bytes": 855025,
+        "change_percent": -9.617189779324399,
+        "libjxl_e9_bytes": 837340,
+        "gap_to_e9_percent": 2.112045286263653
+      }
+    },
+    "per_image": {
+      "alpha-flower": {
+        "before_sa_bytes": 4571784,
+        "after_sa_bytes": 4086686,
+        "before_sp_bytes": 4626496,
+        "after_sp_bytes": 4271401,
+        "tree_nodes": 25,
+        "rct": 6,
+        "candidates": 15
+      },
+      "alpha-ria": {
+        "before_sa_bytes": 286616,
+        "after_sa_bytes": 251925,
+        "before_sp_bytes": 291034,
+        "after_sp_bytes": 267389,
+        "tree_nodes": 31,
+        "rct": 0,
+        "candidates": 13
+      },
+      "alpha16-ramp": {
+        "before_sa_bytes": 109816,
+        "after_sa_bytes": 30801,
+        "before_sp_bytes": 145238,
+        "after_sp_bytes": 46671,
+        "tree_nodes": 19,
+        "rct": 0,
+        "candidates": 16
+      },
+      "chessboard": {
+        "before_sa_bytes": 247128,
+        "after_sa_bytes": 141670,
+        "before_sp_bytes": 510189,
+        "after_sp_bytes": 463763,
+        "tree_nodes": 31,
+        "rct": 0,
+        "candidates": 13
+      },
+      "gray-macan": {
+        "before_sa_bytes": 117256,
+        "after_sa_bytes": 94001,
+        "before_sp_bytes": 118127,
+        "after_sp_bytes": 102038,
+        "tree_nodes": 31,
+        "rct": 0,
+        "candidates": 9
+      },
+      "gray-patches": {
+        "before_sa_bytes": 38629,
+        "after_sa_bytes": 26035,
+        "before_sp_bytes": 62108,
+        "after_sp_bytes": 54414,
+        "tree_nodes": 31,
+        "rct": 0,
+        "candidates": 9
+      },
+      "gray16-ramp": {
+        "before_sa_bytes": 8313,
+        "after_sa_bytes": 1676,
+        "before_sp_bytes": 21452,
+        "after_sp_bytes": 1882,
+        "tree_nodes": 7,
+        "rct": 0,
+        "candidates": 8
+      },
+      "noise16": {
+        "before_sa_bytes": 809184,
+        "after_sa_bytes": 808786,
+        "before_sp_bytes": 810589,
+        "after_sp_bytes": 810191,
+        "tree_nodes": 5,
+        "rct": 6,
+        "candidates": 16
+      },
+      "palette-358": {
+        "before_sa_bytes": 1282,
+        "after_sa_bytes": 1075,
+        "before_sp_bytes": 3291,
+        "after_sp_bytes": 1399,
+        "tree_nodes": 13,
+        "rct": 9,
+        "candidates": 13
+      },
+      "palette-pattern": {
+        "before_sa_bytes": 13483,
+        "after_sa_bytes": 10521,
+        "before_sp_bytes": 20283,
+        "after_sp_bytes": 20283,
+        "tree_nodes": 17,
+        "rct": 0,
+        "candidates": 17
+      },
+      "photo-bliznaca": {
+        "before_sa_bytes": 276482,
+        "after_sa_bytes": 250518,
+        "before_sp_bytes": 280168,
+        "after_sp_bytes": 255473,
+        "tree_nodes": 21,
+        "rct": 6,
+        "candidates": 15
+      },
+      "photo-flower": {
+        "before_sa_bytes": 3208128,
+        "after_sa_bytes": 2858881,
+        "before_sp_bytes": 3256066,
+        "after_sp_bytes": 3008711,
+        "tree_nodes": 31,
+        "rct": 6,
+        "candidates": 15
+      },
+      "photo-macan": {
+        "before_sa_bytes": 332329,
+        "after_sa_bytes": 271492,
+        "before_sp_bytes": 334072,
+        "after_sp_bytes": 290188,
+        "tree_nodes": 31,
+        "rct": 6,
+        "candidates": 16
+      },
+      "photo-ria": {
+        "before_sa_bytes": 238327,
+        "after_sa_bytes": 219767,
+        "before_sp_bytes": 244580,
+        "after_sp_bytes": 222985,
+        "tree_nodes": 21,
+        "rct": 0,
+        "candidates": 13
+      },
+      "screen-pattern": {
+        "before_sa_bytes": 5208,
+        "after_sa_bytes": 3241,
+        "before_sp_bytes": 17499,
+        "after_sp_bytes": 17499,
+        "tree_nodes": 13,
+        "rct": 0,
+        "candidates": 13
+      },
+      "splines": {
+        "before_sa_bytes": 556103,
+        "after_sa_bytes": 396670,
+        "before_sp_bytes": 1744087,
+        "after_sp_bytes": 1707200,
+        "tree_nodes": 13,
+        "rct": 0,
+        "candidates": 16
+      }
+    }
+  },
+  "evidence_sha256": {
+    "build/modular-context-learning/ctest-focused.log": "0145c2a6ca1e84a28bca19072946ee09c762fd4fb944d1d6e5110ed4f06c3f46",
+    "build/modular-context-learning/final-build.log": "3b1fa8f948b50bf94b93558d7a131007c35c0919b5e7022654c1b6719a9d825b",
+    "build/modular-context-learning/final-foundation.log": "71a679c42caf937fcdc609e2744bdbb68c8209c97d3e16403a980b13da2b8a63",
+    "build/modular-context-learning/final-policy.log": "13a4aa7f6f50f795f1071801ae6e80ed48ffd4cda8cf4ccf18e5f90cea594bdd",
+    "build/modular-context-learning/rate/manifest.json": "1dff6fdf853900c6ffb0c664e4b7c29c269494fd6940b9cdd7e473d664aa9fde",
+    "build/modular-context-learning/rate/results.jsonl": "fcb8920576ad578235aadbffa6ee2c4f95685b21ffb6dcb57f41c1c906f3d3f5",
+    "build/modular-context-learning/rate/summary.json": "048b1f77ce0bd380d3d18fa4e89be41b339262c026f485a6eb3c37aad19a2175",
+    "build/modular-context-learning/rate/analyze.py": "9e8e55734963d8b243c639565d8289f498e63553674b4cdddcb39256fb138721",
+    "build/modular-context-learning/rate-final/manifest.json": "90c8e600022e1fe90dc6974b4f62fff6ebc6657e782d037fad2c46dd1a054357",
+    "build/modular-context-learning/rate-final/results.jsonl": "7d85464b1d106896353a82955d579abc203aca6edd92303c43b2c3e81b5d2e42",
+    "build/modular-context-learning/rate-final/source.patch": "d9185848d57c4bc9ea99c2dccc1ce87af0fc48f6c662c62fe77ddbd6cb417ffc",
+    "build/modular-context-learning/rate-final/verification.json": "32ec5b3bc169dda0e8633990c2487a2b8f3a6f6efbe4f2bce98b682ce9e1acc6",
+    "build/modular-context-learning/rate-final/bin/rate_runner": "cf94fdba2977492ad24ab69595f8022814c4e3eec8850034112a272e8d544ee4",
+    "build/modular-rate-20261010/manifest.json": "090dca5f463dffdb2949ad97e982fafa4e44af12bb4eb184d35948218bfc257d",
+    "build/modular-rate-20261010/results.jsonl": "fca28c360fa35c798b31239a092062fba1d7f9dd3a8e5d5da5954e860bdd1508",
+    "build/modular-rate-20261010/provenance.json": "f5cefa390b543cd3e3d5733a721569df1f5c4f31747a7d0abf372c554ab2db67",
+    "build/modular-context-learning-sanitize/ctest.log": "88bee1d3875139e5987821219c7679c0bb56e5ab24c79bf81cb70d80c4ab9f01",
+    "build/modular-context-learning/byte-regression.json": "e4f820d1e7230e2c73688dc8c2643492b66cb5e1fddb1ea359519999434ad968",
+    "build/modular-context-learning/rate-final/verify.py": "58d9ac48f9ea624f7246cb6b50b1f2094389578825d329c99cbee9a207681097",
+    "build/modular-context-learning/allocation-count.cpp": "5fbe3e4a9643d43fa7b2c0f3be924b6fc04c75c8c6409779579fd05871faff38",
+    "build/modular-context-learning/allocation-count.log": "0630d5830fc8de4c94e69504ad73c4670be64ef77fc71e8561efbe20e737d8f3",
+    "build/modular-context-learning/final-configure.log": "fa88bc6f8fa034a3260db66877e4651ae96cde23db0d8f361a64b43b07034141",
+    "build/modular-context-learning/workflow-test-properties.json": "a5bc773ce8e273e287ceebd99fcd9555d5a821cc46e505e12688ad93fdb3458d",
+    "build/modular-context-learning/integration/source-before.json": "b1a022d34829364a55615e50cf2ddac9c2b9d73b87c18278137609cdf48f4b42",
+    "build/modular-context-learning/integration/build.log": "a8f3d23ed66ec8c5f497cbddbdf4d6663c139da364dba9e69a1b3d09a5122a46",
+    "build/modular-context-learning/integration/check.py": "e287db97d0d9e68f07232a0687b3f862ce68b4b30eb4d4ce7b3d6ce48b6509e0",
+    "build/modular-context-learning/integration/tests.json": "7360171daab44ba6ff068571cfe964f493f2715842e81a42cbc3afa8ff90a214",
+    "build/modular-context-learning/integration/check.log": "a95807491b87764ca1c2c33b48197299bc8781a05c830f264f8d069f3c7aa535",
+    "build/modular-context-learning/rate-integrated/manifest.json": "777cf798baf19bc8e8c2d3003febaebb023a734e79b429fffcf4b8bd21f7d858",
+    "build/modular-context-learning/rate-integrated/results.jsonl": "f9e01f8e919ac328fa0a527a3bcc388a8bdbc3709c1e13967fc134b750e74555",
+    "build/modular-context-learning/rate-integrated/verification.json": "86bcf82aafffb7bce1213fc974352084be89af95520950e0f4b632b72d619e0f",
+    "build/modular-context-learning/rate-integrated/bin/rate_runner": "1bd638dfab7c8cf81520bb5e6592696decad3c972e92af0d4abb97ee86e4f625",
+    "build/modular-context-learning/integration/sanitize-build.log": "92b66a9e101396910455c1e529a4ca38ea3bef491f5dfe45bdcca93fe671aed5",
+    "build/modular-context-learning/integration/sanitize-ctest.log": "59d5bffdf2731f22654db10c61ae8054dc47744e6cfa60a176ee3de93c718169",
+    "build/modular-context-learning/ctest-workflow.log": "844b506c673ecb2bb12515dd991d3b53709a59e472e4d4b95f11ad36c421db9f",
+    "build/modular-context-learning/workflow-details.log": "2ea7f4853ff98b30e571a055373a5de556c67fa56d9916c8e3d550c77be43158",
+    "build/modular-context-learning/ci-timeout.patch": "47abe4170c8ef169339d2ef8eb620f934bcd8b69bdde9deb700c5db68ce0e9fa"
+  },
+  "commands": [
+    "cmake -S . -B build/modular-context-learning -G Ninja -DCMAKE_BUILD_TYPE=Release -DGJXL_ENABLE_METAL=OFF -DGJXL_ENABLE_CUDA=OFF -DGJXL_ENABLE_LIBJXL_REFERENCE=OFF -DGJXL_BUILD_TESTS=ON -DGJXL_BUILD_BENCHMARKS=OFF -DGJXL_MODULAR_ORACLE_BUILD=/Users/yunhocho/GitHub/gjxl/build/pinned-libjxl",
+    "ctest --test-dir build/modular-context-learning -R \"^modular_(foundation|stream|oracle|policy|conformance|transform|api|frozen_oracle)$\" --output-on-failure -j 4",
+    "ctest --test-dir build/modular-context-learning -R \"^modular_workflow$\" --output-on-failure",
+    "ctest --test-dir build/modular-context-learning-sanitize -R \"^modular_(foundation|policy)$\" --output-on-failure -j 2",
+    "python3 build/modular-context-learning/rate/run.py",
+    "python3 build/modular-context-learning/rate/analyze.py",
+    "python3 build/modular-context-learning/rate-final/run.py",
+    "python3 build/modular-context-learning/rate-final/verify.py"
+  ],
+  "limitations": [
+    "Small 16-input pilot; no full-corpus rate claim.",
+    "Search performs more CPU training and candidate encodes; no throughput or equivalent-effort claim.",
+    "Histogram scoring is an estimate using fixed HybridUint 4/2/0; the complete file decides acceptance.",
+    "Expanded RCT selection, richer palettes, LZ77 and previous-channel properties remain out of scope.",
+    "CPU-only tests do not qualify GPU execution.",
+    "Initial focused and workflow binaries precede include/format cleanup and an equivalent quota-expression rewrite; final-source policy tests and 64-output repeat are recorded separately."
+  ],
+  "concurrent_integration": {
+    "note": "Independent GPU work extracted EncodePreparedModularFrame during CPU qualification. The context-search changes remain intact. This section qualifies the combined CPU path separately from the original frozen feature snapshot.",
+    "source": {
+      "revision": "1b46e6a604331835710402460cda7953db44e6a8",
+      "sha256": {
+        "src/codec/modular/tree_learning.h": "c1399a2c3a908ad2006d038642efd231ec3b80b5c4a215d08669837bd5a527f8",
+        "src/codec/modular/tree_learning.cpp": "edeb09c5ef6ee6b01006b4c5d2d794487f789fdac78a8dd7016cd1dcdbc55f8c",
+        "src/codestream/modular/search.h": "7ea4857f9ea09fac1d9e4b914121013d5ce20c8dcdbe772fba961dc587a1a848",
+        "src/codestream/modular/search.cpp": "82cc3fbd134fda28842fcf2d8067b2a3cbf9b38ebdf6f24479e5cf4837dbe498",
+        "src/codestream/modular/workflow.cpp": "d2200a752f7fc445d64b3df596a51e47cdba6c9f47ee2f91e3a9e0add1253591",
+        "src/codec/modular/frame.h": "42c3d39d0946ce85c84035b3be7b00511558e09f8baaac17d6098b66a82cee8b",
+        "src/codec/modular/frame.cpp": "48b7bbca7d525e65fe7733c9a2bbf7bf861089bd49d4bfc6f341e9b22dd39500",
+        "src/codestream/modular/prepared_encoder.h": "84e80851c7e318c2fe33ba416c3bec2658b5ba7b9fca43506fe01e70bec18d48",
+        "src/codestream/modular/prepared_encoder.cpp": "cc3b0933081f4254935f2ca4722a4c772a5f83e1835ce33fb7f7ae721a40c9f5",
+        "tests/modular_foundation_test.cpp": "6c055d0377862d99b31c097622a22332d534cc06f7483c437bcdf983d57bc619",
+        "tests/modular_policy_test.cpp": "58f3f1ab5046578da963a411ba13072de7ca381589d54fdf7f5903bdb8169f2a"
+      }
+    },
+    "tests": {
+      "foundation": {
+        "returncode": 0,
+        "seconds": 0.07451775000663474,
+        "command": [
+          "/Users/yunhocho/GitHub/gjxl-modular/build/modular-context-learning/gjxl_modular_foundation_test"
+        ]
+      },
+      "stream": {
+        "returncode": 0,
+        "seconds": 0.08121779200155288,
+        "command": [
+          "/Users/yunhocho/GitHub/gjxl-modular/build/modular-context-learning/gjxl_modular_stream_test"
+        ]
+      },
+      "oracle": {
+        "returncode": 0,
+        "seconds": 0.14459133299533278,
+        "command": [
+          "/Users/yunhocho/GitHub/gjxl-modular/build/modular-context-learning/gjxl_modular_oracle_test"
+        ]
+      },
+      "policy": {
+        "returncode": 0,
+        "seconds": 13.343430042004911,
+        "command": [
+          "/Users/yunhocho/GitHub/gjxl-modular/build/modular-context-learning/gjxl_modular_policy_test"
+        ]
+      },
+      "conformance": {
+        "returncode": 0,
+        "seconds": 22.87375245799194,
+        "command": [
+          "/Users/yunhocho/GitHub/gjxl-modular/build/modular-context-learning/gjxl_modular_conformance_test"
+        ]
+      },
+      "transform": {
+        "returncode": 0,
+        "seconds": 8.45771375001641,
+        "command": [
+          "/Users/yunhocho/GitHub/gjxl-modular/build/modular-context-learning/gjxl_modular_transform_test"
+        ]
+      },
+      "api": {
+        "returncode": 0,
+        "seconds": 7.645049042010214,
+        "command": [
+          "/Users/yunhocho/GitHub/gjxl-modular/build/modular-context-learning/gjxl_modular_api_test"
+        ]
+      },
+      "frozen_oracle": {
+        "returncode": 0,
+        "seconds": 0.9661356669967063,
+        "command": [
+          "python3",
+          "/Users/yunhocho/GitHub/gjxl-modular/tools/modular_oracle/verify.py",
+          "/Users/yunhocho/GitHub/gjxl-modular/build/modular-context-learning/gjxl_modular_capture",
+          "/Users/yunhocho/GitHub/gjxl-modular/testdata/modular",
+          "/Users/yunhocho/GitHub/gjxl-modular/build/modular-context-learning/integration/frozen-native"
+        ]
+      }
+    },
+    "rate_verification": {
+      "verified_outputs": 64,
+      "byte_identical_to_initial_capture": 64,
+      "unchanged_resolved_policy_metadata": 64,
+      "initial_results_sha256": "fcb8920576ad578235aadbffa6ee2c4f95685b21ffb6dcb57f41c1c906f3d3f5",
+      "final_results_sha256": "f9e01f8e919ac328fa0a527a3bcc388a8bdbc3709c1e13967fc134b750e74555",
+      "final_source_sha256": {
+        "src/codec/modular/tree_learning.h": "c1399a2c3a908ad2006d038642efd231ec3b80b5c4a215d08669837bd5a527f8",
+        "src/codec/modular/tree_learning.cpp": "edeb09c5ef6ee6b01006b4c5d2d794487f789fdac78a8dd7016cd1dcdbc55f8c",
+        "src/codestream/modular/search.h": "7ea4857f9ea09fac1d9e4b914121013d5ce20c8dcdbe772fba961dc587a1a848",
+        "src/codestream/modular/search.cpp": "82cc3fbd134fda28842fcf2d8067b2a3cbf9b38ebdf6f24479e5cf4837dbe498",
+        "src/codestream/modular/workflow.cpp": "d2200a752f7fc445d64b3df596a51e47cdba6c9f47ee2f91e3a9e0add1253591",
+        "src/codec/modular/frame.h": "42c3d39d0946ce85c84035b3be7b00511558e09f8baaac17d6098b66a82cee8b",
+        "src/codec/modular/frame.cpp": "48b7bbca7d525e65fe7733c9a2bbf7bf861089bd49d4bfc6f341e9b22dd39500",
+        "src/codestream/modular/prepared_encoder.h": "84e80851c7e318c2fe33ba416c3bec2658b5ba7b9fca43506fe01e70bec18d48",
+        "src/codestream/modular/prepared_encoder.cpp": "cc3b0933081f4254935f2ca4722a4c772a5f83e1835ce33fb7f7ae721a40c9f5",
+        "tests/modular_foundation_test.cpp": "6c055d0377862d99b31c097622a22332d534cc06f7483c437bcdf983d57bc619",
+        "tests/modular_policy_test.cpp": "58f3f1ab5046578da963a411ba13072de7ca381589d54fdf7f5903bdb8169f2a"
+      }
+    },
+    "sanitizers": {
+      "passed": 2,
+      "failed": 0,
+      "tests": [
+        "modular_foundation",
+        "modular_policy"
+      ],
+      "elapsed_seconds": 315.66
+    }
+  },
+  "head_at_completion": "155e60e6133bc3c7668365288a236d3e87c92a37"
+}

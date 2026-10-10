@@ -353,6 +353,27 @@ int main(int argc, char **argv) try {
     extreme.tree.nodes[0].multiplier = uint32_t{1} << 30;
     Case(Fixture(17, 19, 3, bits, 3), extreme);
   }
+  // Independently qualify the new context policies even when complete-size
+  // search happens to retain an older candidate on a particular fixture.
+  for (auto channels : {1u, 3u, 4u})
+    for (auto bits : {8u, 16u}) {
+      Fixture fixture(257, 19, channels, bits, 0);
+      ModularCodingPolicy fixed, single, split, learned;
+      fixed.rct = channels >= 3 ? 6 : 0;
+      Ok(MakeFixedWeightedTree(bits, &fixed.tree));
+      Case(fixture, fixed);
+      ModularEncoderFrame frame;
+      Ok(ModularEncoderFrame::Prepare(fixture.view(), fixed.rct, &frame));
+      ModularFrameGeometry geometry;
+      Ok(ModularFrameGeometry::Create(fixture.view().extent, &geometry));
+      ChannelShape shape;
+      Ok(DescribeImage(frame.image(), &shape));
+      ModularStreamPlan layout;
+      Ok(BuildModularStreamPlan(geometry, shape.channels(), shape.metadata, &layout));
+      Ok(LearnModularPolicies(frame, layout, fixed.rct, &single, &split, &learned));
+      Case(fixture, learned);
+      Case(Fixture(1, 1, channels, bits, 0), {}, true);
+    }
   std::cout << stages << " prescribed stage cases; " << files << " complete policy files passed\n";
 } catch (const std::exception &e) {
   std::cerr << e.what() << '\n';

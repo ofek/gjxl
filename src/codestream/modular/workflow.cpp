@@ -82,10 +82,17 @@ Status EncodeSearch(PackedModularImageView input, ModularEncodingOptions options
   ModularInputProfile profile;
   if (auto s = ResolveModularInput(input.extent, input.format, &profile); !s.ok())
     return s;
+  // Append the new policies only after all retained candidates. This preserves
+  // the old search winner on equal sizes, including its transform decisions.
+  std::array<ModularCodingPolicy, 6> context_candidates;
+  size_t context_count = 0;
+  DecisionTree fixed;
+  if (auto s = MakeFixedWeightedTree(profile.metadata.bits, &fixed); !s.ok())
+    return s;
   for (uint8_t rct : {uint8_t{0}, uint8_t{6}, uint8_t{9}}) {
     if (rct && profile.channel_count < 3)
       continue;
-    ModularCodingPolicy single, split;
+    ModularCodingPolicy single, split, entropy;
     {
       ModularEncoderFrame frame;
       ModularStreamPlan layout;
@@ -94,9 +101,14 @@ Status EncodeSearch(PackedModularImageView input, ModularEncodingOptions options
       if (auto s = BuildModularStreamPlan(storage.geometry, profile.channels(), 0, &layout);
           !s.ok())
         return s;
-      if (auto s = LearnModularPolicies(frame, layout, rct, &single, &split); !s.ok())
+      if (auto s = LearnModularPolicies(frame, layout, rct, &single, &split, &entropy); !s.ok())
         return s;
     }
+    auto &fixed_candidate = context_candidates[context_count++];
+    fixed_candidate.rct = rct;
+    fixed_candidate.tree = fixed;
+    if (entropy != single && entropy != split)
+      context_candidates[context_count++] = entropy;
     for (size_t i = 0; i < 2; ++i) {
       const auto &policy = i ? split : single;
       if (policy == ModularCodingPolicy{} || (i && split == single))
@@ -130,6 +142,17 @@ Status EncodeSearch(PackedModularImageView input, ModularEncodingOptions options
     if (candidate.view().size() < best.view().size()) {
       best = std::move(candidate);
       if (active_modular_profile) best_policy = options.coding;
+    }
+  }
+  for (size_t i = 0; i < context_count; ++i) {
+    options.coding = context_candidates[i];
+    codestream_internal::CodestreamBuffer candidate;
+    if (auto s = Encode(input, options, &candidate); !s.ok())
+      return s;
+    if (candidate.view().size() < best.view().size()) {
+      best = std::move(candidate);
+      if (active_modular_profile)
+        best_policy = options.coding;
     }
   }
   output.Publish(std::move(best));

@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <vector>
 #include "codec/modular/image.h"
+#include "codec/modular/tree_learning.h"
 #include "codestream/modular/stream_plan.h"
 #include "codestream/headers_internal.h"
 
@@ -21,6 +22,85 @@ void Check(bool value, const char *message) {
 void Ok(const Status &s) {
   if (!s.ok())
     throw std::runtime_error(std::string(s.message()));
+}
+
+void ContextLearning() {
+  std::vector<TrainingSample> samples(256);
+  for (size_t i = 0; i < samples.size(); ++i) {
+    samples[i].properties[9] = i < 128 ? -7 : 12;
+    for (size_t p = 0; p < 14; ++p)
+      samples[i].residuals[p] = static_cast<int32_t>((i % 64) * 37 + p * 129);
+    samples[i].residuals[5] = i < 128 ? 1 : -2;
+  }
+  DecisionTree single, legacy, learned, again;
+  Ok(LearnDecisionTrees(samples, &single, &legacy));
+  Check(legacy.size == 1, "Retained learner unexpectedly separates equal bit widths");
+  Ok(LearnEntropyTree(samples, &learned));
+  TreeLayout layout;
+  Ok(ValidateTree(learned, &layout));
+  Check(learned.size == 3 && learned.nodes[0].property == 9 &&
+            Lookup(learned, samples.front().properties) !=
+                Lookup(learned, samples.back().properties),
+        "Entropy learner missed useful same-predictor contexts");
+  for (size_t i = 0; i < learned.size; ++i)
+    if (learned.nodes[i].property == -1)
+      Check(learned.nodes[i].predictor == Predictor::kGradient,
+            "Same-predictor split changed the predictor");
+  for (size_t i = 0; i < samples.size(); ++i) {
+    samples[i].properties = {};
+    samples[i].properties[0] = static_cast<int64_t>(i / 64);
+    samples[i].residuals[5] = int32_t{1} << (i / 64);
+  }
+  Ok(LearnEntropyTree(samples, &learned));
+  Ok(LearnEntropyTree(samples, &again));
+  Ok(ValidateTree(learned, &layout));
+  Check(learned == again && layout.leaves == 4,
+        "Recursive contexts or deterministic learning failed");
+  for (size_t i = 1; i < 4; ++i)
+    Check(Lookup(learned, samples[(i - 1) * 64].properties) !=
+              Lookup(learned, samples[i * 64].properties),
+          "Independent channel contexts were merged by the learner");
+  for (auto &sample : samples)
+    sample.residuals.fill(0);
+  Ok(LearnEntropyTree(samples, &learned));
+  Check(learned.size == 1 && learned.nodes[0].predictor == Predictor::kGradient,
+        "Model/tree overhead failed to reject useless context splits");
+  for (size_t i = 0; i < samples.size(); ++i) {
+    samples[i].properties[15] = i % 2 ? INT64_MAX : INT64_MIN;
+    samples[i].residuals.fill(i % 2 ? INT32_MAX : INT32_MIN);
+  }
+  Ok(LearnEntropyTree(samples, &learned));
+  Ok(ValidateTree(learned, &layout));
+  const auto saved = learned;
+  Check(!LearnEntropyTree({}, &learned).ok() && learned == saved &&
+            !LearnEntropyTree(samples, nullptr).ok(),
+        "Invalid learning input changed output");
+  HostStorageBound bound;
+  ArmNextManagedHostAllocationFailureForTest();
+  Ok(ComputeTreeLearningStorageBound(&bound));
+  Check(ManagedHostAllocationFailurePendingForTest(), "Learning planner allocated");
+  Check(LearnEntropyTree(samples, &learned).code() == StatusCode::kOutOfMemory && learned == saved,
+        "Learning allocation failure changed the tree");
+  DisarmManagedHostAllocationFailureForTest();
+  ResourceBudget budget(bound.peak_bytes);
+  ResourceReservation reservation;
+  Ok(budget.Reserve(bound.peak_bytes, &reservation));
+  {
+    ResourceContextScope scope({&reservation, ResourceClass::kPreparation});
+    Ok(LearnEntropyTree(samples, &learned));
+  }
+  Check(budget.snapshot().peak_backing_bytes <= bound.peak_bytes &&
+            budget.snapshot().total.backing_count == 0,
+        "Learning scratch escaped its budget");
+  for (uint32_t bits : {8u, 16u}) {
+    Ok(MakeFixedWeightedTree(bits, &learned));
+    Ok(ValidateTree(learned, &layout));
+    Check(layout.weighted && layout.leaves == 16 && learned.size == 31,
+          "Fixed context tree shape is wrong");
+  }
+  again = learned;
+  Check(!MakeFixedWeightedTree(12, &learned).ok() && learned == again,
+        "Invalid fixed tree depth changed output");
 }
 
 void ViewsAndImages() {
@@ -284,6 +364,7 @@ int main() {
     ViewsAndImages();
     GeometryAndPlans();
     HeadersAndBounds();
+    ContextLearning();
     std::cout << "Modular channel, geometry, storage and header checks passed\n";
   } catch (const std::exception &e) {
     DisarmManagedHostAllocationFailureForTest();

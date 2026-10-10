@@ -12,10 +12,12 @@ namespace gjxl::modular_internal {
                                               std::array<ModularCodingPolicy, 4> *out,
                                               size_t *count);
 // Deterministic uniform sampling in canonical stream/channel/raster order.
-// Outputs are a learned single leaf and at most one split (two leaves).
+// The retained candidates use the original uniform samples and bit-width cost.
+// Optional entropy learning uses a separate, bounded stratified sample set.
 [[nodiscard]] Status LearnModularPolicies(const ModularEncoderFrame &frame,
                                           const ModularStreamPlan &plan, uint8_t rct,
-                                          ModularCodingPolicy *single, ModularCodingPolicy *split);
+                                          ModularCodingPolicy *single, ModularCodingPolicy *split,
+                                          ModularCodingPolicy *entropy = nullptr);
 [[nodiscard]] Status ComputeModularSearchStoragePlan(Extent2D extent, PackedModularFormat format,
                                                      EntropyCodingMode mode,
                                                      ModularWorkflowStoragePlan *out,
