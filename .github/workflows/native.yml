@@ -65,6 +65,7 @@ jobs:
         run: >-
           cmake --build build/ci --parallel 4 --target
           gjxl_modular_stream_test gjxl_modular_foundation_test
+          gjxl_modular_gpu_input_test
           gjxl_modular_workflow_test gjxl_modular_capture
           gjxl_modular_oracle_test gjxl_modular_conformance_test
           gjxl_modular_policy_test gjxl_modular_transform_test

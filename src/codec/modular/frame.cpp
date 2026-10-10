@@ -43,7 +43,10 @@ Status ResolveModularInput(Extent2D extent, PackedModularFormat format, ModularI
   *out = p;
   return Status::Ok();
 }
-Status PackedModularImageView::Validate() const {
+Status ComputePackedModularInputSize(Extent2D extent, PackedModularFormat format,
+                                     SampleByteOrder byte_order, size_t row_stride, size_t *out) {
+  if (!out)
+    return Status::InvalidArgument("Null Modular packed size output");
   ModularInputProfile profile;
   if (auto s = ResolveModularInput(extent, format, &profile); !s.ok())
     return s;
@@ -58,10 +61,20 @@ Status PackedModularImageView::Validate() const {
       extent.width > SIZE_MAX / pixel_bytes)
     return Status::InvalidArgument("Modular dimensions exceed the format limits");
   const size_t row = pixel_bytes * extent.width;
-  if (!bytes.data() || row_stride < row || extent.height - 1 > (SIZE_MAX - row) / row_stride)
+  if (row_stride < row || extent.height - 1 > (SIZE_MAX - row) / row_stride)
     return Status::InvalidArgument("Invalid Modular stride or backing");
   const size_t end = (extent.height - 1) * row_stride + row;
-  if (end > bytes.size() || end > PTRDIFF_MAX)
+  if (end > PTRDIFF_MAX)
+    return Status::InvalidArgument("Modular backing exceeds the pointer range");
+  *out = end;
+  return Status::Ok();
+}
+Status PackedModularImageView::Validate() const {
+  size_t required;
+  if (auto s = ComputePackedModularInputSize(extent, format, byte_order, row_stride, &required);
+      !s.ok())
+    return s;
+  if (!bytes.data() || required > bytes.size())
     return Status::InvalidArgument("Modular backing is too short");
   return Status::Ok();
 }

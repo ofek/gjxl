@@ -32,6 +32,13 @@ struct ModularInputProfile {
 // Allocation-free resolution shared by validation, preparation and planning.
 [[nodiscard]] Status ResolveModularInput(Extent2D extent, PackedModularFormat format,
                                          ModularInputProfile *out);
+// Shape-only packed backing requirement, shared by view validation and GPU
+// admission. Includes inter-row padding but none after the last sample. Checks
+// the CPU profile/area, byte order, stride and PTRDIFF_MAX limits without reading
+// samples or allocating on success. Failure leaves *out unchanged.
+[[nodiscard]] Status ComputePackedModularInputSize(Extent2D extent, PackedModularFormat format,
+                                                   SampleByteOrder byte_order, size_t row_stride,
+                                                   size_t *out);
 struct Rgb8View {
   std::span<const uint8_t> bytes;
   Extent2D extent;

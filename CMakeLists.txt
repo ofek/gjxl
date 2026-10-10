@@ -583,6 +583,7 @@ add_library(
 
   src/gpu/ops/ac_strategy_search.cpp
   src/gpu/ops/ac_strategy_storage_plan.cpp
+  src/gpu/ops/modular_input_storage_plan.cpp
   src/gpu/ops/profile_storage_plan.cpp
   src/gpu/ops/adaptive_quantization.cpp
   src/gpu/ops/gaborish.cpp
@@ -2317,6 +2318,11 @@ if(GJXL_BUILD_TESTS)
   add_executable(gjxl_modular_foundation_test tests/modular_foundation_test.cpp)
   target_link_libraries(gjxl_modular_foundation_test PRIVATE gjxl_codestream)
   add_test(NAME modular_foundation COMMAND gjxl_modular_foundation_test)
+
+  add_executable(gjxl_modular_gpu_input_test tests/modular_gpu_input_test.cpp)
+  target_link_libraries(gjxl_modular_gpu_input_test PRIVATE gjxl_gpu_ops)
+  add_test(NAME modular_gpu_input COMMAND gjxl_modular_gpu_input_test)
+  set_tests_properties(modular_gpu_input PROPERTIES TIMEOUT 30)
 
   add_executable(gjxl_modular_workflow_test tests/modular_workflow_test.cpp)
   target_link_libraries(gjxl_modular_workflow_test PRIVATE gjxl_codestream)

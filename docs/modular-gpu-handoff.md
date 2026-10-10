@@ -26,6 +26,52 @@ Unsupported features require a new CPU contract and independent qualification
 before GPU work. Preserve the separation between whole-image Modular policy
 and VarDCT's use of shared integer-stream mechanisms.
 
+## First slice: operation and storage contract
+
+The private [input operation](../src/gpu/ops/modular_input.h) and
+[storage planner](../src/gpu/ops/modular_input_storage_plan.h) define unpacking
+plus one prescribed RCT. They build with both GPU backends disabled and are not
+installed headers. No Metal/CUDA implementation or workflow dispatch is enabled
+by this contract.
+
+`GpuModularInputPreparation` is an optional capability of an existing backend.
+It accepts all six packed integer formats and explicit byte order, with RCT 0
+for grayscale or 0–41 for color. Successful preparation is synchronous and
+returns a `PreparedGpuModularInput` owning completed, immutable int32 device
+planes and their resource charges. Plane views preserve source extents, channel
+roles and zero shifts; there are no metadata channels. Alpha and invisible RGB
+follow the scalar oracle. The backend must outlive the owner, and all consumers
+must complete before the owner is destroyed. Failure preserves prior output and
+drains submitted work before releasing backing. Host readback is a separate step.
+
+`ComputeModularInputStoragePlan` accepts shapes without pixel backing. The CPU
+view validator and GPU planner share `ComputePackedModularInputSize`, including
+format, area, byte-order, stride, pointer-range and final-row rules. Input
+offsets are represented by the caller's subspan. The planner reports:
+
+| Backing / phase | Contract |
+| --- | --- |
+| Upload | `(height - 1) * row_stride_bytes + meaningful_row_bytes`; includes inter-row padding, excludes trailing padding |
+| Device result | One arena of dense int32 planes with 256-byte aligned, disjoint offsets |
+| Preparation peak | Upload plus device result; upload is released after completion |
+| Optional readback peak | Device result plus a fresh managed `ModularImage`, including channel records |
+| Component peak | Maximum of preparation and readback, excluding prior outputs and downstream work |
+
+Successful planning allocates no backing and initializes no device. Supplying
+backend limits additionally checks each extent axis, input stride, and the
+upload/output allocations separately. Limits are inclusive and nonzero. Missing
+limits mean arithmetic-only planning; runtime implementations must supply their
+actual limits before allocation. Invalid requests leave the old plan unchanged.
+Callers still compose old-output overlap, diagnostics and the remaining encoder
+phases into complete-call admission.
+
+The CPU-only `modular_gpu_input` test covers the format/RCT metadata matrix,
+odd offsets/strides, exact backing ends, plane ranges and alignment, device-limit
+boundaries, invalid inputs, large shape-only plans, allocation-free planning and
+actual managed host-destination capacity. It is included in native Modular CI.
+Kernel arithmetic, device lifetime/failure behavior and complete GPU-assisted
+files remain subsequent qualification gates.
+
 ## Proposed first operations
 
 Introduce private operation contracts under `src/gpu/ops/`, implementations in
