@@ -393,7 +393,7 @@ void Benchmark(const Fixture &f, EntropyCodingMode mode, bool search, size_t thr
       Decode(f, bytes);
       csv << f.name << ',' << f.extent.width << ',' << f.extent.height << ',' << f.channels << ','
           << f.bits << ",libjxl-effort1,-1,0,1," << run << ',' << seconds << ',' << bytes.size()
-          << ",0,0,0,0,0,0,0,0,0,0\n";
+          << ",0,0,0,0,0,0,0,0,0,0,0\n";
     }
   }
 #endif
@@ -413,7 +413,7 @@ int main(int argc, char **argv) try {
   csv.exceptions(std::ios::badbit | std::ios::failbit);
   csv << std::setprecision(17)
       << "fixture,width,height,channels,bits,encoder,entropy,search,threads,run,seconds,bytes,"
-         "managed_peak,planned_capacity,input,transforms,training,tokens,model,emission,assembly,"
+         "managed_peak,planned_capacity,input,transforms,training,tokens,model,emission,assembly,gpu_input_tokens,"
          "candidates\n";
   for (const auto &f : Corpus(argv[2], bench))
     for (auto mode : {EntropyCodingMode::kPrefix, EntropyCodingMode::kAns}) {

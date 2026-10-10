@@ -699,6 +699,7 @@ MetalBackend::MetalBackend(
   AcStrategyPipelines ac_strategy_pipelines,
   PrimitivePipelines primitive_pipelines,
   NS::SharedPtr<MTL::ComputePipelineState> modular_input_pipeline,
+  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 3> modular_token_pipelines,
   AqPipelines aq_pipelines,
   ButteraugliPipelines butteraugli_pipelines,
   bool test_fail_submission,
@@ -714,6 +715,7 @@ MetalBackend::MetalBackend(
     ac_strategy_pipelines_(std::move(ac_strategy_pipelines)),
     primitive_pipelines_(std::move(primitive_pipelines)),
     modular_input_pipeline_(std::move(modular_input_pipeline)),
+    modular_token_pipelines_(std::move(modular_token_pipelines)),
     aq_pipelines_(std::move(aq_pipelines)),
     butteraugli_pipelines_(std::move(butteraugli_pipelines)),
     test_fail_submission_(test_fail_submission),
@@ -1782,6 +1784,16 @@ Status CreateMetalBackendImpl(
       maximum_threads.width < 8 || maximum_threads.height < 8)
     return Status::Unavailable("Metal cannot launch Modular input threadgroups");
 
+  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 3> modular_token_pipelines;
+  const char* token_kernels[] = {"gjxl_modular_tokens_gradient", "gjxl_modular_tokens_tree",
+                                 "gjxl_modular_tokens_diagnostic"};
+  for (size_t i = 0; i < modular_token_pipelines.size(); ++i) {
+    status = CreatePipeline(device.get(), library.get(), token_kernels[i], &modular_token_pipelines[i]);
+    if (!status.ok()) return status;
+    if (modular_token_pipelines[i]->maxTotalThreadsPerThreadgroup() < 64 || maximum_threads.width < 64)
+      return Status::Unavailable("Metal cannot launch Modular token threadgroups");
+  }
+
   AqPipelines aq_pipelines;
   status = CreateAqPipelines(device.get(), library.get(), &aq_pipelines);
   if (!status.ok()) {
@@ -1805,6 +1817,7 @@ Status CreateMetalBackendImpl(
       std::move(ac_strategy_pipelines),
       std::move(primitive_pipelines),
       std::move(modular_input_pipeline),
+      std::move(modular_token_pipelines),
       std::move(aq_pipelines),
       std::move(butteraugli_pipelines),
       options.test_fail_submission,

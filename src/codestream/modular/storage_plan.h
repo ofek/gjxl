@@ -27,4 +27,13 @@ struct ModularWorkflowStoragePlan {
                                                        const ModularCodingPolicy &policy,
                                                        ModularWorkflowStoragePlan *out,
                                                        size_t cpu_threads = 1);
+// Completed-token continuation only: replaces scalar token backing with the
+// supplied retained arena capacity, and omits image preparation/tokenization.
+// Includes canonical layout and fresh stream views, models, emission workers,
+// assembly and publication. Caller separately accounts for producing the arena
+// and any extra metadata still live during handoff. No charge is acquired here.
+[[nodiscard]] Status ComputeModularTokenConsumerStoragePlan(
+    Extent2D extent, PackedModularFormat format, EntropyCodingMode mode,
+    const ModularCodingPolicy &policy, size_t completed_token_bytes,
+    ModularWorkflowStoragePlan *out, size_t cpu_threads = 1);
 } // namespace gjxl::modular_internal

@@ -26,6 +26,8 @@
 #include "gpu/image.h"
 #include "gpu/metal/metal_backend.h"
 #include "gpu/metal/metal_modular_input.h"
+#include "gpu/metal/metal_modular_tokens.h"
+#include "gpu/metal/kernels/modular_input_params.h"
 #include "gpu/metal/metal_submission_storage_plan.h"
 #include "gpu/ops/ac_strategy.h"
 #include "gpu/ops/ac_strategy_selection.h"
@@ -33,6 +35,7 @@
 #include "gpu/ops/aq_evaluation_internal.h"
 #include "gpu/ops/butteraugli.h"
 #include "gpu/ops/gpu_execution_profile_internal.h"
+#include "gpu/ops/modular_tokenization.h"
 #include "gpu/ops/primitives.h"
 #include "gpu/ops/resident_input.h"
 #include "gpu/scratch.h"
@@ -40,6 +43,15 @@
 namespace gjxl::metal_internal {
 
 class MetalBackend;
+// Validated, borrowed bindings for recording unpack/RCT alone or before tokens.
+struct MetalModularInputEncoding {
+  MTL::Buffer* input = nullptr;
+  MTL::Buffer* output = nullptr;
+  MTL::ComputePipelineState* pipeline = nullptr;
+  gjxl_modular_input::Params params{};
+};
+void EncodeMetalModularInput(MTL::ComputeCommandEncoder* encoder,
+                            const MetalModularInputEncoding& context);
 class MetalCompletedVarDctFrame;
 struct MetalBackendRegistry;
 struct MetalButteraugliScratch;
@@ -358,6 +370,7 @@ class MetalBackend final
     public aq_evaluation_internal::GpuValidatedAqEvaluation,
     public GpuResidentInputPreparation,
     public modular_gpu_internal::GpuModularInputPreparation,
+    public modular_gpu_internal::GpuModularTokenGeneration,
     public DeviceButteraugliOperation {
 public:
   MetalBackend(
@@ -369,6 +382,7 @@ public:
     AcStrategyPipelines ac_strategy_pipelines,
     PrimitivePipelines primitive_pipelines,
     NS::SharedPtr<MTL::ComputePipelineState> modular_input_pipeline,
+    std::array<NS::SharedPtr<MTL::ComputePipelineState>, 3> modular_token_pipelines,
     AqPipelines aq_pipelines,
     ButteraugliPipelines butteraugli_pipelines,
     bool test_fail_submission,
@@ -500,6 +514,22 @@ public:
     std::unique_ptr<modular_gpu_internal::PreparedGpuModularInput>* out) override;
   Status SubmitModularInput(const MetalModularInputDispatch& dispatch,
                            std::unique_ptr<GpuSubmission>* submission);
+  modular_gpu_internal::ModularTokenDeviceLimits modular_token_limits() const noexcept override;
+  Status GenerateModularTokens(
+    const modular_gpu_internal::PreparedGpuModularInput& input,
+    const modular_gpu_internal::ModularTokenizationOptions& options,
+    std::span<const modular_gpu_internal::ModularTokenSlice> slices,
+    std::unique_ptr<modular_gpu_internal::PreparedGpuModularTokens>* out) override;
+  Status PrepareModularTokens(
+    modular_internal::PackedModularImageView input,
+    const modular_gpu_internal::ModularTokenizationOptions& options,
+    std::span<const modular_gpu_internal::ModularTokenSlice> slices,
+    std::unique_ptr<modular_gpu_internal::PreparedGpuModularTokens>* out) override;
+  Status DiagnoseModularTokens(
+    const modular_gpu_internal::PreparedGpuModularInput& input,
+    const modular_gpu_internal::ModularTokenizationOptions& options,
+    std::span<const modular_gpu_internal::ModularTokenSlice> slices,
+    resource_budget_internal::ManagedVector<ModularTokenDiagnostic>* out);
 
   Status Prepare(
     GpuBackend& backend,
@@ -515,6 +545,15 @@ public:
   }
 
 private:
+  Status ResolveModularInputDispatch(const MetalModularInputDispatch& dispatch,
+                                    MetalModularInputEncoding* encoding);
+  Status GenerateModularTokensImpl(
+    const modular_gpu_internal::PreparedGpuModularInput* resident,
+    const modular_internal::PackedModularImageView* packed,
+    const modular_gpu_internal::ModularTokenizationOptions& options,
+    std::span<const modular_gpu_internal::ModularTokenSlice> slices,
+    std::unique_ptr<modular_gpu_internal::PreparedGpuModularTokens>* out,
+    DeviceBuffer* diagnostics = nullptr);
   friend class MetalAcTokenizer;
   friend Status ComputeAcSubmissionStoragePlan(
     const AcSubmissionStorageOptions&, AcSubmissionStoragePlan*);
@@ -814,6 +853,7 @@ private:
   AcStrategyPipelines ac_strategy_pipelines_;
   PrimitivePipelines primitive_pipelines_;
   NS::SharedPtr<MTL::ComputePipelineState> modular_input_pipeline_;
+  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 3> modular_token_pipelines_;
   AqPipelines aq_pipelines_;
   ButteraugliPipelines butteraugli_pipelines_;
   bool test_fail_submission_ = false;

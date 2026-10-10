@@ -94,7 +94,7 @@ protected:
   PreparedGpuModularTokens() = default;
 };
 
-// Optional private capability; no backend implements it at this contract stage.
+// Optional private capability. Metal implements it; other backends return null.
 class GpuModularTokenGeneration {
 public:
   virtual ~GpuModularTokenGeneration() = default;
@@ -117,6 +117,18 @@ public:
                         const ModularTokenizationOptions &options,
                         std::span<const ModularTokenSlice> slices,
                         std::unique_ptr<PreparedGpuModularTokens> *out) = 0;
+  // Composed packed-input producer: same completed-owner/failure contract, but
+  // records unpack/RCT and tokens with an explicit dependency in one submission
+  // and waits once. Upload/planes/dispatch are released before publication.
+  // Validates packed backing, matching format and all descriptors before any
+  // allocation. Consumes the ambient full-call reservation, without readback,
+  // CPU tokenization or a fallback. The caller keeps packed input immutable
+  // until return; old token output remains separately charged.
+  [[nodiscard]] virtual Status
+  PrepareModularTokens(modular_internal::PackedModularImageView input,
+                       const ModularTokenizationOptions &options,
+                       std::span<const ModularTokenSlice> slices,
+                       std::unique_ptr<PreparedGpuModularTokens> *out) = 0;
 };
 [[nodiscard]] inline GpuModularTokenGeneration *
 QueryGpuModularTokenGeneration(GpuBackend &backend) noexcept {

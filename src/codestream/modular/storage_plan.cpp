@@ -28,9 +28,11 @@ Status ComputeModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat fo
                                          EntropyCodingMode mode, ModularWorkflowStoragePlan *out) {
   return ComputeModularWorkflowStoragePlan(extent, format, mode, {}, out);
 }
-Status ComputeModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat format,
-                                         EntropyCodingMode mode, const ModularCodingPolicy &policy,
-                                         ModularWorkflowStoragePlan *out, size_t cpu_threads) {
+namespace {
+Status ComputeStoragePlan(Extent2D extent, PackedModularFormat format,
+                         EntropyCodingMode mode, const ModularCodingPolicy &policy,
+                         ModularWorkflowStoragePlan *out, size_t cpu_threads,
+                         size_t completed_token_bytes) {
   if (!out)
     return Status::InvalidArgument("Null Modular workflow plan");
   if (mode != EntropyCodingMode::kPrefix && mode != EntropyCodingMode::kAns)
@@ -102,16 +104,21 @@ Status ComputeModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat fo
     if (!image.Add(stage))
       return Overflow();
   }
-  if (!tokens.AddVector<EntropyToken>(p.tokens, VectorCapacityPolicy::kFreshExact) ||
-      !tokens.AddVector<EntropyTokenStreamView>(p.streams, VectorCapacityPolicy::kFreshExact))
+  if (completed_token_bytes) {
+    if (!tokens.Add({completed_token_bytes, completed_token_bytes})) return Overflow();
+  } else if (!tokens.AddVector<EntropyToken>(p.tokens, VectorCapacityPolicy::kFreshExact)) {
+    return Overflow();
+  }
+  if (!tokens.AddVector<EntropyTokenStreamView>(p.streams, VectorCapacityPolicy::kFreshExact))
     return Overflow();
   p.preparation = tokens;
-  if (!p.preparation.AddVector<size_t>(p.streams + 1, VectorCapacityPolicy::kFreshExact))
+  if (!completed_token_bytes &&
+      !p.preparation.AddVector<size_t>(p.streams + 1, VectorCapacityPolicy::kFreshExact))
     return Overflow();
-  if (!p.preparation.Add(image))
+  if (!completed_token_bytes && !p.preparation.Add(image))
     return Overflow();
 
-  if (tree_layout.weighted) {
+  if (!completed_token_bytes && tree_layout.weighted) {
     const size_t width = maximum_width;
     for (size_t i = 0; i < 5 * p.participants; ++i)
       if (!p.preparation.AddVector<uint32_t>((width + 2) * 2, VectorCapacityPolicy::kFreshExact))
@@ -220,7 +227,7 @@ Status ComputeModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat fo
     HostStorageBound workers;
     if (!workers.AddVector<Status>(p.streams, VectorCapacityPolicy::kFreshExact) ||
         !workers.AddVector<std::thread>(p.participants - 1, VectorCapacityPolicy::kFreshExact) ||
-        !p.preparation.Add(workers) || !p.emission.Add(workers))
+        (!completed_token_bytes && !p.preparation.Add(workers)) || !p.emission.Add(workers))
       return Overflow();
   }
   p.working = p.output;
@@ -228,5 +235,18 @@ Status ComputeModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat fo
     p.working.peak_bytes = std::max(p.working.peak_bytes, phase.peak_bytes);
   *out = p;
   return Status::Ok();
+}
+} // namespace
+Status ComputeModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat format,
+                                         EntropyCodingMode mode, const ModularCodingPolicy &policy,
+                                         ModularWorkflowStoragePlan *out, size_t cpu_threads) {
+  return ComputeStoragePlan(extent, format, mode, policy, out, cpu_threads, 0);
+}
+Status ComputeModularTokenConsumerStoragePlan(Extent2D extent, PackedModularFormat format,
+    EntropyCodingMode mode, const ModularCodingPolicy &policy, size_t completed_token_bytes,
+    ModularWorkflowStoragePlan *out, size_t cpu_threads) {
+  if (!completed_token_bytes)
+    return Status::InvalidArgument("Empty Modular completed-token backing");
+  return ComputeStoragePlan(extent, format, mode, policy, out, cpu_threads, completed_token_bytes);
 }
 } // namespace gjxl::modular_internal

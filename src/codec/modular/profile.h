@@ -17,6 +17,7 @@ enum class ProfileStage {
   kModel,
   kEmission,
   kAssembly,
+  kGpuInputTokens,
   kCount
 };
 struct ModularProfile {

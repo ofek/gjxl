@@ -358,6 +358,7 @@ add_library(
   src/codestream/modular/workflow.cpp
   src/codestream/modular/prepared_encoder.cpp
   src/codestream/modular/gpu_workflow.cpp
+  src/codestream/modular/gpu_token_workflow.cpp
   src/codestream/huffman.cpp
   src/codestream/rate_control.cpp
   src/codestream/cpu_workflow_storage_plan.cpp
@@ -810,6 +811,8 @@ set(GJXL_AQ_METADATA_METAL_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/metal/ker
 set(GJXL_AQ_METADATA_METAL_IR "${GJXL_METAL_DIR}/aq_strategy_metadata.ir")
 set(GJXL_MODULAR_INPUT_METAL_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/metal/kernels/modular_input.metal")
 set(GJXL_MODULAR_INPUT_METAL_IR "${GJXL_METAL_DIR}/modular_input.ir")
+set(GJXL_MODULAR_TOKENS_METAL_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/metal/kernels/modular_tokens.metal")
+set(GJXL_MODULAR_TOKENS_METAL_IR "${GJXL_METAL_DIR}/modular_tokens.ir")
 
 set(
   GJXL_PRIMITIVES_METAL_IR
@@ -1078,6 +1081,14 @@ add_custom_command(OUTPUT "${GJXL_MODULAR_INPUT_METAL_IR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/metal/kernels/modular_input_params.h"
   COMMENT "Compiling Metal Modular unpack and RCT" VERBATIM)
 
+add_custom_command(OUTPUT "${GJXL_MODULAR_TOKENS_METAL_IR}"
+  COMMAND "${CMAKE_COMMAND}" -E make_directory "${GJXL_METAL_DIR}"
+  COMMAND "${XCRUN_EXECUTABLE}" -sdk macosx metal -std=metal3.1
+    ${GJXL_METAL_PROFILING_FLAGS} -c "${GJXL_MODULAR_TOKENS_METAL_SOURCE}" -o "${GJXL_MODULAR_TOKENS_METAL_IR}"
+  DEPENDS "${GJXL_MODULAR_TOKENS_METAL_SOURCE}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/metal/kernels/modular_token_params.h"
+  COMMENT "Compiling Metal Modular prediction and token generation" VERBATIM)
+
 add_custom_command(OUTPUT "${GJXL_AQ_METADATA_METAL_IR}"
   COMMAND "${CMAKE_COMMAND}" -E make_directory "${GJXL_METAL_DIR}"
   COMMAND "${XCRUN_EXECUTABLE}" -sdk macosx metal -std=metal3.1
@@ -1109,6 +1120,7 @@ add_custom_command(
     "${GJXL_AC_SELECTION_METAL_IR}"
     "${GJXL_AQ_METADATA_METAL_IR}"
     "${GJXL_MODULAR_INPUT_METAL_IR}"
+    "${GJXL_MODULAR_TOKENS_METAL_IR}"
     "${GJXL_PRIMITIVES_METAL_IR}"
     "${GJXL_AQ_REDUCTION_METAL_IR}"
     "${GJXL_AQ_RECONSTRUCTION_METAL_IR}"
@@ -1121,6 +1133,7 @@ add_custom_command(
     "${GJXL_AC_SELECTION_METAL_IR}"
     "${GJXL_AQ_METADATA_METAL_IR}"
     "${GJXL_MODULAR_INPUT_METAL_IR}"
+    "${GJXL_MODULAR_TOKENS_METAL_IR}"
     "${GJXL_PRIMITIVES_METAL_IR}"
     "${GJXL_AQ_REDUCTION_METAL_IR}"
     "${GJXL_AQ_RECONSTRUCTION_METAL_IR}"
@@ -1228,6 +1241,7 @@ add_library(
   src/gpu/metal/metal_butteraugli.cpp
   src/gpu/metal/metal_primitives.cpp
   src/gpu/metal/metal_modular_input.cpp
+  src/gpu/metal/metal_modular_tokens.cpp
   src/gpu/metal/metal_submission.cpp
   src/gpu/metal/metal_submission_storage_plan.cpp
   src/gpu/metal/metal_storage_plan.cpp
@@ -3548,6 +3562,20 @@ if(GJXL_BUILD_TESTS)
   add_test(NAME metal_modular_input COMMAND gjxl_metal_modular_input_test)
   set_tests_properties(metal_modular_input PROPERTIES TIMEOUT 120)
 
+  add_executable(gjxl_metal_modular_tokens_test tests/metal_modular_tokens_test.cpp)
+  target_link_libraries(gjxl_metal_modular_tokens_test PRIVATE gjxl_codestream gjxl_metal)
+  target_compile_definitions(gjxl_metal_modular_tokens_test PRIVATE GJXL_METALLIB_PATH="${GJXL_METALLIB}")
+  if(TARGET gjxl_modular_reference)
+    target_link_libraries(gjxl_metal_modular_tokens_test PRIVATE gjxl_modular_reference)
+    target_compile_definitions(gjxl_metal_modular_tokens_test PRIVATE GJXL_MODULAR_TOKENS_REFERENCE=1)
+  endif()
+  add_test(NAME metal_modular_tokens COMMAND gjxl_metal_modular_tokens_test
+    "${CMAKE_CURRENT_BINARY_DIR}/metal-modular-tokens")
+  set_tests_properties(metal_modular_tokens PROPERTIES TIMEOUT 180)
+  add_test(NAME metal_modular_tokens_composed COMMAND gjxl_metal_modular_tokens_test
+    "${CMAKE_CURRENT_BINARY_DIR}/metal-modular-tokens-composed" --composed)
+  set_tests_properties(metal_modular_tokens_composed PROPERTIES TIMEOUT 180)
+
   add_executable(gjxl_metal_modular_workflow_test tests/metal_modular_workflow_test.cpp)
   target_link_libraries(gjxl_metal_modular_workflow_test PRIVATE gjxl_codestream gjxl_metal)
   target_compile_definitions(gjxl_metal_modular_workflow_test PRIVATE
@@ -3559,6 +3587,18 @@ if(GJXL_BUILD_TESTS)
   add_test(NAME metal_modular_workflow COMMAND gjxl_metal_modular_workflow_test
     "${CMAKE_CURRENT_BINARY_DIR}/metal-modular-workflow")
   set_tests_properties(metal_modular_workflow PROPERTIES TIMEOUT 600)
+
+  add_executable(gjxl_metal_modular_token_workflow_test tests/metal_modular_workflow_test.cpp)
+  target_link_libraries(gjxl_metal_modular_token_workflow_test PRIVATE gjxl_codestream gjxl_metal)
+  target_compile_definitions(gjxl_metal_modular_token_workflow_test PRIVATE
+    GJXL_METALLIB_PATH="${GJXL_METALLIB}" GJXL_MODULAR_TOKEN_WORKFLOW=1)
+  if(TARGET gjxl_modular_reference)
+    target_link_libraries(gjxl_metal_modular_token_workflow_test PRIVATE gjxl_modular_reference)
+    target_compile_definitions(gjxl_metal_modular_token_workflow_test PRIVATE GJXL_MODULAR_WORKFLOW_REFERENCE=1)
+  endif()
+  add_test(NAME metal_modular_token_workflow COMMAND gjxl_metal_modular_token_workflow_test
+    "${CMAKE_CURRENT_BINARY_DIR}/metal-modular-token-workflow")
+  set_tests_properties(metal_modular_token_workflow PROPERTIES TIMEOUT 600)
 
   add_executable(gjxl_metal_resource_budget_test tests/metal_resource_budget_test.cpp)
   target_link_libraries(gjxl_metal_resource_budget_test PRIVATE gjxl_codestream gjxl_metal)

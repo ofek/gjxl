@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 Yunho Cho
+#include "codec/modular/profile.h"
+#include "codestream/modular/gpu_token_workflow.h"
 #include "codestream/modular/gpu_workflow.h"
 #include "codestream/workflow_admission_scope.h"
 #include "codestream/workflow_admission_test.h"
+#include "core/worker_launch_internal.h"
 #include "gpu/metal/metal_backend.h"
 #include <algorithm>
 #include <array>
@@ -20,6 +23,17 @@ using namespace gjxl;
 using namespace gjxl::modular_internal;
 using namespace gjxl::modular_gpu_internal;
 using namespace gjxl::resource_budget_internal;
+#if GJXL_MODULAR_TOKEN_WORKFLOW
+using WorkflowPlan = GpuModularTokenWorkflowStoragePlan;
+constexpr auto EncodeGpu = EncodeGpuModularTokensImage;
+constexpr auto EncodeGpuOwned = EncodeGpuModularTokensImageOwned;
+constexpr size_t kDeviceAllocations = 4;
+#else
+using WorkflowPlan = GpuModularWorkflowStoragePlan;
+constexpr auto EncodeGpu = EncodeGpuModularImage;
+constexpr auto EncodeGpuOwned = EncodeGpuModularImageOwned;
+constexpr size_t kDeviceAllocations = 2;
+#endif
 void Check(bool v, const char *m) {
   if (!v)
     throw std::runtime_error(m);
@@ -82,13 +96,20 @@ struct Fixture {
     return {std::span(bytes).subspan(3), extent, stride, format, order};
   }
 };
-GpuModularWorkflowStoragePlan Plan(GpuBackend &gpu, const Fixture &f,
-                                   const ModularEncodingOptions &options) {
-  GpuModularWorkflowStoragePlan plan;
+WorkflowPlan Plan(GpuBackend &gpu, const Fixture &f, const ModularEncodingOptions &options) {
+  WorkflowPlan plan;
   auto *capability = QueryGpuModularInputPreparation(gpu);
   Check(capability, "Metal has no Modular capability");
+#if GJXL_MODULAR_TOKEN_WORKFLOW
+  auto *tokens = QueryGpuModularTokenGeneration(gpu);
+  Check(tokens, "Metal has no Modular token capability");
+  Ok(ComputeGpuModularTokenWorkflowStoragePlan(f.extent, f.stride, f.format, f.order, options,
+                                               capability->modular_input_limits(),
+                                               tokens->modular_token_limits(), &plan));
+#else
   Ok(ComputeGpuModularWorkflowStoragePlan(f.extent, f.stride, f.format, f.order, options,
                                           capability->modular_input_limits(), &plan));
+#endif
   return plan;
 }
 size_t files = 0, fault_checks = 0;
@@ -109,12 +130,12 @@ void Case(GpuBackend &gpu, const Fixture &f, ModularEncodingOptions options = {}
   options.execution_domain = domain;
   const auto before = gpu.stats();
   const auto unchanged = f.bytes;
-  Ok(EncodeGpuModularImage(gpu, f.view(), options, &actual));
+  Ok(EncodeGpu(gpu, f.view(), options, &actual));
   Empty(*domain);
   const auto s = domain->snapshot();
   Check(actual == expected && f.bytes == unchanged,
         "GPU/CPU complete bytes differ or input changed");
-  Check(gpu.stats().successful_allocations == before.successful_allocations + 2 &&
+  Check(gpu.stats().successful_allocations == before.successful_allocations + kDeviceAllocations &&
             gpu.stats().committed_submissions == before.committed_submissions + 1,
         "GPU workflow fell back, unpacked twice or allocated extra device backing");
   Check(s.peak_committed_bytes == plan.peak_bytes && s.peak_backing_bytes <= plan.peak_bytes &&
@@ -173,6 +194,10 @@ void Matrix(GpuBackend &gpu) {
   const Fixture f({17, 19}, PackedModularFormat::kRgba16, SampleByteOrder::kBigEndian);
   for (auto entropy : {EntropyCodingMode::kPrefix, EntropyCodingMode::kAns}) {
     for (unsigned predictor = 0; predictor < 14; ++predictor) {
+#if GJXL_MODULAR_TOKEN_WORKFLOW
+      if (predictor == 6)
+        continue;
+#endif
       ModularEncodingOptions options{.entropy = entropy};
       options.coding.rct = 41;
       options.coding.tree.nodes[0].predictor = static_cast<Predictor>(predictor);
@@ -182,8 +207,13 @@ void Matrix(GpuBackend &gpu) {
     ModularEncodingOptions split{.entropy = entropy, .cpu_thread_count = 4};
     split.coding.rct = 6;
     split.coding.tree.size = 3;
+#if GJXL_MODULAR_TOKEN_WORKFLOW
+    split.coding.tree.nodes[0] = {.property = 8, .split = 0, .left = 2, .right = 1};
+    split.coding.tree.nodes[1].predictor = Predictor::kAverage4;
+#else
     split.coding.tree.nodes[0] = {.property = 15, .split = 0, .left = 1, .right = 2};
     split.coding.tree.nodes[1].predictor = Predictor::kWeighted;
+#endif
     split.coding.tree.nodes[2].predictor = Predictor::kGradient;
     Case(gpu, Fixture({257, 17}, f.format, f.order), split);
   }
@@ -201,9 +231,11 @@ void Failures(GpuBackend &gpu) {
     Ok(ExecutionDomain::Create({plan.peak_bytes - 1, 1}, &small));
     options.execution_domain = domain;
     std::vector<uint8_t> expected;
-    Ok(EncodeModularImage(f.view(), options, &expected));
+    auto control = options;
+    control.execution_domain = {};
+    Ok(EncodeModularImage(f.view(), control, &expected));
     codestream_internal::CodestreamBuffer owned;
-    Ok(EncodeGpuModularImageOwned(gpu, f.view(), options, &owned));
+    Ok(EncodeGpuOwned(gpu, f.view(), options, &owned));
     const auto live = owned.capacity();
     const auto *identity = owned.data();
     const auto unchanged = f.bytes;
@@ -212,19 +244,18 @@ void Failures(GpuBackend &gpu) {
         Ok(ArmNextMetalAllocationFailureForTest(gpu));
       else
         Ok(ArmNextMetalSubmissionFailureForTest(gpu, fault == 1, fault == 2));
-      const auto s = EncodeGpuModularImageOwned(gpu, f.view(), options, &owned);
+      const auto s = EncodeGpuOwned(gpu, f.view(), options, &owned);
       Check(!s.ok() && owned.data() == identity && std::ranges::equal(owned.view(), expected) &&
                 domain->snapshot().live_capacity_bytes == live &&
                 domain->snapshot().active_reservations == 0,
             "GPU failure replaced owned codestream or leaked charges");
       ++fault_checks;
     }
-    // Sweep every managed host allocation, including readback, tokenization,
-    // modeling, writers and final publication after the GPU has completed.
+    // Sweep every managed host allocation from preparation through final publication.
     size_t failure = 0;
     for (; failure < 10000; ++failure) {
       ArmManagedHostAllocationFailureAfterForTest(failure);
-      const auto s = EncodeGpuModularImageOwned(gpu, f.view(), options, &owned);
+      const auto s = EncodeGpuOwned(gpu, f.view(), options, &owned);
       const bool pending = ManagedHostAllocationFailurePendingForTest();
       DisarmManagedHostAllocationFailureForTest();
       if (s.ok()) {
@@ -249,26 +280,26 @@ void Failures(GpuBackend &gpu) {
     auto too_small = options;
     too_small.execution_domain = small;
     const auto allocations = gpu.stats().successful_allocations;
-    Check(!EncodeGpuModularImage(gpu, f.view(), too_small, &output).ok() &&
+    Check(!EncodeGpu(gpu, f.view(), too_small, &output).ok() &&
               gpu.stats().successful_allocations == allocations &&
               output == std::vector<uint8_t>({7, 8, 9}),
           "Insufficient complete-call admission allocated GPU backing");
     Empty(*small);
     codestream_internal::ArmNextWorkflowAdmissionCapacityForTest(1);
-    const auto status = EncodeGpuModularImage(gpu, f.view(), options, &output);
+    const auto status = EncodeGpu(gpu, f.view(), options, &output);
     codestream_internal::DisarmWorkflowAdmissionCapacityForTest();
     Check(status.resource_plan_exceeded() && output == std::vector<uint8_t>({7, 8, 9}),
           "Underplanned GPU workflow escaped reservation or changed output");
     Empty(*domain);
-    // A scalar-stage error after successful GPU preparation must not publish.
+    // An unrepresentable residual must not publish on either route.
     auto invalid_residual = options;
     invalid_residual.coding.tree.nodes[0].multiplier = 2;
     invalid_residual.coding.tree.nodes[0].offset = 1;
-    Check(!EncodeGpuModularImage(gpu, f.view(), invalid_residual, &output).ok() &&
+    Check(!EncodeGpu(gpu, f.view(), invalid_residual, &output).ok() &&
               output == std::vector<uint8_t>({7, 8, 9}),
           "Unrepresentable residual published output");
     Empty(*domain);
-    Ok(EncodeGpuModularImage(gpu, f.view(), options, &output));
+    Ok(EncodeGpu(gpu, f.view(), options, &output));
     Check(output == expected, "Fault injection remained armed after failure sweep");
     Empty(*domain);
     std::cout << "Host failure boundaries " << int(entropy) << ": " << failure << '\n';
@@ -284,13 +315,15 @@ void ConcurrentAndNested(GpuBackend &gpu) {
   Ok(ExecutionDomain::Create({}, &foreign));
   options.execution_domain = domain;
   std::vector<uint8_t> expected;
-  Ok(EncodeModularImage(f.view(), options, &expected));
+  auto control = options;
+  control.execution_domain = {};
+  Ok(EncodeModularImage(f.view(), control, &expected));
   std::array<std::thread, 4> workers;
   std::array<Status, 4> statuses;
   std::array<std::vector<uint8_t>, 4> outputs;
   for (size_t i = 0; i < workers.size(); ++i)
-    workers[i] = std::thread(
-        [&, i] { statuses[i] = EncodeGpuModularImage(gpu, f.view(), options, &outputs[i]); });
+    workers[i] =
+        std::thread([&, i] { statuses[i] = EncodeGpu(gpu, f.view(), options, &outputs[i]); });
   for (auto &worker : workers)
     worker.join();
   for (size_t i = 0; i < workers.size(); ++i) {
@@ -308,15 +341,75 @@ void ConcurrentAndNested(GpuBackend &gpu) {
     auto wrong = options;
     wrong.execution_domain = foreign;
     const auto submits = gpu.stats().committed_submissions;
-    Check(!EncodeGpuModularImage(gpu, f.view(), wrong, &output).ok() &&
+    Check(!EncodeGpu(gpu, f.view(), wrong, &output).ok() &&
               gpu.stats().committed_submissions == submits,
           "Foreign nested domain submitted GPU work");
-    Ok(EncodeGpuModularImage(gpu, f.view(), options, &output));
+    Ok(EncodeGpu(gpu, f.view(), options, &output));
     Check(output == expected && domain->snapshot().active_reservations == 1,
           "Nested GPU workflow reserved again or changed output");
   }
   Empty(*domain);
 }
+#if GJXL_MODULAR_TOKEN_WORKFLOW
+void ComposedFailureBoundaries(GpuBackend &gpu) {
+  using namespace thread_budget_internal;
+  Fixture f({513, 257}, PackedModularFormat::kRgba16, SampleByteOrder::kBigEndian);
+  ModularEncodingOptions options{.cpu_thread_count = 4};
+  options.coding.rct = 6;
+  const auto plan = Plan(gpu, f, options);
+  std::shared_ptr<const ExecutionDomain> domain;
+  Ok(ExecutionDomain::Create({plan.peak_bytes, 4}, &domain));
+  options.execution_domain = domain;
+  const std::vector<uint8_t> sentinel{7, 8, 9};
+  std::vector<uint8_t> output = sentinel;
+  const auto &generation = plan.generation;
+  size_t cap = generation.host_layout.retained_bytes;
+  size_t allocation = 0;
+  for (size_t bytes : {generation.input.upload_bytes, generation.input.output_bytes,
+                       generation.tokens.output_bytes, generation.tokens.dispatch_bytes}) {
+    cap += bytes;
+    const auto before = gpu.stats();
+    codestream_internal::ArmNextWorkflowAdmissionCapacityForTest(cap - 1);
+    const auto status = EncodeGpu(gpu, f.view(), options, &output);
+    codestream_internal::DisarmWorkflowAdmissionCapacityForTest();
+    Check(status.resource_plan_exceeded() && output == sentinel &&
+              gpu.stats().successful_allocations == before.successful_allocations + allocation &&
+              gpu.stats().committed_submissions == before.committed_submissions,
+          "Composed device allocation boundary escaped admission or submitted work");
+    Empty(*domain);
+    ++allocation;
+    ++fault_checks;
+  }
+  for (auto kind : {WorkerLaunchFailureKind::kSystemError, WorkerLaunchFailureKind::kBadAlloc})
+    for (size_t launched : {0u, 1u, 2u}) {
+      WorkerLaunchFaultForTesting fault{WorkerLaunchSite::kModularEmission, launched, kind};
+      ModularProfile profile;
+      Status status;
+      const auto before = gpu.stats();
+      {
+        WorkerLaunchFaultScopeForTesting injection(&fault);
+        ProfileSession profiling(&profile);
+        status = EncodeGpu(gpu, f.view(), options, &output);
+      }
+      Check(!status.ok() && fault.triggered && fault.launched_in_group == launched &&
+                output == sentinel &&
+                gpu.stats().committed_submissions == before.committed_submissions + 1 &&
+                profile.seconds[static_cast<size_t>(ProfileStage::kGpuInputTokens)] > 0 &&
+                profile.seconds[static_cast<size_t>(ProfileStage::kTokens)] == 0 &&
+                profile.seconds[static_cast<size_t>(ProfileStage::kAssembly)] == 0,
+            "Partial CPU launch failure changed output, ran CPU tokens or missed injection");
+      Empty(*domain);
+      ++fault_checks;
+    }
+  Ok(EncodeGpu(gpu, f.view(), options, &output));
+  Empty(*domain);
+  options.execution_domain = {};
+  std::vector<uint8_t> expected;
+  Ok(EncodeModularImage(f.view(), options, &expected));
+  Check(output == expected, "Composed worker failure did not recover");
+}
+#endif
+
 } // namespace
 int main(int argc, char **argv) try {
   Check(argc == 2, "Expected complete-file artifact directory");
@@ -333,6 +426,9 @@ int main(int argc, char **argv) try {
     Matrix(*gpu);
     Failures(*gpu);
     ConcurrentAndNested(*gpu);
+#if GJXL_MODULAR_TOKEN_WORKFLOW
+    ComposedFailureBoundaries(*gpu);
+#endif
     for (auto mode : {EntropyCodingMode::kPrefix, EntropyCodingMode::kAns}) {
       ModularEncodingOptions options{.entropy = mode};
       options.coding.rct = 41;
