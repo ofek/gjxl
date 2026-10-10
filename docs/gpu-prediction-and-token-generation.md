@@ -1,7 +1,9 @@
 # GPU-resident prescribed prediction and token generation
 
-Status: proposed next Modular GPU implementation slice, following the
-[unpack/RCT performance qualification](modular-gpu-performance.md).
+Status: step 1 (private operation, eligibility and storage contract) is
+implemented; steps 2–6 remain planned. This follows the
+[unpack/RCT performance qualification](modular-gpu-performance.md). No backend
+implements token generation yet, and the consumer/encoder paths are unchanged.
 
 The next slice should consume unpacked/RCT planes directly on the GPU and hand
 completed token buffers to the existing CPU entropy encoder. Completed shared
@@ -59,8 +61,60 @@ completion fence; reusing the previous slice's phase maximum without accounting
 for this overlap is insufficient. Retained token backing remains charged through
 CPU consumption. Existing output stays charged separately during replacement.
 
-The first deliverable is the private operation/storage contract and CPU-only
-eligibility, layout and planning tests. Keep GPU types out of installed APIs.
+The private [operation contract](../src/gpu/ops/modular_tokenization.h) defines
+`GpuModularTokenGeneration`, `PreparedGpuModularTokens` and optional borrowing of
+completed host-readable token views. `ResolveModularTokenEligibility` validates
+the policy and compiles fixed-width tree nodes with scalar breadth-first leaf
+contexts. Malformed inputs return `InvalidArgument`; supported CPU features
+outside this GPU slice return `Unsupported`. Residual divisibility/range remains
+a sample-dependent runtime check, represented by a checked device status word.
+
+The [device storage planner](../src/gpu/ops/modular_token_storage_plan.h) sizes two
+arenas with 256-byte aligned regions. The retained arena contains `uint32` values
+and `uint16` contexts. The transient arena contains 32-byte slice records, all
+31 32-byte tree-node slots and a `uint32` error word. Token offsets use 64 bits;
+descriptor coordinates and canonical IDs have checked 32-bit bounds. A fresh
+host staging vector is conservatively included for dispatch upload; direct
+shared-buffer initialization may use less.
+
+The [codestream planner](../src/codestream/modular/gpu_token_plan.h) keeps stream
+policy out of the GPU operations layer:
+
+| Boundary | Contract |
+| --- | --- |
+| `ComputeGpuModularTokenStoragePlan` | Allocation-free shape/policy planning; optional actual backend limits; no samples or device initialization |
+| `BuildGpuModularTokenPlan` | Fresh managed host metadata only; canonical CPU streams/slices plus GPU slice descriptors and per-stream token ranges |
+| Generation peak | Packed upload + resident planes + token arena + dispatch arena + dispatch staging + host layout |
+| Retained backing | Token arena + host layout; no upload, planes, dispatch arena or staging |
+| CPU continuation | Future full-call admission must add modeling/emission work to retained backing exactly once, then compare with generation/assembly/publication phases |
+
+These are preparation/retention bounds, not a complete encoder reservation or
+process RSS. Shape planning and metadata construction preserve old outputs on
+failure. Existing outputs are charged separately; metadata construction uses the
+ambient reservation or default managed tracking. Runtime backends must supply
+both input and token limit sets before allocating device storage. No new headers
+are installed.
+
+`modular_gpu_token_plan` is a CPU-only qualification target, also registered in
+native Modular CI. It checks the supported format/RCT/predictor matrix, tree
+properties and context numbering, exact stream coverage, compact/aligned storage,
+limits and large shape-only offsets, scalar token-range agreement, actual managed
+metadata capacity and failure-atomic replacement at every metadata allocation.
+It also verifies that a live old plan remains charged during replacement: a
+reservation fitting only the fresh candidate rejects replacement atomically,
+then succeeds after the old plan is released.
+
+Local qualification on 2026-10-10 used an isolated source snapshot of `9cf3b02`
+plus the eight contract/code/build files, excluding concurrent CPU search edits.
+The new target passed 2,210 supported policies and 132 layouts. Five focused
+tests (stream planning, GPU input, token planning, preparation and workflow)
+passed in both C++20 Release and C++23 ASan/UBSan CPU-only builds. The Metal
+library built successfully and the contract test passed with Metal enabled.
+Apple LeakSanitizer was unavailable, so the sanitizer run used
+`ASAN_OPTIONS=detect_leaks=0`; managed backing and charge lifetimes were checked
+by the tests. Source hashes, build/test logs and qualification metadata are
+retained locally in `build/modular-token-contract-qualification/`. These checks
+qualify the contract and metadata planner, not a GPU token producer.
 
 ## 2. Establish the CPU consumer and ownership boundary
 
