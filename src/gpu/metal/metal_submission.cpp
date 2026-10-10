@@ -179,6 +179,12 @@ public:
 
   ~MetalSubmission() override = default;
 
+  void Drain() noexcept {
+    thread_budget_internal::CpuSuspension suspension;
+    auto pool = NS::TransferPtr(NS::AutoreleasePool::alloc()->init());
+    command_buffer_->waitUntilCompleted();
+  }
+
   Status Wait() override {
     thread_budget_internal::CpuSuspension suspension;
     std::call_once(wait_once_, [this] {
@@ -353,6 +359,12 @@ private:
 };
 
 }  // namespace
+
+void DrainMetalSubmission(GpuSubmission& submission) noexcept {
+  auto* metal = dynamic_cast<MetalSubmission*>(&submission);
+  if (!metal) std::terminate(); // Internal kernel/cleanup callback mismatch.
+  metal->Drain();
+}
 
 void DispatchMetalThreads(
     MTL::ComputeCommandEncoder* encoder, MTL::Size threads_per_grid,

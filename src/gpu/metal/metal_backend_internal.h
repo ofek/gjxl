@@ -357,6 +357,7 @@ class MetalBackend final
     public gpu_profile_internal::GpuAqEvaluationProfiler,
     public aq_evaluation_internal::GpuValidatedAqEvaluation,
     public GpuResidentInputPreparation,
+    public modular_gpu_internal::GpuModularInputPreparation,
     public DeviceButteraugliOperation {
 public:
   MetalBackend(
@@ -491,6 +492,12 @@ public:
     std::unique_ptr<PreparedResidentInput>* prepared) override;
 
   modular_gpu_internal::ModularInputDeviceLimits ModularInputLimits() const noexcept;
+  modular_gpu_internal::ModularInputDeviceLimits modular_input_limits() const noexcept override {
+    return ModularInputLimits();
+  }
+  Status PrepareModularInput(
+    const modular_gpu_internal::ModularInputPreparation& preparation,
+    std::unique_ptr<modular_gpu_internal::PreparedGpuModularInput>* out) override;
   Status SubmitModularInput(const MetalModularInputDispatch& dispatch,
                            std::unique_ptr<GpuSubmission>* submission);
 
@@ -832,6 +839,10 @@ private:
   // Keep the registry alive through backend teardown, including static teardown.
   std::shared_ptr<MetalBackendRegistry> registry_;
 };
+
+// Exception-unwinding fence for an actual Metal submission. Produces no Status
+// and does not allocate error diagnostics; safe before releasing borrowed backing.
+void DrainMetalSubmission(GpuSubmission& submission) noexcept;
 
 Status CreateAcStrategyPipelines(
   MTL::Device* device,

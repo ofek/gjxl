@@ -62,8 +62,8 @@ protected:
   PreparedGpuModularInput() = default;
 };
 
-// Optional backend capability. No existing Metal/CUDA backend implements this
-// yet. Querying a backend without it returns nullptr; there is no CPU fallback.
+// Optional backend capability. Metal implements this; querying a backend without
+// it returns nullptr. There is no CPU fallback.
 class GpuModularInputPreparation {
 public:
   virtual ~GpuModularInputPreparation() = default;
@@ -89,5 +89,20 @@ public:
 QueryGpuModularInputPreparation(GpuBackend &backend) noexcept {
   return dynamic_cast<GpuModularInputPreparation *>(&backend);
 }
+
+// Preserves prior output on every failure, including an unsupported backend.
+[[nodiscard]] Status PrepareGpuModularInput(
+    GpuBackend &backend, const ModularInputPreparation &preparation,
+    std::unique_ptr<PreparedGpuModularInput> *out);
+
+// Copies completed dense planes into a fresh managed ModularImage. Backend must
+// match the owner. All views are validated before allocation/copy; failure
+// preserves *out. Uses the current resource context and kPreparation class.
+// The device owner remains live, and a previous host output stays charged
+// separately. The planner's include_host_readback bound covers fresh host
+// backing only. No GPU submissions, mappings or implicit re-preparation.
+[[nodiscard]] Status ReadbackGpuModularInput(
+    GpuBackend &backend, const PreparedGpuModularInput &prepared,
+    modular_internal::ModularImage *out);
 
 } // namespace gjxl::modular_gpu_internal

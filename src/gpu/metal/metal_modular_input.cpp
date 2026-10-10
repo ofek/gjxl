@@ -9,6 +9,7 @@
 
 #include "gpu/metal/kernels/modular_input_params.h"
 #include "gpu/metal/metal_backend_internal.h"
+#include "gpu/ops/modular_input_internal.h"
 
 namespace gjxl::metal_internal {
 using namespace modular_gpu_internal;
@@ -44,6 +45,18 @@ ModularInputDeviceLimits MetalBackend::ModularInputLimits() const noexcept {
   return {{std::numeric_limits<uint32_t>::max(), std::numeric_limits<uint32_t>::max()},
           std::numeric_limits<size_t>::max(),
           static_cast<size_t>(device_->maxBufferLength())};
+}
+
+Status MetalBackend::PrepareModularInput(const ModularInputPreparation &preparation,
+                                        std::unique_ptr<PreparedGpuModularInput> *out) {
+  const ModularInputKernel kernel{
+      +[](GpuBackend &backend, const ModularInputStorageOptions &options,
+          const DeviceBuffer &input, DeviceBuffer &output,
+          std::unique_ptr<GpuSubmission> *submission) {
+        return SubmitMetalModularInput(backend, {&input, 0, &output, 0, options}, submission);
+      },
+      DrainMetalSubmission};
+  return PrepareModularInputWithKernel(*this, preparation, ModularInputLimits(), kernel, out);
 }
 
 Status MetalBackend::SubmitModularInput(const MetalModularInputDispatch &dispatch,

@@ -11,6 +11,7 @@
 #include <thread>
 #include <vector>
 
+#include "core/cpu_execution.h"
 #include "gpu/metal/metal_backend.h"
 #if GJXL_MODULAR_INPUT_REFERENCE
 #include "lib/jxl/memory_manager_internal.h"
@@ -164,6 +165,45 @@ void Run(GpuBackend &gpu, const Fixture &f, bool guarded = true) {
 
   ModularEncoderFrame scalar;
   Ok(ModularEncoderFrame::Prepare(f.view(), f.options.rct, &scalar));
+  auto options = f.options;
+  options.include_host_readback = true;
+  ModularInputStoragePlan owned_plan;
+  Ok(ComputeModularInputStoragePlan(options, &owned_plan));
+  ResourceBudget budget(owned_plan.peak_bytes);
+  ResourceReservation reservation;
+  Ok(budget.TryReserve(owned_plan.peak_bytes, &reservation));
+  std::unique_ptr<PreparedGpuModularInput> prepared;
+  ModularImage host;
+  {
+    ResourceContextScope context({&reservation, ResourceClass::kPreparation});
+    Ok(PrepareGpuModularInput(gpu, {f.view(), f.options.rct}, &prepared));
+    const auto after_prepare = budget.snapshot();
+    Check(after_prepare.total.backing_count == 1 &&
+              after_prepare.total.live_capacity_bytes == owned_plan.output_bytes &&
+              after_prepare.peak_backing_bytes == owned_plan.preparation_peak_bytes,
+          "Owned Metal preparation retained upload or exceeded plan");
+    Check(prepared->metadata() == owned_plan.metadata && prepared->backend_id() == gpu.id() &&
+              prepared->rct() == f.options.rct && prepared->channels().size() == f.format.channels,
+          "Owned Metal preparation metadata differs");
+    for (size_t c = 0; c < f.format.channels; ++c) {
+      const auto &channel = prepared->channels()[c];
+      Check(channel.descriptor == owned_plan.channels[c] &&
+                channel.plane.offset_bytes == owned_plan.planes[c].offset_bytes &&
+                channel.plane.buffer == prepared->channels()[0].plane.buffer,
+            "Owned Metal planes differ from plan");
+    }
+    Ok(ReadbackGpuModularInput(gpu, *prepared, &host));
+    const auto after_readback = budget.snapshot();
+    Check(after_readback.total.live_capacity_bytes ==
+              owned_plan.output_bytes + owned_plan.host_readback.retained_bytes &&
+              after_readback.peak_backing_bytes == owned_plan.peak_bytes &&
+              after_readback.total.pending_count == 0,
+          "Owned Metal readback exceeded plan or leaked pending tickets");
+  }
+  reservation.Reset();
+  prepared.reset(); // Host samples survive both the reservation and device owner.
+  Check(budget.snapshot().total.live_capacity_bytes == owned_plan.host_readback.retained_bytes,
+        "Device owner retained backing or uncharged independent host output");
 #if GJXL_MODULAR_INPUT_REFERENCE
   JxlMemoryManager memory;
   Check(bool(jxl::MemoryManagerInit(&memory, nullptr)), "Pinned memory manager failed");
@@ -179,6 +219,7 @@ void Run(GpuBackend &gpu, const Fixture &f, bool guarded = true) {
       if (words[begin + i] != expected[i])
         throw std::runtime_error("Scalar mismatch at channel " + std::to_string(c) + " pixel " +
                                  std::to_string(i) + " RCT " + std::to_string(f.options.rct));
+      Check(host.view(c).backing[i] == expected[i], "Owned Metal/readback differs from scalar");
 #if GJXL_MODULAR_INPUT_REFERENCE
       Check(words[begin + i] ==
                 reference.channel[c].Row(i / f.options.extent.width)[i % f.options.extent.width],
@@ -190,7 +231,71 @@ void Run(GpuBackend &gpu, const Fixture &f, bool guarded = true) {
   }
   for (size_t i = end; i < words.size(); ++i)
     Check(words[i] == kGuard, "Kernel overwrote suffix guard");
+  host = {};
+  Check(budget.snapshot().committed_bytes() == 0 && budget.snapshot().open_reservations == 0,
+        "Owned Metal path leaked resource charges");
   cases.fetch_add(1, std::memory_order_relaxed);
+}
+
+void OwnedFailures(GpuBackend &gpu) {
+  const Fixture f(formats[5], {3, 2}, SampleByteOrder::kBigEndian, 41, 3, 1);
+  std::unique_ptr<PreparedGpuModularInput> previous;
+  Ok(PrepareGpuModularInput(gpu, {f.view(), 41}, &previous));
+  const auto *identity = previous.get();
+  const auto *backing = previous->channels()[0].plane.buffer;
+  const auto live = DefaultResourceBudget().snapshot().total.live_capacity_bytes;
+  for (unsigned fault = 0; fault < 3; ++fault) {
+    if (fault == 0)
+      Ok(ArmNextMetalAllocationFailureForTest(gpu));
+    else
+      Ok(ArmNextMetalSubmissionFailureForTest(gpu, fault == 1, fault == 2));
+    const auto status = PrepareGpuModularInput(gpu, {f.view(), 41}, &previous);
+    Check(status.code() == (fault == 0 ? StatusCode::kOutOfMemory :
+                           fault == 1 ? StatusCode::kSubmissionFailed : StatusCode::kDeviceError) &&
+              previous.get() == identity && previous->channels()[0].plane.buffer == backing,
+          "Owned Metal failure replaced prior result or returned wrong error");
+    const auto after = DefaultResourceBudget().snapshot();
+    Check(after.total.live_capacity_bytes == live && after.total.pending_count == 0,
+          "Owned Metal failure leaked backing/tickets");
+    ModularImage host;
+    Ok(ReadbackGpuModularInput(gpu, *previous, &host));
+    ModularEncoderFrame scalar;
+    Ok(ModularEncoderFrame::Prepare(f.view(), 41, &scalar));
+    for (size_t c = 0; c < f.format.channels; ++c)
+      Check(std::ranges::equal(host.view(c).backing, scalar.image().view(c).backing),
+            "Owned Metal failure changed old result samples");
+  }
+  Ok(PrepareGpuModularInput(gpu, {f.view(), 41}, &previous));
+  Check(previous.get() != identity, "Successful owned Metal replacement did not publish");
+}
+
+void OwnedCpuParticipation(GpuBackend &gpu) {
+  using namespace thread_budget_internal;
+  const Fixture f(formats[1], {3, 2}, SampleByteOrder::kLittleEndian, 6, 0, 0);
+  std::shared_ptr<const ExecutionDomain> domain;
+  Ok(ExecutionDomain::Create({0, 1}, &domain));
+  struct Observation {
+    size_t leaves = 0, enters = 0;
+  } observation;
+  {
+    CpuExecutionScope cpu;
+    Ok(cpu.Start(domain, 1));
+    current_cpu_execution.observer = {
+        &observation,
+        +[](void *p) noexcept { ++static_cast<Observation *>(p)->enters; },
+        +[](void *p) noexcept { ++static_cast<Observation *>(p)->leaves; }};
+    std::unique_ptr<PreparedGpuModularInput> prepared;
+    Ok(PrepareGpuModularInput(gpu, {f.view(), 6}, &prepared));
+    Check(observation.leaves == 1 && observation.enters == 1 && HasCpuParticipation() &&
+              domain->snapshot().active_cpu_participants == 1,
+          "Owned preparation wait did not suspend/resume CPU participation");
+    Ok(ArmNextMetalSubmissionFailureForTest(gpu, false, true));
+    Check(PrepareGpuModularInput(gpu, {f.view(), 6}, &prepared).code() == StatusCode::kDeviceError &&
+              observation.leaves == 2 && observation.enters == 2 && HasCpuParticipation(),
+          "Completion failure leaked or retained CPU participation while waiting");
+  }
+  Check(!HasCpuParticipation() && domain->snapshot().active_cpu_participants == 0,
+        "Owned preparation leaked a CPU participant");
 }
 
 void Matrix(GpuBackend &gpu) {
@@ -398,11 +503,13 @@ int main() try {
     std::unique_ptr<GpuBackend> gpu, embedded;
     Ok(CreateMetalBackend(GJXL_METALLIB_PATH, &gpu));
     Ok(CreateEmbeddedMetalBackend({}, &embedded));
-    Check(!QueryGpuModularInputPreparation(*gpu),
-          "Owning preparation unexpectedly enabled before step 3");
+    Check(QueryGpuModularInputPreparation(*gpu) && QueryGpuModularInputPreparation(*embedded),
+          "Metal backend did not expose Modular input preparation");
     std::cout << "Metal Modular device: " << gpu->name() << '\n';
     Matrix(*gpu);
     RejectionAndFailures(*gpu, *embedded);
+    OwnedFailures(*gpu);
+    OwnedCpuParticipation(*gpu);
     BorrowedBackingAndAccounting(*gpu);
     Concurrent(*gpu);
     for (uint8_t rct : {0, 6, 41})
@@ -414,7 +521,7 @@ int main() try {
         "Metal Modular tests leaked resource accounting");
   std::cout << cases << " sample cases, " << samples
             << " exact samples; guards, rejection, failures, "
-               "accounting, concurrency, file and embedded libraries passed";
+               "owned preparation/readback, accounting, concurrency, file and embedded libraries passed";
 #if GJXL_MODULAR_INPUT_REFERENCE
   std::cout << "; pinned libjxl matched";
 #else

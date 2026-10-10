@@ -4,9 +4,9 @@ The native scalar implementation and its prescribed decisions are the oracle.
 Start with [the frozen fixture protocol](../tools/modular_oracle/README.md),
 [architecture](modular-architecture.md), and [qualification](modular-p2.6.md).
 The public API currently resolves automatic Modular execution to CPU; explicit
-Metal/CUDA requests remain unsupported/unavailable. A private Metal unpack/RCT
-kernel is implemented for qualification; owning preparation and encoder
-integration remain subsequent steps.
+Metal/CUDA requests remain unsupported/unavailable. Private Metal unpack/RCT,
+owning preparation and explicit host readback are implemented for qualification;
+encoder integration remains the next step.
 
 ## Implemented capability boundary
 
@@ -32,8 +32,8 @@ and VarDCT's use of shared integer-stream mechanisms.
 The private [input operation](../src/gpu/ops/modular_input.h) and
 [storage planner](../src/gpu/ops/modular_input_storage_plan.h) define unpacking
 plus one prescribed RCT. They build with both GPU backends disabled and are not
-installed headers. No Metal/CUDA implementation or workflow dispatch is enabled
-by this contract.
+installed headers. The Metal implementation below consumes this contract;
+workflow dispatch remains unchanged.
 
 `GpuModularInputPreparation` is an optional capability of an existing backend.
 It accepts all six packed integer formats and explicit byte order, with RCT 0
@@ -70,9 +70,9 @@ The CPU-only `modular_gpu_input` test covers the format/RCT metadata matrix,
 odd offsets/strides, exact backing ends, plane ranges and alignment, device-limit
 boundaries, invalid inputs, large shape-only plans, allocation-free planning and
 actual managed host-destination capacity. It is included in native Modular CI.
-The kernel qualification below covers arithmetic and borrowed-buffer submission.
-Owning preparation, admission across the full workflow and complete GPU-assisted
-files remain subsequent qualification gates.
+The qualification below covers arithmetic, borrowed-buffer submission and owning
+preparation/readback. Admission across the full workflow and complete
+GPU-assisted files remain subsequent qualification gates.
 
 ## First slice: fused Metal kernel
 
@@ -96,9 +96,8 @@ include the kernel; its pipeline is created with the backend.
 The caller owns upload/output buffers and must wait before accessing output or
 releasing either buffer, including on completion failure. A rejected launch
 preserves buffers and an existing submission; a device error leaves output
-contents unspecified. The `PreparedGpuModularInput` capability is still disabled:
-step 3 will add the candidate owner, synchronous completion, resource admission
-and failure-atomic publication using this primitive. No public routing changes.
+contents unspecified. The owning preparation capability wraps this primitive
+with the completion and publication rules below. No public routing changes.
 
 `metal_modular_input` requires a working Metal device (no skip/fallback). It
 checks all formats/endian orders/RCTs against scalar preparation, plus pinned
@@ -110,6 +109,56 @@ invalid/native/foreign buffers, overlap, submission/completion faults, repeated
 waits, resource charges, concurrent independent calls, and both library paths.
 Native CI's Metal build and test stages include this target; CPU-only builds
 continue to exercise the contract/planner without a Metal dependency.
+
+## First slice: ownership, resource charges and failure handling
+
+[`PrepareGpuModularInput`](../src/gpu/ops/modular_input.cpp) queries the optional
+backend capability and prepares a private candidate owner. Metal supports the
+operation in both library paths. It validates the packed backing and device
+limits before allocation, allocates a fresh minimal upload and a separate output
+arena, copies only the addressed source span, then submits the fused kernel.
+Only successful completion can publish the candidate. The submission and upload
+are released before publication, leaving exactly one charged device backing.
+There is no cache or intermediate host sample allocation.
+
+[`ReadbackGpuModularInput`](../src/gpu/ops/modular_input.h) separately validates
+the backend and all dense, disjoint plane views, allocates a fresh managed
+`ModularImage`, and copies through `GpuBackend::CopyDeviceToHost`. It requires
+completed samples and never assumes a device buffer is CPU-accessible. The host
+candidate is published only after every plane copy succeeds. Its storage remains
+valid and charged after the device owner and producing reservation are destroyed.
+
+Both operations inherit the caller's reservation and use `kPreparation` resource
+charges. They do not reserve again or transfer charges from a prior output.
+Without an admitted context, standalone private calls use the existing unbounded
+default ledger; this is accounting, not full-workflow admission. A caller planning
+preparation plus readback reserves the maximum of upload-plus-device and
+device-plus-host capacities, with previous device/host outputs charged separately.
+An insufficient reservation fails without escaping its capacity. Composition
+with encoder phases and complete-call admission belongs to step 4.
+
+A scope guard drains any committed work on status failures or exceptions before
+destroying either backing or its tickets. The internal kernel seam requires a
+submitted handle even when submission reports a later error. Metal's cleanup
+fence waits without constructing a `Status` or allocating error diagnostics, so
+an exception from normal completion handling cannot bypass the fence. Normal
+waits and cleanup fences suspend and then restore ambient CPU participation.
+Allocation, launch, completion and readback failures preserve prior outputs.
+
+`modular_gpu_preparation` is a CPU-only lifecycle test using a backend double.
+It checks exact upload/readback peaks, retained-owner charges, old/new output
+overlap, undersized reservations, standalone accounting, allocation/upload/
+submission/completion/copy failures and exceptions after submission or during
+waits. It detects destruction while work still borrows a backing and is included
+in native Modular CI. It does not qualify kernel arithmetic.
+
+The physical `metal_modular_input` matrix exercises both raw dispatch and owning
+preparation/readback for every fixture, comparing every sample with the scalar
+oracle and configured pinned libjxl. It checks actual phase peaks, independent
+host lifetime, failure-atomic replacement, CPU suspension, concurrent calls and
+both library paths. Qualification artifacts for step 3 are retained under
+`build/modular-preparation-qualification/`, using committed CPU sources to keep
+concurrent CPU policy edits outside this slice's evidence.
 
 ## Proposed first operations
 
