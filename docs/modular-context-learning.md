@@ -6,6 +6,10 @@ their existing behavior. This extends encoder policy within the existing
 31-node / 16-leaf CPU and GPU oracle contract; it adds no bitstream feature or
 public API option.
 
+This document records the first context-learning milestone. The subsequent
+[RCT selection milestone](modular-rct-search.md) extends color search to at most
+23 complete candidates; the measurements below retain their original scope.
+
 ## Search changes
 
 The original baseline, one-leaf and one-split policies for RCT 0/6/9, palette,

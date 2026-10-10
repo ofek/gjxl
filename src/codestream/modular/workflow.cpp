@@ -155,6 +155,42 @@ Status EncodeSearch(PackedModularImageView input, ModularEncodingOptions options
         best_policy = options.coding;
     }
   }
+  // Keep the complete retained search as a fallback. Rank all 42 transforms
+  // cheaply, then train/encode only a bounded shortlist of additional RCTs.
+  RctRanking ranking;
+  if (auto s = RankModularRcts(input, &ranking); !s.ok())
+    return s;
+  for (size_t i = 0; i < ranking.count; ++i) {
+    const uint8_t rct = ranking.shortlist[i];
+    ModularCodingPolicy single, split, learned, weighted;
+    {
+      ModularEncoderFrame frame;
+      ModularStreamPlan layout;
+      if (auto s = ModularEncoderFrame::Prepare(input, rct, &frame); !s.ok())
+        return s;
+      if (auto s = BuildModularStreamPlan(storage.geometry, profile.channels(), 0, &layout);
+          !s.ok())
+        return s;
+      if (auto s = LearnModularPolicies(frame, layout, rct, &single, &split, &learned); !s.ok())
+        return s;
+    }
+    weighted.rct = rct;
+    weighted.tree = fixed;
+    for (size_t kind = 0; kind < 2; ++kind) {
+      const auto &policy = kind ? learned : weighted;
+      if (kind && learned == weighted)
+        continue;
+      options.coding = policy;
+      codestream_internal::CodestreamBuffer candidate;
+      if (auto s = Encode(input, options, &candidate); !s.ok())
+        return s;
+      if (candidate.view().size() < best.view().size()) {
+        best = std::move(candidate);
+        if (active_modular_profile)
+          best_policy = policy;
+      }
+    }
+  }
   output.Publish(std::move(best));
   if (active_modular_profile) active_modular_profile->resolved = best_policy;
   return Status::Ok();

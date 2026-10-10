@@ -7,14 +7,19 @@
 #include "codestream/workflow_admission_test.h"
 #include "core/cpu_execution.h"
 #include <array>
+#include <charconv>
 #include <iostream>
 #include <stdexcept>
+#include <string_view>
 #include <thread>
 
 namespace {
 using namespace gjxl;
 using namespace gjxl::modular_internal;
 using namespace gjxl::resource_budget_internal;
+// Optional process-level partition of allocation indices. The default still
+// visits every index; the union of shards [0, count) is exactly the same sweep.
+size_t allocation_shard = 0, allocation_shards = 1;
 void Check(bool v, const char *m) {
   if (!v)
     throw std::runtime_error(m);
@@ -312,8 +317,10 @@ void Workflow(Extent2D extent, EntropyCodingMode mode, bool faults,
   DisarmManagedHostAllocationFailureForTest();
   Empty(*small);
   if (faults) {
-    size_t failure_count = 0;
-    for (; failure_count < 30000; ++failure_count) {
+    size_t failure_count = allocation_shard, injected = 0;
+    // Expanded RCT search can exceed 30,000 managed allocations. Retain the
+    // exhaustive sweep, including every additional candidate and its winner.
+    for (; failure_count < 50000; failure_count += allocation_shards) {
       ArmManagedHostAllocationFailureAfterForTest(failure_count);
       status = EncodeModularImage(view, options, &output);
       const bool pending = ManagedHostAllocationFailurePendingForTest();
@@ -326,15 +333,17 @@ void Workflow(Extent2D extent, EntropyCodingMode mode, bool faults,
       Check(!pending && status.code() == StatusCode::kOutOfMemory &&
                 output == std::vector<uint8_t>({7, 8, 9}),
             "Allocation failure changed output or status");
+      ++injected;
     }
-    Check(failure_count > 10 && failure_count < 30000, "Allocation sweep did not finish");
+    Check(failure_count > 10 && failure_count < 50000, "Allocation sweep did not finish");
     std::cout << "allocation failures " << (mode == EntropyCodingMode::kPrefix ? "prefix " : "ANS ")
               << "format " << static_cast<int>(format) << ' ' << extent.width << 'x'
               << extent.height << " policy "
               << (search                            ? "search"
                   : coding == ModularCodingPolicy{} ? "baseline"
                                                     : "prescribed")
-              << ": " << failure_count << '\n';
+              << ": " << injected << " (shard " << allocation_shard << '/' << allocation_shards
+              << ", first successful index " << failure_count << ")" << std::endl;
   }
   Ok(EncodeModularImage(view, options, &output));
   Check(output == expected && bytes == unchanged,
@@ -411,7 +420,19 @@ void TransformValidation() {
         "Squeeze overflow was not atomic");
 }
 } // namespace
-int main() try {
+int main(int argc, char **argv) try {
+  if (argc != 1) {
+    Check(argc == 4 && std::string_view(argv[1]) == "--allocation-shard",
+          "Usage: modular_workflow_test [--allocation-shard INDEX COUNT]");
+    auto parse = [](std::string_view text, size_t *out) {
+      const auto result = std::from_chars(text.data(), text.data() + text.size(), *out);
+      return result.ec == std::errc{} && result.ptr == text.data() + text.size();
+    };
+    Check(parse(argv[2], &allocation_shard) && parse(argv[3], &allocation_shards) &&
+              allocation_shards >= 1 && allocation_shards <= 64 &&
+              allocation_shard < allocation_shards,
+          "Invalid allocation shard");
+  }
   Validation();
   FormatValidation();
   PolicyValidation();

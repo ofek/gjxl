@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 Yunho Cho
 #include "codec/modular/tree_learning.h"
+#include "codec/modular/entropy_estimate.h"
 #include <algorithm>
 #include <bit>
 #include <new>
@@ -73,34 +74,9 @@ constexpr size_t kPredictors = 14, kSymbols = 128, kThresholds = 32;
 constexpr int64_t kCostUnit = 4096;
 constexpr size_t kMinimumLeafSamples = 8;
 
-// Q12 log2, using integer arithmetic so policy decisions are reproducible
-// across compilers/architectures, including at close split-cost ties.
-uint32_t Log2(uint32_t n) {
-  const unsigned exponent = std::bit_width(n) - 1;
-  uint64_t value = uint64_t{n} << (31 - exponent);
-  uint32_t result = exponent << 12;
-  for (unsigned bit = 12; bit-- > 0;) {
-    value = (value * value) >> 31;
-    if (value >= (uint64_t{1} << 32)) {
-      value >>= 1;
-      result |= uint32_t{1} << bit;
-    }
-  }
-  return result;
-}
-struct ResidualCode {
-  uint8_t symbol = 0, extra_bits = 0;
-};
-ResidualCode EncodeResidual(int32_t residual) {
-  const uint32_t value = FoldSigned(residual);
-  if (value < 16)
-    return {static_cast<uint8_t>(value), 0};
-  const unsigned exponent = std::bit_width(value) - 1;
-  // A fixed 4/2/0 hybrid-integer alphabet for scoring only. The actual
-  // encoder still optimizes HybridUint and the prefix/ANS models separately.
-  return {static_cast<uint8_t>(16 + 4 * (exponent - 4) + ((value >> (exponent - 2)) & 3)),
-          static_cast<uint8_t>(exponent - 2)};
-}
+using entropy_estimate::Log2;
+using entropy_estimate::ResidualCode;
+using entropy_estimate::EncodeResidual;
 struct Histogram {
   std::array<uint16_t, kSymbols> counts{};
   int64_t sum_count_log_count = 0, extra_bits = 0;

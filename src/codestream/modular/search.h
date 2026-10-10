@@ -4,6 +4,21 @@
 #include "codestream/modular/storage_plan.h"
 #include "codec/modular/tree_learning.h"
 namespace gjxl::modular_internal {
+inline constexpr size_t kMaximumRctSamples = 2048;
+inline constexpr size_t kMaximumAdditionalRcts = 3;
+struct RctRanking {
+  // Q12 estimates for all 42 RCTs; no serialized-size or optimality guarantee.
+  std::array<int64_t, 42> costs{};
+  std::array<uint8_t, kMaximumAdditionalRcts> shortlist{};
+  size_t count = 0, samples = 0;
+  bool operator==(const RctRanking &) const = default;
+};
+// Rank sampled gradient/left/top residual distributions. Skip 0/6/9 and
+// duplicate sorted per-channel score profiles. Grayscale returns no candidates.
+// Output is replaced only on success; scratch uses managed preparation storage.
+[[nodiscard]] Status RankModularRcts(PackedModularImageView input, RctRanking *out);
+[[nodiscard]] Status
+ComputeRctRankingStorageBound(resource_budget_internal::HostStorageBound *out);
 // Allocation-free bounded transform policy enumeration. A zero palette size
 // means ineligible; exact probing stops after the 257th distinct tuple.
 [[nodiscard]] Status ProbePalette(PackedModularImageView input, uint16_t *colors);

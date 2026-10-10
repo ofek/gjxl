@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Yunho Cho
 #include "codestream/modular/workflow.h"
 #include "codestream/modular/search.h"
+#include "codec/modular/profile.h"
 #include "codec/modular/transform/rct.h"
 #include "modular_reference.h"
 #include "lib/jxl/memory_manager_internal.h"
@@ -215,6 +216,92 @@ void Stages(const Fixture &f, const ModularCodingPolicy &policy) {
 }
 size_t files = 0, stages = 0;
 std::filesystem::path artifacts;
+void RctSelection() {
+  using namespace gjxl::resource_budget_internal;
+  for (auto bits : {8u, 16u}) {
+    Fixture source(257, 19, 3, bits, 0);
+    RctRanking ranked, again;
+    Ok(RankModularRcts(source.view(), &ranked));
+    Ok(RankModularRcts(source.view(), &again));
+    Check(ranked == again && ranked.samples == kMaximumRctSamples &&
+              ranked.count == kMaximumAdditionalRcts,
+          "RCT ranking is nondeterministic or does not explore additional transforms");
+    for (size_t i = 0; i < ranked.count; ++i) {
+      const auto rct = ranked.shortlist[i];
+      Check(rct < 42 && rct != 0 && rct != 6 && rct != 9,
+            "RCT shortlist repeats a retained candidate");
+      if (i)
+        Check(ranked.costs[ranked.shortlist[i - 1]] <= ranked.costs[rct],
+              "RCT shortlist is not ordered by estimated cost");
+    }
+    // Identical RGB in an unaligned, padded, big-endian RGBA view. Vary alpha
+    // and every padding byte; neither should affect the sampled color ranking.
+    const size_t stride = source.source.width * 4 * (bits / 8) + 7;
+    std::vector<uint8_t> packed(3 + stride * source.source.height, 0xcd);
+    for (size_t y = 0; y < source.source.height; ++y)
+      for (size_t x = 0; x < source.source.width; ++x)
+        for (size_t c = 0; c < 4; ++c) {
+          const uint16_t value = c == 3 ? static_cast<uint16_t>(x * 37 + y * 71)
+                                        : source.source.samples[(y * source.source.width + x) * 3 + c];
+          const size_t pos = 3 + y * stride + (x * 4 + c) * (bits / 8);
+          packed[pos] = static_cast<uint8_t>(bits == 16 ? value >> 8 : value);
+          if (bits == 16)
+            packed[pos + 1] = static_cast<uint8_t>(value);
+        }
+    const auto unchanged = packed;
+    PackedModularImageView view{std::span(packed).subspan(3), source.view().extent, stride,
+                                bits == 8 ? PackedModularFormat::kRgba8
+                                          : PackedModularFormat::kRgba16,
+                                SampleByteOrder::kBigEndian};
+    Ok(RankModularRcts(view, &again));
+    Check(ranked == again && packed == unchanged,
+          "RCT ranking depends on alpha, padding, byte order, or mutates input");
+    ArmNextManagedHostAllocationFailureForTest();
+    HostStorageBound bound;
+    Ok(ComputeRctRankingStorageBound(&bound));
+    Check(ManagedHostAllocationFailurePendingForTest(), "RCT ranking planner allocated");
+    Check(RankModularRcts(view, &again).code() == StatusCode::kOutOfMemory && again == ranked,
+          "RCT ranking allocation failure changed output");
+    DisarmManagedHostAllocationFailureForTest();
+    ResourceBudget budget(bound.peak_bytes);
+    ResourceReservation reservation;
+    Ok(budget.Reserve(bound.peak_bytes, &reservation));
+    {
+      ResourceContextScope scope({&reservation, ResourceClass::kPreparation});
+      Ok(RankModularRcts(view, &again));
+    }
+    Check(ranked == again && budget.snapshot().peak_backing_bytes <= bound.peak_bytes &&
+              budget.snapshot().total.backing_count == 0,
+          "RCT ranking scratch escaped its storage bound");
+    view.row_stride = 1;
+    ArmNextManagedHostAllocationFailureForTest();
+    Check(!RankModularRcts(view, &again).ok() && again == ranked &&
+              ManagedHostAllocationFailurePendingForTest(),
+          "Invalid RCT input allocated or changed output");
+    DisarmManagedHostAllocationFailureForTest();
+  }
+  for (auto extent : {Extent2D{1, 1}, {1, 257}, {257, 1}, {257, 257}}) {
+    Fixture black(extent.width, extent.height, 3, 16, 0);
+    std::fill(black.bytes.begin(), black.bytes.end(), 0);
+    RctRanking ranked;
+    Ok(RankModularRcts(black.view(), &ranked));
+    Check(ranked.count == 0 && ranked.samples == std::min(extent.width * extent.height,
+                                                         kMaximumRctSamples),
+          "Equivalent RCT estimates were not deduplicated");
+    for (auto cost : ranked.costs)
+      Check(cost == 3 * 10 * 4096, "Constant residual entropy estimate is incorrect");
+  }
+  Fixture gray(3, 257, 1, 16, 0);
+  RctRanking ranked;
+  ArmNextManagedHostAllocationFailureForTest();
+  Ok(RankModularRcts(gray.view(), &ranked));
+  Check(ranked == RctRanking{} && ManagedHostAllocationFailurePendingForTest(),
+        "Grayscale RCT ranking did work or allocated");
+  DisarmManagedHostAllocationFailureForTest();
+  Check(!RankModularRcts(gray.view(), nullptr).ok() &&
+            !ComputeRctRankingStorageBound(nullptr).ok(),
+        "Null RCT ranking outputs were accepted");
+}
 void Case(const Fixture &f, const ModularCodingPolicy &policy, bool search = false) {
   if (!search) {
     Stages(f, policy);
@@ -229,7 +316,13 @@ void Case(const Fixture &f, const ModularCodingPolicy &policy, bool search = fal
         {.managed_memory_bytes = plan.working.peak_bytes, .cpu_participant_limit = 1}, &domain));
     std::vector<uint8_t> output, again;
     const auto start = std::chrono::steady_clock::now();
-    Ok(EncodeModularImage(f.view(), {domain, mode, policy, search}, &output));
+    ModularProfile profile;
+    {
+      ProfileSession session(&profile);
+      Ok(EncodeModularImage(f.view(), {domain, mode, policy, search}, &output));
+    }
+    Check(!search || profile.encoded_candidates <= (f.source.channels == 1 ? 9 : 23),
+          "Search exceeded its complete-candidate bound");
     const auto micros = std::chrono::duration_cast<std::chrono::microseconds>(
                             std::chrono::steady_clock::now() - start)
                             .count();
@@ -373,6 +466,30 @@ int main(int argc, char **argv) try {
       Ok(LearnModularPolicies(frame, layout, fixed.rct, &single, &split, &learned));
       Case(fixture, learned);
       Case(Fixture(1, 1, channels, bits, 0), {}, true);
+    }
+  RctSelection();
+  for (auto channels : {3u, 4u})
+    for (auto bits : {8u, 16u}) {
+      Fixture fixture(257, 3, channels, bits, 0);
+      RctRanking ranking;
+      Ok(RankModularRcts(fixture.view(), &ranking));
+      for (size_t i = 0; i < ranking.count; ++i) {
+        ModularCodingPolicy fixed, single, split, learned;
+        fixed.rct = ranking.shortlist[i];
+        Ok(MakeFixedWeightedTree(bits, &fixed.tree));
+        Case(fixture, fixed);
+        ModularEncoderFrame frame;
+        Ok(ModularEncoderFrame::Prepare(fixture.view(), fixed.rct, &frame));
+        ModularFrameGeometry geometry;
+        Ok(ModularFrameGeometry::Create(fixture.view().extent, &geometry));
+        ChannelShape shape;
+        Ok(DescribeImage(frame.image(), &shape));
+        ModularStreamPlan layout;
+        Ok(BuildModularStreamPlan(geometry, shape.channels(), shape.metadata, &layout));
+        Ok(LearnModularPolicies(frame, layout, fixed.rct, &single, &split, &learned));
+        Case(fixture, learned);
+      }
+      Case(fixture, {}, true);
     }
   std::cout << stages << " prescribed stage cases; " << files << " complete policy files passed\n";
 } catch (const std::exception &e) {

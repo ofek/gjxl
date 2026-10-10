@@ -1,0 +1,794 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-10",
+  "milestone": "Bounded CPU Modular RCT selection",
+  "base_revision": "2cdb74c",
+  "head_at_rate_capture": "2cdb74c4b7cc9330119e38a675d16f7074c4c5ef",
+  "source_state": "Uncommitted CPU RCT policy changes; independent GPU work is excluded from this qualification.",
+  "libjxl_revision": "e8ff09762481785938d8e4e01333ed3917571161",
+  "build": {
+    "directory": "build/modular-rct-search",
+    "type": "Release",
+    "platform": "macOS native ARM64",
+    "compiler": "AppleClang 21.0.0.21000334",
+    "metal": false,
+    "cuda": false,
+    "libjxl_backend": false,
+    "independent_oracle_build": "/Users/yunhocho/GitHub/gjxl/build/pinned-libjxl"
+  },
+  "encoding_source_sha256": {
+    "src/codec/modular/entropy_estimate.h": "83296006ac8d3cdb1eaedec4918005c9cde9bcf786cc09f5559664a3df710ae5",
+    "src/codec/modular/tree_learning.cpp": "9dc8c0eb182b4d3da713dacde6a7aa32bb56cb00cbec4945f233686eb3471105",
+    "src/codestream/modular/search.cpp": "4a75fa4b2c6fcbae14cc9be84ac58eee3ac31e559da243bcc584c47eb0315059",
+    "src/codestream/modular/search.h": "c2387252aefdea6cfe52a674147dedb2db2d585d8ee76a64a9ecd06cd35581fa",
+    "src/codestream/modular/workflow.cpp": "2914485bb162720c7f766d69c17ec0f2b680781113401a65319d5bc5ddb2899c"
+  },
+  "test_source_sha256": {
+    "tests/modular_policy_test.cpp": "04c2410447b9284ba8cbefae74750440649774da89598aa7f4eff63b881ff6ab",
+    "tests/modular_workflow_test.cpp": "887dd6f495be8e289fca70a9f75632463e571198e3c615ec1105dbf3b9ba8f9f"
+  },
+  "policy": {
+    "ranking_samples": 2048,
+    "ranked_rct_types": 42,
+    "maximum_additional_rcts": 3,
+    "color_candidate_ceiling": 23,
+    "gray_candidate_ceiling": 9,
+    "ranking_predictors": [
+      "gradient",
+      "left",
+      "top"
+    ],
+    "cost": "integer Q12 Shannon symbol entropy plus HybridUint 4/2/0 extra bits and estimated model overhead",
+    "deduplication": "sorted per-channel best-predictor cost triples; heuristic, not final-codestream equivalence",
+    "retained_candidates": "All previous candidates in the same order; strict complete-size replacement; earlier candidates win ties"
+  },
+  "validation": {
+    "focused_suites": {
+      "foundation": {
+        "returncode": 0,
+        "seconds": 0.07090691701159813,
+        "command": [
+          "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rct-search/gjxl_modular_foundation_test"
+        ]
+      },
+      "stream": {
+        "returncode": 0,
+        "seconds": 0.0752373340073973,
+        "command": [
+          "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rct-search/gjxl_modular_stream_test"
+        ]
+      },
+      "oracle": {
+        "returncode": 0,
+        "seconds": 0.1383556250075344,
+        "command": [
+          "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rct-search/gjxl_modular_oracle_test"
+        ]
+      },
+      "policy": {
+        "returncode": 0,
+        "seconds": 11.219725417002337,
+        "command": [
+          "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rct-search/gjxl_modular_policy_test"
+        ]
+      },
+      "conformance": {
+        "returncode": 0,
+        "seconds": 13.850962458003778,
+        "command": [
+          "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rct-search/gjxl_modular_conformance_test"
+        ]
+      },
+      "transform": {
+        "returncode": 0,
+        "seconds": 3.637075167003786,
+        "command": [
+          "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rct-search/gjxl_modular_transform_test"
+        ]
+      },
+      "api": {
+        "returncode": 0,
+        "seconds": 5.244295499986038,
+        "command": [
+          "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rct-search/gjxl_modular_api_test"
+        ]
+      },
+      "frozen_oracle": {
+        "returncode": 0,
+        "seconds": 0.5046508749946952,
+        "command": [
+          "python3",
+          "/Users/yunhocho/GitHub/gjxl-modular/tools/modular_oracle/verify.py",
+          "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rct-search/gjxl_modular_capture",
+          "/Users/yunhocho/GitHub/gjxl-modular/testdata/modular",
+          "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rct-search/checks/frozen-native"
+        ]
+      }
+    },
+    "policy_stage_cases": 835,
+    "policy_complete_files": 1738,
+    "sanitizers": {
+      "passed": 2,
+      "failed": 0,
+      "elapsed_seconds": 399.19,
+      "build_type": "Debug",
+      "tests": [
+        "modular_foundation",
+        "modular_policy"
+      ],
+      "flags": "-fsanitize=address,undefined -fno-omit-frame-pointer",
+      "scope": "Native GJXL code instrumented; pinned libjxl binaries not instrumented; existing reference targets disable vptr for no-RTTI archives."
+    },
+    "workflow_allocation_sweep": {
+      "passed": true,
+      "fault_cases": 44,
+      "failure_points": 133331,
+      "search_failure_points": 114984,
+      "partition": "Four disjoint allocation-index shards; union verified against every index from zero to each successful allocation count minus one. Default validation, admission, output retention and recovery checks run in every shard.",
+      "wall_seconds": 1072.2458314170071,
+      "case_counts": [
+        {
+          "case": "prefix format 1 1x1 policy baseline",
+          "failure_points": 292
+        },
+        {
+          "case": "prefix format 1 17x19 policy baseline",
+          "failure_points": 319
+        },
+        {
+          "case": "prefix format 1 257x3 policy baseline",
+          "failure_points": 324
+        },
+        {
+          "case": "prefix format 0 17x19 policy baseline",
+          "failure_points": 315
+        },
+        {
+          "case": "prefix format 0 257x3 policy baseline",
+          "failure_points": 299
+        },
+        {
+          "case": "prefix format 3 17x19 policy baseline",
+          "failure_points": 306
+        },
+        {
+          "case": "prefix format 3 257x3 policy baseline",
+          "failure_points": 311
+        },
+        {
+          "case": "prefix format 4 17x19 policy baseline",
+          "failure_points": 324
+        },
+        {
+          "case": "prefix format 4 257x3 policy baseline",
+          "failure_points": 331
+        },
+        {
+          "case": "prefix format 2 17x19 policy baseline",
+          "failure_points": 322
+        },
+        {
+          "case": "prefix format 2 257x3 policy baseline",
+          "failure_points": 329
+        },
+        {
+          "case": "prefix format 5 17x19 policy baseline",
+          "failure_points": 327
+        },
+        {
+          "case": "prefix format 5 257x3 policy baseline",
+          "failure_points": 334
+        },
+        {
+          "case": "ANS format 1 1x1 policy baseline",
+          "failure_points": 428
+        },
+        {
+          "case": "ANS format 1 17x19 policy baseline",
+          "failure_points": 455
+        },
+        {
+          "case": "ANS format 1 257x3 policy baseline",
+          "failure_points": 461
+        },
+        {
+          "case": "ANS format 0 17x19 policy baseline",
+          "failure_points": 454
+        },
+        {
+          "case": "ANS format 0 257x3 policy baseline",
+          "failure_points": 435
+        },
+        {
+          "case": "ANS format 3 17x19 policy baseline",
+          "failure_points": 442
+        },
+        {
+          "case": "ANS format 3 257x3 policy baseline",
+          "failure_points": 445
+        },
+        {
+          "case": "ANS format 4 17x19 policy baseline",
+          "failure_points": 464
+        },
+        {
+          "case": "ANS format 4 257x3 policy baseline",
+          "failure_points": 469
+        },
+        {
+          "case": "ANS format 2 17x19 policy baseline",
+          "failure_points": 462
+        },
+        {
+          "case": "ANS format 2 257x3 policy baseline",
+          "failure_points": 467
+        },
+        {
+          "case": "ANS format 5 17x19 policy baseline",
+          "failure_points": 467
+        },
+        {
+          "case": "ANS format 5 257x3 policy baseline",
+          "failure_points": 469
+        },
+        {
+          "case": "prefix format 5 17x19 policy prescribed",
+          "failure_points": 756
+        },
+        {
+          "case": "prefix format 5 257x3 policy prescribed",
+          "failure_points": 782
+        },
+        {
+          "case": "prefix format 5 17x19 policy search",
+          "failure_points": 20975
+        },
+        {
+          "case": "prefix format 5 257x3 policy search",
+          "failure_points": 21082
+        },
+        {
+          "case": "ANS format 5 17x19 policy prescribed",
+          "failure_points": 1284
+        },
+        {
+          "case": "ANS format 5 257x3 policy prescribed",
+          "failure_points": 1308
+        },
+        {
+          "case": "ANS format 5 17x19 policy search",
+          "failure_points": 35014
+        },
+        {
+          "case": "ANS format 5 257x3 policy search",
+          "failure_points": 37913
+        },
+        {
+          "case": "prefix format 5 17x19 policy prescribed",
+          "failure_points": 330
+        },
+        {
+          "case": "prefix format 5 257x3 policy prescribed",
+          "failure_points": 340
+        },
+        {
+          "case": "prefix format 5 17x19 policy prescribed",
+          "failure_points": 354
+        },
+        {
+          "case": "prefix format 5 257x3 policy prescribed",
+          "failure_points": 355
+        },
+        {
+          "case": "prefix format 5 17x19 policy prescribed",
+          "failure_points": 337
+        },
+        {
+          "case": "ANS format 5 17x19 policy prescribed",
+          "failure_points": 477
+        },
+        {
+          "case": "ANS format 5 257x3 policy prescribed",
+          "failure_points": 480
+        },
+        {
+          "case": "ANS format 5 17x19 policy prescribed",
+          "failure_points": 503
+        },
+        {
+          "case": "ANS format 5 257x3 policy prescribed",
+          "failure_points": 503
+        },
+        {
+          "case": "ANS format 5 17x19 policy prescribed",
+          "failure_points": 487
+        }
+      ],
+      "shards": [
+        {
+          "index": 0,
+          "count": 4,
+          "returncode": 0,
+          "seconds": 1071.1185432909988,
+          "command": [
+            "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rct-search/gjxl_modular_workflow_test",
+            "--allocation-shard",
+            "0",
+            "4"
+          ]
+        },
+        {
+          "index": 1,
+          "count": 4,
+          "returncode": 0,
+          "seconds": 1070.6391614169988,
+          "command": [
+            "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rct-search/gjxl_modular_workflow_test",
+            "--allocation-shard",
+            "1",
+            "4"
+          ]
+        },
+        {
+          "index": 2,
+          "count": 4,
+          "returncode": 0,
+          "seconds": 1072.2447717500036,
+          "command": [
+            "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rct-search/gjxl_modular_workflow_test",
+            "--allocation-shard",
+            "2",
+            "4"
+          ]
+        },
+        {
+          "index": 3,
+          "count": 4,
+          "returncode": 0,
+          "seconds": 1071.0309692920127,
+          "command": [
+            "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rct-search/gjxl_modular_workflow_test",
+            "--allocation-shard",
+            "3",
+            "4"
+          ]
+        }
+      ],
+      "guard_per_case": 50000,
+      "workflow_source_sha256": "887dd6f495be8e289fca70a9f75632463e571198e3c615ec1105dbf3b9ba8f9f",
+      "cli_invalid_argument_checks": 6,
+      "note": "The initial unsharded run was intentionally terminated and is not counted as passing evidence."
+    }
+  },
+  "compression": {
+    "verification": {
+      "sample_exact_outputs": 64,
+      "unchanged_default_outputs": 32,
+      "nonregressing_search_outputs": 32,
+      "equal_size_outputs_byte_identical": true
+    },
+    "groups": {
+      "non-synthetic-11": {
+        "sp": {
+          "before_bytes": 10644961,
+          "after_bytes": 10484090,
+          "reduction_percent": 1.5112408584681547,
+          "libjxl_e9_bytes": 7673910,
+          "before_gap_to_e9_percent": 38.716260680669954,
+          "after_gap_to_e9_percent": 36.61992387192448
+        },
+        "sa": {
+          "before_bytes": 8598720,
+          "after_bytes": 8368742,
+          "reduction_percent": 2.6745608648729102,
+          "libjxl_e9_bytes": 7673910,
+          "before_gap_to_e9_percent": 12.05135322149986,
+          "after_gap_to_e9_percent": 9.054471579677115
+        }
+      },
+      "rgb-photos-4": {
+        "sp": {
+          "before_bytes": 3777357,
+          "after_bytes": 3710062,
+          "reduction_percent": 1.7815366670399402,
+          "libjxl_e9_bytes": 3238540,
+          "before_gap_to_e9_percent": 16.637651534333365,
+          "after_gap_to_e9_percent": 14.559709004674936
+        },
+        "sa": {
+          "before_bytes": 3600658,
+          "after_bytes": 3486826,
+          "reduction_percent": 3.1614221622825567,
+          "libjxl_e9_bytes": 3238540,
+          "before_gap_to_e9_percent": 11.181520067684826,
+          "after_gap_to_e9_percent": 7.666602851902393
+        }
+      },
+      "rgba-photos-2": {
+        "sp": {
+          "before_bytes": 4538790,
+          "after_bytes": 4445237,
+          "reduction_percent": 2.0611881140127686,
+          "libjxl_e9_bytes": 3943782,
+          "before_gap_to_e9_percent": 15.087243666105277,
+          "after_gap_to_e9_percent": 12.715079078914604
+        },
+        "sa": {
+          "before_bytes": 4338611,
+          "after_bytes": 4222479,
+          "reduction_percent": 2.6767092048584185,
+          "libjxl_e9_bytes": 3943782,
+          "before_gap_to_e9_percent": 10.011430652099929,
+          "after_gap_to_e9_percent": 7.0667445614387425
+        }
+      },
+      "gray-photo-1": {
+        "sp": {
+          "before_bytes": 102038,
+          "after_bytes": 102038,
+          "reduction_percent": 0.0,
+          "libjxl_e9_bytes": 90153,
+          "before_gap_to_e9_percent": 13.183144210397879,
+          "after_gap_to_e9_percent": 13.183144210397879
+        },
+        "sa": {
+          "before_bytes": 94001,
+          "after_bytes": 94001,
+          "reduction_percent": 0.0,
+          "libjxl_e9_bytes": 90153,
+          "before_gap_to_e9_percent": 4.268299446496515,
+          "after_gap_to_e9_percent": 4.268299446496515
+        }
+      },
+      "graphics-4": {
+        "sp": {
+          "before_bytes": 2226776,
+          "after_bytes": 2226753,
+          "reduction_percent": 0.0010328834153083832,
+          "libjxl_e9_bytes": 401435,
+          "before_gap_to_e9_percent": 454.7039994021448,
+          "after_gap_to_e9_percent": 454.69826995653096
+        },
+        "sa": {
+          "before_bytes": 565450,
+          "after_bytes": 565436,
+          "reduction_percent": 0.0024759041471367205,
+          "libjxl_e9_bytes": 401435,
+          "before_gap_to_e9_percent": 40.8571748850997,
+          "after_gap_to_e9_percent": 40.853687396465176
+        }
+      },
+      "synthetic-5": {
+        "sp": {
+          "before_bytes": 896526,
+          "after_bytes": 896526,
+          "reduction_percent": 0.0,
+          "libjxl_e9_bytes": 837340,
+          "before_gap_to_e9_percent": 7.068335443189144,
+          "after_gap_to_e9_percent": 7.068335443189144
+        },
+        "sa": {
+          "before_bytes": 855025,
+          "after_bytes": 852476,
+          "reduction_percent": 0.298119938013508,
+          "libjxl_e9_bytes": 837340,
+          "before_gap_to_e9_percent": 2.112045286263653,
+          "after_gap_to_e9_percent": 1.8076289201519158
+        }
+      },
+      "all-16": {
+        "sp": {
+          "before_bytes": 11541487,
+          "after_bytes": 11380616,
+          "reduction_percent": 1.3938498566085977,
+          "libjxl_e9_bytes": 8511250,
+          "before_gap_to_e9_percent": 35.60272580408284,
+          "after_gap_to_e9_percent": 33.712627404905284
+        },
+        "sa": {
+          "before_bytes": 9453745,
+          "after_bytes": 9221218,
+          "reduction_percent": 2.459628432964922,
+          "libjxl_e9_bytes": 8511250,
+          "before_gap_to_e9_percent": 11.073520340725507,
+          "after_gap_to_e9_percent": 8.34152445292995
+        }
+      }
+    },
+    "per_image": {
+      "photo-macan": {
+        "before_bytes": 271492,
+        "after_bytes": 268426,
+        "shortlist": [
+          10,
+          27,
+          13
+        ],
+        "before_rct": 6,
+        "after_rct": 13
+      },
+      "photo-ria": {
+        "before_bytes": 219767,
+        "after_bytes": 219767,
+        "shortlist": [
+          11,
+          20,
+          34
+        ],
+        "before_rct": 0,
+        "after_rct": 0
+      },
+      "photo-bliznaca": {
+        "before_bytes": 250518,
+        "after_bytes": 250237,
+        "shortlist": [
+          41,
+          34,
+          20
+        ],
+        "before_rct": 6,
+        "after_rct": 41
+      },
+      "photo-flower": {
+        "before_bytes": 2858881,
+        "after_bytes": 2748396,
+        "shortlist": [
+          27,
+          13,
+          26
+        ],
+        "before_rct": 6,
+        "after_rct": 27
+      },
+      "gray-macan": {
+        "before_bytes": 94001,
+        "after_bytes": 94001,
+        "shortlist": [],
+        "before_rct": 0,
+        "after_rct": 0
+      },
+      "alpha-ria": {
+        "before_bytes": 251925,
+        "after_bytes": 251925,
+        "shortlist": [
+          11,
+          20,
+          34
+        ],
+        "before_rct": 0,
+        "after_rct": 0
+      },
+      "alpha-flower": {
+        "before_bytes": 4086686,
+        "after_bytes": 3970554,
+        "shortlist": [
+          27,
+          13,
+          26
+        ],
+        "before_rct": 6,
+        "after_rct": 13
+      },
+      "chessboard": {
+        "before_bytes": 141670,
+        "after_bytes": 141670,
+        "shortlist": [
+          10,
+          12,
+          33
+        ],
+        "before_rct": 0,
+        "after_rct": 0
+      },
+      "splines": {
+        "before_bytes": 396670,
+        "after_bytes": 396670,
+        "shortlist": [
+          40,
+          19,
+          2
+        ],
+        "before_rct": 0,
+        "after_rct": 0
+      },
+      "gray-patches": {
+        "before_bytes": 26035,
+        "after_bytes": 26035,
+        "shortlist": [],
+        "before_rct": 0,
+        "after_rct": 0
+      },
+      "palette-358": {
+        "before_bytes": 1075,
+        "after_bytes": 1061,
+        "shortlist": [
+          2,
+          3,
+          26
+        ],
+        "before_rct": 9,
+        "after_rct": 2
+      },
+      "gray16-ramp": {
+        "before_bytes": 1676,
+        "after_bytes": 1676,
+        "shortlist": [],
+        "before_rct": 0,
+        "after_rct": 0
+      },
+      "screen-pattern": {
+        "before_bytes": 3241,
+        "after_bytes": 3241,
+        "shortlist": [
+          26,
+          3,
+          10
+        ],
+        "before_rct": 0,
+        "after_rct": 0
+      },
+      "palette-pattern": {
+        "before_bytes": 10521,
+        "after_bytes": 10308,
+        "shortlist": [
+          26,
+          3,
+          10
+        ],
+        "before_rct": 0,
+        "after_rct": 10
+      },
+      "noise16": {
+        "before_bytes": 808786,
+        "after_bytes": 808781,
+        "shortlist": [
+          34,
+          20,
+          13
+        ],
+        "before_rct": 6,
+        "after_rct": 34
+      },
+      "alpha16-ramp": {
+        "before_bytes": 30801,
+        "after_bytes": 28470,
+        "shortlist": [
+          10,
+          3,
+          17
+        ],
+        "before_rct": 0,
+        "after_rct": 3
+      }
+    },
+    "concentration": {
+      "non_synthetic_improved_inputs": 5,
+      "non_synthetic_input_count": 11,
+      "flower_rgb_and_rgba_saved_bytes": 226617,
+      "share_of_non_synthetic_savings_percent": 98.53855586186505,
+      "note": "RGB and RGBA flower variants are related inputs; their dominant contribution limits corpus generalization."
+    }
+  },
+  "shortlist_oracle": {
+    "scope": "Four fixtures, all 42 RCTs, fixed and entropy-learned trees with ANS; retained old winner also available. This is not an exhaustive oracle over all policies.",
+    "independently_decoded_candidate_encodes": 336,
+    "retained_best_of_two_files": 168,
+    "per_image": {
+      "photo-macan": {
+        "bounded_bytes": 268426,
+        "oracle_with_retained_fallback_bytes": 266928,
+        "oracle_best_rct": 8,
+        "extra_bytes": 1498,
+        "bounded_premium_percent": 0.5612000239765047,
+        "shortlist": [
+          10,
+          27,
+          13
+        ],
+        "bounded_rct": 13
+      },
+      "photo-flower": {
+        "bounded_bytes": 2748396,
+        "oracle_with_retained_fallback_bytes": 2748358,
+        "oracle_best_rct": 12,
+        "extra_bytes": 38,
+        "bounded_premium_percent": 0.0013826437458286378,
+        "shortlist": [
+          27,
+          13,
+          26
+        ],
+        "bounded_rct": 27
+      },
+      "splines": {
+        "bounded_bytes": 396670,
+        "oracle_with_retained_fallback_bytes": 391845,
+        "oracle_best_rct": 36,
+        "extra_bytes": 4825,
+        "bounded_premium_percent": 1.231354234454951,
+        "shortlist": [
+          40,
+          19,
+          2
+        ],
+        "bounded_rct": 0
+      },
+      "alpha16-ramp": {
+        "bounded_bytes": 28470,
+        "oracle_with_retained_fallback_bytes": 27965,
+        "oracle_best_rct": 12,
+        "extra_bytes": 505,
+        "bounded_premium_percent": 1.805828714464508,
+        "shortlist": [
+          10,
+          3,
+          17
+        ],
+        "bounded_rct": 3
+      }
+    }
+  },
+  "limitations": [
+    "Small fixed corpus, no general rate or throughput claim.",
+    "Single-run timings overlap validation work and are diagnostic only.",
+    "Ranking and duplicate-score skipping can miss better fully encoded RCTs.",
+    "Global RCT selection only; palette/Squeeze combinations and local RCT choices remain separate.",
+    "Pinned reference libraries are not sanitizer-instrumented; existing reference targets disable vptr checks for no-RTTI archives."
+  ],
+  "evidence_sha256": {
+    "build/modular-rct-search/source.json": "49e3ac68e9eb10213270747113b142675b11084f0846a422fca9a27c21c07405",
+    "build/modular-rct-search/configure.log": "86460559c4037c959022dbdd04b5b80e82c008314355e85ded5efe6fd106c2f6",
+    "build/modular-rct-search/build-final.log": "b6c537e0d250e12e57567c277840b3fb9324cf6c0252a684113735c4c304e751",
+    "build/modular-rct-search/checks/tests.json": "ab1df0f874be4920e71167798e788348d7d60fa708ec617bfe595b8e731fbc19",
+    "build/modular-rct-search/checks/foundation.log": "71a679c42caf937fcdc609e2744bdbb68c8209c97d3e16403a980b13da2b8a63",
+    "build/modular-rct-search/checks/stream.log": "df48320eca8f6e65ec1137f0b9fe444e4bab65728e1e3c20fb1e3a9ca8050f8b",
+    "build/modular-rct-search/checks/oracle.log": "deaca47fcdff1d0ccb8af2477b7f3e350bc8b6fb8a099ad24ed3033cc75f69e0",
+    "build/modular-rct-search/checks/policy.log": "525e42c77c35543cf4cc4756036a68ceae9216158fe54621633035fe0afe1b73",
+    "build/modular-rct-search/checks/conformance.log": "424490caee1dc41da0d81abaa39970386bd9d91d0d809aa26907c9863c863617",
+    "build/modular-rct-search/checks/transform.log": "a5ffa8914dd632041bf8e05ab2bbb14355d8ef0634812abca021d7a10eb8344a",
+    "build/modular-rct-search/checks/api.log": "f68bd55e33031ce91c2a9f897eba5eb07e028779b9cc5f9f53ca5bb0238e8f4e",
+    "build/modular-rct-search/checks/frozen_oracle.log": "b25e276494675a8135f85fbb0f8d6d299bda047f53dfd55376c495312cf849c8",
+    "build/modular-rct-search/check.py": "823eb0db7e5c71eede2aa41907f2ed0e2f8e5aae11992d256ce9dd0305e58508",
+    "build/modular-rct-search/check.log": "b92d647fff7a145e4134e19fb774c08a5a641ec84275f3c468bbb3c3071b10d3",
+    "build/modular-rct-search/rate/manifest.json": "0f751f307975a35d348bcaf61db0418c5ae9b984c6cbf21f5a04ad6c29b39ab0",
+    "build/modular-rct-search/rate/results.jsonl": "ebe2373636aacebea395b514e0194b9ac5189e0a63f679b7ab087e543493770a",
+    "build/modular-rct-search/rate/source.patch": "73f8baf9f7787a3640d0c26969a7a377b8af8e9353b040509d183af45f221430",
+    "build/modular-rct-search/rate/entropy_estimate.h": "83296006ac8d3cdb1eaedec4918005c9cde9bcf786cc09f5559664a3df710ae5",
+    "build/modular-rct-search/rate/runner.cpp": "f4ff9007c7a8e979534a7d617db260516e0e6f71036e8d8f0d7f3da39406957c",
+    "build/modular-rct-search/rate/run.py": "f50042cab25cde1d0c6086c1ec62fed9eb03fa1d8524692e6e63d789510b4d1d",
+    "build/modular-rct-search/rate/bin/rate_runner": "072ceeeca7f278f4784d24a3b21d756858da6619fdc4c7250ea9cf883c8e8503",
+    "build/modular-rct-search/analyze.py": "cac46e82e31b7346422e0d3dfece3fc90aab3556ab6a9ff4e599088077c6c3d7",
+    "build/modular-rct-search/summary.json": "22563cce20f5ae6d27d6c0caed3b7ca5a989ce3935cfb54d5a604d24a4bfc893",
+    "build/modular-rct-search/allocation-count.log": "c8c903b5fdc1ca4ad651b41845ca36a33d2f7fa26ae54ee9162e49120b4167c5",
+    "build/modular-rct-search/run-workflow-shards.py": "09b728401d77de97f5b949ae832a0ee519bfbed67758636a775175846907ac4b",
+    "build/modular-context-learning/rate-integrated/manifest.json": "777cf798baf19bc8e8c2d3003febaebb023a734e79b429fffcf4b8bd21f7d858",
+    "build/modular-context-learning/rate-integrated/results.jsonl": "f9e01f8e919ac328fa0a527a3bcc388a8bdbc3709c1e13967fc134b750e74555",
+    "build/modular-rate-20261010/results.jsonl": "fca28c360fa35c798b31239a092062fba1d7f9dd3a8e5d5da5954e860bdd1508",
+    "build/modular-rct-search/sanitize-configure.log": "08d6a5afdbd36260eb655a4e8c3a88603e07c828b1809b40d17bafc83f1ac3f4",
+    "build/modular-rct-search/sanitize-build.log": "defe610359e427f1f2338235c16ec659a876b2aa9cbfbee0140d03105057fec2",
+    "build/modular-rct-search/sanitize-tests.log": "e91ac86174ecccafa693134496c80d14a252ca13965646d01f7ecf741c671c9c",
+    "build/modular-rct-search/sanitize/Testing/Temporary/LastTest.log": "b45c8e9f45e788ea45d625a428602dcc5b0e50c2b19ae2a1de57ca0bc29e68f7",
+    "build/modular-rct-search/rct-oracle/manifest.json": "7563d6fee1a332e355e08162ed2b8cd2cde01559303708d37cd7bb859be016b2",
+    "build/modular-rct-search/rct-oracle/results.jsonl": "31721da9d0fc7bb9909b0412e6d2c36035a09d00d1a5d6e52f65e7f185e0a699",
+    "build/modular-rct-search/rct-oracle/runner.cpp": "c7201d8c3e4beb66e572dad145ddb5c071178aa452ab0c4c906e2d2dfb795117",
+    "build/modular-rct-search/rct-oracle/bin/rate_runner": "bfee6a6925393a5362161356713fdd77bd69aa42cff9c4e0118fe98c7c88dd66",
+    "build/modular-rct-search/analyze-oracle.py": "c9543bb7e0d69fc413827babf7f27d4d5b6c3a7cc04eab7bf08bf374daccde58",
+    "build/modular-rct-search/oracle-summary.json": "08041da7fa1af80b0f635e6c276ae1211f2d5cac542fb20d320c9e9ad868fd47",
+    "build/modular-rct-search/final-source.patch": "1992d8eeaa8b0106a9798feb2ba5cac8606e4ff8ebbbd07699bab0546fc06558",
+    "build/modular-rct-search/workflow-shards.json": "de9c2f2eb632329dbd472201242b355e668e0b859098219174a0e3b427b8a71f",
+    "build/modular-rct-search/workflow-verification.json": "bac98b63d3bff522908741557bf0f9dc7adc36641afe9260d7bbcec0eff4ac5f",
+    "build/modular-rct-search/workflow-shard-cli.json": "06ce7446e422f63781c6561ef7f5425326338509477670df6820265f5d512cf4",
+    "build/modular-rct-search/verify-workflow.py": "12d293c7be00e70b923a55af4a9b8888e970b4c2a95ffefed24aa07a32085aff",
+    "build/modular-rct-search/workflow-shard-0.log": "7b89cc5147e78cad39b191186e0cef9ffd92c85d2756ab69939c73cad34ff372",
+    "build/modular-rct-search/workflow-shard-1.log": "79cbf8c18c6debaca59df0dfe64524489d14aeb4ed0bca78381bc9644ba5cc25",
+    "build/modular-rct-search/workflow-shard-2.log": "5708b27a896307905beccfec44d46dfdf11afc0bfa6545e20e01e0143ad08055",
+    "build/modular-rct-search/workflow-shard-3.log": "b9c033a6983efd647cc74ec480a00ecabb3219d3c655acb9769721fe1ec34bea"
+  },
+  "frozen_libraries_sha256": {
+    "libgjxl_codestream.a": "49cdfa85f28a3c5d0e325436a61e6069e5c94e3fa5025361854c94462c643cd8",
+    "libgjxl_gpu.a": "61c901501643b8d986f0938abc2c08508559119005d26d642d431a3f47a5a63e",
+    "libgjxl_gpu_ops.a": "5fca444ecf8b6d9db53ff8c32e994df9d8196bc992155c36227a9e7249c96d59",
+    "libgjxl_codec.a": "5f9493bf0d65f58893cbcddfa2bd6420d0e62779693da21bf788b73472de9d49"
+  },
+  "head_at_completion": "9cf3b02039876de47652ec7c74dd0384fb2d744e"
+}

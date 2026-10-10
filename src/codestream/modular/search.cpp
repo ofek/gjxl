@@ -1,10 +1,151 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 Yunho Cho
 #include "codestream/modular/search.h"
+#include "codec/modular/entropy_estimate.h"
 #include "codec/modular/profile.h"
+#include "codec/modular/transform/rct.h"
 #include <algorithm>
+#include <new>
+#include <numeric>
 namespace gjxl::modular_internal {
 using namespace resource_budget_internal;
+namespace {
+uint64_t Mix(uint64_t value) {
+  value = (value ^ (value >> 30)) * uint64_t{0xbf58476d1ce4e5b9};
+  value = (value ^ (value >> 27)) * uint64_t{0x94d049bb133111eb};
+  return value ^ (value >> 31);
+}
+struct RctSample {
+  // Current, left, top, top-left, with stream-boundary fallbacks applied.
+  std::array<std::array<int32_t, 3>, 4> rgb{};
+};
+struct RctWorkspace {
+  std::array<RctSample, kMaximumRctSamples> samples{};
+  std::array<uint32_t, kMaximumRctSamples + 1> count_log_count{};
+  std::array<std::array<std::array<uint16_t, 128>, 3>, 3> counts{};
+  std::array<std::array<int64_t, 3>, 3> extra_bits{};
+};
+} // namespace
+Status ComputeRctRankingStorageBound(HostStorageBound *out) {
+  if (!out)
+    return Status::InvalidArgument("Null Modular RCT ranking storage output");
+  HostStorageBound bound;
+  if (!bound.AddVector<RctWorkspace>(1, VectorCapacityPolicy::kFreshExact))
+    return Status::InvalidArgument("Modular RCT ranking storage overflow");
+  *out = bound;
+  return Status::Ok();
+}
+Status RankModularRcts(PackedModularImageView input, RctRanking *out) try {
+  ProfileScope profile_scope(ProfileStage::kTraining);
+  if (!out)
+    return Status::InvalidArgument("Null Modular RCT ranking output");
+  if (auto s = input.Validate(); !s.ok())
+    return s;
+  ModularInputProfile profile;
+  if (auto s = ResolveModularInput(input.extent, input.format, &profile); !s.ok())
+    return s;
+  RctRanking result;
+  if (profile.channel_count < 3) {
+    *out = result;
+    return Status::Ok();
+  }
+  ManagedVector<RctWorkspace> scratch(1);
+  auto &w = scratch[0];
+  const size_t width = input.extent.width, area = width * input.extent.height;
+  result.samples = std::min(area, kMaximumRctSamples);
+  auto read = [&](size_t x, size_t y) {
+    std::array<int32_t, 3> rgb;
+    for (size_t c = 0; c < 3; ++c) {
+      const size_t offset = y * input.row_stride +
+                            (x * profile.channel_count + c) * profile.bytes_per_sample;
+      uint32_t value = input.bytes[offset];
+      if (profile.bytes_per_sample == 2)
+        value = input.byte_order == SampleByteOrder::kLittleEndian
+                    ? value | (uint32_t{input.bytes[offset + 1]} << 8)
+                    : (value << 8) | input.bytes[offset + 1];
+      rgb[c] = static_cast<int32_t>(value);
+    }
+    return rgb;
+  };
+  // Divide before multiplying to keep strata arithmetic valid on 32-bit hosts.
+  auto boundary = [&](size_t i) {
+    return (area / result.samples) * i + (area % result.samples) * i / result.samples;
+  };
+  for (size_t i = 0; i < result.samples; ++i) {
+    const size_t begin = boundary(i), end = boundary(i + 1);
+    const size_t pixel = begin + Mix(i) % (end - begin);
+    const size_t x = pixel % width, y = pixel / width;
+    const bool left = x % kGroupDimension != 0, top = y % kGroupDimension != 0;
+    auto &s = w.samples[i].rgb;
+    s[0] = read(x, y);
+    if (left)
+      s[1] = read(x - 1, y);
+    else if (top)
+      s[1] = read(x, y - 1);
+    s[2] = top ? read(x, y - 1) : s[1];
+    s[3] = left && top ? read(x - 1, y - 1) : s[1];
+  }
+  for (uint32_t n = 1; n <= result.samples; ++n)
+    w.count_log_count[n] = n * entropy_estimate::Log2(n);
+  std::array<std::array<int64_t, 3>, 42> profiles;
+  for (uint8_t rct = 0; rct < 42; ++rct) {
+    w.counts = {};
+    w.extra_bits = {};
+    for (size_t i = 0; i < result.samples; ++i) {
+      std::array<std::array<int32_t, 3>, 4> values;
+      for (size_t n = 0; n < values.size(); ++n)
+        values[n] = ForwardRct(w.samples[i].rgb[n], rct);
+      for (size_t c = 0; c < 3; ++c) {
+        const int32_t left = values[1][c], top = values[2][c];
+        const int32_t gradient = std::clamp(left + top - values[3][c], std::min(left, top),
+                                          std::max(left, top));
+        const std::array<int32_t, 3> predictors{gradient, left, top};
+        for (size_t p = 0; p < predictors.size(); ++p) {
+          const auto code = entropy_estimate::EncodeResidual(values[0][c] - predictors[p]);
+          ++w.counts[c][p][code.symbol];
+          w.extra_bits[c][p] += code.extra_bits;
+        }
+      }
+    }
+    for (size_t c = 0; c < 3; ++c) {
+      int64_t best = INT64_MAX;
+      for (size_t p = 0; p < 3; ++p) {
+        int64_t cost = w.count_log_count[result.samples] + (w.extra_bits[c][p] + 8) * 4096;
+        for (auto count : w.counts[c][p])
+          if (count)
+            cost += int64_t{2 * 4096} - w.count_log_count[count];
+        best = std::min(best, cost);
+      }
+      profiles[rct][c] = best;
+      result.costs[rct] += best;
+    }
+    // Channel permutations often have identical estimates. This is heuristic
+    // deduplication, not a claim that their final learned codestreams are equal.
+    std::sort(profiles[rct].begin(), profiles[rct].end());
+  }
+  std::array<uint8_t, 42> order;
+  std::iota(order.begin(), order.end(), uint8_t{0});
+  std::sort(order.begin(), order.end(), [&](uint8_t a, uint8_t b) {
+    return result.costs[a] != result.costs[b] ? result.costs[a] < result.costs[b] : a < b;
+  });
+  for (uint8_t rct : order) {
+    bool duplicate = profiles[rct] == profiles[0] || profiles[rct] == profiles[6] ||
+                     profiles[rct] == profiles[9];
+    for (size_t i = 0; i < result.count; ++i)
+      duplicate |= profiles[rct] == profiles[result.shortlist[i]];
+    if (!duplicate) {
+      result.shortlist[result.count++] = rct;
+      if (result.count == result.shortlist.size())
+        break;
+    }
+  }
+  *out = result;
+  return Status::Ok();
+} catch (const ManagedAllocationFailure &e) {
+  return e.status();
+} catch (const std::bad_alloc &) {
+  return Status::OutOfMemory("Modular RCT ranking allocation failed");
+}
 Status ProbePalette(PackedModularImageView input, uint16_t *colors) {
   ProfileScope profile_scope(ProfileStage::kTraining);
   if (!colors)
@@ -91,15 +232,18 @@ Status ComputeModularSearchStoragePlan(Extent2D extent, PackedModularFormat form
   // Training keeps prepared planes, layout, and sample records, with one WP
   // state at a time. Preparation's token allocation is conservatively retained
   // in this bound, although actual training does not allocate tokens.
-  HostStorageBound learning;
+  HostStorageBound learning, ranking;
   if (auto s = ComputeTreeLearningStorageBound(&learning); !s.ok())
+    return s;
+  if (auto s = ComputeRctRankingStorageBound(&ranking); !s.ok())
     return s;
   if (!plan.preparation.AddVector<TrainingSample>(std::min(plan.tokens, kMaximumTrainingSamples),
                                                   VectorCapacityPolicy::kFreshExact, 2) ||
       !plan.preparation.Add(learning))
     return Status::InvalidArgument("Modular search storage overflow");
   plan.working.peak_bytes =
-      std::max({plan.working.peak_bytes, plan.preparation.peak_bytes, baseline.working.peak_bytes});
+      std::max({plan.working.peak_bytes, plan.preparation.peak_bytes, baseline.working.peak_bytes,
+                ranking.peak_bytes});
   std::array<ModularCodingPolicy, 4> candidates;
   size_t count;
   if (auto s = BuildTransformCandidates(extent, format, kMaximumPaletteColors, &candidates, &count);
@@ -155,11 +299,6 @@ Status LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStrea
   const size_t proportional = stratified.size() - guaranteed;
   if (entropy && total > SIZE_MAX / kMaximumTrainingSamples)
     return Status::InvalidArgument("Modular sampling extent overflow");
-  auto mix = [](uint64_t value) {
-    value = (value ^ (value >> 30)) * uint64_t{0xbf58476d1ce4e5b9};
-    value = (value ^ (value >> 27)) * uint64_t{0x94d049bb133111eb};
-    return value ^ (value >> 31);
-  };
   size_t sampled = 0, sampled_slices = 0;
   size_t ordinal = 0, used = 0;
   for (const auto &stream : plan.streams) {
@@ -194,7 +333,7 @@ Status LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStrea
         if (index == quota)
           return area;
         const size_t begin = index * area / quota, end = (index + 1) * area / quota;
-        return begin + mix(uint64_t{stream.id} * 0x9e3779b97f4a7c15ULL +
+        return begin + Mix(uint64_t{stream.id} * 0x9e3779b97f4a7c15ULL +
                            uint64_t{slice.channel} * 0xd1b54a32d192ed03ULL + index) %
                            (end - begin);
       };
