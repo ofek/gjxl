@@ -219,9 +219,11 @@ vendor `NSObject.hpp` wrapper during backend initialization; its diagnostic is
 retained separately. Native code remains instrumented; the pinned libjxl
 binaries are not rebuilt with sanitizers.
 
-Performance qualification is step 5: include upload, synchronization, readback,
-the CPU continuation and publication in end-to-end comparisons. This slice does
-not establish a speedup or justify automatic GPU dispatch.
+[Step 5 performance qualification](modular-gpu-performance.md) includes upload,
+synchronization, readback, the CPU continuation and publication. The M4 Pro
+32-case pilot found no demonstrated complete-call GPU win: 30 cases favored CPU
+and two noise cases were inconclusive. Keep automatic routing on CPU and use
+the private path to qualify a larger resident preparation/prediction boundary.
 
 ## Proposed first operations
 

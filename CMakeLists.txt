@@ -3713,6 +3713,18 @@ endif()
 
 if(GJXL_BUILD_BENCHMARKS)
 
+  if(GJXL_ENABLE_METAL)
+    add_executable(gjxl_modular_gpu_benchmark benchmarks/modular_gpu_benchmark.cpp src/io/pnm.cpp)
+    target_link_libraries(gjxl_modular_gpu_benchmark PRIVATE gjxl_codestream gjxl_metal)
+    if(TARGET gjxl_modular_reference)
+      target_link_libraries(gjxl_modular_gpu_benchmark PRIVATE gjxl_modular_reference)
+      target_include_directories(gjxl_modular_gpu_benchmark PRIVATE tests)
+      target_compile_definitions(gjxl_modular_gpu_benchmark PRIVATE GJXL_MODULAR_BENCHMARK_REFERENCE=1)
+    else()
+      target_compile_definitions(gjxl_modular_gpu_benchmark PRIVATE GJXL_MODULAR_BENCHMARK_REFERENCE=0)
+    endif()
+  endif()
+
   add_executable(
     gjxl_pfm_benchmark
     benchmarks/pfm_benchmark.cpp
