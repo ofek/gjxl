@@ -22,7 +22,12 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("output", type=Path)
     parser.add_argument("--wesaturate", type=Path)
+    parser.add_argument("--token-slice", action="store_true",
+                        help="Add prescribed split trees and full-resolution photograph cases")
+    parser.add_argument("--large-photos", type=Path, nargs="+", default=[])
     args = parser.parse_args()
+    if args.token_slice and len(args.large_photos) < 3:
+        parser.error("Token qualification requires at least three larger natural RGB photographs")
     root = args.output.resolve()
     inputs = root / "inputs"
     inputs.mkdir(parents=True, exist_ok=True)
@@ -57,8 +62,12 @@ def main():
         save(name, data, bits, dict(kind="synthetic-noise" if noise else "synthetic-structured",
                                    generator="prepare_gpu_performance.py", seed=20261010))
 
-    def case(name, source, rct=6, coder="prefix", threads=1, jobs=1, order="little", padding=0):
-        cases.append([name, records[source]["path"], rct, coder, threads, jobs, order, padding])
+    def case(name, source, rct=6, coder="prefix", threads=1, jobs=1, order="little", padding=0,
+             tree="gradient"):
+        row = [name, records[source]["path"], rct, coder, threads, jobs, order, padding]
+        if args.token_slice:
+            row.append(tree)
+        cases.append(row)
 
     for name, w, h in [("tiny", 1, 1), ("boundary", 257, 255), ("mp1", 1024, 1024),
                         ("hd", 1920, 1080), ("uhd", 3840, 2160)]:
@@ -100,8 +109,26 @@ def main():
                                     source_sha256=digest(source), conversion="Pillow RGB samples; no resize/color conversion"))
             case(name, name)
             case(name + "-ans", name, coder="ans")
+    if args.token_slice:
+        for source in ("mp1-rgb8", "uhd-rgb8", "uhd-rgba16"):
+            for threads in (1, 4):
+                case(source + f"-split7-t{threads}", source, threads=threads, tree="split7")
+        for path in args.large_photos:
+            with Image.open(path) as im:
+                if im.mode != "RGB" or im.width * im.height < 4_000_000:
+                    raise ValueError(f"Expected natural RGB photograph >=4MP: {path}: {im.mode} {im.size}")
+                data = np.array(im)
+            name = "photo-large-" + path.stem.split(".")[0].lower().replace("_", "-")
+            save(name, data, 8, dict(kind="photograph", source=str(path.resolve()),
+                source_sha256=digest(path), conversion="Pillow RGB samples; no resize/color conversion"))
+            for tree in ("gradient", "split7"):
+                for threads in (1,4):
+                    case(name + f"-{tree}-t{threads}", name, threads=threads, tree=tree)
+            case(name + "-gradient-ans-t4", name, threads=4, coder="ans")
+            case(name + "-gradient-b4", name, jobs=4)
     manifest = root / "cases.tsv"
-    manifest.write_text("# name\tpath\trct\tcoder\tthreads\tjobs\torder\tpadding\n" +
+    manifest.write_text("# name\tpath\trct\tcoder\tthreads\tjobs\torder\tpadding" +
+                        ("\ttree\n" if args.token_slice else "\n") +
                         "".join("\t".join(map(str, c)) + "\n" for c in cases))
     (root / "inputs.json").write_text(json.dumps(dict(inputs=records, cases=len(cases),
                                                     manifest_sha256=digest(manifest)), indent=2) + "\n")

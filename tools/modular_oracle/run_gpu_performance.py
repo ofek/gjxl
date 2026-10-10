@@ -28,9 +28,12 @@ def main():
     parser.add_argument("run", type=Path)
     parser.add_argument("--rounds", type=int, default=6)
     parser.add_argument("--seeds", type=int, nargs="+", default=[17, 43, 91])
+    parser.add_argument("--tokens", action="store_true", help="Measure all three routes in balanced triplets")
     args = parser.parse_args()
     if args.rounds < 2 or args.rounds % 2:
         parser.error("Use an even number of pairs (at least two)")
+    if args.tokens and args.rounds % 6:
+        parser.error("Token comparison requires rounds divisible by six to balance all route orders")
     run, binary = args.run.resolve(), args.binary.resolve()
     env = os.environ.copy()
     removed = {}
@@ -50,10 +53,10 @@ def main():
                       command("pmset", "-g", "therm"), command("otool", "-L", str(binary))])
     record = run / "run-provenance.json"
     record.write_text(json.dumps(provenance, indent=2) + "\n")
-    phases = [("measure", seed, args.rounds) for seed in args.seeds] + [("profile", 137, 4)]
+    phases = [("measure", seed, args.rounds) for seed in args.seeds] + [("profile", 137, 6 if args.tokens else 4)]
     with (run / "host-activity.jsonl").open("w") as activity:
         for mode, seed, rounds in phases:
-            cmd = [str(binary), mode, str(run / "cases.tsv"), str(run), str(rounds), "2", str(seed)]
+            cmd = [str(binary), mode, str(run / "cases.tsv"), str(run), str(rounds), "2", str(seed)] + (["tokens"] if args.tokens else [])
             if (run / f"{mode}-{seed}.csv").exists():
                 raise FileExistsError(f"Refusing to overwrite cohort {mode}-{seed}")
             entry = dict(argv=cmd, started=time.time())
