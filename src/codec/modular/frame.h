@@ -56,6 +56,13 @@ public:
                                       ModularEncoderFrame *out);
   [[nodiscard]] static Status Prepare(PackedModularImageView input,
                                       const ModularCodingPolicy &policy, ModularEncoderFrame *out);
+  // Private completed-sample handoff. Caller proves samples equal Prepare(input,
+  // rct); this validates shape/roles and reconstructs canonical source metadata.
+  // No unpacking, RCT, other transforms or sample copy. Failure preserves image
+  // and *out; success moves image into the frame.
+  [[nodiscard]] static Status AdoptPreparedRct(Extent2D extent, PackedModularFormat format,
+                                              uint8_t rct, ModularImage &&image,
+                                              ModularEncoderFrame *out);
   [[nodiscard]] const codec_internal::ImageMetadata &metadata() const { return metadata_; }
   [[nodiscard]] const ModularImage &image() const { return image_; }
 

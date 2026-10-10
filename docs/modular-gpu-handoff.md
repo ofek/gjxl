@@ -5,8 +5,9 @@ Start with [the frozen fixture protocol](../tools/modular_oracle/README.md),
 [architecture](modular-architecture.md), and [qualification](modular-p2.6.md).
 The public API currently resolves automatic Modular execution to CPU; explicit
 Metal/CUDA requests remain unsupported/unavailable. Private Metal unpack/RCT,
-owning preparation and explicit host readback are implemented for qualification;
-encoder integration remains the next step.
+owning preparation, explicit host readback and a private GPU-assisted complete
+encoder path are implemented for qualification. Public backend routing remains
+unchanged pending end-to-end performance evidence.
 
 ## Implemented capability boundary
 
@@ -71,8 +72,7 @@ odd offsets/strides, exact backing ends, plane ranges and alignment, device-limi
 boundaries, invalid inputs, large shape-only plans, allocation-free planning and
 actual managed host-destination capacity. It is included in native Modular CI.
 The qualification below covers arithmetic, borrowed-buffer submission and owning
-preparation/readback. Admission across the full workflow and complete
-GPU-assisted files remain subsequent qualification gates.
+preparation/readback, complete-call admission and GPU-assisted files.
 
 ## First slice: fused Metal kernel
 
@@ -134,8 +134,8 @@ Without an admitted context, standalone private calls use the existing unbounded
 default ledger; this is accounting, not full-workflow admission. A caller planning
 preparation plus readback reserves the maximum of upload-plus-device and
 device-plus-host capacities, with previous device/host outputs charged separately.
-An insufficient reservation fails without escaping its capacity. Composition
-with encoder phases and complete-call admission belongs to step 4.
+An insufficient reservation fails without escaping its capacity. The complete
+workflow below composes these phases with the remaining encoder work.
 
 A scope guard drains any committed work on status failures or exceptions before
 destroying either backing or its tickets. The internal kernel seam requires a
@@ -159,6 +159,69 @@ host lifetime, failure-atomic replacement, CPU suspension, concurrent calls and
 both library paths. Qualification artifacts for step 3 are retained under
 `build/modular-preparation-qualification/`, using committed CPU sources to keep
 concurrent CPU policy edits outside this slice's evidence.
+
+## First slice: private encoder continuation
+
+[`EncodeGpuModularImage` and `EncodeGpuModularImageOwned`](../src/codestream/modular/gpu_workflow.h)
+accept an already initialized backend with the preparation capability. They
+support all six input formats, explicit byte order, prescribed RCT and prescribed
+CPU tree/predictor/entropy decisions. Search and additional transforms are
+rejected before allocation or submission. Explicit failure is returned without
+CPU fallback. These are private experiment/qualification entry points; the
+installed API, automatic backend choice and CLI retain their existing behavior.
+
+After the synchronous GPU preparation, the workflow reads back a fresh managed
+image and releases the device owner. `ModularEncoderFrame::AdoptPreparedRct`
+validates the source shape and channel roles, reconstructs canonical metadata,
+and moves that image into a completed frame without re-unpacking, repeating RCT,
+or copying samples. It is a private handoff requiring already qualified sample
+provenance, not a general unchecked transformed-input API.
+
+The CPU workflow and GPU workflow use the same
+[`EncodePreparedModularFrame`](../src/codestream/modular/prepared_encoder.cpp)
+continuation: canonical stream planning, CPU prediction/tokenization, model
+selection, entropy emission, section assembly and final file construction.
+Samples are released after tokenization and before modeling, matching the
+existing CPU plan. Prescribed decisions and serialization therefore have one
+implementation. The scalar unpack/RCT implementation remains the oracle.
+
+`ComputeGpuModularWorkflowStoragePlan` is allocation-free and composes the fresh
+call as `max(input.peak_bytes, cpu.working.peak_bytes)`. The input peak includes
+both upload-plus-device and device-plus-host phases. The CPU peak already includes
+the host image, which becomes the continuation's input. Releasing device storage
+before tokenization is required for this bound. Complete memory admission occurs
+before CPU participation or GPU sample allocation. Nested same-domain calls share
+the outer reservation; foreign domains are rejected. Existing managed output
+remains charged separately, so replacement requires capacity for the old result
+plus the fresh-call reservation. Public vector output is published and uncharged
+only after every fallible stage succeeds.
+
+`modular_gpu_workflow` checks shape-only phase composition (including an
+upload-dominated padded input), adoption without copying, early rejection and
+admission ordering in CPU-only builds. `metal_modular_workflow` compares complete
+files byte-for-byte with scalar encoding and, when the pinned oracle is configured,
+independently decodes every file to the original integers. The matrix covers all
+formats, endian orders and RCTs, both coders, every predictor, a weighted split
+tree, alpha/invisible RGB, clipped groups and DC-group boundaries, and serial/
+parallel CPU continuations. It also checks memory/CPU caps, nested and concurrent
+calls, owned-output replacement, GPU faults and every managed host allocation
+boundary through final publication. File-loaded and embedded libraries are both
+exercised. Files, case ledger and build/test provenance are retained under
+`build/modular-workflow-qualification/` using committed CPU policy sources.
+
+The local M4 Pro checkpoint passed 797 complete CPU/GPU byte comparisons,
+6,735,280 original-sample comparisons through the pinned decoder and 786 injected
+workflow failures. CPU regression gates passed, including all 286 frozen
+stage/file artifacts and the public API backend checks. ASan/UBSan passed the
+GPU workflow with the repository's existing `metal-ubsan.supp` exclusion for
+null calls inside `third_party/metal-cpp`. The unsuppressed run stops in the
+vendor `NSObject.hpp` wrapper during backend initialization; its diagnostic is
+retained separately. Native code remains instrumented; the pinned libjxl
+binaries are not rebuilt with sanitizers.
+
+Performance qualification is step 5: include upload, synchronization, readback,
+the CPU continuation and publication in end-to-end comparisons. This slice does
+not establish a speedup or justify automatic GPU dispatch.
 
 ## Proposed first operations
 

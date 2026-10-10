@@ -354,6 +354,8 @@ add_library(
   src/codestream/modular/frame_encoder.cpp
   src/codestream/modular/public.cpp
   src/codestream/modular/workflow.cpp
+  src/codestream/modular/prepared_encoder.cpp
+  src/codestream/modular/gpu_workflow.cpp
   src/codestream/huffman.cpp
   src/codestream/rate_control.cpp
   src/codestream/cpu_workflow_storage_plan.cpp
@@ -2343,6 +2345,11 @@ if(GJXL_BUILD_TESTS)
   add_test(NAME modular_gpu_preparation COMMAND gjxl_modular_gpu_preparation_test)
   set_tests_properties(modular_gpu_preparation PROPERTIES TIMEOUT 30)
 
+  add_executable(gjxl_modular_gpu_workflow_test tests/modular_gpu_workflow_test.cpp)
+  target_link_libraries(gjxl_modular_gpu_workflow_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_gpu_workflow COMMAND gjxl_modular_gpu_workflow_test)
+  set_tests_properties(modular_gpu_workflow PROPERTIES TIMEOUT 30)
+
   add_executable(gjxl_modular_workflow_test tests/modular_workflow_test.cpp)
   target_link_libraries(gjxl_modular_workflow_test PRIVATE gjxl_codestream)
   add_test(NAME modular_workflow COMMAND gjxl_modular_workflow_test)
@@ -3524,6 +3531,18 @@ if(GJXL_BUILD_TESTS)
   endif()
   add_test(NAME metal_modular_input COMMAND gjxl_metal_modular_input_test)
   set_tests_properties(metal_modular_input PROPERTIES TIMEOUT 120)
+
+  add_executable(gjxl_metal_modular_workflow_test tests/metal_modular_workflow_test.cpp)
+  target_link_libraries(gjxl_metal_modular_workflow_test PRIVATE gjxl_codestream gjxl_metal)
+  target_compile_definitions(gjxl_metal_modular_workflow_test PRIVATE
+    GJXL_METALLIB_PATH="${GJXL_METALLIB}")
+  if(TARGET gjxl_modular_reference)
+    target_link_libraries(gjxl_metal_modular_workflow_test PRIVATE gjxl_modular_reference)
+    target_compile_definitions(gjxl_metal_modular_workflow_test PRIVATE GJXL_MODULAR_WORKFLOW_REFERENCE=1)
+  endif()
+  add_test(NAME metal_modular_workflow COMMAND gjxl_metal_modular_workflow_test
+    "${CMAKE_CURRENT_BINARY_DIR}/metal-modular-workflow")
+  set_tests_properties(metal_modular_workflow PROPERTIES TIMEOUT 600)
 
   add_executable(gjxl_metal_resource_budget_test tests/metal_resource_budget_test.cpp)
   target_link_libraries(gjxl_metal_resource_budget_test PRIVATE gjxl_codestream gjxl_metal)

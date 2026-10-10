@@ -159,4 +159,30 @@ Status ModularEncoderFrame::Prepare(PackedModularImageView input, const ModularC
   *out = std::move(frame);
   return Status::Ok();
 }
+Status ModularEncoderFrame::AdoptPreparedRct(Extent2D extent, PackedModularFormat format,
+                                            uint8_t rct, ModularImage &&image,
+                                            ModularEncoderFrame *out) {
+  if (!out)
+    return Status::InvalidArgument("Null prepared Modular frame output");
+  ModularInputProfile profile;
+  if (auto s = ResolveModularInput(extent, format, &profile); !s.ok())
+    return s;
+  if (rct >= 42 || (rct && profile.channel_count < 3) || image.metadata_channels() != 0 ||
+      image.channel_count() != profile.channel_count)
+    return Status::InvalidArgument("Invalid prepared Modular frame shape/RCT");
+  for (size_t c = 0; c < profile.channel_count; ++c) {
+    const auto view = image.view(c);
+    if (view.descriptor != profile.descriptors[c])
+      return Status::InvalidArgument("Prepared Modular channel differs from source profile");
+    if (auto s = view.Validate(); !s.ok())
+      return s;
+  }
+  ModularEncoderFrame frame;
+  frame.metadata_ = profile.metadata;
+  if (rct)
+    frame.metadata_.modular_16_bit_buffer_sufficient = false;
+  frame.image_ = std::move(image);
+  *out = std::move(frame);
+  return Status::Ok();
+}
 } // namespace gjxl::modular_internal

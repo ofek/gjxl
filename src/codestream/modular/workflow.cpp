@@ -2,7 +2,7 @@
 // Copyright (c) 2026 Yunho Cho
 #include "codestream/modular/workflow.h"
 #include "codec/modular/profile.h"
-#include "codestream/modular/frame_encoder.h"
+#include "codestream/modular/prepared_encoder.h"
 #include "codestream/modular/search.h"
 #include "codestream/workflow_admission_scope.h"
 #include "core/publication_output.h"
@@ -35,30 +35,12 @@ Status Encode(PackedModularImageView input, ModularEncodingOptions options,
   thread_budget_internal::EncodeScope threads(options.cpu_thread_count);
   resource_budget_internal::ManagedHostScope managed(
       resource_budget_internal::ResourceClass::kPreparation);
-  ModularStreamPlan layout;
-  PreparedModularTokens tokens;
-  codec_internal::ImageMetadata metadata;
-  {
-    ModularEncoderFrame frame;
-    if (auto s = ModularEncoderFrame::Prepare(input, options.coding, &frame); !s.ok())
-      return s;
-    metadata = frame.metadata();
-    if (options.coding != ModularCodingPolicy{})
-      metadata.modular_16_bit_buffer_sufficient = false;
-    ChannelShape shape;
-    if (auto s = DescribeImage(frame.image(), &shape); !s.ok())
-      return s;
-    if (auto s =
-            BuildModularStreamPlan(storage.geometry, shape.channels(), shape.metadata, &layout);
-        !s.ok())
-      return s;
-    if (auto s = TokenizeModular(frame, layout, options.coding, &tokens, storage.participants);
-        !s.ok())
-      return s;
-  }
+  ModularEncoderFrame frame;
+  if (auto s = ModularEncoderFrame::Prepare(input, options.coding, &frame); !s.ok())
+    return s;
   codestream_internal::CodestreamBuffer candidate;
-  if (auto s = EncodeModularFrame(metadata, layout, std::move(tokens), options.entropy, storage,
-                                  &candidate);
+  if (auto s = EncodePreparedModularFrame(std::move(frame), options.coding, options.entropy,
+                                         storage, &candidate);
       !s.ok())
     return s;
   output.Publish(std::move(candidate));
