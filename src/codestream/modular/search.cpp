@@ -237,10 +237,16 @@ Status ComputeModularSearchStoragePlan(Extent2D extent, PackedModularFormat form
     return s;
   if (auto s = ComputeRctRankingStorageBound(&ranking); !s.ok())
     return s;
-  if (!plan.preparation.AddVector<TrainingSample>(std::min(plan.tokens, kMaximumTrainingSamples),
-                                                  VectorCapacityPolicy::kFreshExact, 2) ||
-      !plan.preparation.Add(learning))
-    return Status::InvalidArgument("Modular search storage overflow");
+  auto add_learning = [&](ModularWorkflowStoragePlan &p) -> Status {
+    if (!p.preparation.AddVector<TrainingSample>(std::min(p.tokens, kMaximumTrainingSamples),
+                                                VectorCapacityPolicy::kFreshExact, 2) ||
+        !p.preparation.Add(learning))
+      return Status::InvalidArgument("Modular search storage overflow");
+    p.working.peak_bytes = std::max(p.working.peak_bytes, p.preparation.peak_bytes);
+    return Status::Ok();
+  };
+  if (auto s = add_learning(plan); !s.ok())
+    return s;
   plan.working.peak_bytes =
       std::max({plan.working.peak_bytes, plan.preparation.peak_bytes, baseline.working.peak_bytes,
                 ranking.peak_bytes});
@@ -250,10 +256,16 @@ Status ComputeModularSearchStoragePlan(Extent2D extent, PackedModularFormat form
       !s.ok())
     return s;
   for (size_t i = 0; i < count; ++i) {
+    // Transformed candidates may now learn any supported tree. Include the
+    // largest context model and WP rows, plus samples of the transformed
+    // token count (palette metadata can exceed the original pixel count).
+    candidates[i].tree = largest.tree;
     ModularWorkflowStoragePlan candidate;
     if (auto s = ComputeModularWorkflowStoragePlan(extent, format, mode, candidates[i], &candidate,
                                                    cpu_threads);
         !s.ok())
+      return s;
+    if (auto s = add_learning(candidate); !s.ok())
       return s;
     plan.working.peak_bytes = std::max(plan.working.peak_bytes, candidate.working.peak_bytes);
     plan.maximum_codestream_bytes =
@@ -271,9 +283,18 @@ Status ComputeModularSearchStoragePlan(Extent2D extent, PackedModularFormat form
 Status LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStreamPlan &plan,
                             uint8_t rct, ModularCodingPolicy *single, ModularCodingPolicy *split,
                             ModularCodingPolicy *entropy) {
+  ModularCodingPolicy base;
+  base.rct = rct;
+  return LearnModularPolicies(frame, plan, base, single, split, entropy);
+}
+Status LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStreamPlan &plan,
+                            const ModularCodingPolicy &base, ModularCodingPolicy *single,
+                            ModularCodingPolicy *split, ModularCodingPolicy *entropy) {
   ProfileScope profile_scope(ProfileStage::kTraining);
-  if (!single || !split || rct >= 42 || plan.geometry.source() != frame.metadata().extent)
+  if (!single || !split || plan.geometry.source() != frame.metadata().extent)
     return Status::InvalidArgument("Null Modular learned policy");
+  if (auto s = ValidateCodingPolicy(base); !s.ok())
+    return s;
   size_t total = 0;
   for (size_t c = 0; c < frame.image().channel_count(); ++c) {
     size_t area;
@@ -305,6 +326,7 @@ Status LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStrea
     if (stream.slice_begin > plan.slices.size() ||
         stream.slice_count > plan.slices.size() - stream.slice_begin)
       return Status::InvalidArgument("Invalid Modular training slices");
+    size_t property_channel = 0;
     for (const auto &slice :
          std::span(plan.slices).subspan(stream.slice_begin, stream.slice_count)) {
       if (slice.channel >= frame.image().channel_count())
@@ -338,14 +360,14 @@ Status LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStrea
                            (end - begin);
       };
       size_t local_sample = 0, next_sample = position(0), local = 0;
-      WeightedPredictor<ResourceClass::kPreparation> wp(w);
+      WeightedPredictor<ResourceClass::kPreparation> wp(w, base.weighted);
       for (size_t y = 0; y < h; ++y) {
         int64_t previous_gradient = 0;
         for (size_t x = 0; x < w; ++x, ++ordinal, ++local) {
           const auto n = Neighbors(view, x, y);
           const auto weighted = wp.Predict(x, y, n.top, n.left, n.top_right, n.top_left, n.top_top);
           const auto properties =
-              Properties(n, slice.channel, stream.id, x, y, previous_gradient, weighted.second);
+              Properties(n, property_channel, stream.id, x, y, previous_gradient, weighted.second);
           previous_gradient = properties[9];
           const bool original_sample = ordinal % stride == 0;
           const bool entropy_sample = entropy && local == next_sample;
@@ -374,17 +396,16 @@ Status LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStrea
         }
       }
       sampled_slices += area != 0;
+      ++property_channel;
     }
   }
   if (ordinal != total || !used)
     return Status::InvalidArgument("Incomplete Modular training coverage");
-  ModularCodingPolicy leaf, branch;
-  leaf.rct = branch.rct = rct;
+  ModularCodingPolicy leaf = base, branch = base;
   if (auto status = LearnDecisionTrees(std::span(samples).first(used), &leaf.tree, &branch.tree);
       !status.ok())
     return status;
-  ModularCodingPolicy learned;
-  learned.rct = rct;
+  ModularCodingPolicy learned = base;
   if (entropy) {
     if (sampled != stratified.size())
       return Status::InvalidArgument("Incomplete Modular entropy sampling coverage");

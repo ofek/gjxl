@@ -33,6 +33,13 @@ ComputeRctRankingStorageBound(resource_budget_internal::HostStorageBound *out);
                                           const ModularStreamPlan &plan, uint8_t rct,
                                           ModularCodingPolicy *single, ModularCodingPolicy *split,
                                           ModularCodingPolicy *entropy = nullptr);
+// Frame and layout must describe the completed transforms in base. Learn on
+// those channels (including metadata), preserving transforms and WP parameters.
+[[nodiscard]] Status LearnModularPolicies(const ModularEncoderFrame &frame,
+                                          const ModularStreamPlan &plan,
+                                          const ModularCodingPolicy &base,
+                                          ModularCodingPolicy *single, ModularCodingPolicy *split,
+                                          ModularCodingPolicy *entropy = nullptr);
 [[nodiscard]] Status ComputeModularSearchStoragePlan(Extent2D extent, PackedModularFormat format,
                                                      EntropyCodingMode mode,
                                                      ModularWorkflowStoragePlan *out,

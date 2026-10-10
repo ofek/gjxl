@@ -20,7 +20,7 @@ unchanged pending end-to-end performance evidence.
 | Tree | One prescribed global tree; properties 0–15; at most 31 nodes/16 leaves; exact signed offsets and positive multipliers; no local or previous-channel trees |
 | Transforms | Optional first RCT, types 0–41; up to eight explicit transforms; exact palettes up to 256 colors over 1–4 channels; explicit scalar horizontal/vertical squeeze over 1–19 channels with nonempty residuals |
 | Entropy | Shared native prefix or ANS, resolved HybridUint/context maps; canonical stream and section order; no LZ77 |
-| Policy | Default gradient leaf and identity transforms; opt-in bounded CPU search, at most 23 color/9 gray complete candidates, including [context learning](modular-context-learning.md) and [bounded RCT selection](modular-rct-search.md); earlier candidates win ties |
+| Policy | Default gradient leaf and identity transforms; opt-in bounded CPU search, at most 27 color/13 gray complete candidates, including [context learning](modular-context-learning.md), [bounded RCT selection](modular-rct-search.md), and [learning after transforms](modular-palette-context.md); earlier candidates win ties |
 | Execution | Serial oracle and up to four participants over independent streams; shared domain admission/CPU limits, atomic publication, joined workers on failure |
 | Entry points | Installed C++ `gjxl/modular.hpp`, sized C options, Rust safe wrapper, explicit integer PGM/PPM/PAM CLI route |
 
@@ -262,7 +262,7 @@ cannot select Metal/CUDA dispatch thresholds.
 
 | Boundary | Required specification and gate |
 | --- | --- |
-| Inputs | Immutable borrowed planes, explicit extents/element strides/shifts/roles and metadata count; canonical stream ID and slice origin; validated prescribed transforms/tree/WP/model; no implicit RGB, padding or float conversion |
+| Inputs | Immutable borrowed planes, explicit extents/element strides/shifts/roles and metadata count; canonical stream ID, stream-local channel property and full-image slice origin; validated prescribed transforms/tree/WP/model; no implicit RGB, padding or float conversion |
 | Arithmetic | Signed int32 storage, sufficiently wide signed intermediates and exact rounding/division; reject unrepresentable values before publication; no saturation, reassociation or reduced precision |
 | Outputs | Disjoint owned plane/token ranges in canonical order; exact context/value pairs; stable mapping back to source channel and stream; no pointers into temporary readback storage |
 | Memory | Checked device and host capacities, staging/readback/scratch and old/new-output overlap included in admission; retain every owner until its last fence completes; distinguish reserved capacity from observed backing |

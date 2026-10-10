@@ -1,0 +1,843 @@
+{
+  "schema": 1,
+  "feature": "CPU Modular context learning after palette/Squeeze",
+  "base_revision": "fa4d9f305b837c9e652cd255e448066b7d071608",
+  "branch": "feat/modular-palette-context",
+  "worktree": "/Users/yunhocho/GitHub/gjxl-modular-palette-context",
+  "libjxl_revision": "e8ff09762481785938d8e4e01333ed3917571161",
+  "reference_build": "/Users/yunhocho/GitHub/gjxl/build/pinned-libjxl",
+  "baseline": "Frozen outputs and archives from gjxl-modular/build/modular-rct-search/rate; prior CPU RCT qualification at 710d291; GPU handoff commit fa4d9f3 is the isolated branch base.",
+  "policy": {
+    "maximum_new_candidates": 4,
+    "maximum_color_candidates": 27,
+    "maximum_gray_candidates": 13,
+    "maximum_training_samples": 4096,
+    "maximum_tree_leaves": 16,
+    "new_candidates": "One entropy-learned tree per eligible retained transform: exact all-channel palette and H/V/HV Squeeze. Earlier complete-file candidates remain available and win ties.",
+    "new_transform_features": false
+  },
+  "channel_property_fix": {
+    "passed": true,
+    "total_artifacts": 286,
+    "unchanged_artifacts": 284,
+    "changed": [
+      "palette-ans/decisions.bin",
+      "palette-prefix/decisions.bin"
+    ],
+    "changed_integers_per_trace": 2313,
+    "changed_field": "property 0, from 1 to 0; all other integer fields unchanged",
+    "native_reference_match": true,
+    "all_complete_files_unchanged": true,
+    "source_v1_manifest_sha256": "c6ecb4dfa244d03be1e5cd7b0df760079f3963b12da6b766b4f2ca6c7734fdeb",
+    "v2_manifest_sha256": "34bb2bba242d040c130f930ed2b211229d4d0cc19a316b2facaabfba9b97e16e"
+  },
+  "rate": {
+    "verification": {
+      "sample_exact_outputs": 64,
+      "unchanged_default_outputs": 32,
+      "nonregressing_search_outputs": 32,
+      "equal_size_outputs_byte_identical": true
+    },
+    "groups": {
+      "non-synthetic-11": {
+        "sp": {
+          "before_bytes": 10484090,
+          "after_bytes": 10483713,
+          "reduction_percent": 0.003595924872834555,
+          "libjxl_e9_bytes": 7673910,
+          "before_gap_to_e9_percent": 36.61992387192448,
+          "after_gap_to_e9_percent": 36.615011122100725
+        },
+        "sa": {
+          "before_bytes": 8368742,
+          "after_bytes": 8368624,
+          "reduction_percent": 0.0014100088161383972,
+          "libjxl_e9_bytes": 7673910,
+          "before_gap_to_e9_percent": 9.054471579677115,
+          "after_gap_to_e9_percent": 9.05293390201345
+        }
+      },
+      "rgb-photos-4": {
+        "sp": {
+          "before_bytes": 3710062,
+          "after_bytes": 3710062,
+          "reduction_percent": 0.0,
+          "libjxl_e9_bytes": 3238540,
+          "before_gap_to_e9_percent": 14.559709004674936,
+          "after_gap_to_e9_percent": 14.559709004674936
+        },
+        "sa": {
+          "before_bytes": 3486826,
+          "after_bytes": 3486826,
+          "reduction_percent": 0.0,
+          "libjxl_e9_bytes": 3238540,
+          "before_gap_to_e9_percent": 7.666602851902393,
+          "after_gap_to_e9_percent": 7.666602851902393
+        }
+      },
+      "rgba-photos-2": {
+        "sp": {
+          "before_bytes": 4445237,
+          "after_bytes": 4445237,
+          "reduction_percent": 0.0,
+          "libjxl_e9_bytes": 3943782,
+          "before_gap_to_e9_percent": 12.715079078914604,
+          "after_gap_to_e9_percent": 12.715079078914604
+        },
+        "sa": {
+          "before_bytes": 4222479,
+          "after_bytes": 4222479,
+          "reduction_percent": 0.0,
+          "libjxl_e9_bytes": 3943782,
+          "before_gap_to_e9_percent": 7.0667445614387425,
+          "after_gap_to_e9_percent": 7.0667445614387425
+        }
+      },
+      "gray-photo-1": {
+        "sp": {
+          "before_bytes": 102038,
+          "after_bytes": 102038,
+          "reduction_percent": 0.0,
+          "libjxl_e9_bytes": 90153,
+          "before_gap_to_e9_percent": 13.183144210397879,
+          "after_gap_to_e9_percent": 13.183144210397879
+        },
+        "sa": {
+          "before_bytes": 94001,
+          "after_bytes": 94001,
+          "reduction_percent": 0.0,
+          "libjxl_e9_bytes": 90153,
+          "before_gap_to_e9_percent": 4.268299446496515,
+          "after_gap_to_e9_percent": 4.268299446496515
+        }
+      },
+      "graphics-4": {
+        "sp": {
+          "before_bytes": 2226753,
+          "after_bytes": 2226376,
+          "reduction_percent": 0.016930481288224275,
+          "libjxl_e9_bytes": 401435,
+          "before_gap_to_e9_percent": 454.69826995653096,
+          "after_gap_to_e9_percent": 454.6043568697298
+        },
+        "sa": {
+          "before_bytes": 565436,
+          "after_bytes": 565318,
+          "reduction_percent": 0.020868851647226627,
+          "libjxl_e9_bytes": 401435,
+          "before_gap_to_e9_percent": 40.853687396465176,
+          "after_gap_to_e9_percent": 40.82429284940277
+        }
+      },
+      "synthetic-5": {
+        "sp": {
+          "before_bytes": 896526,
+          "after_bytes": 876462,
+          "reduction_percent": 2.2379719048861935,
+          "libjxl_e9_bytes": 837340,
+          "before_gap_to_e9_percent": 7.068335443189144,
+          "after_gap_to_e9_percent": 4.672176176941267
+        },
+        "sa": {
+          "before_bytes": 852476,
+          "after_bytes": 837274,
+          "reduction_percent": 1.7832760101164191,
+          "libjxl_e9_bytes": 837340,
+          "before_gap_to_e9_percent": 1.8076289201519158,
+          "after_gap_to_e9_percent": -0.007882102849499084
+        }
+      },
+      "all-16": {
+        "sp": {
+          "before_bytes": 11380616,
+          "after_bytes": 11360175,
+          "reduction_percent": 0.17961242168261782,
+          "libjxl_e9_bytes": 8511250,
+          "before_gap_to_e9_percent": 33.712627404905284,
+          "after_gap_to_e9_percent": 33.47246291672785
+        },
+        "sa": {
+          "before_bytes": 9221218,
+          "after_bytes": 9205898,
+          "reduction_percent": 0.1661385730171383,
+          "libjxl_e9_bytes": 8511250,
+          "before_gap_to_e9_percent": 8.34152445292995,
+          "after_gap_to_e9_percent": 8.161527390218826
+        }
+      }
+    },
+    "per_image": {
+      "photo-macan": {
+        "before_bytes": 268426,
+        "after_bytes": 268426,
+        "before_rct": 13,
+        "after_rct": 13,
+        "before_transforms": 0,
+        "after_transforms": 0,
+        "libjxl_e9_bytes": 252153
+      },
+      "photo-ria": {
+        "before_bytes": 219767,
+        "after_bytes": 219767,
+        "before_rct": 0,
+        "after_rct": 0,
+        "before_transforms": 0,
+        "after_transforms": 0,
+        "libjxl_e9_bytes": 208131
+      },
+      "photo-bliznaca": {
+        "before_bytes": 250237,
+        "after_bytes": 250237,
+        "before_rct": 41,
+        "after_rct": 41,
+        "before_transforms": 0,
+        "after_transforms": 0,
+        "libjxl_e9_bytes": 240347
+      },
+      "photo-flower": {
+        "before_bytes": 2748396,
+        "after_bytes": 2748396,
+        "before_rct": 27,
+        "after_rct": 27,
+        "before_transforms": 0,
+        "after_transforms": 0,
+        "libjxl_e9_bytes": 2537909
+      },
+      "gray-macan": {
+        "before_bytes": 94001,
+        "after_bytes": 94001,
+        "before_rct": 0,
+        "after_rct": 0,
+        "before_transforms": 0,
+        "after_transforms": 0,
+        "libjxl_e9_bytes": 90153
+      },
+      "alpha-ria": {
+        "before_bytes": 251925,
+        "after_bytes": 251925,
+        "before_rct": 0,
+        "after_rct": 0,
+        "before_transforms": 0,
+        "after_transforms": 0,
+        "libjxl_e9_bytes": 228013
+      },
+      "alpha-flower": {
+        "before_bytes": 3970554,
+        "after_bytes": 3970554,
+        "before_rct": 13,
+        "after_rct": 13,
+        "before_transforms": 0,
+        "after_transforms": 0,
+        "libjxl_e9_bytes": 3715769
+      },
+      "chessboard": {
+        "before_bytes": 141670,
+        "after_bytes": 141670,
+        "before_rct": 0,
+        "after_rct": 0,
+        "before_transforms": 0,
+        "after_transforms": 0,
+        "libjxl_e9_bytes": 136329
+      },
+      "splines": {
+        "before_bytes": 396670,
+        "after_bytes": 396670,
+        "before_rct": 0,
+        "after_rct": 0,
+        "before_transforms": 0,
+        "after_transforms": 0,
+        "libjxl_e9_bytes": 258951
+      },
+      "gray-patches": {
+        "before_bytes": 26035,
+        "after_bytes": 25917,
+        "before_rct": 0,
+        "after_rct": 0,
+        "before_transforms": 0,
+        "after_transforms": 1,
+        "libjxl_e9_bytes": 4912
+      },
+      "palette-358": {
+        "before_bytes": 1061,
+        "after_bytes": 1061,
+        "before_rct": 2,
+        "after_rct": 2,
+        "before_transforms": 0,
+        "after_transforms": 0,
+        "libjxl_e9_bytes": 1243
+      },
+      "gray16-ramp": {
+        "before_bytes": 1676,
+        "after_bytes": 1431,
+        "before_rct": 0,
+        "after_rct": 0,
+        "before_transforms": 0,
+        "after_transforms": 1,
+        "libjxl_e9_bytes": 2502
+      },
+      "screen-pattern": {
+        "before_bytes": 3241,
+        "after_bytes": 464,
+        "before_rct": 0,
+        "after_rct": 0,
+        "before_transforms": 0,
+        "after_transforms": 1,
+        "libjxl_e9_bytes": 343
+      },
+      "palette-pattern": {
+        "before_bytes": 10308,
+        "after_bytes": 670,
+        "before_rct": 10,
+        "after_rct": 0,
+        "before_transforms": 0,
+        "after_transforms": 1,
+        "libjxl_e9_bytes": 1047
+      },
+      "noise16": {
+        "before_bytes": 808781,
+        "after_bytes": 808588,
+        "before_rct": 34,
+        "after_rct": 6,
+        "before_transforms": 0,
+        "after_transforms": 1,
+        "libjxl_e9_bytes": 825073
+      },
+      "alpha16-ramp": {
+        "before_bytes": 28470,
+        "after_bytes": 26121,
+        "before_rct": 3,
+        "after_rct": 6,
+        "before_transforms": 0,
+        "after_transforms": 1,
+        "libjxl_e9_bytes": 8375
+      }
+    }
+  },
+  "validation": {
+    "cpu_suites": {
+      "foundation": {
+        "returncode": 0,
+        "seconds": 0.06878091601538472,
+        "command": [
+          "/Users/yunhocho/GitHub/gjxl-modular-palette-context/build/modular-palette-context/gjxl_modular_foundation_test"
+        ]
+      },
+      "stream": {
+        "returncode": 0,
+        "seconds": 0.07536016599624418,
+        "command": [
+          "/Users/yunhocho/GitHub/gjxl-modular-palette-context/build/modular-palette-context/gjxl_modular_stream_test"
+        ]
+      },
+      "oracle": {
+        "returncode": 0,
+        "seconds": 0.10422516698599793,
+        "command": [
+          "/Users/yunhocho/GitHub/gjxl-modular-palette-context/build/modular-palette-context/gjxl_modular_oracle_test"
+        ]
+      },
+      "policy": {
+        "returncode": 0,
+        "seconds": 18.40247112500947,
+        "command": [
+          "/Users/yunhocho/GitHub/gjxl-modular-palette-context/build/modular-palette-context/gjxl_modular_policy_test"
+        ]
+      },
+      "conformance": {
+        "returncode": 0,
+        "seconds": 14.102215167018585,
+        "command": [
+          "/Users/yunhocho/GitHub/gjxl-modular-palette-context/build/modular-palette-context/gjxl_modular_conformance_test"
+        ]
+      },
+      "transform": {
+        "returncode": 0,
+        "seconds": 7.742338084004587,
+        "command": [
+          "/Users/yunhocho/GitHub/gjxl-modular-palette-context/build/modular-palette-context/gjxl_modular_transform_test"
+        ]
+      },
+      "api": {
+        "returncode": 0,
+        "seconds": 9.396655958000338,
+        "command": [
+          "/Users/yunhocho/GitHub/gjxl-modular-palette-context/build/modular-palette-context/gjxl_modular_api_test"
+        ]
+      },
+      "frozen_oracle": {
+        "returncode": 0,
+        "seconds": 0.41054958300082944,
+        "command": [
+          "python3",
+          "/Users/yunhocho/GitHub/gjxl-modular-palette-context/tools/modular_oracle/verify.py",
+          "/Users/yunhocho/GitHub/gjxl-modular-palette-context/build/modular-palette-context/gjxl_modular_capture",
+          "/Users/yunhocho/GitHub/gjxl-modular-palette-context/testdata/modular",
+          "/Users/yunhocho/GitHub/gjxl-modular-palette-context/build/modular-palette-context/checks/frozen-native"
+        ]
+      }
+    },
+    "additional_release_suites": [
+      {
+        "name": "modular_gpu_input",
+        "classname": "modular_gpu_input",
+        "time": "0.0581835",
+        "status": "run"
+      },
+      {
+        "name": "modular_gpu_token_plan",
+        "classname": "modular_gpu_token_plan",
+        "time": "0.0746137",
+        "status": "run"
+      },
+      {
+        "name": "modular_gpu_token_handoff",
+        "classname": "modular_gpu_token_handoff",
+        "time": "0.36383",
+        "status": "run"
+      },
+      {
+        "name": "modular_gpu_preparation",
+        "classname": "modular_gpu_preparation",
+        "time": "0.0447358",
+        "status": "run"
+      },
+      {
+        "name": "modular_gpu_workflow",
+        "classname": "modular_gpu_workflow",
+        "time": "0.0550255",
+        "status": "run"
+      },
+      {
+        "name": "modular_transform",
+        "classname": "modular_transform",
+        "time": "7.70671",
+        "status": "run"
+      },
+      {
+        "name": "modular_cli",
+        "classname": "modular_cli",
+        "time": "1.61798",
+        "status": "run"
+      },
+      {
+        "name": "modular_frozen_reference",
+        "classname": "modular_frozen_reference",
+        "time": "0.451541",
+        "status": "run"
+      }
+    ],
+    "policy_cases": {
+      "stage_cases": 835,
+      "complete_files": 1738
+    },
+    "transform_cases": {
+      "stage_cases": 453,
+      "complete_files": 906
+    },
+    "sanitizers": {
+      "passed": true,
+      "wall_seconds": 640.98,
+      "suites": [
+        {
+          "name": "modular_foundation",
+          "classname": "modular_foundation",
+          "time": "0.216329",
+          "status": "run"
+        },
+        {
+          "name": "modular_policy",
+          "classname": "modular_policy",
+          "time": "640.975",
+          "status": "run"
+        },
+        {
+          "name": "modular_transform",
+          "classname": "modular_transform",
+          "time": "336.369",
+          "status": "run"
+        }
+      ],
+      "reference_limit": "Native code instrumented; pinned libjxl archives not rebuilt with sanitizers. Existing reference targets disable vptr because pinned archives omit RTTI."
+    },
+    "workflow_allocation_sweep": {
+      "passed": true,
+      "fault_cases": 44,
+      "failure_points": 171229,
+      "search_failure_points": 152882,
+      "partition": "Four disjoint allocation-index shards; verified union covers every index from zero to successful allocation count minus one. Admission, output retention, CPU participation, cleanup and recovery checks run in every shard.",
+      "wall_seconds": 1934.3268761670042,
+      "case_counts": [
+        {
+          "case": "prefix format 1 1x1 policy baseline",
+          "failure_points": 292
+        },
+        {
+          "case": "prefix format 1 17x19 policy baseline",
+          "failure_points": 319
+        },
+        {
+          "case": "prefix format 1 257x3 policy baseline",
+          "failure_points": 324
+        },
+        {
+          "case": "prefix format 0 17x19 policy baseline",
+          "failure_points": 315
+        },
+        {
+          "case": "prefix format 0 257x3 policy baseline",
+          "failure_points": 299
+        },
+        {
+          "case": "prefix format 3 17x19 policy baseline",
+          "failure_points": 306
+        },
+        {
+          "case": "prefix format 3 257x3 policy baseline",
+          "failure_points": 311
+        },
+        {
+          "case": "prefix format 4 17x19 policy baseline",
+          "failure_points": 324
+        },
+        {
+          "case": "prefix format 4 257x3 policy baseline",
+          "failure_points": 331
+        },
+        {
+          "case": "prefix format 2 17x19 policy baseline",
+          "failure_points": 322
+        },
+        {
+          "case": "prefix format 2 257x3 policy baseline",
+          "failure_points": 329
+        },
+        {
+          "case": "prefix format 5 17x19 policy baseline",
+          "failure_points": 327
+        },
+        {
+          "case": "prefix format 5 257x3 policy baseline",
+          "failure_points": 334
+        },
+        {
+          "case": "ANS format 1 1x1 policy baseline",
+          "failure_points": 428
+        },
+        {
+          "case": "ANS format 1 17x19 policy baseline",
+          "failure_points": 455
+        },
+        {
+          "case": "ANS format 1 257x3 policy baseline",
+          "failure_points": 461
+        },
+        {
+          "case": "ANS format 0 17x19 policy baseline",
+          "failure_points": 454
+        },
+        {
+          "case": "ANS format 0 257x3 policy baseline",
+          "failure_points": 435
+        },
+        {
+          "case": "ANS format 3 17x19 policy baseline",
+          "failure_points": 442
+        },
+        {
+          "case": "ANS format 3 257x3 policy baseline",
+          "failure_points": 445
+        },
+        {
+          "case": "ANS format 4 17x19 policy baseline",
+          "failure_points": 464
+        },
+        {
+          "case": "ANS format 4 257x3 policy baseline",
+          "failure_points": 469
+        },
+        {
+          "case": "ANS format 2 17x19 policy baseline",
+          "failure_points": 462
+        },
+        {
+          "case": "ANS format 2 257x3 policy baseline",
+          "failure_points": 467
+        },
+        {
+          "case": "ANS format 5 17x19 policy baseline",
+          "failure_points": 467
+        },
+        {
+          "case": "ANS format 5 257x3 policy baseline",
+          "failure_points": 469
+        },
+        {
+          "case": "prefix format 5 17x19 policy prescribed",
+          "failure_points": 756
+        },
+        {
+          "case": "prefix format 5 257x3 policy prescribed",
+          "failure_points": 782
+        },
+        {
+          "case": "prefix format 5 17x19 policy search",
+          "failure_points": 27352
+        },
+        {
+          "case": "prefix format 5 257x3 policy search",
+          "failure_points": 27787
+        },
+        {
+          "case": "ANS format 5 17x19 policy prescribed",
+          "failure_points": 1284
+        },
+        {
+          "case": "ANS format 5 257x3 policy prescribed",
+          "failure_points": 1308
+        },
+        {
+          "case": "ANS format 5 17x19 policy search",
+          "failure_points": 45530
+        },
+        {
+          "case": "ANS format 5 257x3 policy search",
+          "failure_points": 52213
+        },
+        {
+          "case": "prefix format 5 17x19 policy prescribed",
+          "failure_points": 330
+        },
+        {
+          "case": "prefix format 5 257x3 policy prescribed",
+          "failure_points": 340
+        },
+        {
+          "case": "prefix format 5 17x19 policy prescribed",
+          "failure_points": 354
+        },
+        {
+          "case": "prefix format 5 257x3 policy prescribed",
+          "failure_points": 355
+        },
+        {
+          "case": "prefix format 5 17x19 policy prescribed",
+          "failure_points": 337
+        },
+        {
+          "case": "ANS format 5 17x19 policy prescribed",
+          "failure_points": 477
+        },
+        {
+          "case": "ANS format 5 257x3 policy prescribed",
+          "failure_points": 480
+        },
+        {
+          "case": "ANS format 5 17x19 policy prescribed",
+          "failure_points": 503
+        },
+        {
+          "case": "ANS format 5 257x3 policy prescribed",
+          "failure_points": 503
+        },
+        {
+          "case": "ANS format 5 17x19 policy prescribed",
+          "failure_points": 487
+        }
+      ],
+      "shards": [
+        {
+          "index": 0,
+          "count": 4,
+          "returncode": 0,
+          "seconds": 1931.5465978340071,
+          "command": [
+            "/Users/yunhocho/GitHub/gjxl-modular-palette-context/build/modular-palette-context/gjxl_modular_workflow_test",
+            "--allocation-shard",
+            "0",
+            "4"
+          ]
+        },
+        {
+          "index": 1,
+          "count": 4,
+          "returncode": 0,
+          "seconds": 1934.3255847499822,
+          "command": [
+            "/Users/yunhocho/GitHub/gjxl-modular-palette-context/build/modular-palette-context/gjxl_modular_workflow_test",
+            "--allocation-shard",
+            "1",
+            "4"
+          ]
+        },
+        {
+          "index": 2,
+          "count": 4,
+          "returncode": 0,
+          "seconds": 1931.8167705840024,
+          "command": [
+            "/Users/yunhocho/GitHub/gjxl-modular-palette-context/build/modular-palette-context/gjxl_modular_workflow_test",
+            "--allocation-shard",
+            "2",
+            "4"
+          ]
+        },
+        {
+          "index": 3,
+          "count": 4,
+          "returncode": 0,
+          "seconds": 1930.9690179579775,
+          "command": [
+            "/Users/yunhocho/GitHub/gjxl-modular-palette-context/build/modular-palette-context/gjxl_modular_workflow_test",
+            "--allocation-shard",
+            "3",
+            "4"
+          ]
+        }
+      ],
+      "guard_per_case": 75000,
+      "workflow_source_sha256": "4cd6e9d9b121e98426db0f24176d6b80b0536e1e17d58dc5489455c1f16237e1",
+      "note": "Initial sweep before the channel-property correction was stopped; only these final-source shards count as passing evidence."
+    },
+    "workflow_shard_cli": [
+      {
+        "arguments": [
+          "--allocation-shard",
+          "4",
+          "4"
+        ],
+        "returncode": 1,
+        "stderr": "Invalid allocation shard"
+      },
+      {
+        "arguments": [
+          "--allocation-shard",
+          "0",
+          "0"
+        ],
+        "returncode": 1,
+        "stderr": "Invalid allocation shard"
+      },
+      {
+        "arguments": [
+          "--allocation-shard",
+          "0",
+          "65"
+        ],
+        "returncode": 1,
+        "stderr": "Invalid allocation shard"
+      },
+      {
+        "arguments": [
+          "--allocation-shard",
+          "x",
+          "4"
+        ],
+        "returncode": 1,
+        "stderr": "Invalid allocation shard"
+      },
+      {
+        "arguments": [
+          "--allocation-shard",
+          "1"
+        ],
+        "returncode": 1,
+        "stderr": "Usage: modular_workflow_test [--allocation-shard INDEX COUNT]"
+      },
+      {
+        "arguments": [
+          "--bad"
+        ],
+        "returncode": 1,
+        "stderr": "Usage: modular_workflow_test [--allocation-shard INDEX COUNT]"
+      }
+    ]
+  },
+  "scope_notes": [
+    "No full libjxl feature parity, throughput, or equal-time claim. Single-run timing overlaps tests.",
+    "Only 118 bytes saved across the 11 PNG fixtures; largest relative gains are synthetic patterns.",
+    "CPU tokenization/training now use stream-local channel property 0. Prescribed transformed trees are corrected too. Default and retained search results are unchanged where their decisions do not depend on the former invalid property.",
+    "The existing no-transform GPU token boundary is unaffected. Future transformed GPU slices must distinguish storage and stream-local channel indices.",
+    "Initial pre-correction captures/sweep were stopped or failed and are excluded from passing qualification; retained under build/modular-palette-context/before-channel-fix and transform-debug."
+  ],
+  "encoding_source_sha256": {
+    "src/codestream/modular/search.cpp": "f0fd8e4a93c2dedb90371fe4470af2b7bc59b7b55902542c8c6f7873cb232cb5",
+    "src/codestream/modular/search.h": "1121cb1bb94e5c028467976925ae203a60d5b75a2b8a3a6939148a6b675be543",
+    "src/codestream/modular/stream_plan.h": "0578ab348663c8b97de85e3576946c3fdad74879f59337be7818e13f8744ec35",
+    "src/codestream/modular/tokenization.cpp": "0c9d7d661b5303530f80b4da8191b7cb49e3e2646797692c004b92a559712d78",
+    "src/codestream/modular/workflow.cpp": "668c25e4f352e441b83c72dee74477ffc8a12280b1856cc0024d68254b5e3922"
+  },
+  "test_source_sha256": {
+    "tests/modular_policy_test.cpp": "c69e807fd65b90fc5b75a1a0fc5377dc3a248b096a7948a72b97990dfe7d34f7",
+    "tests/modular_transform_test.cpp": "8a148caeb3a6e8291a049424b1eb420678ae856dc3d9515fe6382f41ff5a2cb4",
+    "tests/modular_workflow_test.cpp": "4cd6e9d9b121e98426db0f24176d6b80b0536e1e17d58dc5489455c1f16237e1",
+    "tools/modular_oracle/capture.cpp": "6b5db4858385dd740f20c3a9f2983d794d325e38c2fe12774d8fc3578c0c0ee8",
+    "tools/modular_oracle/reference.h": "67cd29b92f954ad170f6ef3cd53dfd97c36b9cfc8d50478b6e42020ec81111c2",
+    "tools/modular_oracle/verify.py": "f9c0b6051a1e83b60249511438333e74eb97cfa8307d00d7ef4b4e7774cd7278"
+  },
+  "build": {
+    "type": "Release",
+    "architecture": "arm64",
+    "metal": false,
+    "cuda": false,
+    "native_cxx_standard": 20,
+    "sanitizer_type": "Debug ASan/UBSan, pinned libjxl archives not instrumented; existing reference targets disable vptr for no-RTTI archives",
+    "compiler": "AppleClang 21.0.0.21000334",
+    "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O"
+  },
+  "evidence_sha256": {
+    "build/modular-palette-context/CMakeCache.txt": "34bbaf7dc8557b5675f3486754a024e3b0d02cfc3b98421e75037e549b45727d",
+    "build/modular-palette-context/source.json": "6a58899e37207741832d8c724ea57f00f5f8456d10f0308a61a4d1da908574ae",
+    "build/modular-palette-context/feature.patch": "1aad5d0e84d367d55eb77e32c118388a9f07cd87c51c4750e5815ee5dabf34fa",
+    "build/modular-palette-context/summary.json": "ae7fc9ccdfa77300480e114f45420f54fcf7c63e486bb39c0bd2ca9b219a0274",
+    "build/modular-palette-context/analyze.py": "6b283a1632297613ce72143ec09e1ae4757b956c9c6067ad2c9386eb4d0cb87a",
+    "build/modular-palette-context/prepare-rate.py": "48291e0e82c0a1fcb209b294be66d30e8ddeca6c7d9ee2b9bcaa65422ca4e388",
+    "build/modular-palette-context/audit-frozen.py": "f97d90f82b53ad9763ff32d3e3466b7f9ce709e886328bb5c604822be7982b95",
+    "build/modular-palette-context/frozen-audit.json": "2df7ad2518f3cf042e84ef4c02110c4a54e97b9942a1ae782cc82a05eed671b6",
+    "build/modular-palette-context/frozen-reference-v2.log": "f30612872cdb344768a5810d020a597e60b30014c7014bd915c76a0dd3983393",
+    "build/modular-palette-context/frozen-native-v2.log": "f30612872cdb344768a5810d020a597e60b30014c7014bd915c76a0dd3983393",
+    "build/modular-palette-context/additional-tests.xml": "9b90ef1c2704e0a9f6e7fa52a388777f0f8fa39727eb92887f50df312e888142",
+    "build/modular-palette-context/additional-tests.log": "71f074ce54024a8f72094ef75de2a7e5a0c3779e129f79b6431b30953577664f",
+    "build/modular-palette-context/asan-tests.xml": "6a87e67fa4747bad78fa8fdd91c8a1d62083032fdd0e4ed3e485fd8e7e4bb3d1",
+    "build/modular-palette-context/asan-tests.log": "ec4ccbc196290065db4343028f05fac3f616a6b164d4263601c63ceb3b372520",
+    "build/modular-palette-context/asan-build.log": "503e695f8d2e36eb55609ddef5fba3e3c771fd21ff496b94816bfbe02aae4b1e",
+    "build/modular-palette-context/run-workflow-shards.py": "22fad2fd63862c968e8f60dde4088edaacf02c882186855121c5bd97361dd5d5",
+    "build/modular-palette-context/verify-workflow.py": "8771eba5ee6241d781d72793df1e2892f17d60c0e6f7d5af6b876f4156191e57",
+    "build/modular-palette-context/workflow-shards.json": "ac854f088338c2527d85b3d498abfee1dde5f96768f53ab371cab8799d6995f2",
+    "build/modular-palette-context/workflow-verification.json": "50572a1d705e3da80bc15beaa8de78680cdec283795484b7b1d5a582e04a4e13",
+    "build/modular-palette-context/workflow-shard-cli.json": "ca6307833423908f179176b00e13182fda4634a9bd1ca0b9a44fadc6373376f3",
+    "build/modular-palette-context/workflow-run.log": "f128f7a6ed39a3cc1c6f0029043480e826e4c362563350d12792e6f14cfd8019",
+    "build/modular-palette-context/allocation-count.cpp": "96c0ac3e7e8d3b12ddc6eaabcc9d376da27ccbf12b50dc0af1ec069128b6b2fe",
+    "build/modular-palette-context/allocation-count.log": "96a4bec7007ac08d55295301e714a32c1ee03aed21a5e59023d5c57cc478d9e6",
+    "build/modular-palette-context/finalize.py": "db20a1fe11f41995557c541b6d7053c689b46f011f5e2f8413e33b335f7c4133",
+    "build/modular-palette-context/workflow-shard-0.log": "b87805dc127e3faaba2ad6697e803726e55ff7432c0d773f47199e38a631fd87",
+    "build/modular-palette-context/workflow-shard-1.log": "d4b99c3b264aa3bbffcb4b0dad89e4010b75ff48a56f28bbe59850d67c105d1d",
+    "build/modular-palette-context/workflow-shard-2.log": "2c7f43c78bb815dda7e2abe6d207d425c946d69e35a2279e1c42bf9a384a9073",
+    "build/modular-palette-context/workflow-shard-3.log": "dba06949295d5bd3361a3e06975fb1a8b733b73d70124d67dd42939d9a80b6d4",
+    "build/modular-palette-context/checks/api.log": "f68bd55e33031ce91c2a9f897eba5eb07e028779b9cc5f9f53ca5bb0238e8f4e",
+    "build/modular-palette-context/checks/conformance.log": "424490caee1dc41da0d81abaa39970386bd9d91d0d809aa26907c9863c863617",
+    "build/modular-palette-context/checks/foundation.log": "71a679c42caf937fcdc609e2744bdbb68c8209c97d3e16403a980b13da2b8a63",
+    "build/modular-palette-context/checks/frozen_oracle.log": "b25e276494675a8135f85fbb0f8d6d299bda047f53dfd55376c495312cf849c8",
+    "build/modular-palette-context/checks/oracle.log": "deaca47fcdff1d0ccb8af2477b7f3e350bc8b6fb8a099ad24ed3033cc75f69e0",
+    "build/modular-palette-context/checks/policy.log": "5a975768519686aacae588d951c6b0a292070a76e8e30efdf3e0d3c8c3dea68e",
+    "build/modular-palette-context/checks/stream.log": "df48320eca8f6e65ec1137f0b9fe444e4bab65728e1e3c20fb1e3a9ca8050f8b",
+    "build/modular-palette-context/checks/transform.log": "671741419472fa343809d8589dbadf75b07f8f1c3918b5804e184b6abf12ad06",
+    "build/modular-palette-context/checks/tests.json": "29fd14fac93999fa717377e3f8564977ed317bfc9f45c3fe6d5133f673ab2dd4",
+    "build/modular-palette-context/check.py": "c725d011b01718f5948c606f8f86e7152c52f6d7d0708822964cd649f5be1370",
+    "build/modular-palette-context/check.log": "b92d647fff7a145e4134e19fb774c08a5a641ec84275f3c468bbb3c3071b10d3",
+    "build/modular-palette-context/rate/manifest.json": "1216f9f7aa34e53af6157051dce627007d0a8c1ecbc33fe4ec0b3f6f1f29ae86",
+    "build/modular-palette-context/rate/results.jsonl": "f0dd16b6d5a10481b1561315b4c1de908b13c3cb9367db745ee4a0e47adedb95",
+    "build/modular-palette-context/rate/runner.cpp": "f4ff9007c7a8e979534a7d617db260516e0e6f71036e8d8f0d7f3da39406957c",
+    "build/modular-palette-context/rate/reference_effort.cpp": "85d9e8f064efe80b98b45c887cbb294429f6c0817f2f79dedfcaac4f3655ef3b",
+    "build/modular-palette-context/rate/run.py": "f50042cab25cde1d0c6086c1ec62fed9eb03fa1d8524692e6e63d789510b4d1d",
+    "build/modular-palette-context/rate/CMakeLists.txt": "3c49dc1f450821194d774dddd87799729870892ce57bc272f400207b6eaab9cb",
+    "build/modular-palette-context/rate/build.log": "841b2ff6a2bbf8e15c1eafc30dc4e1a39fde0044d6f97683096a3b41100593ed",
+    "build/modular-palette-context/rate/run.log": "7c52e31f4cec6def1b5ccffb90965a2fe69703e4cb72f95a26556e888e9b2bbb",
+    "build/modular-palette-context/rate/bin/rate_runner": "b481d5d906fc74a848eceb2bc65c2b6e66a6af8f64db43e57f5a6c4f423abd43",
+    "build/modular-palette-context/rate/libgjxl_codestream.a": "107f230c5292992c2598d4d051e7d079c2941a942329b91df0e72a5ddc969a15",
+    "build/modular-palette-context/rate/libgjxl_gpu_ops.a": "97b2eb3980aa7c25354c4ad7f0a5ee91b3358d52411725bf805899b291c692d6",
+    "build/modular-palette-context/rate/libgjxl_codec.a": "2396d6f1b9fd0d288ef056451d366834ae1e6b520aa638a9c24857005feba286",
+    "build/modular-palette-context/rate/libgjxl_gpu.a": "e308e3f88e5cb93a971d010e00f0f1601456f7018efa40d730a6c789d60895b8",
+    "testdata/modular/oracle-v2.json": "34bb2bba242d040c130f930ed2b211229d4d0cc19a316b2facaabfba9b97e16e"
+  },
+  "qualification_complete": true
+}

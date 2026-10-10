@@ -191,6 +191,38 @@ Status EncodeSearch(PackedModularImageView input, ModularEncodingOptions options
       }
     }
   }
+  // Append learned transform candidates after the complete retained search.
+  // Train on the same metadata/index/residual planes and slice boundaries as
+  // tokenization, then preserve the transform sequence in the learned policy.
+  for (size_t i = 0; i < count; ++i) {
+    ModularCodingPolicy single, split, learned;
+    {
+      ModularEncoderFrame frame;
+      if (auto s = ModularEncoderFrame::Prepare(input, candidates[i], &frame); !s.ok())
+        return s;
+      ChannelShape shape;
+      if (auto s = DescribeImage(frame.image(), &shape); !s.ok())
+        return s;
+      ModularStreamPlan layout;
+      if (auto s = BuildModularStreamPlan(storage.geometry, shape.channels(), shape.metadata,
+                                          &layout); !s.ok())
+        return s;
+      if (auto s = LearnModularPolicies(frame, layout, candidates[i], &single, &split, &learned);
+          !s.ok())
+        return s;
+    }
+    if (learned == candidates[i])
+      continue;
+    options.coding = learned;
+    codestream_internal::CodestreamBuffer candidate;
+    if (auto s = Encode(input, options, &candidate); !s.ok())
+      return s;
+    if (candidate.view().size() < best.view().size()) {
+      best = std::move(candidate);
+      if (active_modular_profile)
+        best_policy = learned;
+    }
+  }
   output.Publish(std::move(best));
   if (active_modular_profile) active_modular_profile->resolved = best_policy;
   return Status::Ok();

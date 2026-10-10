@@ -6,6 +6,10 @@ The default and prescribed policies are unchanged. This is encoder policy
 within the existing CPU/GPU arithmetic contract; it adds no bitstream feature
 or public option.
 
+The subsequent [transform context-learning milestone](modular-palette-context.md)
+adds up to four learned transform candidates and corrects stream-local channel
+properties. The measurements below retain their original scope.
+
 ## Bounded selection
 
 The ranker reads at most 2,048 deterministically jittered pixel neighborhoods

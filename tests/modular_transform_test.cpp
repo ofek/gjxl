@@ -2,6 +2,10 @@
 // Copyright (c) 2026 Yunho Cho
 #include "codestream/modular/workflow.h"
 #include "codestream/modular/storage_plan.h"
+#include "codestream/modular/search.h"
+#include "lib/jxl/modular/encoding/context_predict.h"
+#include "lib/jxl/modular/encoding/enc_ma.h"
+#include "lib/jxl/pack_signed.h"
 #include "modular_reference.h"
 #include "lib/jxl/memory_manager_internal.h"
 #include "lib/jxl/modular/modular_image.h"
@@ -69,7 +73,80 @@ void ReferenceStep(jxl::Image &image, const TransformDescriptor &t) {
     for (size_t x = 0; x < w; ++x)
       image.channel[t.begin + 1].Row(y)[x] = dictionary.at(pixels[y * w + x]);
 }
-void Case(Extent2D extent, PackedModularFormat format, size_t colors, ModularCodingPolicy policy) {
+// Evaluate every learned token with pinned libjxl prediction and tree traversal
+// over independently transformed samples. The stream-layout contract is shared;
+// pixel reconstruction is additionally checked by the independent decoder.
+void LearnedTokens(const ModularEncoderFrame &frame, const ModularStreamPlan &plan,
+                   const ModularCodingPolicy &policy, const jxl::Image &reference,
+                   JxlMemoryManager *memory) {
+  PreparedModularTokens tokens;
+  Ok(TokenizeModular(frame, plan, policy, &tokens));
+  jxl::Tree tree, decoded;
+  for (size_t i = 0; i < policy.tree.size; ++i) {
+    const auto &n = policy.tree.nodes[i];
+    tree.emplace_back(n.property, n.split, n.left, n.right,
+                      static_cast<jxl::Predictor>(n.predictor), n.offset, n.multiplier);
+  }
+  std::vector<jxl::Token> tree_tokens;
+  Check(bool(jxl::TokenizeTree(tree, &tree_tokens, &decoded)), "Learned tree tokenization failed");
+  Check(tree_tokens.size() == tokens.tree_token_count, "Learned tree token count differs");
+  for (size_t i = 0; i < tree_tokens.size(); ++i)
+    Check(tree_tokens[i].context == tokens.tree_tokens[i].context &&
+              tree_tokens[i].value == tokens.tree_tokens[i].value, "Learned tree token differs");
+  jxl::weighted::Header header;
+  const auto &p = policy.weighted.coefficients;
+  header.p1C = p[0]; header.p2C = p[1]; header.p3Ca = p[2]; header.p3Cb = p[3];
+  header.p3Cc = p[4]; header.p3Cd = p[5]; header.p3Ce = p[6];
+  for (size_t i = 0; i < 4; ++i) header.w[i] = policy.weighted.weights[i];
+  for (size_t si = 0; si < plan.streams.size(); ++si) {
+    const auto &stream = plan.streams[si];
+    size_t token = 0, property_channel = 0;
+    for (const auto &slice : std::span(plan.slices).subspan(stream.slice_begin, stream.slice_count)) {
+      const auto [w, h] = slice.rect.extent;
+      auto tile_result = jxl::Channel::Create(memory, w, h);
+      auto refs_result = jxl::Channel::Create(memory, 0, w);
+      Check(tile_result.ok() && refs_result.ok(), "Learned reference allocation failed");
+      auto tile = std::move(tile_result).value_(), refs = std::move(refs_result).value_();
+      for (size_t y = 0; y < h; ++y)
+        for (size_t x = 0; x < w; ++x)
+          tile.Row(y)[x] = reference.channel[slice.channel].Row(slice.rect.y + y)
+                                                      [slice.rect.x + x];
+      jxl::weighted::State state(header, w, h);
+      jxl::Properties properties(16);
+      for (size_t y = 0; y < h; ++y) {
+        jxl::InitPropsRow(&properties,
+                          {static_cast<int32_t>(property_channel), static_cast<int32_t>(stream.id)},
+                          static_cast<int>(y));
+        for (size_t x = 0; x < w; ++x) {
+          std::array<int64_t, 14> predictions{};
+          jxl::PredictLearnAll(&properties, w, tile.Row(y) + x, tile.plane.PixelsPerRow(),
+                               static_cast<int>(x), static_cast<int>(y), refs, &state,
+                               predictions.data());
+          size_t leaf = 0;
+          while (decoded[leaf].property != -1) {
+            const auto &n = decoded[leaf];
+            leaf = properties[n.property] > n.splitval ? n.lchild : n.rchild;
+          }
+          const auto &n = decoded[leaf];
+          const int64_t residual = tile.Row(y)[x] - predictions[static_cast<size_t>(n.predictor)] -
+                                   n.predictor_offset;
+          Check(residual % n.multiplier == 0, "Learned leaf cannot represent sample");
+          Check(token < tokens.streams[si].size() &&
+                    tokens.streams[si][token].value ==
+                        jxl::PackSigned(static_cast<int32_t>(residual / n.multiplier)) &&
+                    tokens.streams[si][token].context == n.lchild,
+                "Learned transformed token differs from pinned libjxl");
+          ++token;
+          state.UpdateErrors(tile.Row(y)[x], x, y, w);
+        }
+      }
+      ++property_channel;
+    }
+    Check(token == tokens.streams[si].size(), "Learned token coverage differs");
+  }
+}
+void Case(Extent2D extent, PackedModularFormat format, size_t colors, ModularCodingPolicy policy,
+          bool learn = false) {
   ModularInputProfile profile;
   Ok(ResolveModularInput(extent, format, &profile));
   ref::IntegerImage expected{extent.width,
@@ -151,6 +228,22 @@ void Case(Extent2D extent, PackedModularFormat format, size_t colors, ModularCod
           Check(v.Row(y)[x] == r.Row(y)[x], "Prescribed transformed sample mismatch");
     }
   }
+  if (learn) {
+    ChannelShape shape;
+    Ok(DescribeImage(transformed.image(), &shape));
+    ModularFrameGeometry geometry;
+    Ok(ModularFrameGeometry::Create(extent, &geometry));
+    ModularStreamPlan layout;
+    Ok(BuildModularStreamPlan(geometry, shape.channels(), shape.metadata, &layout));
+    ModularCodingPolicy single, split, learned, again;
+    Ok(LearnModularPolicies(transformed, layout, policy, &single, &split, &learned));
+    Ok(LearnModularPolicies(transformed, layout, policy, &single, &split, &again));
+    Check(learned == again && learned.transforms == policy.transforms &&
+              learned.rct == policy.rct && learned.weighted == policy.weighted,
+          "Transformed learning lost policy or determinism");
+    LearnedTokens(transformed, layout, learned, reference, &memory);
+    policy = learned;
+  }
   for (auto mode : {EntropyCodingMode::kPrefix, EntropyCodingMode::kAns}) {
     ModularWorkflowStoragePlan plan;
     Ok(ComputeModularWorkflowStoragePlan(extent, format, mode, policy, &plan));
@@ -159,7 +252,24 @@ void Case(Extent2D extent, PackedModularFormat format, size_t colors, ModularCod
         {.managed_memory_bytes = plan.working.peak_bytes, .cpu_participant_limit = 1}, &domain));
     std::vector<uint8_t> output;
     Ok(EncodeModularImage(input, {domain, mode, policy}, &output));
-    Check(ref::DecodeLossless(output) == expected, "Pinned full decode mismatch");
+    try {
+      Check(ref::DecodeLossless(output) == expected, "Pinned full decode mismatch");
+    } catch (...) {
+      std::cerr << "transform decode " << extent.width << 'x' << extent.height
+                << " format " << static_cast<int>(format) << " coder " << static_cast<int>(mode)
+                << " learned " << learn << " nodes " << policy.tree.size << '\n';
+      for (size_t n = 0; n < policy.tree.size; ++n) {
+        const auto &v = policy.tree.nodes[n];
+        std::cerr << n << ": prop " << v.property << " split " << v.split << " children "
+                  << unsigned(v.left) << '/' << unsigned(v.right) << " pred "
+                  << static_cast<int>(v.predictor) << '\n';
+      }
+      if (!artifacts.empty()) {
+        std::ofstream failed(artifacts / "failed.jxl", std::ios::binary);
+        failed.write(reinterpret_cast<const char *>(output.data()), output.size());
+      }
+      throw;
+    }
     if (extent.width > 256 || extent.height > 256) {
       ModularWorkflowStoragePlan parallel_plan;
       Ok(ComputeModularWorkflowStoragePlan(extent, format, mode, policy, &parallel_plan, 4));
@@ -299,6 +409,54 @@ int main(int argc, char **argv) try {
     p.transforms.entries[5] = {TransformKind::kSqueeze, 0, 1, 1, true, false};
     Check(!PlanTransforms(profile.channels(), 0, p.transforms, &shapes).ok(),
           "Excess channels accepted");
+  }
+  // Regression: group-local channel 0 must not inherit its full-image
+  // index after a global palette dictionary or a globally coded lowpass.
+  {
+    ModularCodingPolicy policy;
+    policy.tree.size = 3;
+    policy.tree.nodes[0] = {.property = 0, .split = 0, .left = 1, .right = 2};
+    policy.tree.nodes[1].predictor = Predictor::kZero;
+    policy.tree.nodes[2].predictor = Predictor::kGradient;
+    policy.transforms.size = 1;
+    policy.transforms.entries[0] = {TransformKind::kPalette, 0, 1, 16};
+    Case({257, 3}, PackedModularFormat::kGray8, 16, policy);
+    policy.transforms.size = 2;
+    policy.transforms.entries[0] = {TransformKind::kSqueeze, 0, 4, 1, true, false};
+    policy.transforms.entries[1] = {TransformKind::kSqueeze, 0, 4, 1, false, false};
+    Case({3, 257}, PackedModularFormat::kRgba16, 16, policy);
+  }
+  // Train on palette dictionaries/indices and shifted Squeeze channels in all
+  // formats, with clipped groups, tiny/one-dimensional images and custom WP.
+  for (auto format : {PackedModularFormat::kGray8, PackedModularFormat::kRgb8,
+                     PackedModularFormat::kRgba8, PackedModularFormat::kGray16,
+                     PackedModularFormat::kRgb16, PackedModularFormat::kRgba16}) {
+    for (auto extent : {Extent2D{1, 1}, {1, 17}, {17, 1}, {17, 19}, {257, 3},
+                        {3, 257}, {513, 257}}) {
+      std::array<ModularCodingPolicy, 4> policies;
+      size_t count;
+      Ok(BuildTransformCandidates(extent, format, 16, &policies, &count));
+      for (size_t i = 0; i < count; ++i)
+        Case(extent, format, 16, policies[i], true);
+    }
+    ModularInputProfile profile;
+    Ok(ResolveModularInput({1, 1}, format, &profile));
+    ModularCodingPolicy combined;
+    combined.rct = profile.channel_count >= 3 ? 9 : 0;
+    combined.weighted.coefficients = {17, 9, 6, 8, 7, 1, 2};
+    combined.weighted.weights = {15, 0, 9, 11};
+    combined.transforms.size = 3;
+    combined.transforms.entries[0] = {TransformKind::kPalette, 0,
+                                      static_cast<uint8_t>(profile.channel_count), 16};
+    combined.transforms.entries[1] = {TransformKind::kSqueeze, 1, 1, 1, true, false};
+    combined.transforms.entries[2] = {TransformKind::kSqueeze, 1, 1, 1, false, true};
+    Case({257, 3}, format, 16, combined, true);
+    combined.transforms.size = 6;
+    for (size_t i = 0; i < 6; ++i)
+      combined.transforms.entries[i] = {TransformKind::kSqueeze, 0,
+                                        static_cast<uint8_t>(profile.channel_count), 1,
+                                        i % 2 == 0, false};
+    Case({2057, 17}, format, 0, combined, true);
   }
   std::cout << "Transforms qualified: " << cases << " stages, " << files << " complete files\n";
 } catch (const std::exception &e) {

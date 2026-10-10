@@ -1,0 +1,19 @@
+{
+  "schema": 2,
+  "base_manifest_sha256": "c6ecb4dfa244d03be1e5cd7b0df760079f3963b12da6b766b4f2ca6c7734fdeb",
+  "native_base_revision": "fa4d9f3",
+  "native_changes": "Correct tree property 0 to stream-local channel ordinal. All v1 artifacts retained except the two explicit decision-trace corrections below.",
+  "pinned_libjxl_revision": "e8ff09762481785938d8e4e01333ed3917571161",
+  "capture_sha256": "6b5db4858385dd740f20c3a9f2983d794d325e38c2fe12774d8fc3578c0c0ee8",
+  "correction": "Exactly 2313 property-0 records per palette trace change from full-image channel 1 to stream-local channel 0; no other integers or files change. Native and independently checked reference captures agree.",
+  "artifact_overrides": {
+    "palette-ans/decisions.bin": {
+      "bytes": 722536,
+      "sha256": "fad3c2f0192212b64fb5a1a1d389438dab011916cc5bf3283ecac6b327ebb3d4"
+    },
+    "palette-prefix/decisions.bin": {
+      "bytes": 722536,
+      "sha256": "fad3c2f0192212b64fb5a1a1d389438dab011916cc5bf3283ecac6b327ebb3d4"
+    }
+  }
+}
