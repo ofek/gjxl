@@ -4,8 +4,9 @@ The native scalar implementation and its prescribed decisions are the oracle.
 Start with [the frozen fixture protocol](../tools/modular_oracle/README.md),
 [architecture](modular-architecture.md), and [qualification](modular-p2.6.md).
 The public API currently resolves automatic Modular execution to CPU; explicit
-Metal/CUDA requests remain unsupported/unavailable. No GPU operation is yet
-qualified for this mode.
+Metal/CUDA requests remain unsupported/unavailable. A private Metal unpack/RCT
+kernel is implemented for qualification; owning preparation and encoder
+integration remain subsequent steps.
 
 ## Implemented capability boundary
 
@@ -69,8 +70,46 @@ The CPU-only `modular_gpu_input` test covers the format/RCT metadata matrix,
 odd offsets/strides, exact backing ends, plane ranges and alignment, device-limit
 boundaries, invalid inputs, large shape-only plans, allocation-free planning and
 actual managed host-destination capacity. It is included in native Modular CI.
-Kernel arithmetic, device lifetime/failure behavior and complete GPU-assisted
+The kernel qualification below covers arithmetic and borrowed-buffer submission.
+Owning preparation, admission across the full workflow and complete GPU-assisted
 files remain subsequent qualification gates.
+
+## First slice: fused Metal kernel
+
+[`modular_input.metal`](../src/gpu/metal/kernels/modular_input.metal) runs one
+thread per pixel in an 8-by-8 threadgroup. It loads packed bytes directly,
+performs the prescribed permutation/RCT, and writes disjoint dense int32 planes.
+Byte-wise 16-bit loads preserve odd offsets/strides and both endian orders.
+Alpha passes through and invisible RGB is retained. The source-bound proof beside
+the kernel justifies signed 32-bit arithmetic; negative odd differences use
+explicit floor-halving. A shared host/shader parameter header uses 64-bit byte
+addresses and planar element offsets, independently of the 32-bit grid axes.
+
+[`SubmitMetalModularInput`](../src/gpu/metal/metal_modular_input.h) is the private
+borrowed-buffer launch boundary. It validates the shared storage plan against
+the device's maximum buffer length, checks native backend ownership, addressed
+ranges and input/output overlap, then submits one kernel. It allocates no sample
+backing. Buffer offsets are carried in parameters, so binding alignment does not
+restrict a packed source's byte offset. File-loaded and embedded shader libraries
+include the kernel; its pipeline is created with the backend.
+
+The caller owns upload/output buffers and must wait before accessing output or
+releasing either buffer, including on completion failure. A rejected launch
+preserves buffers and an existing submission; a device error leaves output
+contents unspecified. The `PreparedGpuModularInput` capability is still disabled:
+step 3 will add the candidate owner, synchronous completion, resource admission
+and failure-atomic publication using this primitive. No public routing changes.
+
+`metal_modular_input` requires a working Metal device (no skip/fallback). It
+checks all formats/endian orders/RCTs against scalar preparation, plus pinned
+libjxl when `GJXL_MODULAR_ORACLE_BUILD` is configured. Fixtures include source
+extrema and negative odd differences, transparent colors, unaligned input,
+exact final-row ends, one-dimensional/odd extents and 255/256/257 boundaries.
+Sentinels cover inter-plane padding and surrounding output. Tests also check
+invalid/native/foreign buffers, overlap, submission/completion faults, repeated
+waits, resource charges, concurrent independent calls, and both library paths.
+Native CI's Metal build and test stages include this target; CPU-only builds
+continue to exercise the contract/planner without a Metal dependency.
 
 ## Proposed first operations
 

@@ -802,6 +802,8 @@ set(GJXL_AC_SELECTION_METAL_SOURCE
 set(GJXL_AC_SELECTION_METAL_IR "${GJXL_METAL_DIR}/ac_strategy_select.ir")
 set(GJXL_AQ_METADATA_METAL_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/metal/kernels/aq_strategy_metadata.metal")
 set(GJXL_AQ_METADATA_METAL_IR "${GJXL_METAL_DIR}/aq_strategy_metadata.ir")
+set(GJXL_MODULAR_INPUT_METAL_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/metal/kernels/modular_input.metal")
+set(GJXL_MODULAR_INPUT_METAL_IR "${GJXL_METAL_DIR}/modular_input.ir")
 
 set(
   GJXL_PRIMITIVES_METAL_IR
@@ -1062,6 +1064,14 @@ add_custom_command(
 
 # .ir -> .metallib
 
+add_custom_command(OUTPUT "${GJXL_MODULAR_INPUT_METAL_IR}"
+  COMMAND "${CMAKE_COMMAND}" -E make_directory "${GJXL_METAL_DIR}"
+  COMMAND "${XCRUN_EXECUTABLE}" -sdk macosx metal -std=metal3.1
+    ${GJXL_METAL_PROFILING_FLAGS} -c "${GJXL_MODULAR_INPUT_METAL_SOURCE}" -o "${GJXL_MODULAR_INPUT_METAL_IR}"
+  DEPENDS "${GJXL_MODULAR_INPUT_METAL_SOURCE}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/metal/kernels/modular_input_params.h"
+  COMMENT "Compiling Metal Modular unpack and RCT" VERBATIM)
+
 add_custom_command(OUTPUT "${GJXL_AQ_METADATA_METAL_IR}"
   COMMAND "${CMAKE_COMMAND}" -E make_directory "${GJXL_METAL_DIR}"
   COMMAND "${XCRUN_EXECUTABLE}" -sdk macosx metal -std=metal3.1
@@ -1092,6 +1102,7 @@ add_custom_command(
     "${GJXL_AC_STRATEGY_METAL_IR}"
     "${GJXL_AC_SELECTION_METAL_IR}"
     "${GJXL_AQ_METADATA_METAL_IR}"
+    "${GJXL_MODULAR_INPUT_METAL_IR}"
     "${GJXL_PRIMITIVES_METAL_IR}"
     "${GJXL_AQ_REDUCTION_METAL_IR}"
     "${GJXL_AQ_RECONSTRUCTION_METAL_IR}"
@@ -1103,6 +1114,7 @@ add_custom_command(
     "${GJXL_AC_STRATEGY_METAL_IR}"
     "${GJXL_AC_SELECTION_METAL_IR}"
     "${GJXL_AQ_METADATA_METAL_IR}"
+    "${GJXL_MODULAR_INPUT_METAL_IR}"
     "${GJXL_PRIMITIVES_METAL_IR}"
     "${GJXL_AQ_REDUCTION_METAL_IR}"
     "${GJXL_AQ_RECONSTRUCTION_METAL_IR}"
@@ -1209,6 +1221,7 @@ add_library(
   src/gpu/metal/metal_aq_strategy_metadata.cpp
   src/gpu/metal/metal_butteraugli.cpp
   src/gpu/metal/metal_primitives.cpp
+  src/gpu/metal/metal_modular_input.cpp
   src/gpu/metal/metal_submission.cpp
   src/gpu/metal/metal_submission_storage_plan.cpp
   src/gpu/metal/metal_storage_plan.cpp
@@ -3494,6 +3507,17 @@ if(GJXL_BUILD_TESTS)
     COMMAND gjxl_metal_completed_frame_test --expect-host-metadata 1)
   set_tests_properties(metal_completed_frame_host_metadata_invalid
     PROPERTIES ENVIRONMENT "GJXL_HOST_METADATA=invalid")
+
+  add_executable(gjxl_metal_modular_input_test tests/metal_modular_input_test.cpp)
+  target_link_libraries(gjxl_metal_modular_input_test PRIVATE gjxl_metal)
+  target_compile_definitions(gjxl_metal_modular_input_test PRIVATE
+    GJXL_METALLIB_PATH="${GJXL_METALLIB}")
+  if(TARGET gjxl_modular_reference)
+    target_link_libraries(gjxl_metal_modular_input_test PRIVATE gjxl_modular_reference)
+    target_compile_definitions(gjxl_metal_modular_input_test PRIVATE GJXL_MODULAR_INPUT_REFERENCE=1)
+  endif()
+  add_test(NAME metal_modular_input COMMAND gjxl_metal_modular_input_test)
+  set_tests_properties(metal_modular_input PROPERTIES TIMEOUT 120)
 
   add_executable(gjxl_metal_resource_budget_test tests/metal_resource_budget_test.cpp)
   target_link_libraries(gjxl_metal_resource_budget_test PRIVATE gjxl_codestream gjxl_metal)

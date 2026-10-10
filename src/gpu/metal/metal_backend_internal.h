@@ -25,6 +25,7 @@
 #include "gpu/backend.h"
 #include "gpu/image.h"
 #include "gpu/metal/metal_backend.h"
+#include "gpu/metal/metal_modular_input.h"
 #include "gpu/metal/metal_submission_storage_plan.h"
 #include "gpu/ops/ac_strategy.h"
 #include "gpu/ops/ac_strategy_selection.h"
@@ -366,6 +367,7 @@ public:
     TransformPipelineRegistry transform_pipelines,
     AcStrategyPipelines ac_strategy_pipelines,
     PrimitivePipelines primitive_pipelines,
+    NS::SharedPtr<MTL::ComputePipelineState> modular_input_pipeline,
     AqPipelines aq_pipelines,
     ButteraugliPipelines butteraugli_pipelines,
     bool test_fail_submission,
@@ -487,6 +489,10 @@ public:
   Status PrepareResidentInput(
     const ResidentInputPreparation& preparation,
     std::unique_ptr<PreparedResidentInput>* prepared) override;
+
+  modular_gpu_internal::ModularInputDeviceLimits ModularInputLimits() const noexcept;
+  Status SubmitModularInput(const MetalModularInputDispatch& dispatch,
+                           std::unique_ptr<GpuSubmission>* submission);
 
   Status Prepare(
     GpuBackend& backend,
@@ -800,6 +806,7 @@ private:
   TransformPipelineRegistry transform_pipelines_;
   AcStrategyPipelines ac_strategy_pipelines_;
   PrimitivePipelines primitive_pipelines_;
+  NS::SharedPtr<MTL::ComputePipelineState> modular_input_pipeline_;
   AqPipelines aq_pipelines_;
   ButteraugliPipelines butteraugli_pipelines_;
   bool test_fail_submission_ = false;

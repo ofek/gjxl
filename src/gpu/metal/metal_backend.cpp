@@ -698,6 +698,7 @@ MetalBackend::MetalBackend(
   TransformPipelineRegistry transform_pipelines,
   AcStrategyPipelines ac_strategy_pipelines,
   PrimitivePipelines primitive_pipelines,
+  NS::SharedPtr<MTL::ComputePipelineState> modular_input_pipeline,
   AqPipelines aq_pipelines,
   ButteraugliPipelines butteraugli_pipelines,
   bool test_fail_submission,
@@ -712,6 +713,7 @@ MetalBackend::MetalBackend(
     transform_pipelines_(std::move(transform_pipelines)),
     ac_strategy_pipelines_(std::move(ac_strategy_pipelines)),
     primitive_pipelines_(std::move(primitive_pipelines)),
+    modular_input_pipeline_(std::move(modular_input_pipeline)),
     aq_pipelines_(std::move(aq_pipelines)),
     butteraugli_pipelines_(std::move(butteraugli_pipelines)),
     test_fail_submission_(test_fail_submission),
@@ -1771,6 +1773,15 @@ Status CreateMetalBackendImpl(
     return status;
   }
 
+  NS::SharedPtr<MTL::ComputePipelineState> modular_input_pipeline;
+  status = CreatePipeline(device.get(), library.get(), "gjxl_modular_unpack_rct",
+                          &modular_input_pipeline);
+  if (!status.ok()) return status;
+  const auto maximum_threads = device->maxThreadsPerThreadgroup();
+  if (modular_input_pipeline->maxTotalThreadsPerThreadgroup() < 64 ||
+      maximum_threads.width < 8 || maximum_threads.height < 8)
+    return Status::Unavailable("Metal cannot launch Modular input threadgroups");
+
   AqPipelines aq_pipelines;
   status = CreateAqPipelines(device.get(), library.get(), &aq_pipelines);
   if (!status.ok()) {
@@ -1793,6 +1804,7 @@ Status CreateMetalBackendImpl(
       std::move(transform_pipelines),
       std::move(ac_strategy_pipelines),
       std::move(primitive_pipelines),
+      std::move(modular_input_pipeline),
       std::move(aq_pipelines),
       std::move(butteraugli_pipelines),
       options.test_fail_submission,
