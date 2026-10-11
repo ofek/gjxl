@@ -7,10 +7,10 @@ Status EncodePreparedModularFrame(ModularEncoderFrame frame, const ModularCoding
                                   EntropyCodingMode entropy,
                                   const ModularWorkflowStoragePlan &storage,
                                   codestream_internal::CodestreamBuffer *out,
-                                  AnsSelectionMode selection) {
+                                  AnsSelectionMode selection, ModularCandidateEvaluation *evaluation) {
   if (auto s = ValidateAnsSelectionMode(selection); !s.ok())
     return s;
-  if (!out)
+  if (!out && (!evaluation || evaluation->operation == ModularCandidateOperation::kEmit))
     return Status::InvalidArgument("Null prepared Modular codestream output");
   auto metadata = frame.metadata();
   if (policy != ModularCodingPolicy{})
@@ -26,6 +26,7 @@ Status EncodePreparedModularFrame(ModularEncoderFrame frame, const ModularCoding
   if (auto s = TokenizeModular(frame, layout, policy, &tokens, storage.participants); !s.ok())
     return s;
   frame = {}; // The CPU workflow plan excludes samples from subsequent phases.
-  return EncodeModularFrame(metadata, layout, std::move(tokens), entropy, storage, out, selection);
+  return EncodeModularFrame(metadata, layout, std::move(tokens), entropy, storage, out, selection,
+                             nullptr, evaluation);
 }
 } // namespace gjxl::modular_internal

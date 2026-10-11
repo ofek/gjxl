@@ -9,6 +9,8 @@
 #include "core/publication_output.h"
 #include "core/thread_budget.h"
 #include <optional>
+#include <chrono>
+#include <algorithm>
 
 namespace gjxl::modular_internal {
 namespace {
@@ -16,8 +18,9 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
                     resource_budget_internal::PublicationOutput<uint8_t> output);
 Status Encode(PackedModularImageView input, const ModularEncodingOptions &options,
               resource_budget_internal::PublicationOutput<uint8_t> output,
-              AdaptiveModularTokenCache *cache = nullptr) try {
-  if (output == nullptr)
+              AdaptiveModularTokenCache *cache = nullptr,
+              ModularCandidateEvaluation *evaluation = nullptr, bool count_candidate = true) try {
+  if (output == nullptr && (!evaluation || evaluation->operation == ModularCandidateOperation::kEmit))
     return Status::InvalidArgument("Null Modular workflow output");
   if (auto s = input.Validate(); !s.ok())
     return s;
@@ -29,12 +32,19 @@ Status Encode(PackedModularImageView input, const ModularEncodingOptions &option
     return s;
   if (auto s = ValidateAnsSelectionMode(options.ans_selection); !s.ok())
     return s;
+  if (options.search_evaluation != ModularSearchEvaluation::kEncodeAll &&
+      options.search_evaluation != ModularSearchEvaluation::kMeasureAll &&
+      options.search_evaluation != ModularSearchEvaluation::kShortlist)
+    return Status::InvalidArgument("Invalid Modular search evaluation mode");
+  if (!options.search && !cache && !evaluation &&
+      (options.search_evaluation != ModularSearchEvaluation::kEncodeAll || options.candidate_observer))
+    return Status::InvalidArgument("Candidate evaluation requires Modular search");
   if (options.search)
     return EncodeSearch(input, options, output);
   ModularWorkflowStoragePlan storage;
   if (auto s =
           ComputeModularWorkflowStoragePlan(input.extent, input.format, options.entropy,
-                                            options.coding, &storage, options.cpu_thread_count);
+                                            options.coding, &storage, options.cpu_thread_count, 0, evaluation != nullptr);
       !s.ok())
     return s;
   size_t peak = storage.working.peak_bytes;
@@ -63,22 +73,23 @@ Status Encode(PackedModularImageView input, const ModularEncodingOptions &option
   codestream_internal::CodestreamBuffer candidate;
   if (cache) {
     if (auto s = cache->Encode(options.coding, options.entropy, storage, &candidate,
-                                options.ans_selection); !s.ok())
+                                options.ans_selection, evaluation); !s.ok())
       return s;
   } else {
     ModularEncoderFrame frame;
     if (auto s = ModularEncoderFrame::Prepare(input, options.coding, &frame); !s.ok())
       return s;
     if (auto s = EncodePreparedModularFrame(std::move(frame), options.coding, options.entropy,
-                                             storage, &candidate, options.ans_selection);
+                                             storage, &candidate, options.ans_selection, evaluation);
         !s.ok())
       return s;
   }
   if (active_modular_profile) {
     active_modular_profile->resolved = options.coding;
-    ++active_modular_profile->encoded_candidates;
+    if (count_candidate) ++active_modular_profile->encoded_candidates;
   }
-  output.Publish(std::move(candidate));
+  if (!evaluation || evaluation->operation == ModularCandidateOperation::kEmit)
+    output.Publish(std::move(candidate));
   return Status::Ok();
 } catch (const resource_budget_internal::ManagedAllocationFailure &e) {
   return e.status();
@@ -94,7 +105,9 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
   ModularWorkflowStoragePlan storage;
   if (auto s = ComputeModularSearchStoragePlan(input.extent, input.format, requested.entropy,
                                                &storage, requested.cpu_thread_count,
-                                               requested.learning, requested.tree_checkpoints);
+                                               requested.learning, requested.tree_checkpoints,
+                                               requested.search_evaluation != ModularSearchEvaluation::kEncodeAll ||
+                                               requested.candidate_observer);
       !s.ok())
     return s;
   size_t peak = storage.working.peak_bytes;
@@ -126,10 +139,69 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
   // Always retain the exact default learner and candidate order. Experimental
   // budgets/modes append candidates after this complete baseline search.
   options.learning = {};
+  // The traversal below is shared by the emission oracle and exact sizing.
+  // Keep the winning policy even when profiling is disabled: measurement must
+  // re-create and emit that policy once, after all candidate owners are released.
+  options.search_evaluation = ModularSearchEvaluation::kEncodeAll;
+  options.candidate_observer = nullptr;
+  const bool shortlist = requested.search_evaluation == ModularSearchEvaluation::kShortlist;
+  const bool measure = requested.search_evaluation != ModularSearchEvaluation::kEncodeAll;
+  struct Finalist {
+    ModularCodingPolicy policy;
+    size_t index = 0;
+    bool checkpoint = false;
+    double bits = 0;
+  };
+  std::array<Finalist, kMaximumSearchShortlist> finalists;
+  size_t finalist_count = 0;
   ModularCodingPolicy best_policy;
   codestream_internal::CodestreamBuffer best;
-  if (auto s = Encode(input, options, &best, cache); !s.ok())
-    return s;
+  size_t best_bytes = SIZE_MAX, candidate_index = 0;
+  bool best_is_checkpoint = false;
+  auto consider = [&](const ModularCodingPolicy &policy, bool checkpoint = false) -> Status {
+    options.coding = policy;
+    ModularCandidateEvaluation evaluation;
+    evaluation.operation = shortlist ? ModularCandidateOperation::kScreen :
+                           measure ? ModularCandidateOperation::kMeasure : ModularCandidateOperation::kEmit;
+    codestream_internal::CodestreamBuffer candidate;
+    const auto start = std::chrono::steady_clock::now();
+    if (auto s = Encode(input, options, &candidate, cache,
+                         measure || requested.candidate_observer ? &evaluation : nullptr); !s.ok())
+      return s;
+    const size_t bytes = measure ? evaluation.cost.bytes : candidate.view().size();
+    const bool improved = !shortlist && (bytes < best_bytes ||
+                          (bytes == best_bytes && best_is_checkpoint && !checkpoint));
+    if (shortlist) {
+      // Always retain the baseline and the three lowest sampled estimates.
+      // Stable estimate ties retain earlier candidates; exact finalists below
+      // are visited in original order with the original checkpoint tie rule.
+      size_t position = candidate_index == 0 ? 0 : 1;
+      while (position < finalist_count && evaluation.estimate.bits >= finalists[position].bits)
+        ++position;
+      if (position < finalists.size()) {
+        finalist_count = std::min(finalist_count + 1, finalists.size());
+        for (size_t i = finalist_count - 1; i > position; --i)
+          finalists[i] = std::move(finalists[i - 1]);
+        finalists[position] = {policy, candidate_index, checkpoint, evaluation.estimate.bits};
+      }
+    }
+    if (improved) {
+      best_bytes = bytes;
+      best_is_checkpoint = checkpoint;
+      best_policy = policy;
+      if (!measure) best = std::move(candidate);
+    }
+    if (requested.candidate_observer) {
+      const ModularCandidateRecord record{
+          candidate_index, checkpoint, improved,
+          std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count(),
+          evaluation.cost, !shortlist, evaluation.estimate.bits, evaluation.estimate.sampled_tokens};
+      if (auto s = requested.candidate_observer->Candidate(policy, record); !s.ok()) return s;
+    }
+    ++candidate_index;
+    return Status::Ok();
+  };
+  if (auto s = consider({}); !s.ok()) return s;
   ModularInputProfile profile;
   if (auto s = ResolveModularInput(input.extent, input.format, &profile); !s.ok())
     return s;
@@ -166,16 +238,7 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
       const auto &policy = i ? split : single;
       if (policy == ModularCodingPolicy{} || (i && split == single))
         continue;
-      options.coding = policy;
-      codestream_internal::CodestreamBuffer candidate;
-      if (auto s = Encode(input, options, &candidate, cache); !s.ok())
-        return s;
-      // Compare complete bytes, including transforms/tree/models/TOC/padding.
-      // Baseline and earlier candidates win ties. Replacement releases the old winner.
-      if (candidate.view().size() < best.view().size()) {
-        best = std::move(candidate);
-        if (active_modular_profile) best_policy = options.coding;
-      }
+      if (auto s = consider(policy); !s.ok()) return s;
     }
   }
   uint16_t palette_colors;
@@ -188,25 +251,10 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
       !s.ok())
     return s;
   for (size_t i = 0; i < count; ++i) {
-    options.coding = candidates[i];
-    codestream_internal::CodestreamBuffer candidate;
-    if (auto s = Encode(input, options, &candidate, cache); !s.ok())
-      return s;
-    if (candidate.view().size() < best.view().size()) {
-      best = std::move(candidate);
-      if (active_modular_profile) best_policy = options.coding;
-    }
+    if (auto s = consider(candidates[i]); !s.ok()) return s;
   }
   for (size_t i = 0; i < context_count; ++i) {
-    options.coding = context_candidates[i];
-    codestream_internal::CodestreamBuffer candidate;
-    if (auto s = Encode(input, options, &candidate, cache); !s.ok())
-      return s;
-    if (candidate.view().size() < best.view().size()) {
-      best = std::move(candidate);
-      if (active_modular_profile)
-        best_policy = options.coding;
-    }
+    if (auto s = consider(context_candidates[i]); !s.ok()) return s;
   }
   // Keep the complete retained search as a fallback. Rank all 42 transforms
   // cheaply, then train/encode only a bounded shortlist of additional RCTs.
@@ -235,15 +283,7 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
       const auto &policy = kind ? learned : weighted;
       if (kind && learned == weighted)
         continue;
-      options.coding = policy;
-      codestream_internal::CodestreamBuffer candidate;
-      if (auto s = Encode(input, options, &candidate, cache); !s.ok())
-        return s;
-      if (candidate.view().size() < best.view().size()) {
-        best = std::move(candidate);
-        if (active_modular_profile)
-          best_policy = policy;
-      }
+      if (auto s = consider(policy); !s.ok()) return s;
     }
   }
   // Append learned transform candidates after the complete retained search.
@@ -269,18 +309,9 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
     }
     if (learned == candidates[i])
       continue;
-    options.coding = learned;
-    codestream_internal::CodestreamBuffer candidate;
-    if (auto s = Encode(input, options, &candidate, cache); !s.ok())
-      return s;
-    if (candidate.view().size() < best.view().size()) {
-      best = std::move(candidate);
-      if (active_modular_profile)
-        best_policy = learned;
-    }
+    if (auto s = consider(learned); !s.ok()) return s;
   }
   if (requested.learning != TreeLearningOptions{} || requested.tree_checkpoints) {
-    bool best_is_checkpoint = false;
     auto try_learning = [&](const ModularCodingPolicy &base) -> Status {
       ModularCodingPolicy single, split, learned;
       TreeLearningCheckpoints checkpoints;
@@ -302,31 +333,13 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
             !s.ok())
           return s;
       }
-      auto consider = [&](const DecisionTree &tree, bool checkpoint) -> Status {
-        options.coding.rct = learned.rct;
-        options.coding.transforms = learned.transforms;
-        options.coding.weighted = learned.weighted;
-        options.coding.tree = tree;
-        codestream_internal::CodestreamBuffer candidate;
-        if (auto s = Encode(input, options, &candidate, cache); !s.ok())
-          return s;
-        // All pre-existing final-tree candidates outrank checkpoints on ties,
-        // including final candidates from later transforms in the search.
-        if (candidate.view().size() < best.view().size() ||
-            (candidate.view().size() == best.view().size() && best_is_checkpoint && !checkpoint)) {
-          best = std::move(candidate);
-          best_is_checkpoint = checkpoint;
-          if (active_modular_profile)
-            best_policy = options.coding;
-        }
-        return Status::Ok();
-      };
-      if (auto s = consider(learned.tree, false); !s.ok())
-        return s;
-      for (size_t i = 0; i < checkpoints.size; ++i)
-        if (checkpoints.trees[i].size != learned.tree.size)
-          if (auto s = consider(checkpoints.trees[i], true); !s.ok())
-            return s;
+      if (auto s = consider(learned); !s.ok()) return s;
+      for (size_t i = 0; i < checkpoints.size; ++i) {
+        if (checkpoints.trees[i].size == learned.tree.size) continue;
+        auto policy = learned;
+        policy.tree = checkpoints.trees[i];
+        if (auto s = consider(policy, true); !s.ok()) return s;
+      }
       return Status::Ok();
     };
     for (uint8_t rct : {uint8_t{0}, uint8_t{6}, uint8_t{9}}) {
@@ -346,6 +359,39 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
     for (size_t i = 0; i < count; ++i)
       if (auto s = try_learning(candidates[i]); !s.ok())
         return s;
+  }
+  if (shortlist) {
+    std::sort(finalists.begin(), finalists.begin() + finalist_count,
+              [](const auto &a, const auto &b) { return a.index < b.index; });
+    for (size_t i = 0; i < finalist_count; ++i) {
+      const auto &finalist = finalists[i];
+      options.coding = finalist.policy;
+      ModularCandidateEvaluation evaluation;
+      evaluation.operation = ModularCandidateOperation::kMeasure;
+      const auto start = std::chrono::steady_clock::now();
+      if (auto s = Encode(input, options, nullptr, cache, &evaluation, false); !s.ok()) return s;
+      const size_t bytes = evaluation.cost.bytes;
+      const bool improved = bytes < best_bytes ||
+                            (bytes == best_bytes && best_is_checkpoint && !finalist.checkpoint);
+      if (improved) {
+        best_bytes = bytes;
+        best_policy = finalist.policy;
+        best_is_checkpoint = finalist.checkpoint;
+      }
+      if (requested.candidate_observer) {
+        const ModularCandidateRecord record{
+            finalist.index, finalist.checkpoint, improved,
+            std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count(),
+            evaluation.cost, true, finalist.bits, 0};
+        if (auto s = requested.candidate_observer->Candidate(finalist.policy, record); !s.ok()) return s;
+      }
+    }
+  }
+  if (measure) {
+    options.coding = best_policy;
+    if (auto s = Encode(input, options, &best, cache, nullptr, false); !s.ok()) return s;
+    if (best.view().size() != best_bytes)
+      return Status::Internal("Measured Modular winner differs from final emission");
   }
   if (active_modular_profile)
     active_modular_profile->resolved = std::move(best_policy);

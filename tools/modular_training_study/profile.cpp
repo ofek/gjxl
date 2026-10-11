@@ -15,6 +15,7 @@
 #include <iomanip>
 #include <iostream>
 #include <stdexcept>
+#include <sstream>
 
 namespace {
 using namespace gjxl;
@@ -31,29 +32,54 @@ size_t Number(std::string_view text) {
     throw std::runtime_error("Expected a positive integer");
   return n;
 }
-void Policy(const ModularCodingPolicy &p) {
-  std::cout << "{\"rct\":" << unsigned(p.rct) << ",\"transforms\":[";
+void Policy(const ModularCodingPolicy &p, std::ostream &out = std::cout) {
+  out << "{\"rct\":" << unsigned(p.rct) << ",\"transforms\":[";
   for (size_t i = 0; i < p.transforms.size; ++i) {
     const auto &t = p.transforms.entries[i];
-    std::cout << (i ? "," : "") << '[' << int(t.kind) << ',' << unsigned(t.begin) << ','
+    out << (i ? "," : "") << '[' << int(t.kind) << ',' << unsigned(t.begin) << ','
               << unsigned(t.count) << ',' << t.colors << ',' << t.horizontal << ',' << t.in_place
               << ']';
   }
-  std::cout << "],\"nodes\":[";
+  out << "],\"nodes\":[";
   for (size_t i = 0; i < p.tree.size; ++i) {
     const auto &n = p.tree.nodes[i];
-    std::cout << (i ? "," : "") << '[' << n.property << ',' << n.split << ',' << n.left << ','
+    out << (i ? "," : "") << '[' << n.property << ',' << n.split << ',' << n.left << ','
               << n.right << ',' << int(n.predictor) << ',' << n.offset << ',' << n.multiplier
               << ']';
   }
-  std::cout << "],\"weighted_coefficients\":[";
+  out << "],\"weighted_coefficients\":[";
   for (size_t i = 0; i < p.weighted.coefficients.size(); ++i)
-    std::cout << (i ? "," : "") << unsigned(p.weighted.coefficients[i]);
-  std::cout << "],\"weighted_weights\":[";
+    out << (i ? "," : "") << unsigned(p.weighted.coefficients[i]);
+  out << "],\"weighted_weights\":[";
   for (size_t i = 0; i < p.weighted.weights.size(); ++i)
-    std::cout << (i ? "," : "") << unsigned(p.weighted.weights[i]);
-  std::cout << "]}";
+    out << (i ? "," : "") << unsigned(p.weighted.weights[i]);
+  out << "]}";
 }
+class CandidateLedger final : public ModularCandidateObserver {
+public:
+  std::vector<std::string> rows;
+  Status Candidate(const ModularCodingPolicy &policy, const ModularCandidateRecord &record) override {
+    std::ostringstream out;
+    const auto &c = record.cost;
+    out << std::setprecision(17) << "{\"index\":" << record.index
+        << ",\"checkpoint\":" << (record.checkpoint ? "true" : "false")
+        << ",\"improved\":" << (record.improved ? "true" : "false")
+        << ",\"exact\":" << (record.exact ? "true" : "false")
+        << ",\"estimated_bits\":" << record.estimated_bits
+        << ",\"sampled_tokens\":" << record.sampled_tokens
+        << ",\"seconds\":" << record.seconds << ",\"bytes\":" << c.bytes
+        << ",\"tokens\":" << c.tokens << ",\"contexts\":" << c.contexts
+        << ",\"clusters\":" << c.clusters << ",\"payload_bits\":" << c.payload_bits
+        << ",\"tree_bits\":" << c.tree_bits << ",\"model_bits\":" << c.model_bits
+        << ",\"stream_header_bits\":" << c.stream_header_bits
+        << ",\"frame_header_bits\":" << c.frame_header_bits << ",\"toc_bits\":" << c.toc_bits
+        << ",\"padding_bits\":" << c.padding_bits << ",\"policy\":";
+    Policy(policy, out);
+    out << '}';
+    rows.push_back(out.str());
+    return Status::Ok();
+  }
+};
 template <size_t N>
 void Stages(const std::array<const char *, N> &names, const std::array<double, N> &seconds) {
   std::cout << '{';
@@ -64,10 +90,12 @@ void Stages(const std::array<const char *, N> &names, const std::array<double, N
 } // namespace
 
 int main(int argc, char **argv) try {
-  if (argc < 6 || argc > 9)
+  if (argc < 6 || argc > 12)
     throw std::runtime_error(
-        "gjxl_modular_search_profile INPUT OUTPUT SAMPLES LEAVES THREADS [--metal|--metal-ans|--metal-learn] [--estimated-ans] [--no-profile]");
+        "gjxl_modular_search_profile INPUT OUTPUT SAMPLES LEAVES THREADS [--metal|--metal-ans|--metal-learn] [--estimated-ans] [--measure-all|--shortlist] [--candidate-ledger] [--no-profile]");
   bool profiling = true, metal = false, metal_ans = false, metal_learn = false, estimated = false;
+  bool measure = false, shortlist = false, ledger = false;
+  CandidateLedger candidates;
   for (int i = 6; i < argc; ++i) {
     const std::string_view argument(argv[i]);
     if (argument == "--no-profile" && profiling) profiling = false;
@@ -75,6 +103,9 @@ int main(int argc, char **argv) try {
     else if (argument == "--metal-ans" && !metal) { metal = true; metal_ans = true; }
     else if (argument == "--metal-learn" && !metal) { metal = true; metal_ans = true; metal_learn = true; }
     else if (argument == "--estimated-ans" && !estimated) estimated = true;
+    else if (argument == "--measure-all" && !measure && !shortlist) measure = true;
+    else if (argument == "--shortlist" && !measure && !shortlist) shortlist = true;
+    else if (argument == "--candidate-ledger" && !ledger) ledger = true;
     else throw std::runtime_error("Unknown or duplicate profiling option");
   }
   std::unique_ptr<GpuBackend> gpu;
@@ -98,6 +129,8 @@ int main(int argc, char **argv) try {
   options.adaptive_ans_cost = metal_ans;
   options.adaptive_tree_statistics = metal_learn;
   options.ans_selection = estimated ? AnsSelectionMode::kEstimated : AnsSelectionMode::kExact;
+  options.search_evaluation = shortlist ? ModularSearchEvaluation::kShortlist : measure ? ModularSearchEvaluation::kMeasureAll : ModularSearchEvaluation::kEncodeAll;
+  options.candidate_observer = ledger ? &candidates : nullptr;
   Ok(ValidateTreeLearningOptions(options.learning));
   io::IntegerImage image;
   Ok(io::ReadPnm(argv[1], &image));
@@ -106,7 +139,7 @@ int main(int argc, char **argv) try {
                               SampleByteOrder::kBigEndian};
   ModularWorkflowStoragePlan plan;
   Ok(ComputeModularSearchStoragePlan(image.extent, view.format, options.entropy, &plan,
-                                     options.cpu_thread_count, options.learning, true));
+                                     options.cpu_thread_count, options.learning, true, measure || shortlist || ledger));
   size_t planned_capacity = plan.working.peak_bytes;
   if (gpu) {
     AdaptiveModularWorkflowStoragePlan adaptive;
@@ -158,6 +191,11 @@ int main(int argc, char **argv) try {
             << "{\"schema\":1,\"route\":\"" << (metal_learn ? "hybrid-learning-complete-search" : metal_ans ? "hybrid-ans-complete-search" : metal ? "hybrid-complete-search" : "cpu-complete-search")
             << "\",\"entropy\":\"ans\""
             << ",\"ans_selection\":\"" << (estimated ? "estimated" : "exact") << '"'
+            << ",\"search_evaluation\":\"" << (shortlist ? "shortlist" : measure ? "measure-all" : "encode-all") << '"'
+            << ",\"candidate_ledger_enabled\":" << (ledger ? "true" : "false")
+            << ",\"candidate_emissions\":" << profile.candidate_emissions
+            << ",\"screened_candidates\":" << profile.screened_candidates
+            << ",\"exactly_measured_candidates\":" << profile.exactly_measured_candidates
             << ",\"backend_setup_seconds\":" << backend_setup_seconds
             << ",\"gpu_submissions\":" << gpu_after.committed_submissions - gpu_before.committed_submissions
             << ",\"gpu_allocations\":" << gpu_after.successful_allocations - gpu_before.successful_allocations
@@ -232,7 +270,10 @@ int main(int argc, char **argv) try {
     std::cout << (first ? "" : ",") << '"' << name << "\":" << value;
     first = false;
   }
-  std::cout << "},\"policy\":";
+  std::cout << "},\"candidate_ledger\":[";
+  for (size_t i = 0; i < candidates.rows.size(); ++i)
+    std::cout << (i ? "," : "") << candidates.rows[i];
+  std::cout << "],\"policy\":";
   if (profiling)
     Policy(resolved);
   else

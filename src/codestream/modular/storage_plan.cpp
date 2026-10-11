@@ -7,6 +7,7 @@
 #include "codestream/sections.h"
 #include <algorithm>
 #include "codestream/modular/parallel.h"
+#include "codestream/modular/candidate_screen.h"
 
 namespace gjxl::modular_internal {
 using namespace codestream_internal;
@@ -32,7 +33,8 @@ namespace {
 Status ComputeStoragePlan(Extent2D extent, PackedModularFormat format,
                          EntropyCodingMode mode, const ModularCodingPolicy &policy,
                          ModularWorkflowStoragePlan *out, size_t cpu_threads,
-                         size_t completed_token_bytes, size_t maximum_tree_leaves) {
+                         size_t completed_token_bytes, size_t maximum_tree_leaves,
+                         bool candidate_evaluation) {
   if (!out)
     return Status::InvalidArgument("Null Modular workflow plan");
   if (mode != EntropyCodingMode::kPrefix && mode != EntropyCodingMode::kAns)
@@ -143,7 +145,7 @@ Status ComputeStoragePlan(Extent2D extent, PackedModularFormat format,
                                                   .tokens = p.tokens,
                                                   .contexts = contexts,
                                                   .sections = p.streams,
-                                                  .return_cost = false,
+                                                  .return_cost = candidate_evaluation && mode == EntropyCodingMode::kPrefix,
                                                   .retain_prepared_clusters = mode == EntropyCodingMode::kAns};
   if (auto s = ComputeEntropyOptimizationStoragePlan(options, &prefix); !s.ok())
     return s;
@@ -153,6 +155,7 @@ Status ComputeStoragePlan(Extent2D extent, PackedModularFormat format,
     ans_options.policy = EntropyStoragePolicy::kAnsFromPrefix;
     ans_options.retain_prepared_clusters = false;
     ans_options.borrow_prepared_clusters = true;
+    ans_options.return_cost = candidate_evaluation;
     if (auto s = ComputeEntropyOptimizationStoragePlan(ans_options, &ans); !s.ok())
       return s;
     HostStorageBound concurrent = prefix.output;
@@ -259,6 +262,29 @@ Status ComputeStoragePlan(Extent2D extent, PackedModularFormat format,
   p.working = p.output;
   for (auto phase : {p.preparation, p.modeling, p.emission, p.assembly, p.publication})
     p.working.peak_bytes = std::max(p.working.peak_bytes, phase.peak_bytes);
+  if (candidate_evaluation) {
+    // Costs live through compact header measurement. The emission ledger can
+    // measure while its complete sections are still live. Screening additionally
+    // retains bounded sampled tokens/views beside the full canonical tokens.
+    HostStorageBound evaluation, header_writer;
+    if (global)
+      if (auto s = ComputeEntropyWriterStorageBound(MaximumCodingStreamHeaderBits({}), &group_writer); !s.ok())
+        return s;
+    if (auto s = ComputeEntropyWriterStorageBound(32 * count + 15 + 384, &header_writer); !s.ok())
+      return s;
+    if (p.streams > SIZE_MAX - kMaximumScreenSamples ||
+        !evaluation.AddVector<uint64_t>(p.streams, VectorCapacityPolicy::kFreshExact) ||
+        !evaluation.AddVector<uint64_t>(count, VectorCapacityPolicy::kFreshExact) ||
+        !evaluation.AddVector<size_t>(count, VectorCapacityPolicy::kFreshExact) ||
+        !evaluation.AddVector<size_t>(p.streams + 1, VectorCapacityPolicy::kFreshExact) ||
+        !evaluation.AddVector<EntropyToken>(std::min(p.tokens, kMaximumScreenSamples + p.streams),
+                                             VectorCapacityPolicy::kFreshExact) ||
+        !evaluation.AddVector<EntropyTokenStreamView>(p.streams, VectorCapacityPolicy::kFreshExact) ||
+        !evaluation.Add(global_writer) || !evaluation.Add(group_writer) ||
+        !evaluation.Add(header_writer) || !evaluation.Add(headers.temporary) ||
+        !evaluation.Add(tree.scratch) || !evaluation.Add(model.write_scratch) ||
+        !p.working.Add(evaluation)) return Overflow();
+  }
   *out = p;
   return Status::Ok();
 }
@@ -266,15 +292,15 @@ Status ComputeStoragePlan(Extent2D extent, PackedModularFormat format,
 Status ComputeModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat format,
                                          EntropyCodingMode mode, const ModularCodingPolicy &policy,
                                          ModularWorkflowStoragePlan *out, size_t cpu_threads,
-                                         size_t maximum_tree_leaves) {
+                                         size_t maximum_tree_leaves, bool candidate_evaluation) {
   return ComputeStoragePlan(extent, format, mode, policy, out, cpu_threads, 0,
-                            maximum_tree_leaves);
+                            maximum_tree_leaves, candidate_evaluation);
 }
 Status ComputeModularTokenConsumerStoragePlan(Extent2D extent, PackedModularFormat format,
     EntropyCodingMode mode, const ModularCodingPolicy &policy, size_t completed_token_bytes,
     ModularWorkflowStoragePlan *out, size_t cpu_threads) {
   if (!completed_token_bytes)
     return Status::InvalidArgument("Empty Modular completed-token backing");
-  return ComputeStoragePlan(extent, format, mode, policy, out, cpu_threads, completed_token_bytes, 0);
+  return ComputeStoragePlan(extent, format, mode, policy, out, cpu_threads, completed_token_bytes, 0, false);
 }
 } // namespace gjxl::modular_internal

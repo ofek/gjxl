@@ -57,5 +57,6 @@ LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStreamPlan &
 [[nodiscard]] Status
 ComputeModularSearchStoragePlan(Extent2D extent, PackedModularFormat format, EntropyCodingMode mode,
                                 ModularWorkflowStoragePlan *out, size_t cpu_threads = 1,
-                                TreeLearningOptions learning = {}, bool tree_checkpoints = false);
+                                TreeLearningOptions learning = {}, bool tree_checkpoints = false,
+                                bool candidate_evaluation = false);
 } // namespace gjxl::modular_internal

@@ -31,7 +31,8 @@ struct ModularWorkflowStoragePlan {
                                                        const ModularCodingPolicy &policy,
                                                        ModularWorkflowStoragePlan *out,
                                                        size_t cpu_threads = 1,
-                                                       size_t maximum_tree_leaves = 0);
+                                                       size_t maximum_tree_leaves = 0,
+                                                       bool candidate_evaluation = false);
 // Completed-token continuation only: replaces scalar token backing with the
 // supplied retained arena capacity, and omits image preparation/tokenization.
 // Includes canonical layout and fresh stream views, models, emission workers,

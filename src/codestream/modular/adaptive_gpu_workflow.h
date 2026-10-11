@@ -6,6 +6,7 @@
 #include "gpu/ops/modular_adaptive_tokens.h"
 
 namespace gjxl::modular_internal {
+struct ModularCandidateEvaluation;
 struct AdaptiveModularWorkflowStoragePlan {
   ModularWorkflowStoragePlan cpu;
   size_t additional_peak_bytes = 0, peak_bytes = 0;
@@ -34,7 +35,8 @@ public:
   [[nodiscard]] Status Encode(const ModularCodingPolicy &policy, EntropyCodingMode mode,
                               const ModularWorkflowStoragePlan &storage,
                               codestream_internal::CodestreamBuffer *out,
-                              AnsSelectionMode selection = AnsSelectionMode::kExact);
+                              AnsSelectionMode selection = AnsSelectionMode::kExact,
+                              ModularCandidateEvaluation *evaluation = nullptr);
 
 private:
   [[nodiscard]] Status Prepare(const ModularCodingPolicy &policy, ModularEncoderFrame *fallback);

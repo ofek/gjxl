@@ -355,6 +355,8 @@ add_library(
   src/codestream/modular/tokenization.cpp
   src/codestream/modular/storage_plan.cpp
   src/codestream/modular/frame_encoder.cpp
+  src/codestream/modular/candidate_cost.cpp
+  src/codestream/modular/candidate_screen.cpp
   src/codestream/modular/public.cpp
   src/codestream/modular/workflow.cpp
   src/codestream/modular/prepared_encoder.cpp
@@ -2405,6 +2407,20 @@ if(GJXL_BUILD_TESTS)
   add_test(NAME ans_selection COMMAND gjxl_ans_selection_test)
   add_test(NAME ans_selection_faults COMMAND gjxl_ans_selection_test --allocations)
   set_tests_properties(ans_selection ans_selection_faults PROPERTIES TIMEOUT 300)
+
+  add_executable(gjxl_modular_candidate_cost_test tests/modular_candidate_cost_test.cpp)
+  target_link_libraries(gjxl_modular_candidate_cost_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_candidate_cost COMMAND gjxl_modular_candidate_cost_test)
+  set_tests_properties(modular_candidate_cost PROPERTIES TIMEOUT 180)
+
+  add_executable(gjxl_modular_candidate_search_test tests/modular_candidate_search_test.cpp)
+  target_link_libraries(gjxl_modular_candidate_search_test PRIVATE gjxl_codestream)
+  if(TARGET gjxl_metal)
+    target_link_libraries(gjxl_modular_candidate_search_test PRIVATE gjxl_metal)
+    target_compile_definitions(gjxl_modular_candidate_search_test PRIVATE GJXL_CANDIDATE_SEARCH_METAL=1)
+  endif()
+  add_test(NAME modular_candidate_search COMMAND gjxl_modular_candidate_search_test)
+  set_tests_properties(modular_candidate_search PROPERTIES TIMEOUT 300)
 
   add_executable(gjxl_modular_training_budget_test tests/modular_training_budget_test.cpp)
   target_link_libraries(gjxl_modular_training_budget_test PRIVATE gjxl_codestream)

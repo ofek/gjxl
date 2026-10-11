@@ -12,5 +12,6 @@ namespace gjxl::modular_internal {
 EncodePreparedModularFrame(ModularEncoderFrame frame, const ModularCodingPolicy &policy,
                            EntropyCodingMode entropy, const ModularWorkflowStoragePlan &storage,
                            codestream_internal::CodestreamBuffer *out,
-                           AnsSelectionMode selection = AnsSelectionMode::kExact);
+                           AnsSelectionMode selection = AnsSelectionMode::kExact,
+                           ModularCandidateEvaluation *evaluation = nullptr);
 } // namespace gjxl::modular_internal

@@ -129,7 +129,11 @@ all candidates; tiny/empty streams, transforms, alpha/16-bit data, TOC threshold
 ties, admission and failure paths are covered. Qualify the shortlist's rate/time
 trade-off from actual outputs rather than a sum of estimated savings.
 
-Status: pending.
+Status: implemented; correctness qualification is recorded in
+[the candidate evaluation contract](modular-candidate-evaluation.md).
+Complete-call timing, shortlist winner recall and rate regret remain pending
+until the serial frozen-binary corpus study. The original emission oracle remains
+the default. Neither measured sizing nor shortlist selection changes public policy.
 
 ## 4. GPU population production and reuse
 

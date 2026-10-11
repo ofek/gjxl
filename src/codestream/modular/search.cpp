@@ -220,7 +220,7 @@ Status BuildTransformCandidates(Extent2D extent, PackedModularFormat format, uin
 Status ComputeModularSearchStoragePlan(Extent2D extent, PackedModularFormat format,
                                        EntropyCodingMode mode, ModularWorkflowStoragePlan *out,
                                        size_t cpu_threads, TreeLearningOptions learning_options,
-                                       bool tree_checkpoints) {
+                                       bool tree_checkpoints, bool candidate_evaluation) {
   if (!out)
     return Status::InvalidArgument("Null Modular search plan");
   if (auto s = ValidateTreeLearningOptions(learning_options); !s.ok())
@@ -237,10 +237,11 @@ Status ComputeModularSearchStoragePlan(Extent2D extent, PackedModularFormat form
     return s;
   ModularWorkflowStoragePlan plan, baseline;
   if (auto s = ComputeModularWorkflowStoragePlan(extent, format, mode, largest, &plan, cpu_threads,
-                                                 maximum_leaves);
+                                                 maximum_leaves, candidate_evaluation);
       !s.ok())
     return s;
-  if (auto s = ComputeModularWorkflowStoragePlan(extent, format, mode, {}, &baseline, cpu_threads);
+  if (auto s = ComputeModularWorkflowStoragePlan(extent, format, mode, {}, &baseline, cpu_threads,
+                                                0, candidate_evaluation);
       !s.ok())
     return s;
   // Training keeps prepared planes, layout, and sample records, with one WP
@@ -282,7 +283,7 @@ Status ComputeModularSearchStoragePlan(Extent2D extent, PackedModularFormat form
     candidates[i].tree = largest.tree;
     ModularWorkflowStoragePlan candidate;
     if (auto s = ComputeModularWorkflowStoragePlan(extent, format, mode, candidates[i], &candidate,
-                                                   cpu_threads, maximum_leaves);
+                                                   cpu_threads, maximum_leaves, candidate_evaluation);
         !s.ok())
       return s;
     if (auto s = add_learning(candidate); !s.ok())
@@ -304,7 +305,8 @@ Status ComputeModularSearchStoragePlan(Extent2D extent, PackedModularFormat form
   const size_t nodes = 2 * maximum_leaves - 1;
   HostStorageBound policies;
   if (nodes > kInlineTreeNodes &&
-      !policies.AddVector<DecisionNode>(nodes, VectorCapacityPolicy::kFreshExact, 16))
+      !policies.AddVector<DecisionNode>(nodes, VectorCapacityPolicy::kFreshExact,
+                                        candidate_evaluation ? 20 : 16))
     return Status::InvalidArgument("Modular search policy storage overflow");
   if (!plan.working.Add(policies))
     return Status::InvalidArgument("Modular search policy overlap overflow");

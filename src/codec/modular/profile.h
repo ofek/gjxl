@@ -70,6 +70,11 @@ struct ModularProfile {
   // Release this diagnostic copy before asserting that the domain is empty.
   ModularCodingPolicy resolved;
   size_t encoded_candidates = 0;
+  // Actual complete payload emissions, including the final winner re-encode.
+  // encoded_candidates counts candidates considered by the search, excluding
+  // that final re-encode; GPU counters still count every actual token request.
+  size_t candidate_emissions = 0;
+  size_t screened_candidates = 0, exactly_measured_candidates = 0;
 };
 inline thread_local ModularProfile *active_modular_profile = nullptr;
 class ProfileSession {

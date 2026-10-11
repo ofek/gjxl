@@ -4,6 +4,7 @@
 #include "codec/modular/frame.h"
 #include "codec/modular/tree_learning.h"
 #include "codestream/entropy.h"
+#include "codestream/modular/candidate_cost.h"
 #include "core/execution_domain.h"
 
 namespace gjxl { class GpuBackend; }
@@ -30,6 +31,8 @@ struct ModularEncodingOptions {
   // Private selector: estimated mode omits ordered candidate simulation unless
   // an exact cost is requested. Applies equally to CPU and hybrid token paths.
   AnsSelectionMode ans_selection = AnsSelectionMode::kExact;
+  ModularSearchEvaluation search_evaluation = ModularSearchEvaluation::kEncodeAll;
+  ModularCandidateObserver *candidate_observer = nullptr;
 };
 [[nodiscard]] Status EncodeRgb8ModularOwned(Rgb8View input, const ModularEncodingOptions &options,
                                             codestream_internal::CodestreamBuffer *out);

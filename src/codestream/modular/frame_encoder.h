@@ -2,7 +2,14 @@
 // Copyright (c) 2026 Yunho Cho
 #pragma once
 #include "codestream/modular/storage_plan.h"
+#include "codestream/modular/candidate_screen.h"
 namespace gjxl::modular_internal {
+enum class ModularCandidateOperation { kEmit, kMeasure, kScreen };
+struct ModularCandidateEvaluation {
+  ModularCandidateOperation operation = ModularCandidateOperation::kEmit;
+  ModularCandidateCost cost;
+  ModularCandidateEstimate estimate;
+};
 // Internal handoff: plan/tokens have canonical provenance. Consumes either CPU
 // tokens or completed GPU-owned split views; joins all entropy workers before
 // releasing the owner, before assembly, also on failure after consumption.
@@ -14,5 +21,6 @@ namespace gjxl::modular_internal {
                                         const ModularWorkflowStoragePlan &storage,
                                         codestream_internal::CodestreamBuffer *out,
                                         AnsSelectionMode selection = AnsSelectionMode::kExact,
-                                        GpuBackend *ans_gpu = nullptr);
+                                        GpuBackend *ans_gpu = nullptr,
+                                        ModularCandidateEvaluation *evaluation = nullptr);
 } // namespace gjxl::modular_internal

@@ -15,15 +15,31 @@ Status EncodeModularFrame(const codec_internal::ImageMetadata &metadata,
                           const ModularStreamPlan &layout, PreparedModularTokens &&input,
                           EntropyCodingMode mode, const ModularWorkflowStoragePlan &storage,
                           CodestreamBuffer *out, AnsSelectionMode selection,
-                          GpuBackend *ans_gpu) try {
+                          GpuBackend *ans_gpu, ModularCandidateEvaluation *evaluation) try {
   if (auto s = ValidateAnsSelectionMode(selection); !s.ok())
     return s;
-  if (!out || input.streams.size() != layout.streams.size())
+  const auto operation = evaluation ? evaluation->operation : ModularCandidateOperation::kEmit;
+  const bool emit = operation == ModularCandidateOperation::kEmit;
+  if ((!out && emit) || input.streams.size() != layout.streams.size() ||
+      (operation != ModularCandidateOperation::kEmit && operation != ModularCandidateOperation::kMeasure &&
+       operation != ModularCandidateOperation::kScreen))
     return Status::InvalidArgument("Invalid Modular frame handoff");
+  ModularCandidateEvaluation result;
+  result.operation = operation;
   Storage<BitWriter> sections;
   {
     PreparedModularTokens tokens = std::move(input);
+    if (operation == ModularCandidateOperation::kScreen) {
+      ProfileScope profile_scope(ProfileStage::kModel);
+      if (auto s = ScreenModularCandidate(metadata, layout, tokens, mode, &result.estimate); !s.ok())
+        return s;
+      *evaluation = result;
+      if (active_modular_profile) ++active_modular_profile->screened_candidates;
+      return Status::Ok();
+    }
     EntropyCode model;
+    EntropyCodeCost model_cost;
+    auto *requested_cost = emit ? nullptr : &model_cost;
     {
       ProfileScope profile_scope(ProfileStage::kModel);
       thread_budget_internal::EncodeScope serial(1);
@@ -43,21 +59,30 @@ Status EncodeModularFrame(const codec_internal::ImageMetadata &metadata,
         if (ans_gpu) {
           ModularGpuAnsCost evaluator(*ans_gpu, tokens);
           if (auto s = OptimizeAnsEntropyCodeWithPreparedClusters(
-                tokens.streams, model, populations, &ans, nullptr, entropy_profile, selection,
+                tokens.streams, model, populations, &ans, requested_cost, entropy_profile, selection,
                 &evaluator); !s.ok())
             return s;
         } else {
           if (auto s = OptimizeAnsEntropyCodeWithPreparedClusters(
-                tokens.streams, model, populations, &ans, nullptr, entropy_profile, selection); !s.ok())
+                tokens.streams, model, populations, &ans, requested_cost, entropy_profile, selection); !s.ok())
             return s;
         }
         model = std::move(ans);
-      } else if (auto s = OptimizeEntropyCode(tokens.streams, options, &model, nullptr,
+      } else if (auto s = OptimizeEntropyCode(tokens.streams, options, &model, requested_cost,
                                                entropy_profile); !s.ok()) {
         return s;
       }
     }
+    if (!emit) {
+      ProfileScope profile_scope(ProfileStage::kModel);
+      if (auto s = MeasureModularCandidate(metadata, layout, tokens, model, model_cost, &result.cost); !s.ok())
+        return s;
+      *evaluation = result;
+      if (active_modular_profile) ++active_modular_profile->exactly_measured_candidates;
+      return Status::Ok();
+    }
     ProfileScope emission_scope(ProfileStage::kEmission);
+    if (evaluation) model_cost.section_token_bits.resize(tokens.streams.size(), 0);
     sections.resize(layout.geometry.section_count());
     {
       thread_budget_internal::EncodeScope serial(1);
@@ -71,14 +96,20 @@ Status EncodeModularFrame(const codec_internal::ImageMetadata &metadata,
                         std::span(tokens.tree_tokens).first(tokens.tree_token_count), &global);
                     !s.ok())
                   return s;
+                const size_t model_begin = global.bits_written();
                 if (auto s = WriteGlobalModelInTransaction(model, &global); !s.ok())
                   return s;
+                if (evaluation) model_cost.model_bits = global.bits_written() - model_begin - 1;
                 if (auto s = WriteCodingStreamHeader(tokens.policy.weighted, tokens.policy.rct,
                                                      tokens.policy.transforms, &global);
                     !s.ok())
                   return s;
-                if (tokens.streams[0].size())
-                  return WriteStreamTokensWithValidatedModel(tokens.streams[0], model, &global);
+                if (tokens.streams[0].size()) {
+                  const size_t begin = global.bits_written();
+                  if (auto s = WriteStreamTokensWithValidatedModel(tokens.streams[0], model, &global); !s.ok())
+                    return s;
+                  if (evaluation) model_cost.section_token_bits[0] = global.bits_written() - begin;
+                }
                 return Status::Ok();
               });
           !s.ok())
@@ -102,8 +133,11 @@ Status EncodeModularFrame(const codec_internal::ImageMetadata &metadata,
                         if (auto s = WriteCodingStreamHeader(tokens.policy.weighted, 0, &section);
                             !s.ok())
                           return s;
-                        return WriteStreamTokensWithValidatedModel(tokens.streams[i], model,
-                                                                   &section);
+                        const size_t begin = section.bits_written();
+                        if (auto s = WriteStreamTokensWithValidatedModel(tokens.streams[i], model,
+                                                                         &section); !s.ok()) return s;
+                        if (evaluation) model_cost.section_token_bits[i] = section.bits_written() - begin;
+                        return Status::Ok();
                       });
                   !s.ok())
                 return s;
@@ -111,6 +145,9 @@ Status EncodeModularFrame(const codec_internal::ImageMetadata &metadata,
             });
         !status.ok())
       return status;
+    if (evaluation)
+      if (auto s = MeasureModularCandidate(metadata, layout, tokens, model, model_cost, &result.cost); !s.ok())
+        return s;
   } // Tokens and model are no longer live during final assembly.
   ProfileScope assembly_scope(ProfileStage::kAssembly);
   BitWriter file;
@@ -122,8 +159,13 @@ Status EncodeModularFrame(const codec_internal::ImageMetadata &metadata,
     return s;
   // Clear backing as well as elements before allocating the published copy.
   Storage<BitWriter>().swap(sections);
-  return CodestreamBuffer::CopyFrom(file.padded_bytes(), out,
-                                    resource_budget_internal::ResourceClass::kRetainedResult);
+  if (evaluation && result.cost.bytes != file.padded_size())
+    return Status::Internal("Modular complete candidate cost differs from emitted bytes");
+  if (auto s = CodestreamBuffer::CopyFrom(file.padded_bytes(), out,
+              resource_budget_internal::ResourceClass::kRetainedResult); !s.ok()) return s;
+  if (evaluation) *evaluation = result;
+  if (active_modular_profile) ++active_modular_profile->candidate_emissions;
+  return Status::Ok();
 } catch (const resource_budget_internal::ManagedAllocationFailure &e) {
   return e.status();
 } catch (const std::bad_alloc &) {
