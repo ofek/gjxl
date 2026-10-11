@@ -66,12 +66,13 @@ void Stages(const std::array<const char *, N> &names, const std::array<double, N
 int main(int argc, char **argv) try {
   if (argc < 6 || argc > 8)
     throw std::runtime_error(
-        "gjxl_modular_search_profile INPUT OUTPUT SAMPLES LEAVES THREADS [--metal] [--no-profile]");
-  bool profiling = true, metal = false;
+        "gjxl_modular_search_profile INPUT OUTPUT SAMPLES LEAVES THREADS [--metal|--metal-ans] [--no-profile]");
+  bool profiling = true, metal = false, metal_ans = false;
   for (int i = 6; i < argc; ++i) {
     const std::string_view argument(argv[i]);
     if (argument == "--no-profile" && profiling) profiling = false;
     else if (argument == "--metal" && !metal) metal = true;
+    else if (argument == "--metal-ans" && !metal) { metal = true; metal_ans = true; }
     else throw std::runtime_error("Unknown or duplicate profiling option");
   }
   std::unique_ptr<GpuBackend> gpu;
@@ -92,6 +93,7 @@ int main(int argc, char **argv) try {
   options.tree_checkpoints = true;
   options.cpu_thread_count = Number(argv[5]);
   options.adaptive_gpu = gpu.get();
+  options.adaptive_ans_cost = metal_ans;
   Ok(ValidateTreeLearningOptions(options.learning));
   io::IntegerImage image;
   Ok(io::ReadPnm(argv[1], &image));
@@ -149,7 +151,7 @@ int main(int argc, char **argv) try {
   output.write(reinterpret_cast<const char *>(encoded.data()), encoded.size());
   output.close();
   std::cout << std::setprecision(17)
-            << "{\"schema\":1,\"route\":\"" << (metal ? "hybrid-complete-search" : "cpu-complete-search")
+            << "{\"schema\":1,\"route\":\"" << (metal_ans ? "hybrid-ans-complete-search" : metal ? "hybrid-complete-search" : "cpu-complete-search")
             << "\",\"entropy\":\"ans\""
             << ",\"backend_setup_seconds\":" << backend_setup_seconds
             << ",\"gpu_submissions\":" << gpu_after.committed_submissions - gpu_before.committed_submissions
@@ -174,7 +176,10 @@ int main(int argc, char **argv) try {
             << ",\"feature_preparations\":" << g.feature_preparations
             << ",\"feature_reuses\":" << g.feature_reuses << ",\"evictions\":" << g.evictions
             << ",\"encoded_candidates\":" << g.encoded_candidates
-            << ",\"cpu_fallback_candidates\":" << g.cpu_fallback_candidates << '}';
+            << ",\"cpu_fallback_candidates\":" << g.cpu_fallback_candidates
+            << ",\"ans_gpu_groups\":" << g.ans_gpu_groups
+            << ",\"ans_gpu_states\":" << g.ans_gpu_states
+            << ",\"ans_cpu_fallback_groups\":" << g.ans_cpu_fallback_groups << '}';
   std::cout << ",\"training\":{\"stages\":";
   const auto &t = profile.training_work;
   Stages(std::array{"rct_ranking", "palette_probe", "sample_gathering", "simple_learning",

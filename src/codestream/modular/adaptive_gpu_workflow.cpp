@@ -6,13 +6,14 @@
 #include "codestream/modular/prepared_encoder.h"
 #include "codestream/modular/search.h"
 #include "gpu/ops/modular_adaptive_layout.h"
+#include "gpu/ops/ans_token_cost.h"
 
 namespace gjxl::modular_internal {
 using namespace modular_gpu_internal;
 using namespace resource_budget_internal;
 namespace {
 Status AdditionalBound(const ModularInputProfile &source, const ModularFrameGeometry &geometry,
-                       const TransformSequence &transforms, size_t nodes, size_t *out) {
+                       const TransformSequence &transforms, size_t nodes, bool ans_cost, size_t *out) {
   std::array<ChannelShape, kMaximumTransforms + 1> shapes;
   if (auto s = PlanTransforms(source.channels(), 0, transforms, &shapes); !s.ok())
     return s;
@@ -41,6 +42,16 @@ Status AdditionalBound(const ModularInputProfile &source, const ModularFrameGeom
   if (!additional.Add({operation, operation}) ||
       !additional.AddVector<AdaptiveModularTokenSlice>(slices, VectorCapacityPolicy::kFreshExact))
     return Status::InvalidArgument("Adaptive Modular additional storage overflow");
+  if (ans_cost) {
+    ans_gpu_internal::AnsTokenCostStoragePlan cost;
+    const size_t contexts = (nodes + 1) / 2;
+    if (auto s = ans_gpu_internal::ComputeAnsTokenCostStoragePlan(
+          total, layout.streams, ans_gpu_internal::kMaximumCostCandidates, contexts,
+          std::min(contexts, ans_gpu_internal::kMaximumCostClusters), &cost); !s.ok())
+      return s;
+    if (!additional.Add({cost.peak_bytes, cost.peak_bytes}))
+      return Status::InvalidArgument("Adaptive Modular ANS storage overflow");
+  }
   *out = additional.peak_bytes;
   return Status::Ok();
 }
@@ -87,8 +98,9 @@ Status ComputeAdaptiveModularWorkflowStoragePlan(Extent2D extent, PackedModularF
       std::max(kDefaultTreeLeaves, options.learning.maximum_leaves),
       MaximumGlobalTreeLeaves(uint64_t{extent.width} * extent.height * source.channel_count));
   const size_t nodes = options.search ? 2 * leaves - 1 : options.coding.tree.size;
+  const bool ans_cost = options.adaptive_ans_cost && options.entropy == EntropyCodingMode::kAns;
   if (auto s = AdditionalBound(source, result.cpu.geometry, options.coding.transforms, nodes,
-                               &result.additional_peak_bytes);
+                               ans_cost, &result.additional_peak_bytes);
       !s.ok())
     return s;
   if (options.search) {
@@ -101,7 +113,7 @@ Status ComputeAdaptiveModularWorkflowStoragePlan(Extent2D extent, PackedModularF
     for (size_t i = 0; i < count; ++i) {
       size_t bound;
       if (auto s =
-              AdditionalBound(source, result.cpu.geometry, candidates[i].transforms, nodes, &bound);
+              AdditionalBound(source, result.cpu.geometry, candidates[i].transforms, nodes, ans_cost, &bound);
           !s.ok())
         return s;
       result.additional_peak_bytes = std::max(result.additional_peak_bytes, bound);
@@ -218,7 +230,7 @@ Status AdaptiveModularTokenCache::Encode(const ModularCodingPolicy &policy, Entr
   auto metadata = features_->metadata();
   if (policy != ModularCodingPolicy{})
     metadata.modular_16_bit_buffer_sufficient = false;
-  const auto status = EncodeModularFrame(metadata, layout_, std::move(tokens), mode, storage, out);
+  const auto status = EncodeModularFrame(metadata, layout_, std::move(tokens), mode, storage, out, ans_backend_);
   if (status.ok() && active_modular_profile)
     ++active_modular_profile->adaptive_gpu.encoded_candidates;
   return status;

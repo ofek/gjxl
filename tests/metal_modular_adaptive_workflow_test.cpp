@@ -92,8 +92,11 @@ AdaptiveModularWorkflowStoragePlan Plan(const Fixture &f, const ModularEncodingO
         "Adaptive whole-call planner allocated or omitted the cache lifetime");
   return result;
 }
-void Case(GpuBackend &gpu, const Fixture &f, ModularEncodingOptions options, bool extra = false) {
+void Case(GpuBackend &gpu, const Fixture &f, ModularEncodingOptions options, bool extra = false,
+          bool ans_cost = false) {
+  options.adaptive_ans_cost = ans_cost;
   const auto plan = Plan(f, options);
+  options.adaptive_ans_cost = false;
   std::vector<uint8_t> cpu, hybrid{7, 8, 9};
   ModularProfile baseline, actual;
   Ok(ExecutionDomain::Create({plan.cpu.working.peak_bytes, options.cpu_thread_count},
@@ -108,6 +111,7 @@ void Case(GpuBackend &gpu, const Fixture &f, ModularEncodingOptions options, boo
   Ok(ExecutionDomain::Create({plan.peak_bytes, options.cpu_thread_count},
                              &options.execution_domain));
   options.adaptive_gpu = &gpu;
+  options.adaptive_ans_cost = ans_cost;
   const auto before = gpu.stats();
   {
     ProfileSession profile(&actual);
@@ -118,9 +122,14 @@ void Case(GpuBackend &gpu, const Fixture &f, ModularEncodingOptions options, boo
             actual.adaptive_gpu.encoded_candidates == actual.encoded_candidates &&
             actual.adaptive_gpu.cpu_fallback_candidates == 0 &&
             gpu.stats().committed_submissions - before.committed_submissions ==
-                actual.encoded_candidates,
+                actual.encoded_candidates + actual.adaptive_gpu.ans_gpu_groups,
         "Hybrid search changed bytes, selected policy, candidate count, or silently fell back");
   const auto &g = actual.adaptive_gpu;
+  Check(g.ans_cpu_fallback_groups == 0 && (ans_cost && options.entropy == EntropyCodingMode::kAns
+                                               ? g.ans_gpu_groups >= actual.encoded_candidates &&
+                                                     g.ans_gpu_states >= g.ans_gpu_groups
+                                               : g.ans_gpu_groups == 0 && g.ans_gpu_states == 0),
+        "Exact ANS cost route was omitted or silently fell back");
   Check(g.feature_preparations + g.feature_reuses == g.encoded_candidates &&
             g.evictions + 1 == g.feature_preparations && g.feature_seconds > 0 &&
             g.token_seconds > 0 &&
@@ -298,10 +307,53 @@ void FallbacksAndFailures(GpuBackend &gpu) {
     ++fault_checks;
   }
 }
-void AllocationSweep(GpuBackend &gpu) {
+void AnsFallback(GpuBackend &gpu) {
+  Fixture f(PackedModularFormat::kRgb16, {19, 17});
+  ModularEncodingOptions options;
+  options.entropy = EntropyCodingMode::kAns;
+  std::vector<uint8_t> cpu, actual{7, 8, 9};
+  Ok(EncodeModularImage(f.view, options, &cpu));
+  FaultCapability tokens_only(gpu);
+  options.adaptive_gpu = &tokens_only;
+  options.adaptive_ans_cost = true;
+  const auto plan = Plan(f, options);
+  Ok(ExecutionDomain::Create({plan.peak_bytes, 1}, &options.execution_domain));
+  ModularProfile profile;
+  const auto before = gpu.stats();
+  {
+    ProfileSession session(&profile);
+    Ok(EncodeModularImage(f.view, options, &actual));
+  }
+  Check(actual == cpu && profile.adaptive_gpu.ans_gpu_groups == 0 &&
+            profile.adaptive_gpu.ans_cpu_fallback_groups > 0 &&
+            gpu.stats().committed_submissions == before.committed_submissions + 1,
+        "Missing ANS capability did not use the explicit scalar cost fallback");
+  profile.resolved = {};
+  Empty(*options.execution_domain);
+  options.adaptive_gpu = &gpu;
+  Ok(ExecutionDomain::Create({plan.peak_bytes - 1, 1}, &options.execution_domain));
+  actual = {7, 8, 9};
+  ArmNextManagedHostAllocationFailureForTest();
+  const auto status = EncodeModularImage(f.view, options, &actual);
+  const bool pending = ManagedHostAllocationFailurePendingForTest();
+  DisarmManagedHostAllocationFailureForTest();
+  Check(status.code() == StatusCode::kOutOfMemory && pending &&
+            actual == std::vector<uint8_t>({7, 8, 9}),
+        "ANS-inclusive admission allocated or published with one byte too little");
+  Empty(*options.execution_domain);
+  options.execution_domain.reset();
+  options.adaptive_gpu = nullptr;
+  Check(EncodeModularImage(f.view, options, &actual).code() == StatusCode::kInvalidArgument &&
+            actual == std::vector<uint8_t>({7, 8, 9}),
+        "ANS switch without adaptive GPU was not rejected");
+}
+void AllocationSweep(GpuBackend &gpu, bool ans_cost = false) {
   Fixture f(PackedModularFormat::kGray8, {1, 1});
   ModularEncodingOptions options;
   options.adaptive_gpu = &gpu;
+  options.adaptive_ans_cost = ans_cost;
+  if (ans_cost)
+    options.entropy = EntropyCodingMode::kAns;
   options.search = true;
   options.tree_checkpoints = true;
   options.learning = {32, 32};
@@ -417,8 +469,27 @@ int main(int argc, char **argv) try {
   prescribed.coding.transforms.entries[0] = {TransformKind::kSqueeze, 0, 4, 1, true, false};
   prescribed.coding.tree.nodes[0].predictor = Predictor::kWeighted;
   Case(*gpu, grouped, prescribed);
+  for (auto format :
+       {PackedModularFormat::kGray8, PackedModularFormat::kRgb8, PackedModularFormat::kRgba8,
+        PackedModularFormat::kGray16, PackedModularFormat::kRgb16, PackedModularFormat::kRgba16}) {
+    for (bool palette : {false, true}) {
+      Fixture f(format, {13, 11}, palette);
+      ModularEncodingOptions options;
+      options.search = true;
+      options.entropy = EntropyCodingMode::kAns;
+      options.tree_checkpoints = true;
+      options.learning = {512, 32};
+      options.cpu_thread_count = palette ? 4 : 1;
+      Case(*gpu, f, options, format == PackedModularFormat::kGray16 && palette, true);
+    }
+  }
+  Case(*gpu, grouped, prescribed, true, true);
+  prescribed.entropy = EntropyCodingMode::kPrefix;
+  Case(*gpu, grouped, prescribed, false, true);
   FallbacksAndFailures(*gpu);
+  AnsFallback(*gpu);
   AllocationSweep(*gpu);
+  AllocationSweep(*gpu, true);
   SameAddress(*gpu);
   CacheKeys(*gpu);
   gpu.reset();

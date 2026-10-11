@@ -2397,7 +2397,8 @@ Status OptimizeAnsEntropyCodeImpl(
   EntropyCode* code,
   EntropyCodeCost* cost,
   codestream_internal::PreparedAnsEntropyCode* deferred,
-  codestream_internal::EntropyWorkProfile* profile) {
+  codestream_internal::EntropyWorkProfile* profile,
+  codestream_internal::AnsTokenCostEvaluator* evaluator = nullptr) {
 
   const bool direct_partition =
     prepared != nullptr && prefix_partition.prefix_codes.empty();
@@ -2878,13 +2879,21 @@ Status OptimizeAnsEntropyCodeImpl(
       std::array<EntropyCodeCost, kAnsAlphabetWidthCount> candidate_costs{};
       const ProfileClock::time_point token_cost_begin =
         ProfileBegin(profile);
-      if (Status status = MeasureAnsCodes(
-            section_tokens,
-            std::span(candidate_codes).first(group_size),
-            std::span(candidate_model_bits).first(group_size),
-            std::span(candidate_costs).first(group_size));
-          !status.ok()) {
-        return status;
+      bool handled = false;
+      if (evaluator != nullptr) {
+        if (Status status = evaluator->TryMeasure(
+              section_tokens, std::span(candidate_codes).first(group_size),
+              std::span(candidate_model_bits).first(group_size),
+              std::span(candidate_costs).first(group_size), &handled);
+            !status.ok()) return status;
+      }
+      if (!handled) {
+        if (Status status = MeasureAnsCodes(
+              section_tokens,
+              std::span(candidate_codes).first(group_size),
+              std::span(candidate_model_bits).first(group_size),
+              std::span(candidate_costs).first(group_size));
+            !status.ok()) return status;
       }
       ProfileEnd(
         profile, token_cost_begin,
@@ -3137,6 +3146,15 @@ Status codestream_internal::FinalizePreparedAnsEntropyCode(
   } catch (const std::length_error&) {
     return AllocationFailure();
   }
+}
+
+Status codestream_internal::OptimizeAnsEntropyCodeWithCostEvaluator(
+  std::span<const EntropyTokenStreamView> section_tokens,
+  const EntropyCode& prefix_partition, AnsTokenCostEvaluator& evaluator,
+  EntropyCode* code, EntropyCodeCost* cost, EntropyWorkProfile* profile) {
+  return OptimizeAnsEntropyCodeImpl(
+    section_tokens, prefix_partition, nullptr, kMaximumCompressionAnsPolicy,
+    code, cost, nullptr, profile, &evaluator);
 }
 
 Status OptimizeAnsEntropyCode(

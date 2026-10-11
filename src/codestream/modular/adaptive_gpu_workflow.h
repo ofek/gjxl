@@ -28,9 +28,9 @@ ComputeAdaptiveModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat f
 class AdaptiveModularTokenCache {
 public:
   AdaptiveModularTokenCache(GpuBackend &backend, PackedModularImageView input,
-                            bool anticipate_weighted = true)
+                            bool anticipate_weighted = true, bool ans_cost = false)
       : operation_(modular_gpu_internal::QueryGpuAdaptiveModularTokenGeneration(backend)),
-        input_(input), anticipate_weighted_(anticipate_weighted) {}
+        input_(input), anticipate_weighted_(anticipate_weighted), ans_backend_(ans_cost ? &backend : nullptr) {}
   [[nodiscard]] Status Encode(const ModularCodingPolicy &policy, EntropyCodingMode mode,
                               const ModularWorkflowStoragePlan &storage,
                               codestream_internal::CodestreamBuffer *out);
@@ -41,6 +41,7 @@ private:
   modular_gpu_internal::GpuAdaptiveModularTokenGeneration *operation_;
   const PackedModularImageView input_;
   const bool anticipate_weighted_;
+  GpuBackend *const ans_backend_;
   uint8_t rct_ = 0;
   TransformSequence transforms_;
   WeightedPredictorParameters weighted_;

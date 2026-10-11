@@ -192,3 +192,14 @@ The frozen one-pair pilot and validation command are documented in
 policy parity, training work counters and cache accounting before regenerating
 the report. It reports timings as diagnostic observations, alongside exact
 ANS attribution and the increased managed backing/admission requirement.
+
+`--metal-ans` enables the resident-token hybrid route plus exact GPU ANS cost
+evaluation; use it instead of `--metal`. It preserves the CPU model search,
+candidate pruning and ties. Its route is `hybrid-ans-complete-search`.
+`adaptive_gpu.ans_gpu_groups` counts successful cost submissions,
+`ans_gpu_states` counts section/candidate states, and
+`ans_cpu_fallback_groups` counts explicit pre-dispatch scalar fallback. The
+existing `entropy_work.ans_token_cost_ns` includes model upload, GPU wait and
+conversion inside `stages.model`. Actual `gpu_submissions` is token-generation
+submissions plus cost-group submissions. `--metal-ans --no-profile` also works;
+backend counts remain enabled while optional attribution counters are zero.

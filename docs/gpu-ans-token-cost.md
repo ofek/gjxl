@@ -94,7 +94,8 @@ may take an explicitly counted CPU route before dispatch.
    alphabet widths, HybridUint configurations, cluster maps and edge values.
 3. Route only the existing exact-cost call through the capability for resident
    adaptive tokens. Compose storage and preserve all optimizer decisions and
-   error/owner lifetimes. Record submissions, fallback and nested elapsed time.
+   error/owner lifetimes. Implemented behind `adaptive_ans_cost`, with submissions,
+   fallback counts and the existing nested exact-cost elapsed interval.
 4. Qualify complete-file/policy equality, pinned decoding, exact admission,
    injected allocation/submission/completion failures and disabled profiling.
 5. Repeat paired full-resolution complete searches. Include model upload, waits,
@@ -106,8 +107,8 @@ values/contexts, directly initializes shared descriptor/model backing, dispatche
 one lane per section/candidate and publishes a completed shared result arena
 after waiting and validating status. No token copy or token-sized scratch is
 introduced. The new kernel is included in external and embedded libraries.
-Encoder routing and complete-path measurements are still required; the hybrid
-pilot predates this operation.
+Encoder routing is now implemented as described below; complete-path performance
+measurements are still required. The earlier hybrid pilot predates this operation.
 
 `ans_token_cost_plan` passes in the Release/Metal and CPU-only builds. Tests cover
 normalized native model tables, malformed configuration/frequency/offset/map and
@@ -143,3 +144,60 @@ pass. Logs are retained under `build/adaptive-integration/ans-cost-*`; the final
 test details and frozen native test artifacts are recorded in
 `build/ans-cost-device-20261011/manifest.json`. This establishes operation
 correctness, not a complete-encode speedup or changed compression rate.
+
+## Complete-search integration
+
+The private `ModularEncodingOptions::adaptive_ans_cost` switch requires an
+`adaptive_gpu` backend. The profile tool's `--metal-ans` option enables both;
+`--metal` retains the earlier token-only hybrid route as a control. Public
+encoding defaults remain unchanged. Prefix mode never invokes ANS costing.
+
+`ModularGpuAnsCost` validates that the optimizer's split streams partition the
+completed token owner's host views, then borrows the same native device ranges.
+It builds small section/model views for the existing candidate group, measures
+the group synchronously, validates the completed result, performs checked
+summation and moves exact costs back to the unchanged selector. It does not
+recollect tokens, normalize models, change pruning, reorder candidates or cache
+mutable model state. The internal `AnsTokenCostEvaluator` hook is an explicit
+call argument, not a global or thread-local override.
+
+If the capability is absent or shape/device-limit preflight is unsupported, the
+adapter explicitly requests the original scalar cost measurement. A provider
+error, including Unsupported after work has begun, propagates immediately. The
+existing CPU optimizer and its other clients continue through the old entry
+point with no provider. The provider contract test checks identical models and
+exact costs for handled and declined requests, and unchanged public model/cost
+outputs after a terminal provider error.
+
+The complete workflow adds the worst-case four-candidate cost-operation peak for
+each transformed layout to its existing conservative CPU-plus-feature bound.
+This covers GPU dispatch/result backing and caller views while the CPU models,
+resident tokens and feature cache are alive. Admission includes the bound even
+when a capability later falls back. The CPU optimizer's existing cost-vector
+bound covers result conversion and selection; no second token arena is added.
+
+Profiling reports `ans_gpu_groups`, `ans_gpu_states` and
+`ans_cpu_fallback_groups` inside `adaptive_gpu`. Successful GPU groups each add
+one actual submission. Cost upload, dispatch, wait and conversion are included in
+`entropy_work.ans_token_cost_ns`, itself nested in `stages.model`; those intervals
+must not be summed again. With profiling disabled, actual backend submission and
+allocation totals remain available. The capture route is
+`hybrid-ans-complete-search`.
+
+Integrated tests pass 39 complete CPU/hybrid file and selected-policy matches,
+including 14 additional ANS-enabled/prefix-bypass cases covering all six formats,
+palette patterns, expanded checkpoint search, one/four CPU participants and
+grouped Squeeze/weighted prediction. Pinned libjxl decodes 92,908 source samples
+exactly. Profile-disabled and owned publication paths match too. Capability
+fallback is explicit and byte exact; ANS-inclusive one-byte-short admission and
+an ANS switch without a GPU are rejected before publication. The original and
+ANS-enabled tiny-input complete-search allocation sweeps plus existing device
+and late-candidate faults pass 3,905 injected failure-atomic checks. This count
+does not mean exhaustive allocation sweeps on the photographic corpus.
+
+The full Release build and all 19 selected integrated ANS/entropy, Modular GPU,
+profile, embedded-library and submission-storage regressions pass. Test logs use
+the `build/adaptive-integration/ans-cost-integrated-*` prefix. The CPU-only ANS
+contract/provider, Modular profile and GPU-token handoff tests also pass. Paired performance
+captures must now establish whether the exact operation improves complete calls
+on the original full-resolution inputs.

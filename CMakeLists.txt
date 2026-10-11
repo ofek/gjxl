@@ -359,6 +359,7 @@ add_library(
   src/codestream/modular/workflow.cpp
   src/codestream/modular/prepared_encoder.cpp
   src/codestream/modular/adaptive_gpu_workflow.cpp
+  src/codestream/modular/gpu_ans_cost.cpp
   src/codestream/modular/gpu_workflow.cpp
   src/codestream/modular/gpu_token_workflow.cpp
   src/codestream/huffman.cpp

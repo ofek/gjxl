@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 Yunho Cho
 #include "codestream/modular/frame_encoder.h"
+#include "codestream/modular/gpu_ans_cost.h"
 #include "codec/modular/profile.h"
 #include "codestream/headers_internal.h"
 #include "codestream/modular/stream_encoder.h"
@@ -13,7 +14,7 @@ using namespace codestream_internal;
 Status EncodeModularFrame(const codec_internal::ImageMetadata &metadata,
                           const ModularStreamPlan &layout, PreparedModularTokens &&input,
                           EntropyCodingMode mode, const ModularWorkflowStoragePlan &storage,
-                          CodestreamBuffer *out) try {
+                          CodestreamBuffer *out, GpuBackend *ans_gpu) try {
   if (!out || input.streams.size() != layout.streams.size())
     return Status::InvalidArgument("Invalid Modular frame handoff");
   Storage<BitWriter> sections;
@@ -32,9 +33,15 @@ Status EncodeModularFrame(const codec_internal::ImageMetadata &metadata,
         return s;
       if (mode == EntropyCodingMode::kAns) {
         EntropyCode ans;
-        if (auto s = OptimizeAnsEntropyCode(tokens.streams, model, &ans, nullptr, entropy_profile);
-            !s.ok())
-          return s;
+        if (ans_gpu) {
+          ModularGpuAnsCost evaluator(*ans_gpu, tokens);
+          if (auto s = OptimizeAnsEntropyCodeWithCostEvaluator(
+                tokens.streams, model, evaluator, &ans, nullptr, entropy_profile); !s.ok())
+            return s;
+        } else {
+          if (auto s = OptimizeAnsEntropyCode(tokens.streams, model, &ans, nullptr, entropy_profile); !s.ok())
+            return s;
+        }
         model = std::move(ans);
       }
     }

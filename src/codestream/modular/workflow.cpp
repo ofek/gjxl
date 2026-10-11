@@ -21,6 +21,8 @@ Status Encode(PackedModularImageView input, const ModularEncodingOptions &option
     return Status::InvalidArgument("Null Modular workflow output");
   if (auto s = input.Validate(); !s.ok())
     return s;
+  if (options.adaptive_ans_cost && !options.adaptive_gpu)
+    return Status::InvalidArgument("GPU ANS cost requires the adaptive GPU route");
   if (auto s = ValidateTreeLearningOptions(options.learning); !s.ok())
     return s;
   if (options.search)
@@ -51,7 +53,7 @@ Status Encode(PackedModularImageView input, const ModularEncodingOptions &option
       resource_budget_internal::ResourceClass::kPreparation);
   std::optional<AdaptiveModularTokenCache> local_cache;
   if (options.adaptive_gpu && !cache) {
-    local_cache.emplace(*options.adaptive_gpu, input, false);
+    local_cache.emplace(*options.adaptive_gpu, input, false, options.adaptive_ans_cost);
     cache = &*local_cache;
   }
   codestream_internal::CodestreamBuffer candidate;
@@ -110,7 +112,7 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
   thread_budget_internal::EncodeScope threads(requested.cpu_thread_count);
   std::optional<AdaptiveModularTokenCache> adaptive_cache;
   if (requested.adaptive_gpu)
-    adaptive_cache.emplace(*requested.adaptive_gpu, input);
+    adaptive_cache.emplace(*requested.adaptive_gpu, input, true, requested.adaptive_ans_cost);
   auto *cache = adaptive_cache ? &*adaptive_cache : nullptr;
   auto options = requested;
   options.search = false;

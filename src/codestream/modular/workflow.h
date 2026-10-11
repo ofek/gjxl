@@ -22,6 +22,9 @@ struct ModularEncodingOptions {
   // Private hybrid qualification route. Backend is borrowed for this complete
   // call; feature reuse is call-local. Public defaults stay on their old paths.
   GpuBackend *adaptive_gpu = nullptr;
+  // Private qualification switch; requires adaptive_gpu. The old hybrid route
+  // remains available as a paired control while exact ANS costing is qualified.
+  bool adaptive_ans_cost = false;
 };
 [[nodiscard]] Status EncodeRgb8ModularOwned(Rgb8View input, const ModularEncodingOptions &options,
                                             codestream_internal::CodestreamBuffer *out);

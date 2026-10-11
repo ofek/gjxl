@@ -48,6 +48,8 @@ struct AdaptiveGpuWorkProfile {
   double feature_seconds = 0, token_seconds = 0;
   size_t feature_preparations = 0, feature_reuses = 0, evictions = 0;
   size_t encoded_candidates = 0, cpu_fallback_candidates = 0;
+  // Exact ANS cost is nested in kModel/entropy_work.ans_token_cost_nanoseconds.
+  size_t ans_gpu_groups = 0, ans_gpu_states = 0, ans_cpu_fallback_groups = 0;
   bool operator==(const AdaptiveGpuWorkProfile &) const = default;
 };
 struct ModularProfile {

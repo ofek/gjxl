@@ -156,11 +156,73 @@ void NativeModels() {
   const AnsTokenCostModelView model{ans.context_map, clusters};
   Ok(ValidateAnsTokenCostModels(std::span(&model, 1)));
 }
+void EvaluatorContract() {
+  using namespace codestream_internal;
+  struct Evaluator : AnsTokenCostEvaluator {
+    unsigned mode = 0;
+    size_t calls = 0;
+    Status TryMeasure(std::span<const EntropyTokenStreamView> sections,
+                      std::span<const EntropyCode *const> codes,
+                      std::span<const uint64_t> model_bits, std::span<EntropyCodeCost> costs,
+                      bool *handled) override {
+      ++calls;
+      *handled = false;
+      if (mode == 2)
+        return Status::Unsupported("Injected failure after provider work");
+      if (mode == 0)
+        return Status::Ok();
+      for (size_t c = 0; c < codes.size(); ++c) {
+        EntropyCodeCost cost;
+        cost.model_bits = model_bits[c];
+        cost.cluster_count = codes[c]->ans_histograms.size();
+        for (auto section : sections) {
+          uint64_t bits;
+          if (auto s = CountAnsTokenStreamBits(section, *codes[c], &bits); !s.ok())
+            return s;
+          cost.section_token_bits.push_back(bits);
+          cost.token_bits += bits;
+        }
+        costs[c] = std::move(cost);
+      }
+      *handled = true;
+      return Status::Ok();
+    }
+  } evaluator;
+  std::vector<EntropyToken> tokens;
+  for (uint32_t i = 0; i < 3073; ++i)
+    tokens.push_back({i % 3, (i * i + 31 * i) % 513});
+  const std::array sections{EntropyTokenStreamView::Interleaved({}),
+                            EntropyTokenStreamView::Interleaved(std::span(tokens).first(1001)),
+                            EntropyTokenStreamView::Interleaved(std::span(tokens).subspan(1001))};
+  EntropyCode prefix, reference;
+  EntropyCodeCost expected;
+  Ok(OptimizeEntropyCode(sections, {.context_count = 3}, &prefix));
+  Ok(OptimizeAnsEntropyCode(sections, prefix, &reference, &expected));
+  for (unsigned mode : {0, 1, 2}) {
+    evaluator.mode = mode;
+    evaluator.calls = 0;
+    EntropyCode actual = prefix;
+    EntropyCodeCost cost{.model_bits = 17, .token_bits = 23};
+    const auto old_cost = cost;
+    const auto status =
+        OptimizeAnsEntropyCodeWithCostEvaluator(sections, prefix, evaluator, &actual, &cost);
+    Check(evaluator.calls != 0, "ANS exact-cost provider was not called");
+    if (mode == 2) {
+      Check(status.code() == StatusCode::kUnsupported && actual == prefix && cost == old_cost,
+            "ANS provider error silently retried or changed published model/cost");
+    } else {
+      Ok(status);
+      Check(actual == reference && cost == expected,
+            "ANS provider/fallback changed selected model, exact cost or tie handling");
+    }
+  }
+}
 } // namespace
 int main() try {
   Shapes();
   Inputs();
   NativeModels();
+  EvaluatorContract();
   std::cout << "ANS token-cost operation, admission and borrowed-model "
                "contracts passed\n";
 } catch (const std::exception &e) {

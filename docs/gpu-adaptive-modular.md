@@ -157,6 +157,9 @@ allocation-free validation and storage tests pass with Metal enabled and disable
 including compatibility with a real scalar-optimized model. The native Metal
 kernel and completed-result owner now pass 829 cases and 224,848 exact
 bit-count/final-state comparisons, with bounded storage and failure publication.
-All 19 selected ANS/entropy and Metal regressions pass. Workflow routing and
-complete-path qualification of this optimization remain subsequent milestones;
+All 19 selected ANS/entropy and Metal regressions pass. The operation is now
+connected to the exact-cost selector through the private `adaptive_ans_cost`
+switch (`--metal-ans` in the capture tool). Full-search tests preserve bytes,
+policies, admission and failure publication, including explicit capability
+fallback. Performance qualification of this optimization remains outstanding;
 the published hybrid pilot still uses CPU ANS costing.
