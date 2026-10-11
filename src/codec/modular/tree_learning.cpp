@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Yunho Cho
 #include "codec/modular/tree_learning.h"
 #include "codec/modular/entropy_estimate.h"
+#include "codec/modular/profile.h"
 #include "codec/modular/quantized_tree_learning.h"
 #include <algorithm>
 #include <bit>
@@ -18,6 +19,7 @@ Status LearnDecisionTrees(std::span<const TrainingSample> samples, DecisionTree 
                           DecisionTree *split) {
   if (!single || !split || samples.empty() || samples.size() > kDefaultTrainingSamples)
     return Status::InvalidArgument("Invalid Modular training samples");
+  TrainingProfileScope profile(TrainingProfileStage::kSimpleLearning);
   const size_t used = samples.size();
   std::array<uint64_t, 14> costs{};
   for (size_t i = 0; i < used; ++i)
@@ -75,9 +77,9 @@ constexpr size_t kPredictors = 14, kSymbols = 128, kThresholds = 32;
 constexpr int64_t kCostUnit = 4096;
 constexpr size_t kMinimumLeafSamples = 8;
 
+using entropy_estimate::EncodeResidual;
 using entropy_estimate::Log2;
 using entropy_estimate::ResidualCode;
-using entropy_estimate::EncodeResidual;
 struct Histogram {
   std::array<uint32_t, kSymbols> counts{};
   int64_t sum_count_log_count = 0, extra_bits = 0;
@@ -133,21 +135,36 @@ std::pair<size_t, int64_t> Best(const std::array<Histogram, kPredictors> &histog
 void FindSplit(std::span<const TrainingSample> samples, Leaf &leaf, DecisionTree &tree,
                LearningWorkspace &w) {
   const size_t count = leaf.end - leaf.begin;
-  w.parent = {};
-  for (size_t i = leaf.begin; i < leaf.end; ++i)
-    for (size_t p = 0; p < kPredictors; ++p)
-      Change(w.parent[p], w.codes[w.order[i]][p], 1, w);
-  const auto [predictor, cost] = Best(w.parent, count, w);
-  tree.nodes[leaf.node].predictor = static_cast<Predictor>(predictor);
+  if (active_modular_profile)
+    ++active_modular_profile->training_work.split_evaluations;
+  int64_t cost;
+  {
+    TrainingProfileScope profile(TrainingProfileStage::kSplitHistograms);
+    w.parent = {};
+    for (size_t i = leaf.begin; i < leaf.end; ++i)
+      for (size_t p = 0; p < kPredictors; ++p)
+        Change(w.parent[p], w.codes[w.order[i]][p], 1, w);
+    const auto best = Best(w.parent, count, w);
+    tree.nodes[leaf.node].predictor = static_cast<Predictor>(best.first);
+    cost = best.second;
+  }
   leaf.split = {};
   if (count < 2 * kMinimumLeafSamples || leaf.depth >= kMaximumTreeDepth)
     return;
   for (size_t property = 0; property < kPropertyCount; ++property) {
     auto begin = w.order.begin() + leaf.begin, end = w.order.begin() + leaf.end;
-    std::sort(begin, end, [&](uint32_t a, uint32_t b) {
-      const auto x = samples[a].properties[property], y = samples[b].properties[property];
-      return x != y ? x < y : a < b;
-    });
+    {
+      TrainingProfileScope profile(TrainingProfileStage::kPropertySorting);
+      std::sort(begin, end, [&](uint32_t a, uint32_t b) {
+        const auto x = samples[a].properties[property], y = samples[b].properties[property];
+        return x != y ? x < y : a < b;
+      });
+      if (active_modular_profile) {
+        ++active_modular_profile->training_work.sorted_properties;
+        active_modular_profile->training_work.sorted_samples += count;
+      }
+    }
+    TrainingProfileScope profile(TrainingProfileStage::kSplitScanning);
     w.low = {};
     w.high = w.parent;
     size_t quantile = 1;
@@ -253,9 +270,13 @@ Status LearnEntropyTree(std::span<const TrainingSample> samples, DecisionTree *o
     return Status::InvalidArgument("Invalid Modular entropy training samples");
   if (population && population < samples.size())
     return Status::InvalidArgument("Modular training population is smaller than sample count");
-  if (options.mode == TreeLearningMode::kQuantized)
+  if (options.mode == TreeLearningMode::kQuantized) {
+    TrainingProfileScope profile(TrainingProfileStage::kQuantizedLearning);
     return LearnQuantizedEntropyTree(samples, out, options,
                                      population ? population : samples.size(), checkpoints);
+  }
+  TrainingProfileScope control_profile(TrainingProfileStage::kTreeControl);
+  TrainingProfileScope preparation_profile(TrainingProfileStage::kEntropyPreparation);
   resource_budget_internal::ManagedVector<LearningWorkspace> storage(1);
   auto &w = storage[0];
   w.count_log_count.resize(samples.size() + 1);
@@ -273,6 +294,7 @@ Status LearnEntropyTree(std::span<const TrainingSample> samples, DecisionTree *o
   tree.nodes.resize(2 * options.maximum_leaves - 1);
   w.leaves[0] = {0, samples.size(), 0, 1, {}};
   size_t leaves = 1;
+  preparation_profile.Stop();
   FindSplit(samples, w.leaves[0], tree, w);
   while (leaves < options.maximum_leaves) {
     size_t best = 0;

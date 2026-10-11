@@ -37,6 +37,7 @@ Status ComputeRctRankingStorageBound(HostStorageBound *out) {
 }
 Status RankModularRcts(PackedModularImageView input, RctRanking *out) try {
   ProfileScope profile_scope(ProfileStage::kTraining);
+  TrainingProfileScope detail(TrainingProfileStage::kRctRanking);
   if (!out)
     return Status::InvalidArgument("Null Modular RCT ranking output");
   if (auto s = input.Validate(); !s.ok())
@@ -56,8 +57,8 @@ Status RankModularRcts(PackedModularImageView input, RctRanking *out) try {
   auto read = [&](size_t x, size_t y) {
     std::array<int32_t, 3> rgb;
     for (size_t c = 0; c < 3; ++c) {
-      const size_t offset = y * input.row_stride +
-                            (x * profile.channel_count + c) * profile.bytes_per_sample;
+      const size_t offset =
+          y * input.row_stride + (x * profile.channel_count + c) * profile.bytes_per_sample;
       uint32_t value = input.bytes[offset];
       if (profile.bytes_per_sample == 2)
         value = input.byte_order == SampleByteOrder::kLittleEndian
@@ -97,8 +98,8 @@ Status RankModularRcts(PackedModularImageView input, RctRanking *out) try {
         values[n] = ForwardRct(w.samples[i].rgb[n], rct);
       for (size_t c = 0; c < 3; ++c) {
         const int32_t left = values[1][c], top = values[2][c];
-        const int32_t gradient = std::clamp(left + top - values[3][c], std::min(left, top),
-                                          std::max(left, top));
+        const int32_t gradient =
+            std::clamp(left + top - values[3][c], std::min(left, top), std::max(left, top));
         const std::array<int32_t, 3> predictors{gradient, left, top};
         for (size_t p = 0; p < predictors.size(); ++p) {
           const auto code = entropy_estimate::EncodeResidual(values[0][c] - predictors[p]);
@@ -148,6 +149,7 @@ Status RankModularRcts(PackedModularImageView input, RctRanking *out) try {
 }
 Status ProbePalette(PackedModularImageView input, uint16_t *colors) {
   ProfileScope profile_scope(ProfileStage::kTraining);
+  TrainingProfileScope detail(TrainingProfileStage::kPaletteProbe);
   if (!colors)
     return Status::InvalidArgument("Null palette probe output");
   if (auto s = input.Validate(); !s.ok())
@@ -265,9 +267,8 @@ Status ComputeModularSearchStoragePlan(Extent2D extent, PackedModularFormat form
   };
   if (auto s = add_learning(plan); !s.ok())
     return s;
-  plan.working.peak_bytes =
-      std::max({plan.working.peak_bytes, plan.preparation.peak_bytes, baseline.working.peak_bytes,
-                ranking.peak_bytes});
+  plan.working.peak_bytes = std::max({plan.working.peak_bytes, plan.preparation.peak_bytes,
+                                      baseline.working.peak_bytes, ranking.peak_bytes});
   std::array<ModularCodingPolicy, 4> candidates;
   size_t count;
   if (auto s = BuildTransformCandidates(extent, format, kMaximumPaletteColors, &candidates, &count);
@@ -348,6 +349,7 @@ Status LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStrea
     return Status::InvalidArgument("Null Modular learned policy");
   if (auto s = ValidateCodingPolicy(base); !s.ok())
     return s;
+  TrainingProfileScope gathering_profile(TrainingProfileStage::kSampleGathering);
   size_t total = 0;
   for (size_t c = 0; c < frame.image().channel_count(); ++c) {
     size_t area;
@@ -489,6 +491,13 @@ Status LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStrea
   }
   if (ordinal != total || !used)
     return Status::InvalidArgument("Incomplete Modular training coverage");
+  gathering_profile.Stop();
+  if (active_modular_profile) {
+    auto &work = active_modular_profile->training_work;
+    ++work.learning_calls;
+    work.population += total;
+    work.samples += sampled;
+  }
   // The prescribed tree is irrelevant to learning; retain only transform and
   // prediction settings, avoiding copies of an unrelated large tree.
   ModularCodingPolicy settings;

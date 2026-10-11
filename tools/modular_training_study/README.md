@@ -131,3 +131,35 @@ exact instrumentation and build provenance.
 The analysis separates actual fixed-cap files, selection among measured
 checkpoint files, and actual normal-search outputs. It never substitutes a
 selection envelope for a newly measured full-search configuration.
+# Complete-search profiling
+
+With `GJXL_BUILD_BENCHMARKS=ON` and a pinned `GJXL_MODULAR_ORACLE_BUILD`, the main
+build provides `gjxl_modular_search_profile`. It runs one complete CPU ANS search
+with the original learner, the requested sample/leaf budgets, retained baseline
+candidates, and checkpoint selection:
+
+```sh
+build/release/gjxl_modular_search_profile input.pam output.jxl 262144 256 4 > result.json
+```
+
+The wall timer brackets `EncodeModularImage`, including all learning and candidate
+encodes. PNM input, pinned decoder validation, and output-file writing are outside
+that timer. Successful output requires exact decoded samples and released workflow
+resources. The JSON records the full winning tree/transform policy, encoded size,
+candidate count, resource peaks, top-level phases, detailed training attribution,
+and entropy diagnostics.
+
+`training.stages` contains disjoint nested intervals inside `stages.training`;
+do not add both levels into an end-to-end total. Sample gathering includes the
+complete weighted-predictor scan, quota preparation, and retained training
+samples. The split-scanning interval includes histogram updates and candidate
+threshold scoring. Tree control excludes the separately attributed preparation,
+histogram, sorting, and scanning intervals. Entropy diagnostics retain their
+existing nesting: prefix value aggregation is inside prefix configuration search.
+
+Append `--no-profile` for an ordinary control call. Its profile counters are zero
+and its policy is null; encoded bytes and decode validation remain available.
+Compare complete files to a profiled call before interpreting the attribution.
+Retain binary/input/output hashes, build revision and flags, exact commands, and
+machine activity alongside captures. One capture on a busy desktop is diagnostic,
+not a qualified throughput comparison.

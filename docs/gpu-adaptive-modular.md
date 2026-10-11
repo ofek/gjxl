@@ -93,5 +93,18 @@ workflow/admission assertions and every 64th injected allocation failure. The
 other 63 allocation shards were not run. Logs are retained in
 `build/adaptive-integration/`.
 
+Complete-search instrumentation and a pinned-decoder capture tool are now
+implemented; see `tools/modular_training_study/README.md`. The profile test checks
+disabled/nested sinks, accumulation, disjoint training attribution, selected
+policy equality, and complete-byte equality. The budget, coverage, checkpoint,
+and frozen-oracle tests also pass after instrumentation.
+
+Six complete searches (profiling enabled/disabled for `photo-macan`,
+`palette-pattern`, and `alpha16-ramp`, all at 262144 samples/256 leaves with
+checkpoints and four CPU participants) decode exactly and match the saved
+tree-learning branch's complete files byte for byte. These exercise photographic,
+palette, and 16-bit alpha input. Captures are retained in
+`build/adaptive-profile-smoke/`; their timing is diagnostic.
+
 No full-resolution adaptive timing or new GPU speedup has been established by
-this effort yet. Complete-search instrumentation is the next milestone.
+this effort yet. Full-resolution baseline capture is the next milestone.
