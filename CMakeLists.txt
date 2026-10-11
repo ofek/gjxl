@@ -60,6 +60,12 @@ option(
   OFF
 )
 
+option(
+  GJXL_ENABLE_WEBGPU
+  "Build Dawn dependencies for the upcoming WebGPU backend (no codec kernels yet)"
+  OFF
+)
+
 option(GJXL_CUDA_COMPACT_AC
   "Experimental native narrow AC readback for the resident CUDA policy" OFF)
 
@@ -94,6 +100,11 @@ if(GJXL_ENABLE_METAL)
 endif()
 include(cmake/CheckStorageToolchain.cmake)
 gjxl_check_storage_toolchain("${CMAKE_CURRENT_SOURCE_DIR}/src")
+
+if(GJXL_ENABLE_WEBGPU)
+  include(cmake/Dawn.cmake)
+  gjxl_add_dawn()
+endif()
 
 if(GJXL_ENABLE_LIBJXL_REFERENCE AND
    (GJXL_BUILD_TESTS OR GJXL_BUILD_BENCHMARKS))
@@ -1306,6 +1317,21 @@ endif()
 if(GJXL_BUILD_TESTS)
 
   enable_testing()
+
+  if(GJXL_ENABLE_WEBGPU)
+    add_executable(gjxl_webgpu_smoke_test tests/webgpu_smoke_test.cpp)
+    target_link_libraries(gjxl_webgpu_smoke_test PRIVATE dawn::webgpu_dawn)
+    get_target_property(GJXL_DAWN_LIBRARY_TYPE dawn::webgpu_dawn TYPE)
+    if(WIN32 AND GJXL_DAWN_LIBRARY_TYPE STREQUAL "SHARED_LIBRARY")
+      add_custom_command(TARGET gjxl_webgpu_smoke_test POST_BUILD
+        COMMAND "${CMAKE_COMMAND}" -E copy_if_different
+          "$<TARGET_FILE:dawn::webgpu_dawn>"
+          "$<TARGET_FILE_DIR:gjxl_webgpu_smoke_test>"
+        VERBATIM)
+    endif()
+    add_test(NAME webgpu_smoke COMMAND gjxl_webgpu_smoke_test)
+    set_tests_properties(webgpu_smoke PROPERTIES TIMEOUT 30 LABELS webgpu)
+  endif()
 
   add_executable(gjxl_planning_recipes_test tests/planning_recipes_test.cpp)
   target_link_libraries(gjxl_planning_recipes_test PRIVATE gjxl_codestream)

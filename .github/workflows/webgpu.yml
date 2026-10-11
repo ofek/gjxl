@@ -1,0 +1,55 @@
+name: WebGPU Dependency
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.gitmodules'
+      - 'third_party/dawn'
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - 'tests/webgpu_smoke_test.cpp'
+      - '.github/actions/setup-native-toolchain/**'
+      - '.github/workflows/webgpu.yml'
+  pull_request:
+    paths:
+      - '.gitmodules'
+      - 'third_party/dawn'
+      - 'CMakeLists.txt'
+      - 'cmake/**'
+      - 'tests/webgpu_smoke_test.cpp'
+      - '.github/actions/setup-native-toolchain/**'
+      - '.github/workflows/webgpu.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-26, ubuntu-24.04, windows-2022, windows-11-arm]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-native-toolchain
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Initialize pinned Dawn
+        run: git submodule update --init --depth 1 third_party/dawn
+      - name: Configure
+        run: >-
+          cmake -S . -B build/webgpu -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DGJXL_ENABLE_WEBGPU=ON
+          -DGJXL_ENABLE_METAL=OFF -DGJXL_ENABLE_CUDA=OFF
+          -DGJXL_BUILD_TESTS=ON -DGJXL_BUILD_BENCHMARKS=OFF
+          -DGJXL_ENABLE_LIBJXL_REFERENCE=OFF
+      - name: Build Dawn and smoke test
+        run: cmake --build build/webgpu --target gjxl_webgpu_smoke_test --parallel 4
+      - name: Test without a GPU
+        run: ctest --test-dir build/webgpu -R '^webgpu_smoke$' --output-on-failure
