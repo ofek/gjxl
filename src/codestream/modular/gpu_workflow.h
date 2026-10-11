@@ -29,12 +29,12 @@ struct GpuModularWorkflowStoragePlan {
 // Public backend routing is unchanged. Admission covers GPU and CPU phases,
 // consumes an existing same-domain reservation if present, and precedes CPU
 // participation and all sample allocations. Output replacement is atomic.
-[[nodiscard]] Status EncodeGpuModularImageOwned(GpuBackend &backend,
-                                                modular_internal::PackedModularImageView input,
-                                                modular_internal::ModularEncodingOptions options,
-                                                codestream_internal::CodestreamBuffer *out);
+[[nodiscard]] Status
+EncodeGpuModularImageOwned(GpuBackend &backend, modular_internal::PackedModularImageView input,
+                           const modular_internal::ModularEncodingOptions &options,
+                           codestream_internal::CodestreamBuffer *out);
 [[nodiscard]] Status EncodeGpuModularImage(GpuBackend &backend,
                                            modular_internal::PackedModularImageView input,
-                                           modular_internal::ModularEncodingOptions options,
+                                           const modular_internal::ModularEncodingOptions &options,
                                            std::vector<uint8_t> *out);
 } // namespace gjxl::modular_gpu_internal

@@ -30,7 +30,8 @@ Status ComputeModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat fo
 }
 Status ComputeModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat format,
                                          EntropyCodingMode mode, const ModularCodingPolicy &policy,
-                                         ModularWorkflowStoragePlan *out, size_t cpu_threads) {
+                                         ModularWorkflowStoragePlan *out, size_t cpu_threads,
+                                         size_t maximum_tree_leaves) {
   if (!out)
     return Status::InvalidArgument("Null Modular workflow plan");
   if (mode != EntropyCodingMode::kPrefix && mode != EntropyCodingMode::kAns)
@@ -40,8 +41,8 @@ Status ComputeModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat fo
   TreeLayout tree_layout;
   if (auto s = ValidateTree(policy.tree, &tree_layout); !s.ok())
     return s;
-  const size_t contexts = tree_layout.leaves;
-  const size_t tree_tokens = 5 * contexts + 2 * (policy.tree.size - contexts);
+  if (maximum_tree_leaves > kMaximumTreeLeaves)
+    return Status::InvalidArgument("Invalid Modular tree storage capacity");
   if (cpu_threads > 256)
     return Status::InvalidArgument("Invalid Modular CPU thread count");
   ModularWorkflowStoragePlan p;
@@ -56,6 +57,14 @@ Status ComputeModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat fo
   size_t area;
   if (!extent.try_area(&area) || uint64_t{area} > (uint64_t{1} << 40))
     return Overflow();
+  const size_t image_leaves = MaximumGlobalTreeLeaves(uint64_t{area} * profile.channel_count);
+  if (tree_layout.leaves > image_leaves)
+    return Status::Unsupported("Modular tree exceeds the image-dependent decoder limit");
+  maximum_tree_leaves = std::min(maximum_tree_leaves, image_leaves);
+  const size_t contexts = std::max(tree_layout.leaves, maximum_tree_leaves);
+  const size_t nodes = 2 * contexts - 1;
+  const size_t node_capacity = std::max(nodes, policy.tree.nodes.size());
+  const size_t tree_tokens = 5 * contexts + 2 * (nodes - contexts);
   std::array<ChannelShape, kMaximumTransforms + 1> shapes;
   if (auto s = PlanTransforms(profile.channels(), 0, policy.transforms, &shapes); !s.ok())
     return s;
@@ -93,6 +102,12 @@ Status ComputeModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat fo
     return s;
   p.streams = layout.streams;
   HostStorageBound image, tokens = layout.owned;
+  // The header owns a policy copy plus serialized tree tokens through emission.
+  if ((node_capacity > kInlineTreeNodes &&
+       !tokens.AddVector<DecisionNode>(node_capacity, VectorCapacityPolicy::kFreshExact)) ||
+      (tree_tokens > 5 * kInlineTreeNodes &&
+       !tokens.AddVector<EntropyToken>(tree_tokens, VectorCapacityPolicy::kFreshExact)))
+    return Overflow();
   // Conservative live overlap: borrowed original plus every replacement stage.
   for (size_t i = 0; i <= policy.transforms.size; ++i) {
     HostStorageBound stage;
@@ -149,7 +164,9 @@ Status ComputeModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat fo
       global ? p.tokens : std::max({global_tokens, dc_tokens, group_tokens});
   if (auto s = ComputeGlobalTreeStoragePlan(tree_tokens, &tree); !s.ok())
     return s;
-  if (auto s = ComputeEntropyModelStoragePlan(mode, contexts, contexts, &model); !s.ok())
+  if (auto s = ComputeEntropyModelStoragePlan(mode, contexts,
+                                              std::min(contexts, kMaximumPrefixClusters), &model);
+      !s.ok())
     return s;
   if (auto s = ComputeEntropyTokenEmissionStoragePlan(mode, maximum_stream_tokens, &payload);
       !s.ok())
@@ -223,6 +240,11 @@ Status ComputeModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat fo
         !p.preparation.Add(workers) || !p.emission.Add(workers))
       return Overflow();
   }
+  // Optional resolved-policy profiling copies before publication, after token
+  // storage is released. The previous diagnostic result is caller-owned.
+  if (node_capacity > kInlineTreeNodes &&
+      !p.publication.AddVector<DecisionNode>(node_capacity, VectorCapacityPolicy::kFreshExact))
+    return Overflow();
   p.working = p.output;
   for (auto phase : {p.preparation, p.modeling, p.emission, p.assembly, p.publication})
     p.working.peak_bytes = std::max(p.working.peak_bytes, phase.peak_bytes);

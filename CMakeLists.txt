@@ -2338,6 +2338,13 @@ if(GJXL_BUILD_TESTS)
   target_link_libraries(gjxl_modular_foundation_test PRIVATE gjxl_codestream)
   add_test(NAME modular_foundation COMMAND gjxl_modular_foundation_test)
 
+  add_executable(gjxl_modular_training_budget_test tests/modular_training_budget_test.cpp)
+  target_link_libraries(gjxl_modular_training_budget_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_training_budget COMMAND gjxl_modular_training_budget_test)
+  set_tests_properties(modular_training_budget PROPERTIES TIMEOUT 300)
+  add_test(NAME modular_training_budget_faults COMMAND gjxl_modular_training_budget_test --allocations)
+  set_tests_properties(modular_training_budget_faults PROPERTIES TIMEOUT 600)
+
   add_executable(gjxl_modular_gpu_input_test tests/modular_gpu_input_test.cpp)
   target_link_libraries(gjxl_modular_gpu_input_test PRIVATE gjxl_gpu_ops)
   add_test(NAME modular_gpu_input COMMAND gjxl_modular_gpu_input_test)

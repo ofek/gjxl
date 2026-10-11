@@ -10,7 +10,7 @@ namespace gjxl::modular_internal {
 inline constexpr std::array<EntropyToken, 5> kGradientTreeTokens{
     {{1, 0}, {2, 5}, {3, 0}, {4, 0}, {5, 0}}};
 struct PreparedModularTokens {
-  std::array<EntropyToken, 5 * kMaximumTreeNodes> tree_tokens{};
+  InlineStorage<EntropyToken, 5 * kInlineTreeNodes> tree_tokens;
   size_t tree_token_count = 0, context_count = 1;
   ModularCodingPolicy policy;
   // Exactly one backing representation is populated by a producer. A completed
@@ -26,8 +26,8 @@ struct PreparedModularTokens {
   PreparedModularTokens(PreparedModularTokens &&) noexcept = default;
   PreparedModularTokens &operator=(PreparedModularTokens &&) noexcept = default;
 };
-// Shared scalar/GPU wire metadata, with no sample tokens or allocations. Caller
-// supplies a validated policy and its ValidateTree result.
+// Shared scalar/GPU wire metadata, with no sample tokens. Larger trees allocate managed
+// header/policy storage. Caller supplies a validated policy and its ValidateTree result.
 [[nodiscard]] PreparedModularTokens PrepareModularTokenHeader(
     const ModularCodingPolicy &policy, const TreeLayout &layout);
 // Plan must be the canonical BuildModularStreamPlan result for this frame.

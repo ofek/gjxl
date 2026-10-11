@@ -6,6 +6,7 @@
 #include <array>
 
 namespace gjxl::modular_gpu_internal {
+inline constexpr size_t kMaximumGpuTreeNodes = 31;
 
 struct ModularTokenizationOptions {
   modular_internal::PackedModularFormat format = modular_internal::PackedModularFormat::kRgb8;
@@ -37,7 +38,7 @@ struct ModularTokenNode {
 };
 struct ModularTokenEligibility {
   size_t channel_count = 0, context_count = 0, node_count = 0;
-  std::array<ModularTokenNode, modular_internal::kMaximumTreeNodes> nodes{};
+  std::array<ModularTokenNode, kMaximumGpuTreeNodes> nodes{};
   bool gradient_leaf = false;
   bool operator==(const ModularTokenEligibility &) const = default;
 };

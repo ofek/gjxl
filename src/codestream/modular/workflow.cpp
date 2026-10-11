@@ -10,13 +10,15 @@
 
 namespace gjxl::modular_internal {
 namespace {
-Status EncodeSearch(PackedModularImageView input, ModularEncodingOptions options,
+Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &options,
                     resource_budget_internal::PublicationOutput<uint8_t> output);
-Status Encode(PackedModularImageView input, ModularEncodingOptions options,
+Status Encode(PackedModularImageView input, const ModularEncodingOptions &options,
               resource_budget_internal::PublicationOutput<uint8_t> output) try {
   if (output == nullptr)
     return Status::InvalidArgument("Null Modular workflow output");
   if (auto s = input.Validate(); !s.ok())
+    return s;
+  if (auto s = ValidateTreeLearningOptions(options.learning); !s.ok())
     return s;
   if (options.search)
     return EncodeSearch(input, options, output);
@@ -43,11 +45,11 @@ Status Encode(PackedModularImageView input, ModularEncodingOptions options,
                                          storage, &candidate);
       !s.ok())
     return s;
-  output.Publish(std::move(candidate));
   if (active_modular_profile) {
     active_modular_profile->resolved = options.coding;
     ++active_modular_profile->encoded_candidates;
   }
+  output.Publish(std::move(candidate));
   return Status::Ok();
 } catch (const resource_budget_internal::ManagedAllocationFailure &e) {
   return e.status();
@@ -56,24 +58,26 @@ Status Encode(PackedModularImageView input, ModularEncodingOptions options,
 } catch (const std::length_error &) {
   return Status::InvalidArgument("Modular workflow storage overflow");
 }
-Status EncodeSearch(PackedModularImageView input, ModularEncodingOptions options,
+Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &requested,
                     resource_budget_internal::PublicationOutput<uint8_t> output) {
-  if (options.coding != ModularCodingPolicy{})
+  if (requested.coding != ModularCodingPolicy{})
     return Status::InvalidArgument("Search cannot override a prescribed Modular policy");
   ModularWorkflowStoragePlan storage;
-  if (auto s = ComputeModularSearchStoragePlan(input.extent, input.format, options.entropy,
-                                               &storage, options.cpu_thread_count);
+  if (auto s =
+          ComputeModularSearchStoragePlan(input.extent, input.format, requested.entropy, &storage,
+                                          requested.cpu_thread_count, requested.learning);
       !s.ok())
     return s;
   codestream_internal::WorkflowAdmission admission;
-  if (auto s = admission.Start(storage.working.peak_bytes, options.execution_domain); !s.ok())
+  if (auto s = admission.Start(storage.working.peak_bytes, requested.execution_domain); !s.ok())
     return s;
   thread_budget_internal::CpuExecutionScope execution;
-  if (auto s = execution.Start(options.execution_domain, options.cpu_thread_count); !s.ok())
+  if (auto s = execution.Start(requested.execution_domain, requested.cpu_thread_count); !s.ok())
     return s;
   resource_budget_internal::ManagedHostScope managed(
       resource_budget_internal::ResourceClass::kPreparation);
-  thread_budget_internal::EncodeScope threads(options.cpu_thread_count);
+  thread_budget_internal::EncodeScope threads(requested.cpu_thread_count);
+  auto options = requested;
   options.search = false;
   ModularCodingPolicy best_policy;
   codestream_internal::CodestreamBuffer best;
@@ -101,7 +105,9 @@ Status EncodeSearch(PackedModularImageView input, ModularEncodingOptions options
       if (auto s = BuildModularStreamPlan(storage.geometry, profile.channels(), 0, &layout);
           !s.ok())
         return s;
-      if (auto s = LearnModularPolicies(frame, layout, rct, &single, &split, &entropy); !s.ok())
+      if (auto s =
+              LearnModularPolicies(frame, layout, rct, &single, &split, &entropy, options.learning);
+          !s.ok())
         return s;
     }
     auto &fixed_candidate = context_candidates[context_count++];
@@ -171,7 +177,9 @@ Status EncodeSearch(PackedModularImageView input, ModularEncodingOptions options
       if (auto s = BuildModularStreamPlan(storage.geometry, profile.channels(), 0, &layout);
           !s.ok())
         return s;
-      if (auto s = LearnModularPolicies(frame, layout, rct, &single, &split, &learned); !s.ok())
+      if (auto s =
+              LearnModularPolicies(frame, layout, rct, &single, &split, &learned, options.learning);
+          !s.ok())
         return s;
     }
     weighted.rct = rct;
@@ -207,7 +215,8 @@ Status EncodeSearch(PackedModularImageView input, ModularEncodingOptions options
       if (auto s = BuildModularStreamPlan(storage.geometry, shape.channels(), shape.metadata,
                                           &layout); !s.ok())
         return s;
-      if (auto s = LearnModularPolicies(frame, layout, candidates[i], &single, &split, &learned);
+      if (auto s = LearnModularPolicies(frame, layout, candidates[i], &single, &split, &learned,
+                                        options.learning);
           !s.ok())
         return s;
     }
@@ -223,25 +232,26 @@ Status EncodeSearch(PackedModularImageView input, ModularEncodingOptions options
         best_policy = learned;
     }
   }
+  if (active_modular_profile)
+    active_modular_profile->resolved = std::move(best_policy);
   output.Publish(std::move(best));
-  if (active_modular_profile) active_modular_profile->resolved = best_policy;
   return Status::Ok();
 }
 } // namespace
-Status EncodeRgb8ModularOwned(Rgb8View input, ModularEncodingOptions options,
+Status EncodeRgb8ModularOwned(Rgb8View input, const ModularEncodingOptions &options,
                               codestream_internal::CodestreamBuffer *out) {
-  return Encode(input.packed(), std::move(options), out);
+  return Encode(input.packed(), options, out);
 }
-Status EncodeRgb8Modular(Rgb8View input, ModularEncodingOptions options,
+Status EncodeRgb8Modular(Rgb8View input, const ModularEncodingOptions &options,
                          std::vector<uint8_t> *out) {
-  return Encode(input.packed(), std::move(options), out);
+  return Encode(input.packed(), options, out);
 }
-Status EncodeModularImageOwned(PackedModularImageView input, ModularEncodingOptions options,
+Status EncodeModularImageOwned(PackedModularImageView input, const ModularEncodingOptions &options,
                                codestream_internal::CodestreamBuffer *out) {
-  return Encode(input, std::move(options), out);
+  return Encode(input, options, out);
 }
-Status EncodeModularImage(PackedModularImageView input, ModularEncodingOptions options,
+Status EncodeModularImage(PackedModularImageView input, const ModularEncodingOptions &options,
                           std::vector<uint8_t> *out) {
-  return Encode(input, std::move(options), out);
+  return Encode(input, options, out);
 }
 } // namespace gjxl::modular_internal

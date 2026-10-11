@@ -30,6 +30,8 @@ Status ResolveModularTokenEligibility(const ModularTokenizationOptions &options,
   TreeLayout tree;
   if (auto s = ValidateTree(options.coding.tree, &tree); !s.ok())
     return s;
+  if (options.coding.tree.size > kMaximumGpuTreeNodes)
+    return Status::Unsupported("GPU Modular tree exceeds backend node capacity");
   if (options.search || options.coding.transforms.size || tree.weighted)
     return Status::Unsupported("GPU Modular tokens require prescribed nonweighted RCT-only policy");
   ModularTokenEligibility result;
@@ -84,7 +86,7 @@ Status ComputeModularTokenStoragePlan(size_t tokens, size_t slices, ModularToken
   p.values_bytes = tokens * sizeof(uint32_t);
   p.contexts_bytes = tokens * sizeof(uint16_t);
   p.slices_bytes = slices * sizeof(ModularTokenSlice);
-  constexpr size_t nodes = sizeof(ModularTokenNode) * kMaximumTreeNodes;
+  constexpr size_t nodes = sizeof(ModularTokenNode) * kMaximumGpuTreeNodes;
   if (!Align(p.values_bytes, &p.contexts_offset) ||
       p.contexts_bytes > SIZE_MAX - p.contexts_offset || !Align(p.slices_bytes, &p.nodes_offset) ||
       nodes > SIZE_MAX - p.nodes_offset || !Align(p.nodes_offset + nodes, &p.status_offset) ||

@@ -32,16 +32,19 @@ ComputeRctRankingStorageBound(resource_budget_internal::HostStorageBound *out);
 [[nodiscard]] Status LearnModularPolicies(const ModularEncoderFrame &frame,
                                           const ModularStreamPlan &plan, uint8_t rct,
                                           ModularCodingPolicy *single, ModularCodingPolicy *split,
-                                          ModularCodingPolicy *entropy = nullptr);
+                                          ModularCodingPolicy *entropy = nullptr,
+                                          TreeLearningOptions learning = {});
 // Frame and layout must describe the completed transforms in base. Learn on
 // those channels (including metadata), preserving transforms and WP parameters.
 [[nodiscard]] Status LearnModularPolicies(const ModularEncoderFrame &frame,
                                           const ModularStreamPlan &plan,
                                           const ModularCodingPolicy &base,
                                           ModularCodingPolicy *single, ModularCodingPolicy *split,
-                                          ModularCodingPolicy *entropy = nullptr);
+                                          ModularCodingPolicy *entropy = nullptr,
+                                          TreeLearningOptions learning = {});
 [[nodiscard]] Status ComputeModularSearchStoragePlan(Extent2D extent, PackedModularFormat format,
                                                      EntropyCodingMode mode,
                                                      ModularWorkflowStoragePlan *out,
-                                                     size_t cpu_threads = 1);
+                                                     size_t cpu_threads = 1,
+                                                     TreeLearningOptions learning = {});
 } // namespace gjxl::modular_internal

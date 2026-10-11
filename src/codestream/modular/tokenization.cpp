@@ -11,6 +11,7 @@ PreparedModularTokens PrepareModularTokenHeader(const ModularCodingPolicy &polic
   PreparedModularTokens result;
   result.policy = policy;
   result.context_count = layout.leaves;
+  result.tree_tokens.resize(5 * layout.leaves + 2 * (policy.tree.size - layout.leaves));
   auto tree_token = [&](uint32_t context, uint32_t value) {
     result.tree_tokens[result.tree_token_count++] = {context, value};
   };
