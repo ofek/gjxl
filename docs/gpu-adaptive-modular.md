@@ -155,7 +155,7 @@ input ownership, section/candidate independence, borrowed normalized tables,
 completed bit-count/final-state results and bounded transient storage. Its
 allocation-free validation and storage tests pass with Metal enabled and disabled,
 including compatibility with a real scalar-optimized model. The native Metal
-kernel and completed-result owner now pass 829 cases and 224,848 exact
+kernel and completed-result owner now pass 1,853 cases and 237,136 exact
 bit-count/final-state comparisons, with bounded storage and failure publication.
 All 19 selected ANS/entropy and Metal regressions pass. The operation is now
 connected to the exact-cost selector through the private `adaptive_ans_cost`
@@ -163,3 +163,15 @@ switch (`--metal-ans` in the capture tool). Full-search tests preserve bytes,
 policies, admission and failure publication, including explicit capability
 fallback. Performance qualification of this optimization remains outstanding;
 the published hybrid pilot still uses CPU ANS costing.
+
+
+The SIMD ANS implementation and explicit small-section CPU crossover are frozen
+at `2009da7`. Its repeated complete-search capture is in progress; none of the
+single-run probes substitutes for that qualification. The original implementation
+outline also requires bulk learner statistics. The
+[learner-statistics operation design](gpu-modular-learner-statistics.md) specifies
+the next boundary: preserve CPU property sorting and threshold enumeration, then
+build bucket histograms and evaluate all predictor/threshold costs on the GPU.
+Greedy growth, integer costs, sample budgets and checkpoint ties remain unchanged.
+That operation is not yet implemented or qualified; completing the ANS report
+alone does not complete the full adaptive GPU effort.
