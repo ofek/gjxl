@@ -2400,6 +2400,12 @@ if(GJXL_BUILD_TESTS)
   target_link_libraries(gjxl_modular_foundation_test PRIVATE gjxl_codestream)
   add_test(NAME modular_foundation COMMAND gjxl_modular_foundation_test)
 
+  add_executable(gjxl_ans_selection_test tests/ans_selection_test.cpp)
+  target_link_libraries(gjxl_ans_selection_test PRIVATE gjxl_codestream)
+  add_test(NAME ans_selection COMMAND gjxl_ans_selection_test)
+  add_test(NAME ans_selection_faults COMMAND gjxl_ans_selection_test --allocations)
+  set_tests_properties(ans_selection ans_selection_faults PROPERTIES TIMEOUT 300)
+
   add_executable(gjxl_modular_training_budget_test tests/modular_training_budget_test.cpp)
   target_link_libraries(gjxl_modular_training_budget_test PRIVATE gjxl_codestream)
   add_test(NAME modular_training_budget COMMAND gjxl_modular_training_budget_test)

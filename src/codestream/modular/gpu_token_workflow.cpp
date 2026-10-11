@@ -19,6 +19,8 @@ Status ComputeGpuModularTokenWorkflowStoragePlan(Extent2D extent, size_t row_str
                                                  GpuModularTokenWorkflowStoragePlan *out) {
   if (!out)
     return Status::InvalidArgument("Null GPU Modular token workflow plan");
+  if (auto s = ValidateAnsSelectionMode(options.ans_selection); !s.ok())
+    return s;
   GpuModularTokenWorkflowStoragePlan plan;
   // Validate the borrowed CPU tree before constructing inline GPU options.
   if (auto s = ResolveModularTokenEligibility(format, options.coding, options.search,
@@ -101,7 +103,7 @@ Status Encode(GpuBackend &backend, PackedModularImageView input,
   } // GPU descriptors/ranges die before CPU modeling; only layout/views/tokens remain.
   codestream_internal::CodestreamBuffer candidate;
   if (auto s = EncodeModularFrame(metadata, layout, std::move(tokens), options.entropy, storage.cpu,
-                                  &candidate);
+                                  &candidate, options.ans_selection);
       !s.ok())
     return s;
   // Layout is not needed during the final public-vector copy.

@@ -33,7 +33,8 @@ public:
         input_(input), anticipate_weighted_(anticipate_weighted), ans_backend_(ans_cost ? &backend : nullptr) {}
   [[nodiscard]] Status Encode(const ModularCodingPolicy &policy, EntropyCodingMode mode,
                               const ModularWorkflowStoragePlan &storage,
-                              codestream_internal::CodestreamBuffer *out);
+                              codestream_internal::CodestreamBuffer *out,
+                              AnsSelectionMode selection = AnsSelectionMode::kExact);
 
 private:
   [[nodiscard]] Status Prepare(const ModularCodingPolicy &policy, ModularEncoderFrame *fallback);

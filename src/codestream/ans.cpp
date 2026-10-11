@@ -2811,7 +2811,7 @@ Status OptimizeAnsEntropyCodeImpl(
       &EntropyWorkProfile::ans_model_build_nanoseconds);
 
     if (deferred == nullptr && cost == nullptr &&
-        policy.smallest_alphabet_width) {
+        (policy.smallest_alphabet_width || policy.estimate_alphabet_width)) {
       const auto selected = std::ranges::find_if(
         width_candidates,
         [](const auto& candidate) { return candidate.survives; });
@@ -3151,21 +3151,28 @@ Status codestream_internal::FinalizePreparedAnsEntropyCode(
 Status codestream_internal::OptimizeAnsEntropyCodeWithCostEvaluator(
   std::span<const EntropyTokenStreamView> section_tokens,
   const EntropyCode& prefix_partition, AnsTokenCostEvaluator& evaluator,
-  EntropyCode* code, EntropyCodeCost* cost, EntropyWorkProfile* profile) {
+  EntropyCode* code, EntropyCodeCost* cost, EntropyWorkProfile* profile,
+  AnsSelectionMode selection) {
+  if (Status status = ValidateAnsSelectionMode(selection); !status.ok())
+    return status;
+  auto policy = kMaximumCompressionAnsPolicy;
+  policy.estimate_alphabet_width = selection == AnsSelectionMode::kEstimated;
   return OptimizeAnsEntropyCodeImpl(
-    section_tokens, prefix_partition, nullptr, kMaximumCompressionAnsPolicy,
+    section_tokens, prefix_partition, nullptr, policy,
     code, cost, nullptr, profile, &evaluator);
 }
 
-Status OptimizeAnsEntropyCode(
-  std::span<const EntropyTokenStreamView> section_tokens,
-  const EntropyCode& prefix_partition,
-  EntropyCode* code,
-  EntropyCodeCost* cost,
-  codestream_internal::EntropyWorkProfile* profile) {
-  return OptimizeAnsEntropyCodeImpl(
-    section_tokens, prefix_partition, nullptr, kMaximumCompressionAnsPolicy,
-    code, cost, nullptr, profile);
+Status OptimizeAnsEntropyCode(std::span<const EntropyTokenStreamView> section_tokens,
+                              const EntropyCode &prefix_partition, EntropyCode *code,
+                              EntropyCodeCost *cost,
+                              codestream_internal::EntropyWorkProfile *profile,
+                              AnsSelectionMode selection) {
+  if (Status status = ValidateAnsSelectionMode(selection); !status.ok())
+    return status;
+  auto policy = kMaximumCompressionAnsPolicy;
+  policy.estimate_alphabet_width = selection == AnsSelectionMode::kEstimated;
+  return OptimizeAnsEntropyCodeImpl(section_tokens, prefix_partition, nullptr, policy, code, cost,
+                                    nullptr, profile);
 }
 
 Status codestream_internal::OptimizeDirectAnsEntropyCode(
@@ -3302,31 +3309,31 @@ codestream_internal::DirectAnsHistogramPrecisionShifts(
 }
 
 Status codestream_internal::OptimizeAnsEntropyCodeWithPreparedClusters(
-  std::span<const EntropyTokenStreamView> section_tokens,
-  const EntropyCode& prefix_partition,
-  const PreparedEntropyClusters& prepared,
-  EntropyCode* code,
-  EntropyCodeCost* cost,
-  EntropyWorkProfile* profile) {
-  return OptimizeAnsEntropyCodeImpl(
-    section_tokens, prefix_partition, &prepared,
-    kMaximumCompressionAnsPolicy, code, cost, nullptr, profile);
+    std::span<const EntropyTokenStreamView> section_tokens, const EntropyCode &prefix_partition,
+    const PreparedEntropyClusters &prepared, EntropyCode *code, EntropyCodeCost *cost,
+    EntropyWorkProfile *profile, AnsSelectionMode selection) {
+  if (Status status = ValidateAnsSelectionMode(selection); !status.ok())
+    return status;
+  auto policy = kMaximumCompressionAnsPolicy;
+  policy.estimate_alphabet_width = selection == AnsSelectionMode::kEstimated;
+  return OptimizeAnsEntropyCodeImpl(section_tokens, prefix_partition, &prepared, policy, code, cost,
+                                    nullptr, profile);
 }
 
-Status OptimizeAnsEntropyCode(
-  std::span<const std::vector<EntropyToken>> section_tokens,
-  const EntropyCode& prefix_partition,
-  EntropyCode* code,
-  EntropyCodeCost* cost,
-  codestream_internal::EntropyWorkProfile* profile) {
+Status OptimizeAnsEntropyCode(std::span<const std::vector<EntropyToken>> section_tokens,
+                              const EntropyCode &prefix_partition, EntropyCode *code,
+                              EntropyCodeCost *cost,
+                              codestream_internal::EntropyWorkProfile *profile,
+                              AnsSelectionMode selection) {
+  if (Status status = ValidateAnsSelectionMode(selection); !status.ok())
+    return status;
   try {
     Storage<EntropyTokenStreamView> views;
     views.reserve(section_tokens.size());
     for (const std::vector<EntropyToken>& section : section_tokens) {
       views.push_back(EntropyTokenStreamView::Interleaved(section));
     }
-    return OptimizeAnsEntropyCode(
-      views, prefix_partition, code, cost, profile);
+    return OptimizeAnsEntropyCode(views, prefix_partition, code, cost, profile, selection);
   } catch (const resource_budget_internal::ManagedAllocationFailure& error) {
     return error.status();
   } catch (const std::bad_alloc&) {

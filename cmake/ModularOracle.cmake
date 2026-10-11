@@ -40,6 +40,8 @@ target_link_libraries(gjxl_modular_reference PUBLIC
   "${GJXL_MODULAR_ORACLE_BUILD}/third_party/brotli/${modular_oracle_prefix}brotlienc${modular_oracle_link}"
   "${GJXL_MODULAR_ORACLE_BUILD}/third_party/brotli/${modular_oracle_prefix}brotlidec${modular_oracle_link}"
   "${GJXL_MODULAR_ORACLE_BUILD}/third_party/brotli/${modular_oracle_prefix}brotlicommon${modular_oracle_link}")
+target_link_libraries(gjxl_ans_selection_test PRIVATE gjxl_modular_reference)
+target_compile_definitions(gjxl_ans_selection_test PRIVATE GJXL_ANS_SELECTION_REFERENCE=1)
 target_link_libraries(gjxl_modular_training_budget_test PRIVATE gjxl_modular_reference)
 target_compile_definitions(gjxl_modular_training_budget_test PRIVATE GJXL_TRAINING_BUDGET_REFERENCE=1)
 if(GJXL_BUILD_BENCHMARKS)

@@ -29,7 +29,40 @@ Repeat paired full-resolution complete searches and report rate differences,
 timing boundaries, resource peaks and actual execution routes. Existing fixed
 Gradient estimator timings do not qualify the adaptive hybrid.
 
-Status: pending.
+Status: implementation integrated; full-resolution performance qualification
+pending. The profile executable accepts `--estimated-ans` independently of
+`--metal`, `--metal-ans`, or `--metal-learn` and records `ans_selection`. The
+adaptive planner omits unused GPU ANS measurement scratch in estimated mode.
+The prescribed unpack/token GPU continuations propagate the same selector.
+
+Local implementation validation: three focused Release suites passed, including
+55 complete CPU/hybrid comparisons, 26,119,113 independently decoded samples and
+5,835 hybrid failure-atomic checks. Eight entropy/Modular/Metal regression suites
+and four CPU-only suites also passed. The estimator's original CPU experiment
+and its commits remain in the merged ancestry. New provider tests require zero
+exact calls without a cost request and exactly one selected model when exact
+cost is requested. Native hybrid tests cover all six formats, weighted trees,
+transforms, large-section costing eligibility, GPU learner execution, profiling
+off, managed publication and allocation failures.
+
+Logs: `build/entropy-step1-{build,tests,regression-build,regressions,cpu-build,cpu-tests}.log`.
+Run the serial frozen-binary capture and audit with:
+
+```sh
+python3 tools/modular_training_study/entropy_efficiency.py capture \
+  --capture build/entropy-estimated-qualified-20261011 \
+  --binary build/release/gjxl_modular_search_profile \
+  --baseline build/adaptive-baseline-20261011
+python3 tools/modular_training_study/entropy_efficiency.py analyze \
+  --capture build/entropy-estimated-qualified-20261011 \
+  --json docs/modular-entropy-estimated-results.json
+```
+
+The capture runs three CPU estimated controls and two alternating GPU
+exact/estimated pairs per large image (15 full encodes). Its auditor verifies
+the complete matrix, all artifact hashes, actual routes, unchanged search work,
+CPU/hybrid bytes and policies, and frozen exact outputs. Rate changes between
+selectors are measured, not assumed absent.
 
 ## 2. Reuse exact entropy populations
 

@@ -8,9 +8,9 @@ namespace gjxl::modular_internal {
 // Storage must be the canonical workflow plan for that source format/policy.
 // Caller owns full-call admission, CPU participation and atomic publication.
 // Consumes the frame and releases its samples before modeling/emission/assembly.
-[[nodiscard]] Status EncodePreparedModularFrame(ModularEncoderFrame frame,
-                                                const ModularCodingPolicy &policy,
-                                                EntropyCodingMode entropy,
-                                                const ModularWorkflowStoragePlan &storage,
-                                                codestream_internal::CodestreamBuffer *out);
+[[nodiscard]] Status
+EncodePreparedModularFrame(ModularEncoderFrame frame, const ModularCodingPolicy &policy,
+                           EntropyCodingMode entropy, const ModularWorkflowStoragePlan &storage,
+                           codestream_internal::CodestreamBuffer *out,
+                           AnsSelectionMode selection = AnsSelectionMode::kExact);
 } // namespace gjxl::modular_internal

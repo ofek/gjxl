@@ -13,5 +13,6 @@ namespace gjxl::modular_internal {
                                         PreparedModularTokens &&tokens, EntropyCodingMode mode,
                                         const ModularWorkflowStoragePlan &storage,
                                         codestream_internal::CodestreamBuffer *out,
+                                        AnsSelectionMode selection = AnsSelectionMode::kExact,
                                         GpuBackend *ans_gpu = nullptr);
 } // namespace gjxl::modular_internal

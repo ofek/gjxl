@@ -27,6 +27,8 @@ Status Encode(PackedModularImageView input, const ModularEncodingOptions &option
     return Status::InvalidArgument("GPU learner statistics requires the adaptive GPU search route");
   if (auto s = ValidateTreeLearningOptions(options.learning); !s.ok())
     return s;
+  if (auto s = ValidateAnsSelectionMode(options.ans_selection); !s.ok())
+    return s;
   if (options.search)
     return EncodeSearch(input, options, output);
   ModularWorkflowStoragePlan storage;
@@ -60,14 +62,15 @@ Status Encode(PackedModularImageView input, const ModularEncodingOptions &option
   }
   codestream_internal::CodestreamBuffer candidate;
   if (cache) {
-    if (auto s = cache->Encode(options.coding, options.entropy, storage, &candidate); !s.ok())
+    if (auto s = cache->Encode(options.coding, options.entropy, storage, &candidate,
+                                options.ans_selection); !s.ok())
       return s;
   } else {
     ModularEncoderFrame frame;
     if (auto s = ModularEncoderFrame::Prepare(input, options.coding, &frame); !s.ok())
       return s;
     if (auto s = EncodePreparedModularFrame(std::move(frame), options.coding, options.entropy,
-                                             storage, &candidate);
+                                             storage, &candidate, options.ans_selection);
         !s.ok())
       return s;
   }

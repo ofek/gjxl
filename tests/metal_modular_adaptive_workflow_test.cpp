@@ -131,16 +131,24 @@ void Case(GpuBackend &gpu, const Fixture &f, ModularEncodingOptions options, boo
         "Hybrid search changed bytes, selected policy, candidate count, or silently fell back");
   const auto &g = actual.adaptive_gpu;
   Check(g.ans_cpu_fallback_groups == g.ans_cpu_small_groups &&
-            (ans_cost && options.entropy == EntropyCodingMode::kAns
+            (ans_cost && options.entropy == EntropyCodingMode::kAns &&
+                 options.ans_selection == AnsSelectionMode::kExact
                  ? g.ans_gpu_groups + g.ans_cpu_fallback_groups >= actual.encoded_candidates &&
                        g.ans_gpu_states >= g.ans_gpu_groups
                  : g.ans_gpu_groups == 0 && g.ans_gpu_states == 0 &&
                        g.ans_cpu_fallback_groups == 0) &&
             (!require_gpu_cost || (g.ans_gpu_groups > 0 && g.ans_cpu_fallback_groups == 0)),
         "Exact ANS cost route was omitted or fallback attribution differs");
-  if (ans_cost && options.entropy == EntropyCodingMode::kAns && !require_gpu_cost)
+  if (ans_cost && options.entropy == EntropyCodingMode::kAns && !require_gpu_cost &&
+      options.ans_selection == AnsSelectionMode::kExact)
     Check(g.ans_gpu_groups == 0 && g.ans_cpu_small_groups > 0,
           "Small workflow did not use the explicit scalar cost crossover");
+  if (options.entropy == EntropyCodingMode::kAns &&
+      options.ans_selection == AnsSelectionMode::kEstimated)
+    Check(actual.entropy_work.ans_token_cost_nanoseconds == 0 &&
+              baseline.entropy_work.ans_token_cost_nanoseconds == 0 &&
+              actual.entropy_work.ans_alphabet_width_candidate_count == actual.encoded_candidates,
+          "Estimated hybrid performed exact simulation or built extra widths");
   if (tree_statistics) {
     Check(require_gpu_statistics
               ? g.tree_gpu_preparations > 0 && g.tree_gpu_groups > 0 && g.tree_gpu_samples > 0
@@ -473,11 +481,13 @@ void TreeAttemptFailure() {
     ++fault_checks;
   }
 }
-void AllocationSweep(GpuBackend &gpu, bool ans_cost = false) {
+void AllocationSweep(GpuBackend &gpu, bool ans_cost = false,
+                     AnsSelectionMode selection = AnsSelectionMode::kExact) {
   Fixture f(PackedModularFormat::kGray8, {1, 1});
   ModularEncodingOptions options;
   options.adaptive_gpu = &gpu;
   options.adaptive_ans_cost = ans_cost;
+  options.ans_selection = selection;
   if (ans_cost)
     options.entropy = EntropyCodingMode::kAns;
   options.search = true;
@@ -618,6 +628,8 @@ int main(int argc, char **argv) try {
     options.entropy = EntropyCodingMode::kAns;
     options.coding.tree.nodes[0].predictor = Predictor::kWeighted;
     Case(*gpu, large, options, false, true, true);
+    options.ans_selection = AnsSelectionMode::kEstimated;
+    Case(*gpu, large, options, true, true);
   }
   for (auto format : {PackedModularFormat::kGray8, PackedModularFormat::kRgb8,
                       PackedModularFormat::kRgba8, PackedModularFormat::kGray16,
@@ -630,6 +642,8 @@ int main(int argc, char **argv) try {
     options.tree_checkpoints = true;
     options.cpu_thread_count = format == PackedModularFormat::kRgba16 ? 4 : 1;
     Case(*gpu, f, options, format == PackedModularFormat::kGray8, true, false, true, true);
+    options.ans_selection = AnsSelectionMode::kEstimated;
+    Case(*gpu, f, options, format == PackedModularFormat::kRgba16, true, false, true, true);
   }
   {
     Fixture f(PackedModularFormat::kRgb8, {192, 128}, true);
@@ -651,6 +665,7 @@ int main(int argc, char **argv) try {
   TreeAttemptFailure();
   AllocationSweep(*gpu);
   AllocationSweep(*gpu, true);
+  AllocationSweep(*gpu, true, AnsSelectionMode::kEstimated);
   SameAddress(*gpu);
   CacheKeys(*gpu);
   gpu.reset();

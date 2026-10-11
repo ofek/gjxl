@@ -84,6 +84,8 @@ Status ComputeAdaptiveModularWorkflowStoragePlan(Extent2D extent, PackedModularF
     return Status::InvalidArgument("Invalid adaptive Modular workflow plan request");
   if (auto s = ValidateTreeLearningOptions(options.learning); !s.ok())
     return s;
+  if (auto s = ValidateAnsSelectionMode(options.ans_selection); !s.ok())
+    return s;
   AdaptiveModularWorkflowStoragePlan result;
   const auto cpu_status =
       options.search
@@ -102,7 +104,8 @@ Status ComputeAdaptiveModularWorkflowStoragePlan(Extent2D extent, PackedModularF
       MaximumGlobalTreeLeaves(uint64_t{extent.width} * extent.height * source.channel_count));
   const size_t nodes = options.search ? 2 * leaves - 1 : options.coding.tree.size;
   size_t maximum_samples = 0;
-  const bool ans_cost = options.adaptive_ans_cost && options.entropy == EntropyCodingMode::kAns;
+  const bool ans_cost = options.adaptive_ans_cost && options.entropy == EntropyCodingMode::kAns &&
+                        options.ans_selection == AnsSelectionMode::kExact;
   if (auto s = AdditionalBound(source, result.cpu.geometry, options.coding.transforms, nodes,
                                ans_cost, &result.additional_peak_bytes, &maximum_samples);
       !s.ok())
@@ -230,12 +233,16 @@ Status AdaptiveModularTokenCache::Prepare(const ModularCodingPolicy &policy,
 }
 Status AdaptiveModularTokenCache::Encode(const ModularCodingPolicy &policy, EntropyCodingMode mode,
                                          const ModularWorkflowStoragePlan &storage,
-                                         codestream_internal::CodestreamBuffer *out) {
+                                         codestream_internal::CodestreamBuffer *out,
+                                         AnsSelectionMode selection) {
+  if (auto s = ValidateAnsSelectionMode(selection); !s.ok())
+    return s;
   ModularEncoderFrame fallback;
   if (auto s = Prepare(policy, &fallback); !s.ok())
     return s;
   if (fallback.image().channel_count()) {
-    const auto status = EncodePreparedModularFrame(std::move(fallback), policy, mode, storage, out);
+    const auto status = EncodePreparedModularFrame(std::move(fallback), policy, mode, storage, out,
+                                                   selection);
     if (status.ok() && active_modular_profile)
       ++active_modular_profile->adaptive_gpu.cpu_fallback_candidates;
     return status;
@@ -254,7 +261,8 @@ Status AdaptiveModularTokenCache::Encode(const ModularCodingPolicy &policy, Entr
   auto metadata = features_->metadata();
   if (policy != ModularCodingPolicy{})
     metadata.modular_16_bit_buffer_sufficient = false;
-  const auto status = EncodeModularFrame(metadata, layout_, std::move(tokens), mode, storage, out, ans_backend_);
+  const auto status = EncodeModularFrame(metadata, layout_, std::move(tokens), mode, storage, out,
+                                         selection, ans_backend_);
   if (status.ok() && active_modular_profile)
     ++active_modular_profile->adaptive_gpu.encoded_candidates;
   return status;

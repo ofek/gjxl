@@ -1,5 +1,13 @@
 # Native Modular training coverage study
 
+The current [entropy efficiency plan](../../docs/modular-entropy-efficiency.md)
+tracks estimated ANS selection, exact population reuse, candidate evaluation,
+GPU statistics, and the controlled entropy-rate study. `gjxl_modular_search_profile`
+accepts `--estimated-ans` with any CPU/Metal route; the JSON records its selection
+mode. `entropy_efficiency.py` captures and audits the original three full-resolution
+images with exact/estimated GPU pairs and independent CPU estimated controls.
+See the plan for reproduction commands and qualification status.
+
 This opt-in CPU study measures complete raw lossless Modular files, including
 transform/tree/model headers and padding. It does not modify public defaults.
 Use a clean pinned libjxl source/build for independent sample-exact decoding.

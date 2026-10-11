@@ -27,6 +27,9 @@ struct ModularEncodingOptions {
   bool adaptive_ans_cost = false;
   // Private original-learner statistics route; requires adaptive_gpu and search.
   bool adaptive_tree_statistics = false;
+  // Private selector: estimated mode omits ordered candidate simulation unless
+  // an exact cost is requested. Applies equally to CPU and hybrid token paths.
+  AnsSelectionMode ans_selection = AnsSelectionMode::kExact;
 };
 [[nodiscard]] Status EncodeRgb8ModularOwned(Rgb8View input, const ModularEncodingOptions &options,
                                             codestream_internal::CodestreamBuffer *out);

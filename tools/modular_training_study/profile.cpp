@@ -64,16 +64,17 @@ void Stages(const std::array<const char *, N> &names, const std::array<double, N
 } // namespace
 
 int main(int argc, char **argv) try {
-  if (argc < 6 || argc > 8)
+  if (argc < 6 || argc > 9)
     throw std::runtime_error(
-        "gjxl_modular_search_profile INPUT OUTPUT SAMPLES LEAVES THREADS [--metal|--metal-ans|--metal-learn] [--no-profile]");
-  bool profiling = true, metal = false, metal_ans = false, metal_learn = false;
+        "gjxl_modular_search_profile INPUT OUTPUT SAMPLES LEAVES THREADS [--metal|--metal-ans|--metal-learn] [--estimated-ans] [--no-profile]");
+  bool profiling = true, metal = false, metal_ans = false, metal_learn = false, estimated = false;
   for (int i = 6; i < argc; ++i) {
     const std::string_view argument(argv[i]);
     if (argument == "--no-profile" && profiling) profiling = false;
     else if (argument == "--metal" && !metal) metal = true;
     else if (argument == "--metal-ans" && !metal) { metal = true; metal_ans = true; }
     else if (argument == "--metal-learn" && !metal) { metal = true; metal_ans = true; metal_learn = true; }
+    else if (argument == "--estimated-ans" && !estimated) estimated = true;
     else throw std::runtime_error("Unknown or duplicate profiling option");
   }
   std::unique_ptr<GpuBackend> gpu;
@@ -96,6 +97,7 @@ int main(int argc, char **argv) try {
   options.adaptive_gpu = gpu.get();
   options.adaptive_ans_cost = metal_ans;
   options.adaptive_tree_statistics = metal_learn;
+  options.ans_selection = estimated ? AnsSelectionMode::kEstimated : AnsSelectionMode::kExact;
   Ok(ValidateTreeLearningOptions(options.learning));
   io::IntegerImage image;
   Ok(io::ReadPnm(argv[1], &image));
@@ -155,6 +157,7 @@ int main(int argc, char **argv) try {
   std::cout << std::setprecision(17)
             << "{\"schema\":1,\"route\":\"" << (metal_learn ? "hybrid-learning-complete-search" : metal_ans ? "hybrid-ans-complete-search" : metal ? "hybrid-complete-search" : "cpu-complete-search")
             << "\",\"entropy\":\"ans\""
+            << ",\"ans_selection\":\"" << (estimated ? "estimated" : "exact") << '"'
             << ",\"backend_setup_seconds\":" << backend_setup_seconds
             << ",\"gpu_submissions\":" << gpu_after.committed_submissions - gpu_before.committed_submissions
             << ",\"gpu_allocations\":" << gpu_after.successful_allocations - gpu_before.successful_allocations

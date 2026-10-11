@@ -7,6 +7,7 @@
 #include "codestream/workflow_admission_test.h"
 #include "core/worker_launch_internal.h"
 #include "gpu/metal/metal_backend.h"
+#include "codec/modular/profile.h"
 #include <algorithm>
 #include <array>
 #include <filesystem>
@@ -434,6 +435,16 @@ int main(int argc, char **argv) try {
       options.coding.rct = 41;
       Case(*embedded, Fixture({17, 19}, PackedModularFormat::kRgba16, SampleByteOrder::kBigEndian),
            options);
+      if (mode == EntropyCodingMode::kAns) {
+        options.ans_selection = AnsSelectionMode::kEstimated;
+        ModularProfile profile;
+        ProfileSession session(&profile);
+        Case(*embedded, Fixture({17, 19}, PackedModularFormat::kRgba16, SampleByteOrder::kBigEndian),
+             options);
+        Check(profile.entropy_work.ans_token_cost_nanoseconds == 0 &&
+                  profile.entropy_work.ans_alphabet_width_candidate_count == 2,
+              "Prescribed GPU path ignored estimated ANS selection");
+      }
     }
   }
   const auto s = DefaultResourceBudget().snapshot();
