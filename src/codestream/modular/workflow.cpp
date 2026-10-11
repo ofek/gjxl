@@ -1,19 +1,22 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 Yunho Cho
 #include "codestream/modular/workflow.h"
+#include "codestream/modular/adaptive_gpu_workflow.h"
 #include "codec/modular/profile.h"
 #include "codestream/modular/prepared_encoder.h"
 #include "codestream/modular/search.h"
 #include "codestream/workflow_admission_scope.h"
 #include "core/publication_output.h"
 #include "core/thread_budget.h"
+#include <optional>
 
 namespace gjxl::modular_internal {
 namespace {
 Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &options,
                     resource_budget_internal::PublicationOutput<uint8_t> output);
 Status Encode(PackedModularImageView input, const ModularEncodingOptions &options,
-              resource_budget_internal::PublicationOutput<uint8_t> output) try {
+              resource_budget_internal::PublicationOutput<uint8_t> output,
+              AdaptiveModularTokenCache *cache = nullptr) try {
   if (output == nullptr)
     return Status::InvalidArgument("Null Modular workflow output");
   if (auto s = input.Validate(); !s.ok())
@@ -28,8 +31,17 @@ Status Encode(PackedModularImageView input, const ModularEncodingOptions &option
                                             options.coding, &storage, options.cpu_thread_count);
       !s.ok())
     return s;
+  size_t peak = storage.working.peak_bytes;
+  if (options.adaptive_gpu && !cache) {
+    AdaptiveModularWorkflowStoragePlan adaptive;
+    if (auto s = ComputeAdaptiveModularWorkflowStoragePlan(input.extent, input.format, options,
+                                                           &adaptive);
+        !s.ok())
+      return s;
+    peak = adaptive.peak_bytes;
+  }
   codestream_internal::WorkflowAdmission admission;
-  if (auto s = admission.Start(storage.working.peak_bytes, options.execution_domain); !s.ok())
+  if (auto s = admission.Start(peak, options.execution_domain); !s.ok())
     return s;
   thread_budget_internal::CpuExecutionScope execution;
   if (auto s = execution.Start(options.execution_domain, options.cpu_thread_count); !s.ok())
@@ -37,14 +49,24 @@ Status Encode(PackedModularImageView input, const ModularEncodingOptions &option
   thread_budget_internal::EncodeScope threads(options.cpu_thread_count);
   resource_budget_internal::ManagedHostScope managed(
       resource_budget_internal::ResourceClass::kPreparation);
-  ModularEncoderFrame frame;
-  if (auto s = ModularEncoderFrame::Prepare(input, options.coding, &frame); !s.ok())
-    return s;
+  std::optional<AdaptiveModularTokenCache> local_cache;
+  if (options.adaptive_gpu && !cache) {
+    local_cache.emplace(*options.adaptive_gpu, input, false);
+    cache = &*local_cache;
+  }
   codestream_internal::CodestreamBuffer candidate;
-  if (auto s = EncodePreparedModularFrame(std::move(frame), options.coding, options.entropy,
-                                         storage, &candidate);
-      !s.ok())
-    return s;
+  if (cache) {
+    if (auto s = cache->Encode(options.coding, options.entropy, storage, &candidate); !s.ok())
+      return s;
+  } else {
+    ModularEncoderFrame frame;
+    if (auto s = ModularEncoderFrame::Prepare(input, options.coding, &frame); !s.ok())
+      return s;
+    if (auto s = EncodePreparedModularFrame(std::move(frame), options.coding, options.entropy,
+                                             storage, &candidate);
+        !s.ok())
+      return s;
+  }
   if (active_modular_profile) {
     active_modular_profile->resolved = options.coding;
     ++active_modular_profile->encoded_candidates;
@@ -68,8 +90,17 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
                                                requested.learning, requested.tree_checkpoints);
       !s.ok())
     return s;
+  size_t peak = storage.working.peak_bytes;
+  if (requested.adaptive_gpu) {
+    AdaptiveModularWorkflowStoragePlan adaptive;
+    if (auto s = ComputeAdaptiveModularWorkflowStoragePlan(input.extent, input.format, requested,
+                                                           &adaptive);
+        !s.ok())
+      return s;
+    peak = adaptive.peak_bytes;
+  }
   codestream_internal::WorkflowAdmission admission;
-  if (auto s = admission.Start(storage.working.peak_bytes, requested.execution_domain); !s.ok())
+  if (auto s = admission.Start(peak, requested.execution_domain); !s.ok())
     return s;
   thread_budget_internal::CpuExecutionScope execution;
   if (auto s = execution.Start(requested.execution_domain, requested.cpu_thread_count); !s.ok())
@@ -77,6 +108,10 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
   resource_budget_internal::ManagedHostScope managed(
       resource_budget_internal::ResourceClass::kPreparation);
   thread_budget_internal::EncodeScope threads(requested.cpu_thread_count);
+  std::optional<AdaptiveModularTokenCache> adaptive_cache;
+  if (requested.adaptive_gpu)
+    adaptive_cache.emplace(*requested.adaptive_gpu, input);
+  auto *cache = adaptive_cache ? &*adaptive_cache : nullptr;
   auto options = requested;
   options.search = false;
   // Always retain the exact default learner and candidate order. Experimental
@@ -84,7 +119,7 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
   options.learning = {};
   ModularCodingPolicy best_policy;
   codestream_internal::CodestreamBuffer best;
-  if (auto s = Encode(input, options, &best); !s.ok())
+  if (auto s = Encode(input, options, &best, cache); !s.ok())
     return s;
   ModularInputProfile profile;
   if (auto s = ResolveModularInput(input.extent, input.format, &profile); !s.ok())
@@ -124,7 +159,7 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
         continue;
       options.coding = policy;
       codestream_internal::CodestreamBuffer candidate;
-      if (auto s = Encode(input, options, &candidate); !s.ok())
+      if (auto s = Encode(input, options, &candidate, cache); !s.ok())
         return s;
       // Compare complete bytes, including transforms/tree/models/TOC/padding.
       // Baseline and earlier candidates win ties. Replacement releases the old winner.
@@ -146,7 +181,7 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
   for (size_t i = 0; i < count; ++i) {
     options.coding = candidates[i];
     codestream_internal::CodestreamBuffer candidate;
-    if (auto s = Encode(input, options, &candidate); !s.ok())
+    if (auto s = Encode(input, options, &candidate, cache); !s.ok())
       return s;
     if (candidate.view().size() < best.view().size()) {
       best = std::move(candidate);
@@ -156,7 +191,7 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
   for (size_t i = 0; i < context_count; ++i) {
     options.coding = context_candidates[i];
     codestream_internal::CodestreamBuffer candidate;
-    if (auto s = Encode(input, options, &candidate); !s.ok())
+    if (auto s = Encode(input, options, &candidate, cache); !s.ok())
       return s;
     if (candidate.view().size() < best.view().size()) {
       best = std::move(candidate);
@@ -193,7 +228,7 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
         continue;
       options.coding = policy;
       codestream_internal::CodestreamBuffer candidate;
-      if (auto s = Encode(input, options, &candidate); !s.ok())
+      if (auto s = Encode(input, options, &candidate, cache); !s.ok())
         return s;
       if (candidate.view().size() < best.view().size()) {
         best = std::move(candidate);
@@ -227,7 +262,7 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
       continue;
     options.coding = learned;
     codestream_internal::CodestreamBuffer candidate;
-    if (auto s = Encode(input, options, &candidate); !s.ok())
+    if (auto s = Encode(input, options, &candidate, cache); !s.ok())
       return s;
     if (candidate.view().size() < best.view().size()) {
       best = std::move(candidate);
@@ -264,7 +299,7 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
         options.coding.weighted = learned.weighted;
         options.coding.tree = tree;
         codestream_internal::CodestreamBuffer candidate;
-        if (auto s = Encode(input, options, &candidate); !s.ok())
+        if (auto s = Encode(input, options, &candidate, cache); !s.ok())
           return s;
         // All pre-existing final-tree candidates outrank checkpoints on ties,
         // including final candidates from later transforms in the search.

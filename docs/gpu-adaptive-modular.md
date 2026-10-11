@@ -123,8 +123,16 @@ reconstruction of every source sample. Large trees, weighted property 15, palett
 and Squeeze layouts, signed arithmetic, bounded storage and failure publication
 are covered; the contract document records the precise scope.
 
-The new operation is not yet connected to full adaptive search. Bounded per-search
-feature reuse, composed admission/fallback accounting, and complete-search CPU/GPU
-comparisons remain next. CPU transformation and weighted-history construction are
-still part of the required measured path. The original prescribed GPU path remains
-available with its original eligibility; public encoding defaults are unchanged.
+The new operation is connected to full adaptive search through a private option.
+One call retains at most one transformed layout and its weighted features, with
+composed admission and explicit fallback accounting. All 25 complete CPU/hybrid
+workflow cases match selected policies, candidate counts and complete bytes, with
+pinned-decoder reconstruction; cache-key/lifetime cases and 1,770 failure checks
+also pass. The original candidate order and tie behavior remain intact.
+
+The profile capture tool now accepts `--metal` and reports actual GPU submissions,
+feature preparations/reuses, GPU candidates and CPU fallbacks. CPU transformation,
+weighted-history construction and every candidate remain inside the timed call.
+Paired full-resolution measurements are next; no adaptive end-to-end GPU speedup
+has yet been established. The original prescribed GPU path remains available with
+its original eligibility; public encoding defaults are unchanged.

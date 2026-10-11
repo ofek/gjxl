@@ -6,6 +6,8 @@
 #include "codestream/entropy.h"
 #include "core/execution_domain.h"
 
+namespace gjxl { class GpuBackend; }
+
 namespace gjxl::modular_internal {
 struct ModularEncodingOptions {
   std::shared_ptr<const ExecutionDomain> execution_domain;
@@ -17,6 +19,9 @@ struct ModularEncodingOptions {
   TreeLearningOptions learning;
   // Compare 16/32/... leaf checkpoints from each experimental learning pass.
   bool tree_checkpoints = false;
+  // Private hybrid qualification route. Backend is borrowed for this complete
+  // call; feature reuse is call-local. Public defaults stay on their old paths.
+  GpuBackend *adaptive_gpu = nullptr;
 };
 [[nodiscard]] Status EncodeRgb8ModularOwned(Rgb8View input, const ModularEncodingOptions &options,
                                             codestream_internal::CodestreamBuffer *out);

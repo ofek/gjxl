@@ -358,6 +358,7 @@ add_library(
   src/codestream/modular/public.cpp
   src/codestream/modular/workflow.cpp
   src/codestream/modular/prepared_encoder.cpp
+  src/codestream/modular/adaptive_gpu_workflow.cpp
   src/codestream/modular/gpu_workflow.cpp
   src/codestream/modular/gpu_token_workflow.cpp
   src/codestream/huffman.cpp
@@ -3626,6 +3627,16 @@ if(GJXL_BUILD_TESTS)
   add_test(NAME metal_modular_adaptive COMMAND gjxl_metal_modular_adaptive_test
     "${CMAKE_CURRENT_BINARY_DIR}/metal-modular-adaptive")
   set_tests_properties(metal_modular_adaptive PROPERTIES TIMEOUT 600)
+
+  add_executable(gjxl_metal_modular_adaptive_workflow_test tests/metal_modular_adaptive_workflow_test.cpp)
+  target_link_libraries(gjxl_metal_modular_adaptive_workflow_test PRIVATE gjxl_codestream gjxl_metal)
+  if(TARGET gjxl_modular_reference)
+    target_link_libraries(gjxl_metal_modular_adaptive_workflow_test PRIVATE gjxl_modular_reference)
+    target_compile_definitions(gjxl_metal_modular_adaptive_workflow_test PRIVATE GJXL_MODULAR_ADAPTIVE_REFERENCE=1)
+  endif()
+  add_test(NAME metal_modular_adaptive_workflow COMMAND gjxl_metal_modular_adaptive_workflow_test
+    "${CMAKE_CURRENT_BINARY_DIR}/metal-modular-adaptive-workflow")
+  set_tests_properties(metal_modular_adaptive_workflow PROPERTIES TIMEOUT 600)
 
   add_executable(gjxl_metal_modular_workflow_test tests/metal_modular_workflow_test.cpp)
   target_link_libraries(gjxl_metal_modular_workflow_test PRIVATE gjxl_codestream gjxl_metal)

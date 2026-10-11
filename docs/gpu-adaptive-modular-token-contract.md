@@ -3,7 +3,8 @@
 Status: private operation interfaces, ABI records, canonical descriptors, checked
 storage planning, CPU feature production, Metal dispatch, and completed-token
 handoff are implemented and device-qualified. Complete-search integration and
-bounded reuse across candidates remain the next milestone. The existing
+bounded reuse across candidates are also implemented and correctness-qualified;
+paired full-resolution performance qualification remains next. The existing
 prescribed producer is unchanged; this contract is separate from its 31-node,
 four-equal-plane ABI.
 
@@ -194,7 +195,60 @@ Metal-disabled adaptive-plan and token-handoff tests also passed. The exhaustive
 `modular_workflow` allocation sweep was not repeated for this producer milestone;
 its earlier shard evidence is recorded in the integration document.
 
-Complete-search admission, cache
-eviction, selected-policy equality, CPU fallback attribution, and end-to-end timing
-still require the enclosing workflow implementation. The producer has no silent
-fallback and does not alter encoder defaults.
+The producer has no silent fallback and does not alter encoder defaults.
+
+## Complete-search integration
+
+`ModularEncodingOptions::adaptive_gpu` privately opts the existing encoder into
+the hybrid path. The same search implementation still enumerates, learns, encodes
+and compares every candidate in the original order, with unchanged complete-size
+and checkpoint tie rules. Both public-vector and managed-output publication remain
+failure-atomic. Public API defaults and the original prescribed GPU route are
+unchanged.
+
+`AdaptiveModularTokenCache` borrows one fixed source view for the duration of one
+encoder call. Its key contains RCT, the transform sequence and weighted parameters;
+trees, entropy mode and learning budgets do not enter the key. A miss destroys the
+old completed features and CPU layout before constructing a replacement. The CPU
+frame and temporary device descriptors are released after preparation, while the
+feature owner and canonical stream plan remain available to later candidates.
+Search prepares weighted history even for an initially unweighted candidate;
+standalone prescribed calls prepare it only when their tree needs it.
+
+The allocation-free workflow planner conservatively adds the maximum adaptive
+operation and canonical metadata bound to the complete CPU search bound. It
+enumerates the same transform shapes, including worst-case palette metadata, and
+includes cached features during learning, CPU fallback and entropy processing.
+It intentionally does not discount unused GPU capacity for a capability-limited
+backend. Existing outputs stay separately charged during replacement.
+
+Missing capability or device-capacity rejection at preflight selects the CPU
+candidate path. Subsequent feature, dispatch, representability, allocation or
+completion failures are terminal, including an `Unsupported` returned after
+preflight; none silently starts another encode on CPU.
+
+`ModularProfile::adaptive_gpu` reports feature preparations/reuses/evictions,
+successful GPU candidates, successful CPU fallback candidates, and nested feature
+and token-operation intervals within the existing `tokens` stage. The feature
+interval includes CPU weighted-history production and shared-memory initialization.
+The token interval includes host dispatch setup, GPU wait, and completed-token
+handoff; it is not a device-only timestamp. Input/transform stages remain separately
+attributed, and all cache creation is inside the complete encoder-call timer.
+
+The `metal_modular_adaptive_workflow` qualification passes 25 complete CPU/hybrid
+comparisons across all six formats, prefix/ANS, palette/photographic patterns,
+expanded learning with checkpoints, and one/four CPU participants. Winners,
+candidate counts, training work counters and complete bytes match; the pinned
+decoder verifies 53,380 samples. Additional direct cache cases vary tree, entropy,
+weighted parameters and Squeeze layout; a new call at the same input address with
+changed pixels verifies that features cannot escape a call.
+
+The suite also passes 1,770 failure-atomic checks, including an exhaustive managed
+host-allocation sweep for a tiny complete search, feature replacement after earlier
+successful candidates, later token failure, device faults, explicit CPU fallback,
+exact-bound admission and one-byte-short rejection. All domains are empty after
+completed or failed calls. The other 29 focused Modular tests pass, along with three
+Metal-disabled profile/plan/handoff tests. The expanded workflow test was rerun
+after correcting its expected 8-bit palette-alpha samples to match packed bytes.
+This correctness evidence does not establish full-resolution throughput; retained
+logs are named `adaptive-search-*` in `build/adaptive-integration/`.

@@ -163,3 +163,25 @@ Compare complete files to a profiled call before interpreting the attribution.
 Retain binary/input/output hashes, build revision and flags, exact commands, and
 machine activity alongside captures. One capture on a busy desktop is diagnostic,
 not a qualified throughput comparison.
+
+In a Metal-enabled build, append `--metal` to measure the complete hybrid search:
+
+```sh
+build/release/gjxl_modular_search_profile input.pam output.jxl 262144 256 4 --metal > result.json
+```
+
+The backend is initialized before the timer and its setup duration is recorded
+separately. CPU transforms and weighted-feature preparation, call-local cache
+creation/replacement, GPU token evaluation, CPU entropy processing and output
+publication all remain inside the encoder-call timer. Search policy and candidate
+order are identical to the CPU control. `--metal --no-profile` is supported too;
+actual `gpu_submissions` and `gpu_allocations` remain recorded with profiling off.
+
+The JSON route is `hybrid-complete-search`. The `adaptive_gpu` object contains
+feature preparation/reuse/eviction counts and GPU/fallback candidate counts. Its
+`feature_seconds` and `token_seconds` are nested subsets of `stages.tokens`, not
+additional phases or device-only timestamps. The older `gpu_input_tokens` stage
+belongs to the separate prescribed unpack/RCT/token route and stays zero here.
+The CPU-only build rejects `--metal` explicitly. Compare complete bytes and the
+entire winning policy, including weighted parameters, before interpreting paired
+CPU/hybrid timings.

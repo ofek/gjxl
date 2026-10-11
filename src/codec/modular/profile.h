@@ -43,6 +43,13 @@ struct TrainingWorkProfile {
   size_t split_evaluations = 0, sorted_properties = 0, sorted_samples = 0;
   bool operator==(const TrainingWorkProfile &) const = default;
 };
+struct AdaptiveGpuWorkProfile {
+  // Nested within kTokens, not additional top-level caller-wall stages.
+  double feature_seconds = 0, token_seconds = 0;
+  size_t feature_preparations = 0, feature_reuses = 0, evictions = 0;
+  size_t encoded_candidates = 0, cpu_fallback_candidates = 0;
+  bool operator==(const AdaptiveGpuWorkProfile &) const = default;
+};
 struct ModularProfile {
   std::array<double, static_cast<size_t>(ProfileStage::kCount)> seconds{};
   // Nested diagnostics within kModel, not additional caller-wall stages.
@@ -50,6 +57,7 @@ struct ModularProfile {
   // shared counter type retains its work-time semantics if that changes.
   codestream_internal::EntropyWorkProfile entropy_work;
   TrainingWorkProfile training_work;
+  AdaptiveGpuWorkProfile adaptive_gpu;
   // A large winning tree retains its managed backing after the encoder call.
   // Release this diagnostic copy before asserting that the domain is empty.
   ModularCodingPolicy resolved;
