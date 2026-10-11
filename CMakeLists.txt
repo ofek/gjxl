@@ -590,6 +590,7 @@ add_library(
 
   src/gpu/ops/ac_strategy_search.cpp
   src/gpu/ops/ac_strategy_storage_plan.cpp
+  src/gpu/ops/ans_token_cost.cpp
   src/gpu/ops/modular_input_storage_plan.cpp
   src/gpu/ops/modular_token_storage_plan.cpp
   src/gpu/ops/modular_adaptive_token_storage_plan.cpp
@@ -2397,6 +2398,11 @@ if(GJXL_BUILD_TESTS)
   target_link_libraries(gjxl_modular_adaptive_token_plan_test PRIVATE gjxl_gpu_ops)
   add_test(NAME modular_adaptive_token_plan COMMAND gjxl_modular_adaptive_token_plan_test)
   set_tests_properties(modular_adaptive_token_plan PROPERTIES TIMEOUT 30)
+
+  add_executable(gjxl_ans_token_cost_plan_test tests/ans_token_cost_plan_test.cpp)
+  target_link_libraries(gjxl_ans_token_cost_plan_test PRIVATE gjxl_codestream gjxl_gpu_ops)
+  add_test(NAME ans_token_cost_plan COMMAND gjxl_ans_token_cost_plan_test)
+  set_tests_properties(ans_token_cost_plan PROPERTIES TIMEOUT 30)
 
   add_executable(gjxl_modular_gpu_token_handoff_test tests/modular_gpu_token_handoff_test.cpp)
   target_link_libraries(gjxl_modular_gpu_token_handoff_test PRIVATE gjxl_codestream)

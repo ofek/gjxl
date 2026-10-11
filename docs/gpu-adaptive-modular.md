@@ -149,3 +149,10 @@ simulation is the largest remaining individual measured task, so the next slice
 will parallelize independent section/candidate states while retaining exact
 recurrence, pruning and selection ties. The original prescribed GPU path remains
 available with its original eligibility; public encoding defaults are unchanged.
+
+The [exact ANS token-cost contract](gpu-ans-token-cost.md) now defines resident
+input ownership, section/candidate independence, borrowed normalized tables,
+completed bit-count/final-state results and bounded transient storage. Its
+allocation-free validation and storage tests pass with Metal enabled and disabled,
+including compatibility with a real scalar-optimized model. Native device
+implementation and workflow routing are subsequent milestones.
