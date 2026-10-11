@@ -133,6 +133,9 @@ int main(int argc,char** argv) try {
     ModularProfile profile;ModularCodingPolicy resolved;
     std::vector<uint8_t> encoded;
     double learning_seconds=0;
+#if STUDY_CONTROL
+    double learning_cpu=0;
+#endif
     const auto start=Clock::now();
     {
       ProfileSession session(&profile);
@@ -147,8 +150,14 @@ int main(int argc,char** argv) try {
           ModularFrameGeometry geometry;Ok(ModularFrameGeometry::Create(image.extent,&geometry));
           ModularStreamPlan layout;Ok(BuildModularStreamPlan(geometry,shape.channels(),shape.metadata,&layout));
           const auto training_start=Clock::now();
+#if STUDY_CONTROL
+          const auto training_cpu_start=std::clock();
+#endif
           Ok(LearnModularPolicies(frame,layout,fixed,&single,&split,&learned,options.learning,nullptr,&checkpoints));
           learning_seconds=std::chrono::duration<double>(Clock::now()-training_start).count();
+#if STUDY_CONTROL
+          learning_cpu=double(std::clock()-training_cpu_start)/CLOCKS_PER_SEC;
+#endif
         }
         // Compare the same final/checkpoint portfolio under this learner. No
         // fallback to the saved winner: retain regressions in this ablation.
@@ -174,6 +183,11 @@ int main(int argc,char** argv) try {
       <<",\"learning_seconds\":"<<learning_seconds<<",\"bytes\":"<<encoded.size()<<",\"decoded_exact\":true,\"candidates\":"<<profile.encoded_candidates<<",\"stages\":[";
     for(size_t i=0;i<profile.seconds.size();++i)std::cout<<(i?",":"")<<profile.seconds[i];
     std::cout<<"],\"policy\":";PolicyJson(resolved);std::cout<<",\"passes\":";Passes(passes);std::cout<<"}"<<std::endl;
+#if STUDY_CONTROL
+    std::cerr<<std::setprecision(17)<<"CONTROL {\"iteration\":"<<iteration
+      <<",\"warmup\":"<<(iteration<warmups?"true":"false")
+      <<",\"learning_cpu\":"<<learning_cpu<<"}\n";
+#endif
   }
   return 0;
 }catch(const std::exception& e){std::cerr<<e.what()<<'\n';return 1;}

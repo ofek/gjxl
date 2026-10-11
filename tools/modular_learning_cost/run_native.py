@@ -2,7 +2,7 @@
 """Serial, hash-bound native learning decomposition and frozen-policy ablations."""
 import argparse, hashlib, json, subprocess, time
 from pathlib import Path
-p=argparse.ArgumentParser();p.add_argument('--binaries',type=Path,required=True);p.add_argument('--ans-study',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--phase',choices=['profile','pilot','rate','search-ablation'],required=True);a=p.parse_args()
+p=argparse.ArgumentParser();p.add_argument('--binaries',type=Path,required=True);p.add_argument('--ans-study',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--phase',choices=['profile','pilot','rate','search-ablation','control'],required=True);a=p.parse_args()
 sha=lambda p:hashlib.sha256(Path(p).read_bytes()).hexdigest()
 a.output.mkdir(parents=True,exist_ok=True)
 old=json.loads((a.ans_study/'search/manifest.json').read_text())
@@ -10,8 +10,8 @@ old_results={r['input']:r for r in map(json.loads,(a.ans_study/'search/results.j
 inputs=[c['input'] for c in old['cases']]
 pilot={'photo-macan','alpha-ria','gray-patches'}
 if a.phase!='rate':inputs=[i for i in inputs if i['name'] in pilot]
-variants={'profile':['baseline'],'pilot':['baseline','two','keys','two_keys','skip_constant'], 'rate':['baseline','two','keys','quantized'], 'search-ablation':['keys','two']}[a.phase]
-repeats,warmups=(2,1) if a.phase=='pilot' else (1,0)
+variants={'profile':['baseline'],'pilot':['baseline','two','keys','two_keys','skip_constant'], 'rate':['baseline','two','keys','quantized'], 'search-ablation':['keys','two'], 'control':['unprofiled']}[a.phase]
+repeats,warmups=(2,1) if a.phase in ('pilot','control') else (1,0)
 binaries={v:(a.binaries/('native_'+('baseline' if v=='quantized' else v))).resolve() for v in variants}
 manifest=dict(phase=a.phase,inputs=inputs,variants=variants,repeats=repeats,warmups=warmups,cpu_participants=4,prior_manifest_sha256=sha(a.ans_study/'search/manifest.json'),prior_results_sha256=sha(a.ans_study/'search/results.jsonl'),binary_sha256={str(b):sha(b) for b in binaries.values()},source_revision=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip())
 m=a.output/'manifest.json'

@@ -19,6 +19,9 @@ cost proxy, best-first growth, and checkpoint selection, except where stated:
 - `quantized`: the existing experimental quantized learner. This also changes
   sampling allocation, predictors, thresholds and scoring; it does not isolate
   the effect of binning.
+- `unprofiled`: links the original learner/search objects from the qualified
+  archives, with only external call timing and the existing coarse profile.
+  The `control` phase measures instrumentation impact on the three pilot cases.
 
 `fixed` freezes the saved winning RCT/transform sequence, retrains at 262,144
 samples / 256 leaves, and selects among the resulting final tree/checkpoints.
@@ -72,6 +75,14 @@ python3 tools/modular_learning_cost/run_reference.py \
   --binary build/learning-cost/bin/reference_runner \
   --previous-data /Users/yunhocho/GitHub/gjxl-modular-libjxl-study/build/modular-libjxl-controls \
   --output build/learning-cost/reference
+python3 tools/modular_learning_cost/run_native.py \
+  --binaries build/learning-cost/bin \
+  --ans-study /Users/yunhocho/GitHub/gjxl-modular-ans-estimates/build/ans-selection \
+  --output build/learning-cost/control --phase control
+python3 tools/modular_learning_cost/analyze.py \
+  --root build/learning-cost \
+  --ans-study /Users/yunhocho/GitHub/gjxl-modular-ans-estimates/build/ans-selection \
+  --output docs/modular-tree-learning-cost-results.json
 ```
 
 Manifests bind inputs, binaries and prior ledgers. Resume rejects changed

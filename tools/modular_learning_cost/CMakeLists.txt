@@ -9,8 +9,12 @@ foreach(var GJXL_BUILD REFERENCE_SOURCE REFERENCE_BUILD STUDY_DATA)
   endif()
 endforeach()
 function(native name predictors keys skip)
-  add_executable(native_${name} native_runner.cpp ${GJXL_SOURCE}/src/io/pnm.cpp
-    ${STUDY_DATA}/overrides/search.cpp ${STUDY_DATA}/overrides/tree_learning.cpp)
+  add_executable(native_${name} native_runner.cpp ${GJXL_SOURCE}/src/io/pnm.cpp)
+  if(name STREQUAL "unprofiled")
+    target_compile_definitions(native_${name} PRIVATE STUDY_CONTROL=1)
+  else()
+    target_sources(native_${name} PRIVATE ${STUDY_DATA}/overrides/search.cpp ${STUDY_DATA}/overrides/tree_learning.cpp)
+  endif()
   target_include_directories(native_${name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${GJXL_SOURCE}/include ${GJXL_SOURCE}/src
     ${GJXL_SOURCE}/tests ${REFERENCE_SOURCE} ${REFERENCE_SOURCE}/lib/include
     ${REFERENCE_BUILD}/lib/include ${REFERENCE_SOURCE}/third_party/highway)
@@ -29,6 +33,7 @@ native(two 2 0 0)
 native(keys 14 1 0)
 native(two_keys 2 1 0)
 native(skip_constant 14 0 1)
+native(unprofiled 14 0 0)
 if(REFERENCE_STUDY_DATA)
   add_executable(reference_runner ${REFERENCE_STUDY_DATA}/reference_runner.cpp
     ${REFERENCE_STUDY_DATA}/reference_effort.cpp
