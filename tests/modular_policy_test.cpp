@@ -321,7 +321,7 @@ void Case(const Fixture &f, const ModularCodingPolicy &policy, bool search = fal
       ProfileSession session(&profile);
       Ok(EncodeModularImage(f.view(), {domain, mode, policy, search}, &output));
     }
-    Check(!search || profile.encoded_candidates <= (f.source.channels == 1 ? 9 : 23),
+    Check(!search || profile.encoded_candidates <= (f.source.channels == 1 ? 13 : 27),
           "Search exceeded its complete-candidate bound");
     const auto micros = std::chrono::duration_cast<std::chrono::microseconds>(
                             std::chrono::steady_clock::now() - start)

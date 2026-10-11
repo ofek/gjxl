@@ -142,7 +142,7 @@ inline void Stages(PackedModularImageView input, const ModularCodingPolicy &poli
   Require(ValidateTree(policy.tree, &layout).ok(), "Native tree");
   for (size_t si = 0; si < plan.streams.size(); ++si) {
     auto stream = plan.streams[si];
-    size_t token = 0;
+    size_t token = 0, property_channel = 0;
     for (auto slice : std::span(plan.slices).subspan(stream.slice_begin, stream.slice_count)) {
       auto [w, h] = slice.rect.extent;
       auto tile_result = jxl::Channel::Create(&memory, w, h);
@@ -161,7 +161,7 @@ inline void Stages(PackedModularImageView input, const ModularCodingPolicy &poli
       jxl::Properties properties(16);
       for (size_t y = 0; y < h; ++y) {
         jxl::InitPropsRow(&properties,
-                          {static_cast<int32_t>(slice.channel), static_cast<int32_t>(stream.id)},
+                          {static_cast<int32_t>(property_channel), static_cast<int32_t>(stream.id)},
                           static_cast<int>(y));
         int64_t previous = 0;
         for (size_t x = 0; x < w; ++x) {
@@ -171,7 +171,7 @@ inline void Stages(PackedModularImageView input, const ModularCodingPolicy &poli
                                predictions.data());
           auto n = Neighbors(view, x, y);
           auto weighted = wp.Predict(x, y, n.top, n.left, n.top_right, n.top_left, n.top_top);
-          auto actual = Properties(n, slice.channel, stream.id, x, y, previous, weighted.second);
+          auto actual = Properties(n, property_channel, stream.id, x, y, previous, weighted.second);
           previous = actual[9];
           for (size_t i = 0; i < 16; ++i)
             Require(actual[i] == properties[i], "Reference properties");
@@ -195,6 +195,7 @@ inline void Stages(PackedModularImageView input, const ModularCodingPolicy &poli
           Require(wp.Update(view.Row(y)[x], x, y), "Native weighted range");
         }
       }
+      ++property_channel;
     }
     Require(token == tokens.streams[si].size(), "Reference token coverage");
   }

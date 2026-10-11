@@ -15,6 +15,10 @@ struct ModularWorkflowStoragePlan {
   resource_budget_internal::HostStorageBound assembly, publication, output, working;
   bool operator==(const ModularWorkflowStoragePlan &) const = default;
 };
+// maximum_tree_leaves optionally bounds future learned trees (including their
+// storage capacity); zero uses the prescribed tree. Input policy backing and
+// old outputs are caller-owned. The prefix-derived ANS model still has at most
+// kMaximumPrefixClusters clusters, independently of the number of leaves.
 // Shape-only, allocation-free; bounds fresh work and output. An existing managed
 // result stays charged separately in its domain during replacement.
 [[nodiscard]] Status ComputeModularWorkflowStoragePlan(Extent2D extent, EntropyCodingMode mode,
@@ -26,7 +30,8 @@ struct ModularWorkflowStoragePlan {
                                                        EntropyCodingMode mode,
                                                        const ModularCodingPolicy &policy,
                                                        ModularWorkflowStoragePlan *out,
-                                                       size_t cpu_threads = 1);
+                                                       size_t cpu_threads = 1,
+                                                       size_t maximum_tree_leaves = 0);
 // Completed-token continuation only: replaces scalar token backing with the
 // supplied retained arena capacity, and omits image preparation/tokenization.
 // Includes canonical layout and fresh stream views, models, emission workers,

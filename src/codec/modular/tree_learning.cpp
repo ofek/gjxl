@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Yunho Cho
 #include "codec/modular/tree_learning.h"
 #include "codec/modular/entropy_estimate.h"
+#include "codec/modular/quantized_tree_learning.h"
 #include <algorithm>
 #include <bit>
 #include <new>
@@ -15,7 +16,7 @@ unsigned ResidualWidth(int32_t residual) { return 1 + std::bit_width(FoldSigned(
 } // namespace
 Status LearnDecisionTrees(std::span<const TrainingSample> samples, DecisionTree *single,
                           DecisionTree *split) {
-  if (!single || !split || samples.empty() || samples.size() > kMaximumTrainingSamples)
+  if (!single || !split || samples.empty() || samples.size() > kDefaultTrainingSamples)
     return Status::InvalidArgument("Invalid Modular training samples");
   const size_t used = samples.size();
   std::array<uint64_t, 14> costs{};
@@ -78,7 +79,7 @@ using entropy_estimate::Log2;
 using entropy_estimate::ResidualCode;
 using entropy_estimate::EncodeResidual;
 struct Histogram {
-  std::array<uint16_t, kSymbols> counts{};
+  std::array<uint32_t, kSymbols> counts{};
   int64_t sum_count_log_count = 0, extra_bits = 0;
   size_t occupied = 0;
 };
@@ -87,15 +88,15 @@ struct Split {
   int32_t property = -1, threshold = 0;
 };
 struct Leaf {
-  size_t begin = 0, end = 0, node = 0;
+  size_t begin = 0, end = 0, node = 0, depth = 1;
   Split split;
 };
 struct LearningWorkspace {
-  std::array<uint32_t, kMaximumTrainingSamples + 1> count_log_count{};
-  std::array<uint16_t, kMaximumTrainingSamples> order{};
-  std::array<std::array<ResidualCode, kPredictors>, kMaximumTrainingSamples> codes{};
+  resource_budget_internal::ManagedVector<int64_t> count_log_count;
+  resource_budget_internal::ManagedVector<uint32_t> order;
+  resource_budget_internal::ManagedVector<std::array<ResidualCode, kPredictors>> codes;
   std::array<Histogram, kPredictors> parent{}, low{}, high{};
-  std::array<Leaf, kMaximumTreeLeaves> leaves{};
+  resource_budget_internal::ManagedVector<Leaf> leaves;
 };
 void Change(Histogram &h, ResidualCode code, int delta, const LearningWorkspace &w) {
   auto &count = h.counts[code.symbol];
@@ -139,11 +140,11 @@ void FindSplit(std::span<const TrainingSample> samples, Leaf &leaf, DecisionTree
   const auto [predictor, cost] = Best(w.parent, count, w);
   tree.nodes[leaf.node].predictor = static_cast<Predictor>(predictor);
   leaf.split = {};
-  if (count < 2 * kMinimumLeafSamples)
+  if (count < 2 * kMinimumLeafSamples || leaf.depth >= kMaximumTreeDepth)
     return;
   for (size_t property = 0; property < kPropertyCount; ++property) {
     auto begin = w.order.begin() + leaf.begin, end = w.order.begin() + leaf.end;
-    std::sort(begin, end, [&](uint16_t a, uint16_t b) {
+    std::sort(begin, end, [&](uint32_t a, uint32_t b) {
       const auto x = samples[a].properties[property], y = samples[b].properties[property];
       return x != y ? x < y : a < b;
     });
@@ -177,32 +178,103 @@ void FindSplit(std::span<const TrainingSample> samples, Leaf &leaf, DecisionTree
 }
 } // namespace
 
-Status ComputeTreeLearningStorageBound(resource_budget_internal::HostStorageBound *out) {
+Status TreeLearningCheckpoints::Capture(const DecisionTree &tree, bool final) {
+  const size_t leaves = (tree.size + 1) / 2;
+  if ((!final && (leaves < 16 || !std::has_single_bit(leaves))) ||
+      (size && trees[size - 1].size == tree.size))
+    return Status::Ok();
+  if (size == trees.size())
+    return Status::InvalidArgument("Modular tree checkpoint capacity exceeded");
+  trees[size] = tree;
+  ++size;
+  return Status::Ok();
+}
+Status ComputeTreeLearningCheckpointStorageBound(size_t maximum_leaves,
+                                                 resource_budget_internal::HostStorageBound *out) {
   using namespace resource_budget_internal;
-  if (!out)
-    return Status::InvalidArgument("Null Modular learning storage output");
+  if (!out || !maximum_leaves || maximum_leaves > kMaximumTreeLeaves)
+    return Status::InvalidArgument("Invalid Modular checkpoint storage request");
   HostStorageBound bound;
-  if (!bound.AddVector<LearningWorkspace>(1, VectorCapacityPolicy::kFreshExact))
-    return Status::InvalidArgument("Modular learning storage overflow");
+  auto add = [&](size_t leaves) {
+    const size_t nodes = 2 * leaves - 1;
+    return nodes <= kInlineTreeNodes ||
+           bound.AddVector<DecisionNode>(nodes, VectorCapacityPolicy::kFreshExact);
+  };
+  // The final checkpoint may be between powers of two. Its backing is bounded
+  // by maximum_leaves, including an early stop before a power-of-two cap.
+  for (size_t leaves = 16; leaves < maximum_leaves; leaves *= 2)
+    if (!add(leaves))
+      return Status::InvalidArgument("Modular checkpoint storage overflow");
+  if (!add(maximum_leaves))
+    return Status::InvalidArgument("Modular checkpoint storage overflow");
   *out = bound;
   return Status::Ok();
 }
-Status LearnEntropyTree(std::span<const TrainingSample> samples, DecisionTree *out) try {
-  if (!out || samples.empty() || samples.size() > kMaximumTrainingSamples)
+Status ComputeTreeLearningStorageBound(resource_budget_internal::HostStorageBound *out,
+                                       TreeLearningOptions options, bool retain_checkpoints) {
+  using namespace resource_budget_internal;
+  if (!out)
+    return Status::InvalidArgument("Null Modular learning storage output");
+  if (auto s = ValidateTreeLearningOptions(options); !s.ok())
+    return s;
+  HostStorageBound bound;
+  if (options.mode == TreeLearningMode::kQuantized) {
+    if (auto s = ComputeQuantizedTreeLearningStorageBound(&bound, options); !s.ok())
+      return s;
+  } else {
+    const size_t nodes = 2 * options.maximum_leaves - 1;
+    if (!bound.AddVector<LearningWorkspace>(1, VectorCapacityPolicy::kFreshExact) ||
+        !bound.AddVector<int64_t>(options.maximum_samples + 1, VectorCapacityPolicy::kFreshExact) ||
+        !bound.AddVector<uint32_t>(options.maximum_samples, VectorCapacityPolicy::kFreshExact) ||
+        !bound.AddVector<std::array<ResidualCode, kPredictors>>(
+            options.maximum_samples, VectorCapacityPolicy::kFreshExact) ||
+        !bound.AddVector<Leaf>(options.maximum_leaves, VectorCapacityPolicy::kFreshExact) ||
+        (nodes > kInlineTreeNodes &&
+         !bound.AddVector<DecisionNode>(nodes, VectorCapacityPolicy::kFreshExact)))
+      return Status::InvalidArgument("Modular learning storage overflow");
+  }
+  if (retain_checkpoints) {
+    HostStorageBound checkpoints;
+    if (auto s = ComputeTreeLearningCheckpointStorageBound(options.maximum_leaves, &checkpoints);
+        !s.ok())
+      return s;
+    if (!bound.Add(checkpoints))
+      return Status::InvalidArgument("Modular learning checkpoint overlap overflow");
+  }
+  *out = bound;
+  return Status::Ok();
+}
+Status LearnEntropyTree(std::span<const TrainingSample> samples, DecisionTree *out,
+                        TreeLearningOptions options, size_t population,
+                        TreeLearningCheckpoints *checkpoints) try {
+  if (auto s = ValidateTreeLearningOptions(options); !s.ok())
+    return s;
+  if (!out || samples.empty() || samples.size() > options.maximum_samples)
     return Status::InvalidArgument("Invalid Modular entropy training samples");
+  if (population && population < samples.size())
+    return Status::InvalidArgument("Modular training population is smaller than sample count");
+  if (options.mode == TreeLearningMode::kQuantized)
+    return LearnQuantizedEntropyTree(samples, out, options,
+                                     population ? population : samples.size(), checkpoints);
   resource_budget_internal::ManagedVector<LearningWorkspace> storage(1);
   auto &w = storage[0];
+  w.count_log_count.resize(samples.size() + 1);
+  w.order.resize(samples.size());
+  w.codes.resize(samples.size());
+  w.leaves.resize(options.maximum_leaves);
   for (uint32_t n = 1; n <= samples.size(); ++n)
-    w.count_log_count[n] = n * Log2(n);
-  std::iota(w.order.begin(), w.order.begin() + samples.size(), uint16_t{0});
+    w.count_log_count[n] = int64_t{n} * Log2(n);
+  std::iota(w.order.begin(), w.order.end(), uint32_t{0});
   for (size_t i = 0; i < samples.size(); ++i)
     for (size_t p = 0; p < kPredictors; ++p)
       w.codes[i][p] = EncodeResidual(samples[i].residuals[p]);
   DecisionTree tree;
-  w.leaves[0] = {0, samples.size(), 0, {}};
+  TreeLearningCheckpoints retained;
+  tree.nodes.resize(2 * options.maximum_leaves - 1);
+  w.leaves[0] = {0, samples.size(), 0, 1, {}};
   size_t leaves = 1;
   FindSplit(samples, w.leaves[0], tree, w);
-  while (leaves < kMaximumTreeLeaves) {
+  while (leaves < options.maximum_leaves) {
     size_t best = 0;
     for (size_t i = 1; i < leaves; ++i)
       if (w.leaves[i].split.gain > w.leaves[best].split.gain)
@@ -211,30 +283,40 @@ Status LearnEntropyTree(std::span<const TrainingSample> samples, DecisionTree *o
     if (leaf.split.gain <= 0)
       break;
     const auto middle =
-        std::partition(w.order.begin() + leaf.begin, w.order.begin() + leaf.end, [&](uint16_t i) {
+        std::partition(w.order.begin() + leaf.begin, w.order.begin() + leaf.end, [&](uint32_t i) {
           return samples[i].properties[leaf.split.property] > leaf.split.threshold;
         });
     const size_t boundary = static_cast<size_t>(middle - w.order.begin());
-    const uint8_t left = static_cast<uint8_t>(tree.size++);
-    const uint8_t right = static_cast<uint8_t>(tree.size++);
+    const TreeIndex left = static_cast<TreeIndex>(tree.size++);
+    const TreeIndex right = static_cast<TreeIndex>(tree.size++);
     tree.nodes[leaf.node] = {.property = leaf.split.property,
                              .split = leaf.split.threshold,
                              .left = left,
                              .right = right};
-    w.leaves[best] = {leaf.begin, boundary, left, {}};
-    w.leaves[leaves] = {boundary, leaf.end, right, {}};
+    w.leaves[best] = {leaf.begin, boundary, left, leaf.depth + 1, {}};
+    w.leaves[leaves] = {boundary, leaf.end, right, leaf.depth + 1, {}};
     FindSplit(samples, w.leaves[best], tree, w);
     FindSplit(samples, w.leaves[leaves++], tree, w);
+    if (checkpoints)
+      if (auto s = retained.Capture(tree); !s.ok())
+        return s;
   }
   TreeLayout layout;
   if (auto s = ValidateTree(tree, &layout); !s.ok())
     return s;
-  *out = tree;
+  if (checkpoints) {
+    if (auto s = retained.Capture(tree, true); !s.ok())
+      return s;
+    *checkpoints = std::move(retained);
+  }
+  *out = std::move(tree);
   return Status::Ok();
 } catch (const resource_budget_internal::ManagedAllocationFailure &e) {
   return e.status();
 } catch (const std::bad_alloc &) {
   return Status::OutOfMemory("Modular learning allocation failed");
+} catch (const std::length_error &) {
+  return Status::InvalidArgument("Modular learning storage overflow");
 }
 
 Status MakeFixedWeightedTree(uint32_t bits, DecisionTree *out) {
@@ -250,14 +332,14 @@ Status MakeFixedWeightedTree(uint32_t bits, DecisionTree *out) {
       return;
     }
     const size_t mid = (begin + end) / 2;
-    const uint8_t left = static_cast<uint8_t>(tree.size++);
-    const uint8_t right = static_cast<uint8_t>(tree.size++);
+    const TreeIndex left = static_cast<TreeIndex>(tree.size++);
+    const TreeIndex right = static_cast<TreeIndex>(tree.size++);
     tree.nodes[id] = {.property = 15, .split = cutoffs[mid] * scale, .left = left, .right = right};
     self(self, mid + 1, end, left);
     self(self, begin, mid, right);
   };
   fill(fill, 0, cutoffs.size(), 0);
-  *out = tree;
+  *out = std::move(tree);
   return Status::Ok();
 }
 } // namespace gjxl::modular_internal

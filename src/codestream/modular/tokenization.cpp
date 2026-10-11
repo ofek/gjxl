@@ -11,6 +11,7 @@ PreparedModularTokens PrepareModularTokenHeader(const ModularCodingPolicy &polic
   PreparedModularTokens result;
   result.policy = policy;
   result.context_count = layout.leaves;
+  result.tree_tokens.resize(5 * layout.leaves + 2 * (policy.tree.size - layout.leaves));
   auto tree_token = [&](uint32_t context, uint32_t value) {
     result.tree_tokens[result.tree_token_count++] = {context, value};
   };
@@ -84,6 +85,7 @@ Status TokenizeModular(const ModularEncoderFrame &frame, const ModularStreamPlan
             const auto &stream = plan.streams[i];
             size_t next = offsets[i];
             const size_t begin = next;
+            size_t property_channel = 0;
             for (const auto &slice :
                  std::span(plan.slices).subspan(stream.slice_begin, stream.slice_count)) {
               if (slice.channel >= channels)
@@ -108,7 +110,7 @@ Status TokenizeModular(const ModularEncoderFrame &frame, const ModularStreamPlan
                   if (wp)
                     weighted = wp->Predict(x, y, neighbors.top, neighbors.left, neighbors.top_right,
                                            neighbors.top_left, neighbors.top_top);
-                  const auto properties = Properties(neighbors, slice.channel, stream.id, x, y,
+                  const auto properties = Properties(neighbors, property_channel, stream.id, x, y,
                                                      previous_gradient, weighted.second);
                   previous_gradient = properties[9];
                   const size_t leaf = Lookup(policy.tree, properties);
@@ -127,6 +129,7 @@ Status TokenizeModular(const ModularEncoderFrame &frame, const ModularStreamPlan
                     return Status::Unsupported("Modular weighted state exceeds supported range");
                 }
               }
+              ++property_channel;
             }
             result.streams[i] = EntropyTokenStreamView::Interleaved(
                 std::span(result.tokens).subspan(begin, next - begin));

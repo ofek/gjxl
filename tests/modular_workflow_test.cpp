@@ -318,9 +318,9 @@ void Workflow(Extent2D extent, EntropyCodingMode mode, bool faults,
   Empty(*small);
   if (faults) {
     size_t failure_count = allocation_shard, injected = 0;
-    // Expanded RCT search can exceed 30,000 managed allocations. Retain the
+    // Transform context search can exceed 50,000 managed allocations. Retain the
     // exhaustive sweep, including every additional candidate and its winner.
-    for (; failure_count < 50000; failure_count += allocation_shards) {
+    for (; failure_count < 75000; failure_count += allocation_shards) {
       ArmManagedHostAllocationFailureAfterForTest(failure_count);
       status = EncodeModularImage(view, options, &output);
       const bool pending = ManagedHostAllocationFailurePendingForTest();
@@ -335,7 +335,7 @@ void Workflow(Extent2D extent, EntropyCodingMode mode, bool faults,
             "Allocation failure changed output or status");
       ++injected;
     }
-    Check(failure_count > 10 && failure_count < 50000, "Allocation sweep did not finish");
+    Check(failure_count > 10 && failure_count < 75000, "Allocation sweep did not finish");
     std::cout << "allocation failures " << (mode == EntropyCodingMode::kPrefix ? "prefix " : "ANS ")
               << "format " << static_cast<int>(format) << ' ' << extent.width << 'x'
               << extent.height << " policy "

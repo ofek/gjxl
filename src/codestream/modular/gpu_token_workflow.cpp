@@ -20,6 +20,11 @@ Status ComputeGpuModularTokenWorkflowStoragePlan(Extent2D extent, size_t row_str
   if (!out)
     return Status::InvalidArgument("Null GPU Modular token workflow plan");
   GpuModularTokenWorkflowStoragePlan plan;
+  // Validate the borrowed CPU tree before constructing inline GPU options.
+  if (auto s = ResolveModularTokenEligibility(format, options.coding, options.search,
+                                              &plan.generation.eligibility);
+      !s.ok())
+    return s;
   const GpuModularTokenPlanOptions tokens{
       extent, row_stride_bytes, byte_order, {format, options.coding, options.search}};
   if (auto s =
@@ -44,8 +49,8 @@ Status ComputeGpuModularTokenWorkflowStoragePlan(Extent2D extent, size_t row_str
   return Status::Ok();
 }
 namespace {
-Status Encode(GpuBackend &backend, PackedModularImageView input, ModularEncodingOptions options,
-              PublicationOutput<uint8_t> output) try {
+Status Encode(GpuBackend &backend, PackedModularImageView input,
+              const ModularEncodingOptions &options, PublicationOutput<uint8_t> output) try {
   if (output == nullptr)
     return Status::InvalidArgument("Null GPU Modular token output");
   if (auto s = input.Validate(); !s.ok())
@@ -101,11 +106,11 @@ Status Encode(GpuBackend &backend, PackedModularImageView input, ModularEncoding
     return s;
   // Layout is not needed during the final public-vector copy.
   layout = {};
-  output.Publish(std::move(candidate));
   if (active_modular_profile) {
     active_modular_profile->resolved = options.coding;
     ++active_modular_profile->encoded_candidates;
   }
+  output.Publish(std::move(candidate));
   return Status::Ok();
 } catch (const ManagedAllocationFailure &e) {
   return e.status();
@@ -116,12 +121,13 @@ Status Encode(GpuBackend &backend, PackedModularImageView input, ModularEncoding
 }
 } // namespace
 Status EncodeGpuModularTokensImageOwned(GpuBackend &backend, PackedModularImageView input,
-                                        ModularEncodingOptions options,
+                                        const ModularEncodingOptions &options,
                                         codestream_internal::CodestreamBuffer *out) {
-  return Encode(backend, input, std::move(options), out);
+  return Encode(backend, input, options, out);
 }
 Status EncodeGpuModularTokensImage(GpuBackend &backend, PackedModularImageView input,
-                                   ModularEncodingOptions options, std::vector<uint8_t> *out) {
-  return Encode(backend, input, std::move(options), out);
+                                   const ModularEncodingOptions &options,
+                                   std::vector<uint8_t> *out) {
+  return Encode(backend, input, options, out);
 }
 } // namespace gjxl::modular_gpu_internal

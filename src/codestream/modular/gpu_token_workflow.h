@@ -29,11 +29,13 @@ struct GpuModularTokenWorkflowStoragePlan {
 // Full admission precedes CPU participation and allocations; uses an existing
 // same-domain reservation, preserves output on any failure, and never retries
 // on CPU. Backend is initialized by the caller and outlives CPU consumption.
-[[nodiscard]] Status EncodeGpuModularTokensImageOwned(
-    GpuBackend &backend, modular_internal::PackedModularImageView input,
-    modular_internal::ModularEncodingOptions options, codestream_internal::CodestreamBuffer *out);
-[[nodiscard]] Status EncodeGpuModularTokensImage(GpuBackend &backend,
-                                                 modular_internal::PackedModularImageView input,
-                                                 modular_internal::ModularEncodingOptions options,
-                                                 std::vector<uint8_t> *out);
+[[nodiscard]] Status
+EncodeGpuModularTokensImageOwned(GpuBackend &backend,
+                                 modular_internal::PackedModularImageView input,
+                                 const modular_internal::ModularEncodingOptions &options,
+                                 codestream_internal::CodestreamBuffer *out);
+[[nodiscard]] Status
+EncodeGpuModularTokensImage(GpuBackend &backend, modular_internal::PackedModularImageView input,
+                            const modular_internal::ModularEncodingOptions &options,
+                            std::vector<uint8_t> *out);
 } // namespace gjxl::modular_gpu_internal

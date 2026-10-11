@@ -35,7 +35,8 @@ Status ComputeGpuModularWorkflowStoragePlan(Extent2D extent, size_t row_stride_b
   return Status::Ok();
 }
 namespace {
-Status Encode(GpuBackend &backend, PackedModularImageView input, ModularEncodingOptions options,
+Status Encode(GpuBackend &backend, PackedModularImageView input,
+              const ModularEncodingOptions &options,
               resource_budget_internal::PublicationOutput<uint8_t> output) try {
   if (output == nullptr)
     return Status::InvalidArgument("Null GPU Modular workflow output");
@@ -82,11 +83,11 @@ Status Encode(GpuBackend &backend, PackedModularImageView input, ModularEncoding
                                           storage.cpu, &candidate);
       !s.ok())
     return s;
-  output.Publish(std::move(candidate));
   if (active_modular_profile) {
     active_modular_profile->resolved = options.coding;
     ++active_modular_profile->encoded_candidates;
   }
+  output.Publish(std::move(candidate));
   return Status::Ok();
 } catch (const resource_budget_internal::ManagedAllocationFailure &e) {
   return e.status();
@@ -97,12 +98,12 @@ Status Encode(GpuBackend &backend, PackedModularImageView input, ModularEncoding
 }
 } // namespace
 Status EncodeGpuModularImageOwned(GpuBackend &backend, PackedModularImageView input,
-                                  ModularEncodingOptions options,
+                                  const ModularEncodingOptions &options,
                                   codestream_internal::CodestreamBuffer *out) {
-  return Encode(backend, input, std::move(options), out);
+  return Encode(backend, input, options, out);
 }
 Status EncodeGpuModularImage(GpuBackend &backend, PackedModularImageView input,
-                             ModularEncodingOptions options, std::vector<uint8_t> *out) {
-  return Encode(backend, input, std::move(options), out);
+                             const ModularEncodingOptions &options, std::vector<uint8_t> *out) {
+  return Encode(backend, input, options, out);
 }
 } // namespace gjxl::modular_gpu_internal

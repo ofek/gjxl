@@ -14,7 +14,13 @@ def artifacts(root):
 
 def main():
     executable, corpus, output = map(Path, sys.argv[1:])
-    expected = json.loads((corpus / "oracle-v1.json").read_text())
+    base = (corpus / "oracle-v1.json").read_bytes()
+    expected = json.loads(base)
+    corrections = json.loads((corpus / "oracle-v2.json").read_text())
+    assert corrections["schema"] == 2
+    assert hashlib.sha256(base).hexdigest() == corrections["base_manifest_sha256"]
+    assert corrections["artifact_overrides"].keys() <= expected["artifacts"].keys()
+    expected["artifacts"].update(corrections["artifact_overrides"])
     photo = corpus / "photo.ppm"
     assert hashlib.sha256(photo.read_bytes()).hexdigest() == expected["photo_sha256"]
     subprocess.run([str(executable), "freeze", str(photo), str(output)], check=True)

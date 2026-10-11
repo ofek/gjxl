@@ -1,0 +1,848 @@
+{
+  "schema": 1,
+  "created_utc": "2026-10-11T00:48:33.167302+00:00",
+  "worktree": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets",
+  "branch": "feat/modular-training-budgets",
+  "base_revision": "f4300f4a17774bb1639f460f97e5708a0398f968",
+  "libjxl_revision": "e8ff09762481785938d8e4e01333ed3917571161",
+  "scope": "Step 1: configurable private CPU training budgets and safe tree representation; no default or split-scoring promotion",
+  "limits": {
+    "default_samples": 4096,
+    "default_leaves": 16,
+    "maximum_samples": 1048576,
+    "maximum_leaves": 8192,
+    "maximum_nodes": 16383,
+    "maximum_depth": 2047,
+    "gpu_token_maximum_nodes": 31,
+    "global_tree_source_samples_bound": "leaves <= floor((1024 + source_samples / 16 + 1) / 2), capped to native limit"
+  },
+  "release_tests": [
+    {
+      "name": "modular_stream",
+      "seconds": 0.0613923,
+      "passed": true
+    },
+    {
+      "name": "modular_foundation",
+      "seconds": 0.0681435,
+      "passed": true
+    },
+    {
+      "name": "modular_training_budget",
+      "seconds": 9.5967,
+      "passed": true
+    },
+    {
+      "name": "modular_training_budget_faults",
+      "seconds": 15.017,
+      "passed": true
+    },
+    {
+      "name": "modular_gpu_input",
+      "seconds": 0.0480757,
+      "passed": true
+    },
+    {
+      "name": "modular_gpu_token_plan",
+      "seconds": 0.0919134,
+      "passed": true
+    },
+    {
+      "name": "modular_gpu_token_handoff",
+      "seconds": 0.659835,
+      "passed": true
+    },
+    {
+      "name": "modular_gpu_preparation",
+      "seconds": 0.0509675,
+      "passed": true
+    },
+    {
+      "name": "modular_gpu_workflow",
+      "seconds": 0.090024,
+      "passed": true
+    },
+    {
+      "name": "modular_frozen_oracle",
+      "seconds": 0.929747,
+      "passed": true
+    },
+    {
+      "name": "modular_oracle",
+      "seconds": 0.166788,
+      "passed": true
+    },
+    {
+      "name": "modular_conformance",
+      "seconds": 24.2001,
+      "passed": true
+    },
+    {
+      "name": "modular_policy",
+      "seconds": 30.7951,
+      "passed": true
+    },
+    {
+      "name": "modular_transform",
+      "seconds": 11.079,
+      "passed": true
+    },
+    {
+      "name": "modular_api",
+      "seconds": 16.6948,
+      "passed": true
+    },
+    {
+      "name": "modular_cli",
+      "seconds": 2.57036,
+      "passed": true
+    },
+    {
+      "name": "modular_frozen_reference",
+      "seconds": 0.911559,
+      "passed": true
+    }
+  ],
+  "sanitizer_tests": [
+    {
+      "name": "modular_foundation",
+      "seconds": 0.209562,
+      "passed": true
+    },
+    {
+      "name": "modular_training_budget",
+      "seconds": 44.8591,
+      "passed": true
+    },
+    {
+      "name": "modular_gpu_token_plan",
+      "seconds": 0.131477,
+      "passed": true
+    },
+    {
+      "name": "modular_gpu_workflow",
+      "seconds": 0.187507,
+      "passed": true
+    }
+  ],
+  "sanitizer_configuration": {
+    "native": "RelWithDebInfo, -O1 -g -DNDEBUG -fsanitize=address,undefined -fno-omit-frame-pointer",
+    "pinned_reference_instrumented": false
+  },
+  "excluded_attempts": [
+    {
+      "path": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/asan-tests.log",
+      "reason": "Earlier source snapshot, Debug ASan/UBSan budget test timed out after 300 seconds without sanitizer diagnostic; excluded from passing evidence"
+    }
+  ],
+  "allocation_failures": {
+    "learner_fresh_backings_exhaustive": 6,
+    "large_budget_complete_workflows_exhaustive": {
+      "prescribed_prefix": 847,
+      "prescribed_ans": 988,
+      "search_prefix": 4281,
+      "search_ans": 5926,
+      "total": 12042
+    },
+    "legacy_workflow_sample": {
+      "shard": 0,
+      "shards": 64,
+      "cases": 44,
+      "failure_points": 2702,
+      "exhaustive": false
+    }
+  },
+  "legacy_byte_identity": {
+    "files": 64,
+    "inputs": 16,
+    "configurations": [
+      "gp",
+      "ga",
+      "sp",
+      "sa"
+    ],
+    "baseline_results": "/Users/yunhocho/GitHub/gjxl-modular-palette-context/build/modular-palette-context/rate/results.jsonl",
+    "all_byte_identical": true,
+    "all_independently_decoded_exact": true,
+    "inputs_sha256": {
+      "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rate-20261010/inputs/photo-macan.pam": "00f553eeed5f5706240e027011628cb4c96a8c1879775480e20f50e2679f2e6e",
+      "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rate-20261010/inputs/photo-ria.pam": "a731e1fbbd26ff2064222d0f9abef847d081dd189f85354227caeedea90ae633",
+      "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rate-20261010/inputs/photo-bliznaca.pam": "cee4510bcf6c7d7cb11dc1de8f536b154b9ef9a337e22db7a3ff38cfb8d30d7b",
+      "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rate-20261010/inputs/photo-flower.pam": "e45be290e9d1637eb153ad79ece768d09c216e1e1b1d4ad618eb884b49b2d243",
+      "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rate-20261010/inputs/gray-macan.pam": "7affde7530bb204823b36d6ef946e0ccdd5b76d7199982bca15bc07bdb4a9be0",
+      "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rate-20261010/inputs/alpha-ria.pam": "e9167882740846d65e4a88cb513912d39996351c8527583a3bf825fc197220a9",
+      "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rate-20261010/inputs/alpha-flower.pam": "0a86fffd79be2e0e2c61098a1e4961176d6fef2d8feda4950dcd4f336b20b014",
+      "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rate-20261010/inputs/chessboard.pam": "a36c5dd7439cbd5975e02911f72cadd4d2d9b93ee8f72b255994d47a9b11f8c2",
+      "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rate-20261010/inputs/splines.pam": "e742b718d8efa584a194b9e4fefea09bf9b6728332dffabbf9f3cffc174f33da",
+      "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rate-20261010/inputs/gray-patches.pam": "f67792ee63fcbd1ac2ca8fc1b52723eecb77c82f158da20bfc3eda21b9dce7cb",
+      "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rate-20261010/inputs/palette-358.pam": "bf34ee41d73e578df86a4d3b88017b48e72adc16fb1df2e22e30a483c17d0214",
+      "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rate-20261010/inputs/gray16-ramp.pam": "afc3ed9feb770d936099334b996ae62106f0728a56b3264bf366cfe9ee9f00bd",
+      "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rate-20261010/inputs/screen-pattern.pam": "1e93aedcddbbab56332cf6cdf6df637113683e52c426fad42805281f9b22b39a",
+      "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rate-20261010/inputs/palette-pattern.pam": "781e4c7a9ddeed09ecb1706a82fd25b4e2e5864afb046065e5eacda507f67c0c",
+      "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rate-20261010/inputs/noise16.pam": "519f7b1bd59b6bc6121df9ec19023f4eb4bb79b809e21790d8a2d5daf43457de",
+      "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rate-20261010/inputs/alpha16-ramp.pam": "dc0197fd31ce47cdb6db6b3f08d1da38b735f125bbd24d44b4ade3cd397eb0ae"
+    },
+    "files_verified": [
+      {
+        "input": "photo-macan",
+        "config": "gp",
+        "encoded_bytes": 371859,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/photo-macan-gp.jxl",
+        "output_sha256": "9a4de01e6cb7651795c597abbe8bf143f9e59218feb6330a4f0de74933e2ad75",
+        "baseline_sha256": "9a4de01e6cb7651795c597abbe8bf143f9e59218feb6330a4f0de74933e2ad75",
+        "decoded_exact": true
+      },
+      {
+        "input": "photo-macan",
+        "config": "ga",
+        "encoded_bytes": 367445,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/photo-macan-ga.jxl",
+        "output_sha256": "2000e644ed0059f230b60b616165ae5ffd23c65c8bbe3977853a2bc18150bc0b",
+        "baseline_sha256": "2000e644ed0059f230b60b616165ae5ffd23c65c8bbe3977853a2bc18150bc0b",
+        "decoded_exact": true
+      },
+      {
+        "input": "photo-macan",
+        "config": "sp",
+        "encoded_bytes": 287221,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/photo-macan-sp.jxl",
+        "output_sha256": "bb848b360bc041d43bf4f99437cdd286ee8f0281a207c79576625f9f2688c88c",
+        "baseline_sha256": "bb848b360bc041d43bf4f99437cdd286ee8f0281a207c79576625f9f2688c88c",
+        "decoded_exact": true
+      },
+      {
+        "input": "photo-macan",
+        "config": "sa",
+        "encoded_bytes": 268426,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/photo-macan-sa.jxl",
+        "output_sha256": "1ebc175dc6af8393a1b6030ff570c2c64ff45f9e433b36f2a76107012c88da2a",
+        "baseline_sha256": "1ebc175dc6af8393a1b6030ff570c2c64ff45f9e433b36f2a76107012c88da2a",
+        "decoded_exact": true
+      },
+      {
+        "input": "photo-ria",
+        "config": "gp",
+        "encoded_bytes": 265442,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/photo-ria-gp.jxl",
+        "output_sha256": "9578198d379acbe81a45cfb67fc101952c10e113f7cfd834e4e7877d43af803a",
+        "baseline_sha256": "9578198d379acbe81a45cfb67fc101952c10e113f7cfd834e4e7877d43af803a",
+        "decoded_exact": true
+      },
+      {
+        "input": "photo-ria",
+        "config": "ga",
+        "encoded_bytes": 261696,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/photo-ria-ga.jxl",
+        "output_sha256": "e6b662956721ebbb7aaac49989428ef7a5bb3a5d41811cabca50e624c6f2c246",
+        "baseline_sha256": "e6b662956721ebbb7aaac49989428ef7a5bb3a5d41811cabca50e624c6f2c246",
+        "decoded_exact": true
+      },
+      {
+        "input": "photo-ria",
+        "config": "sp",
+        "encoded_bytes": 222985,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/photo-ria-sp.jxl",
+        "output_sha256": "afd976fd45e69f1afbd9e88df9ff0eb3b393bc73fe5461d951557548586cd9ca",
+        "baseline_sha256": "afd976fd45e69f1afbd9e88df9ff0eb3b393bc73fe5461d951557548586cd9ca",
+        "decoded_exact": true
+      },
+      {
+        "input": "photo-ria",
+        "config": "sa",
+        "encoded_bytes": 219767,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/photo-ria-sa.jxl",
+        "output_sha256": "88a99eef4966968a311db0780d1cadba06c3b87e554a0a181f5a1d2061675046",
+        "baseline_sha256": "88a99eef4966968a311db0780d1cadba06c3b87e554a0a181f5a1d2061675046",
+        "decoded_exact": true
+      },
+      {
+        "input": "photo-bliznaca",
+        "config": "gp",
+        "encoded_bytes": 333527,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/photo-bliznaca-gp.jxl",
+        "output_sha256": "f7b87089fdb170015ac83060cd8bd2c7672a3dabff3b58cc328c39cf21c0d05c",
+        "baseline_sha256": "f7b87089fdb170015ac83060cd8bd2c7672a3dabff3b58cc328c39cf21c0d05c",
+        "decoded_exact": true
+      },
+      {
+        "input": "photo-bliznaca",
+        "config": "ga",
+        "encoded_bytes": 329414,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/photo-bliznaca-ga.jxl",
+        "output_sha256": "3f78987929182cfe2eec3342076ac4c43ddbdc9dacd676e055efc72656873814",
+        "baseline_sha256": "3f78987929182cfe2eec3342076ac4c43ddbdc9dacd676e055efc72656873814",
+        "decoded_exact": true
+      },
+      {
+        "input": "photo-bliznaca",
+        "config": "sp",
+        "encoded_bytes": 255473,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/photo-bliznaca-sp.jxl",
+        "output_sha256": "2bb03f8fa99dbd936550a83f6a7fd2e3a10027ec641a114d8f412ffba7f742d6",
+        "baseline_sha256": "2bb03f8fa99dbd936550a83f6a7fd2e3a10027ec641a114d8f412ffba7f742d6",
+        "decoded_exact": true
+      },
+      {
+        "input": "photo-bliznaca",
+        "config": "sa",
+        "encoded_bytes": 250237,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/photo-bliznaca-sa.jxl",
+        "output_sha256": "c1770de2c54076a17c4496569806f25fb2e30975bd0dd0a3d0cff38a765bf8d4",
+        "baseline_sha256": "c1770de2c54076a17c4496569806f25fb2e30975bd0dd0a3d0cff38a765bf8d4",
+        "decoded_exact": true
+      },
+      {
+        "input": "photo-flower",
+        "config": "gp",
+        "encoded_bytes": 4469130,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/photo-flower-gp.jxl",
+        "output_sha256": "ebc73191f7bb6db499d8c10125610f62eab12212dff66567143db5bd9e44fe7c",
+        "baseline_sha256": "ebc73191f7bb6db499d8c10125610f62eab12212dff66567143db5bd9e44fe7c",
+        "decoded_exact": true
+      },
+      {
+        "input": "photo-flower",
+        "config": "ga",
+        "encoded_bytes": 4405613,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/photo-flower-ga.jxl",
+        "output_sha256": "c3ab7e61cd1ea437655ee424155d8820496a317afbec3d6815e111e4a244a5c4",
+        "baseline_sha256": "c3ab7e61cd1ea437655ee424155d8820496a317afbec3d6815e111e4a244a5c4",
+        "decoded_exact": true
+      },
+      {
+        "input": "photo-flower",
+        "config": "sp",
+        "encoded_bytes": 2944383,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/photo-flower-sp.jxl",
+        "output_sha256": "23041ddd16f39b02253605ddf26d919e6ef54d94d4f9eb47607385c4b2e58331",
+        "baseline_sha256": "23041ddd16f39b02253605ddf26d919e6ef54d94d4f9eb47607385c4b2e58331",
+        "decoded_exact": true
+      },
+      {
+        "input": "photo-flower",
+        "config": "sa",
+        "encoded_bytes": 2748396,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/photo-flower-sa.jxl",
+        "output_sha256": "4b34cd5599e78f7b8d53f8e1c49179b54de58fe601f5e72cb93b5207e9c0f3d3",
+        "baseline_sha256": "4b34cd5599e78f7b8d53f8e1c49179b54de58fe601f5e72cb93b5207e9c0f3d3",
+        "decoded_exact": true
+      },
+      {
+        "input": "gray-macan",
+        "config": "gp",
+        "encoded_bytes": 122314,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/gray-macan-gp.jxl",
+        "output_sha256": "c97110bc8b7693ec481762b03336f881f671c63f7a8ca69ba69f829c4483d5c5",
+        "baseline_sha256": "c97110bc8b7693ec481762b03336f881f671c63f7a8ca69ba69f829c4483d5c5",
+        "decoded_exact": true
+      },
+      {
+        "input": "gray-macan",
+        "config": "ga",
+        "encoded_bytes": 121110,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/gray-macan-ga.jxl",
+        "output_sha256": "faa264b2242bce6fe79f7d109e11c30c7e3a0f30f5274028eb1300a964c3a999",
+        "baseline_sha256": "faa264b2242bce6fe79f7d109e11c30c7e3a0f30f5274028eb1300a964c3a999",
+        "decoded_exact": true
+      },
+      {
+        "input": "gray-macan",
+        "config": "sp",
+        "encoded_bytes": 102038,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/gray-macan-sp.jxl",
+        "output_sha256": "3a1d266a9ddf565c90c8b1214f706ec22284e29c5cd33f7fc2c3f8c07926e847",
+        "baseline_sha256": "3a1d266a9ddf565c90c8b1214f706ec22284e29c5cd33f7fc2c3f8c07926e847",
+        "decoded_exact": true
+      },
+      {
+        "input": "gray-macan",
+        "config": "sa",
+        "encoded_bytes": 94001,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/gray-macan-sa.jxl",
+        "output_sha256": "c0c5af331d1f91f7714303425d0a8f3bfbd7571b6dadc34d70ad4797e289ab44",
+        "baseline_sha256": "c0c5af331d1f91f7714303425d0a8f3bfbd7571b6dadc34d70ad4797e289ab44",
+        "decoded_exact": true
+      },
+      {
+        "input": "alpha-ria",
+        "config": "gp",
+        "encoded_bytes": 322376,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/alpha-ria-gp.jxl",
+        "output_sha256": "0ba59656d4fc938a7d5763740f9fdd6ffaaf714ea0cbe98783f1ddebef2ca442",
+        "baseline_sha256": "0ba59656d4fc938a7d5763740f9fdd6ffaaf714ea0cbe98783f1ddebef2ca442",
+        "decoded_exact": true
+      },
+      {
+        "input": "alpha-ria",
+        "config": "ga",
+        "encoded_bytes": 315712,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/alpha-ria-ga.jxl",
+        "output_sha256": "bf5c33eed17979e435fef7877217a74d2ce058b6cdacc7a14d92b52faa204bdb",
+        "baseline_sha256": "bf5c33eed17979e435fef7877217a74d2ce058b6cdacc7a14d92b52faa204bdb",
+        "decoded_exact": true
+      },
+      {
+        "input": "alpha-ria",
+        "config": "sp",
+        "encoded_bytes": 267389,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/alpha-ria-sp.jxl",
+        "output_sha256": "da331f0540b615c9f9ac225bd286264dc05d66ab8bd89fd2b54be9dcb261c91b",
+        "baseline_sha256": "da331f0540b615c9f9ac225bd286264dc05d66ab8bd89fd2b54be9dcb261c91b",
+        "decoded_exact": true
+      },
+      {
+        "input": "alpha-ria",
+        "config": "sa",
+        "encoded_bytes": 251925,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/alpha-ria-sa.jxl",
+        "output_sha256": "6fee22c4b96ba8adb34ffd617c4dce6c129a282dffa8920fd04bd22a62d31c58",
+        "baseline_sha256": "6fee22c4b96ba8adb34ffd617c4dce6c129a282dffa8920fd04bd22a62d31c58",
+        "decoded_exact": true
+      },
+      {
+        "input": "alpha-flower",
+        "config": "gp",
+        "encoded_bytes": 5935006,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/alpha-flower-gp.jxl",
+        "output_sha256": "552fc67098cf122e49f8b22679cbb75304d69e0f5151b14e18cdd3fe87fb17d7",
+        "baseline_sha256": "552fc67098cf122e49f8b22679cbb75304d69e0f5151b14e18cdd3fe87fb17d7",
+        "decoded_exact": true
+      },
+      {
+        "input": "alpha-flower",
+        "config": "ga",
+        "encoded_bytes": 5851022,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/alpha-flower-ga.jxl",
+        "output_sha256": "c92da32bd6edb22aca84689e0b8765695c542200e289dc114dc4175175cf3c49",
+        "baseline_sha256": "c92da32bd6edb22aca84689e0b8765695c542200e289dc114dc4175175cf3c49",
+        "decoded_exact": true
+      },
+      {
+        "input": "alpha-flower",
+        "config": "sp",
+        "encoded_bytes": 4177848,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/alpha-flower-sp.jxl",
+        "output_sha256": "268e417fb281441bc57e2fd4361ae616471f914ffba92c99229f4fa25a93172d",
+        "baseline_sha256": "268e417fb281441bc57e2fd4361ae616471f914ffba92c99229f4fa25a93172d",
+        "decoded_exact": true
+      },
+      {
+        "input": "alpha-flower",
+        "config": "sa",
+        "encoded_bytes": 3970554,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/alpha-flower-sa.jxl",
+        "output_sha256": "86bcd9ade7d9d11e1c0db64d438b72ec1902c108bb8bf5e908df5aec61a528d1",
+        "baseline_sha256": "86bcd9ade7d9d11e1c0db64d438b72ec1902c108bb8bf5e908df5aec61a528d1",
+        "decoded_exact": true
+      },
+      {
+        "input": "chessboard",
+        "config": "gp",
+        "encoded_bytes": 2809234,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/chessboard-gp.jxl",
+        "output_sha256": "c0f4b037dc32dc9d6c9dd8f3b067a1af760b8a81590b3b49dfb9233188d3a6e5",
+        "baseline_sha256": "c0f4b037dc32dc9d6c9dd8f3b067a1af760b8a81590b3b49dfb9233188d3a6e5",
+        "decoded_exact": true
+      },
+      {
+        "input": "chessboard",
+        "config": "ga",
+        "encoded_bytes": 2789514,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/chessboard-ga.jxl",
+        "output_sha256": "e419c69a38576d428c882ad7a938663952db1c14b07517b3df5475bf89450fce",
+        "baseline_sha256": "e419c69a38576d428c882ad7a938663952db1c14b07517b3df5475bf89450fce",
+        "decoded_exact": true
+      },
+      {
+        "input": "chessboard",
+        "config": "sp",
+        "encoded_bytes": 463763,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/chessboard-sp.jxl",
+        "output_sha256": "d56c457d3fabb8d5a03f37a3b3faaa690f2ab9683928c5b04667485c5ea66bd0",
+        "baseline_sha256": "d56c457d3fabb8d5a03f37a3b3faaa690f2ab9683928c5b04667485c5ea66bd0",
+        "decoded_exact": true
+      },
+      {
+        "input": "chessboard",
+        "config": "sa",
+        "encoded_bytes": 141670,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/chessboard-sa.jxl",
+        "output_sha256": "e8ab11475c525f29316b7edb4bc99525b68808663cc7b04434d2317ba7613571",
+        "baseline_sha256": "e8ab11475c525f29316b7edb4bc99525b68808663cc7b04434d2317ba7613571",
+        "decoded_exact": true
+      },
+      {
+        "input": "splines",
+        "config": "gp",
+        "encoded_bytes": 1919063,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/splines-gp.jxl",
+        "output_sha256": "4597b54bd78f093a4b13319d462adbd0792227a9b90f868382324a1d4d801c6f",
+        "baseline_sha256": "4597b54bd78f093a4b13319d462adbd0792227a9b90f868382324a1d4d801c6f",
+        "decoded_exact": true
+      },
+      {
+        "input": "splines",
+        "config": "ga",
+        "encoded_bytes": 1167681,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/splines-ga.jxl",
+        "output_sha256": "abe10ff887ebcd676b6d4d48c0fc58a8360a1fd73f1a92d43d057940af1a1c89",
+        "baseline_sha256": "abe10ff887ebcd676b6d4d48c0fc58a8360a1fd73f1a92d43d057940af1a1c89",
+        "decoded_exact": true
+      },
+      {
+        "input": "splines",
+        "config": "sp",
+        "encoded_bytes": 1707200,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/splines-sp.jxl",
+        "output_sha256": "b3574c92c910cd1b2688385ccd68e3ba33026799392c9f0f03fe385a0514f379",
+        "baseline_sha256": "b3574c92c910cd1b2688385ccd68e3ba33026799392c9f0f03fe385a0514f379",
+        "decoded_exact": true
+      },
+      {
+        "input": "splines",
+        "config": "sa",
+        "encoded_bytes": 396670,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/splines-sa.jxl",
+        "output_sha256": "29fdf320a043470fa5e384364221d106d528a0c37d6628721bb36b6eeaa8275a",
+        "baseline_sha256": "29fdf320a043470fa5e384364221d106d528a0c37d6628721bb36b6eeaa8275a",
+        "decoded_exact": true
+      },
+      {
+        "input": "gray-patches",
+        "config": "gp",
+        "encoded_bytes": 64205,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/gray-patches-gp.jxl",
+        "output_sha256": "34becc059913bfe0cd49d9b461e3e7bed41e96eb7c6fdf06330521a2e3e299be",
+        "baseline_sha256": "34becc059913bfe0cd49d9b461e3e7bed41e96eb7c6fdf06330521a2e3e299be",
+        "decoded_exact": true
+      },
+      {
+        "input": "gray-patches",
+        "config": "ga",
+        "encoded_bytes": 47124,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/gray-patches-ga.jxl",
+        "output_sha256": "2dd1b7b4b24cb75e6045370089e3d5f360622752c4603d148df16d2ec39ed738",
+        "baseline_sha256": "2dd1b7b4b24cb75e6045370089e3d5f360622752c4603d148df16d2ec39ed738",
+        "decoded_exact": true
+      },
+      {
+        "input": "gray-patches",
+        "config": "sp",
+        "encoded_bytes": 54037,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/gray-patches-sp.jxl",
+        "output_sha256": "4c042730f43b85808a40b3764241653b3d1fae1f0adaf1d189cb8488b66d7983",
+        "baseline_sha256": "4c042730f43b85808a40b3764241653b3d1fae1f0adaf1d189cb8488b66d7983",
+        "decoded_exact": true
+      },
+      {
+        "input": "gray-patches",
+        "config": "sa",
+        "encoded_bytes": 25917,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/gray-patches-sa.jxl",
+        "output_sha256": "539e75c439d66503c67d9da3804f52404480599a102d6659d8646fef752f44ae",
+        "baseline_sha256": "539e75c439d66503c67d9da3804f52404480599a102d6659d8646fef752f44ae",
+        "decoded_exact": true
+      },
+      {
+        "input": "palette-358",
+        "config": "gp",
+        "encoded_bytes": 3543,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/palette-358-gp.jxl",
+        "output_sha256": "f0014e16864b2269f3c8647030247d2b4efa4954d7763314377fbf30bc8c23d3",
+        "baseline_sha256": "f0014e16864b2269f3c8647030247d2b4efa4954d7763314377fbf30bc8c23d3",
+        "decoded_exact": true
+      },
+      {
+        "input": "palette-358",
+        "config": "ga",
+        "encoded_bytes": 1674,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/palette-358-ga.jxl",
+        "output_sha256": "ecdbc25cd5229e6a3dc98306289f1eee0726483ee11010a88c5abcc64b1d657d",
+        "baseline_sha256": "ecdbc25cd5229e6a3dc98306289f1eee0726483ee11010a88c5abcc64b1d657d",
+        "decoded_exact": true
+      },
+      {
+        "input": "palette-358",
+        "config": "sp",
+        "encoded_bytes": 1376,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/palette-358-sp.jxl",
+        "output_sha256": "e2eb64dc95b4ab13ac3d2cb66c54c823ffcd6c0168044dfeff90e1bba05ef389",
+        "baseline_sha256": "e2eb64dc95b4ab13ac3d2cb66c54c823ffcd6c0168044dfeff90e1bba05ef389",
+        "decoded_exact": true
+      },
+      {
+        "input": "palette-358",
+        "config": "sa",
+        "encoded_bytes": 1061,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/palette-358-sa.jxl",
+        "output_sha256": "c4d2d06e19c75886d26a433a8d69cf5425fa07c03905da9c2c10ad693b1fff85",
+        "baseline_sha256": "c4d2d06e19c75886d26a433a8d69cf5425fa07c03905da9c2c10ad693b1fff85",
+        "decoded_exact": true
+      },
+      {
+        "input": "gray16-ramp",
+        "config": "gp",
+        "encoded_bytes": 99518,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/gray16-ramp-gp.jxl",
+        "output_sha256": "960c2d372da6344486d5f1a10d67d1a2c9101f575c2d8aea751f814ee0fe1c0e",
+        "baseline_sha256": "960c2d372da6344486d5f1a10d67d1a2c9101f575c2d8aea751f814ee0fe1c0e",
+        "decoded_exact": true
+      },
+      {
+        "input": "gray16-ramp",
+        "config": "ga",
+        "encoded_bytes": 84734,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/gray16-ramp-ga.jxl",
+        "output_sha256": "38cf4dd7ad5833b4813f3aeb19e7e564069a987d0236dc07cb12d30b5c28e527",
+        "baseline_sha256": "38cf4dd7ad5833b4813f3aeb19e7e564069a987d0236dc07cb12d30b5c28e527",
+        "decoded_exact": true
+      },
+      {
+        "input": "gray16-ramp",
+        "config": "sp",
+        "encoded_bytes": 1882,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/gray16-ramp-sp.jxl",
+        "output_sha256": "f4eec3f0dc55ee38ab063989c2a7f286b2fc398a046232559d89db3ca0fd03e9",
+        "baseline_sha256": "f4eec3f0dc55ee38ab063989c2a7f286b2fc398a046232559d89db3ca0fd03e9",
+        "decoded_exact": true
+      },
+      {
+        "input": "gray16-ramp",
+        "config": "sa",
+        "encoded_bytes": 1431,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/gray16-ramp-sa.jxl",
+        "output_sha256": "be62f425b67b1ba63214b2adf76af893068e1528389ad006ff87746dbe2f8a7e",
+        "baseline_sha256": "be62f425b67b1ba63214b2adf76af893068e1528389ad006ff87746dbe2f8a7e",
+        "decoded_exact": true
+      },
+      {
+        "input": "screen-pattern",
+        "config": "gp",
+        "encoded_bytes": 55443,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/screen-pattern-gp.jxl",
+        "output_sha256": "c1c36559adf1b9882d5e5335289f94674fe200acdfa90023f64bde89efe4266e",
+        "baseline_sha256": "c1c36559adf1b9882d5e5335289f94674fe200acdfa90023f64bde89efe4266e",
+        "decoded_exact": true
+      },
+      {
+        "input": "screen-pattern",
+        "config": "ga",
+        "encoded_bytes": 16880,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/screen-pattern-ga.jxl",
+        "output_sha256": "c48c5208d22614525357f912a575385e1f762f658104bfcd661f1ea0ad2fb002",
+        "baseline_sha256": "c48c5208d22614525357f912a575385e1f762f658104bfcd661f1ea0ad2fb002",
+        "decoded_exact": true
+      },
+      {
+        "input": "screen-pattern",
+        "config": "sp",
+        "encoded_bytes": 16525,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/screen-pattern-sp.jxl",
+        "output_sha256": "1fd8940df446b19566ab97dff3cd40a8ce0656d5743a06799659c6286efa85bf",
+        "baseline_sha256": "1fd8940df446b19566ab97dff3cd40a8ce0656d5743a06799659c6286efa85bf",
+        "decoded_exact": true
+      },
+      {
+        "input": "screen-pattern",
+        "config": "sa",
+        "encoded_bytes": 464,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/screen-pattern-sa.jxl",
+        "output_sha256": "f9efbc27b2daaff9bc3bc1751fd9d77f3be627288a207d02af9a9bd69b77a8e4",
+        "baseline_sha256": "f9efbc27b2daaff9bc3bc1751fd9d77f3be627288a207d02af9a9bd69b77a8e4",
+        "decoded_exact": true
+      },
+      {
+        "input": "palette-pattern",
+        "config": "gp",
+        "encoded_bytes": 84497,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/palette-pattern-gp.jxl",
+        "output_sha256": "25fe37dba9d80862fd7917a5eecfbdc9bc54b1ae3a49678d31b7f25fd6e65c10",
+        "baseline_sha256": "25fe37dba9d80862fd7917a5eecfbdc9bc54b1ae3a49678d31b7f25fd6e65c10",
+        "decoded_exact": true
+      },
+      {
+        "input": "palette-pattern",
+        "config": "ga",
+        "encoded_bytes": 42944,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/palette-pattern-ga.jxl",
+        "output_sha256": "b30fa1766ceecb955b0d179f40586ecce4120ffc1c6dbdcb87c9182a0d45964c",
+        "baseline_sha256": "b30fa1766ceecb955b0d179f40586ecce4120ffc1c6dbdcb87c9182a0d45964c",
+        "decoded_exact": true
+      },
+      {
+        "input": "palette-pattern",
+        "config": "sp",
+        "encoded_bytes": 1200,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/palette-pattern-sp.jxl",
+        "output_sha256": "6722faabdc8536f03f3d76e2d995a47f8d27ff88d4c8e4cc45a74670015fc80a",
+        "baseline_sha256": "6722faabdc8536f03f3d76e2d995a47f8d27ff88d4c8e4cc45a74670015fc80a",
+        "decoded_exact": true
+      },
+      {
+        "input": "palette-pattern",
+        "config": "sa",
+        "encoded_bytes": 670,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/palette-pattern-sa.jxl",
+        "output_sha256": "e4a3257e06bf6d1bcad7c3f4c9f69e8135f5063a4fce6d00f69de366d2b0a1bb",
+        "baseline_sha256": "e4a3257e06bf6d1bcad7c3f4c9f69e8135f5063a4fce6d00f69de366d2b0a1bb",
+        "decoded_exact": true
+      },
+      {
+        "input": "noise16",
+        "config": "gp",
+        "encoded_bytes": 828702,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/noise16-gp.jxl",
+        "output_sha256": "bd9b646cd5e8761f727bff382d5a11a54f21bde22e05b818f177fa85e3e3c4f6",
+        "baseline_sha256": "bd9b646cd5e8761f727bff382d5a11a54f21bde22e05b818f177fa85e3e3c4f6",
+        "decoded_exact": true
+      },
+      {
+        "input": "noise16",
+        "config": "ga",
+        "encoded_bytes": 827293,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/noise16-ga.jxl",
+        "output_sha256": "f4c5c7ebd885e1c883eeddc307e41936721d34b4a09248da445d91708154c594",
+        "baseline_sha256": "f4c5c7ebd885e1c883eeddc307e41936721d34b4a09248da445d91708154c594",
+        "decoded_exact": true
+      },
+      {
+        "input": "noise16",
+        "config": "sp",
+        "encoded_bytes": 810184,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/noise16-sp.jxl",
+        "output_sha256": "1b5ab6a17bc94aa49e49060253a30090fed118bca4e22b3c663755dae599c060",
+        "baseline_sha256": "1b5ab6a17bc94aa49e49060253a30090fed118bca4e22b3c663755dae599c060",
+        "decoded_exact": true
+      },
+      {
+        "input": "noise16",
+        "config": "sa",
+        "encoded_bytes": 808588,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/noise16-sa.jxl",
+        "output_sha256": "ec8c2124c3ecfcc6b497802e3de163596116917a69cbf8a755559f6a332d4cbb",
+        "baseline_sha256": "ec8c2124c3ecfcc6b497802e3de163596116917a69cbf8a755559f6a332d4cbb",
+        "decoded_exact": true
+      },
+      {
+        "input": "alpha16-ramp",
+        "config": "gp",
+        "encoded_bytes": 405098,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/alpha16-ramp-gp.jxl",
+        "output_sha256": "d760dd9c620fbaf38fae8d1fdab4d8cac52803f4fb31f971e709ce696370df68",
+        "baseline_sha256": "d760dd9c620fbaf38fae8d1fdab4d8cac52803f4fb31f971e709ce696370df68",
+        "decoded_exact": true
+      },
+      {
+        "input": "alpha16-ramp",
+        "config": "ga",
+        "encoded_bytes": 367570,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/alpha16-ramp-ga.jxl",
+        "output_sha256": "53820f9d4e06d1fad14cc40817564d56c141f2d6c53de147373d94734e8b72e3",
+        "baseline_sha256": "53820f9d4e06d1fad14cc40817564d56c141f2d6c53de147373d94734e8b72e3",
+        "decoded_exact": true
+      },
+      {
+        "input": "alpha16-ramp",
+        "config": "sp",
+        "encoded_bytes": 46671,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/alpha16-ramp-sp.jxl",
+        "output_sha256": "66e18064154ce1ae6c517c8654e67e6a68d2a27adbc729a6e1d418a8095ff2c9",
+        "baseline_sha256": "66e18064154ce1ae6c517c8654e67e6a68d2a27adbc729a6e1d418a8095ff2c9",
+        "decoded_exact": true
+      },
+      {
+        "input": "alpha16-ramp",
+        "config": "sa",
+        "encoded_bytes": 26121,
+        "output": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/outputs/alpha16-ramp-sa.jxl",
+        "output_sha256": "a48598deb2e35da5b5534f3f31c1b7931dfcbe2fc66f2f2d3ca78a17d599d00f",
+        "baseline_sha256": "a48598deb2e35da5b5534f3f31c1b7931dfcbe2fc66f2f2d3ca78a17d599d00f",
+        "decoded_exact": true
+      }
+    ]
+  },
+  "frozen_oracles": {
+    "native_artifacts": 286,
+    "reference_artifacts": 286
+  },
+  "source_sha256": {
+    "CMakeLists.txt": "3917bf03734eb636e2b0c34daf923abf4394ed006f15e248bcc95c90dab45f8f",
+    "cmake/ModularOracle.cmake": "5bbc604573e71f9729aac7985d0972d97c2f6979fbe3bee65e10489c75948763",
+    "src/codec/modular/inline_storage.h": "af3864d4c40f5c487fecaa5caa43335acfd9142ecfd93cb16f1878c5bffcbbe1",
+    "src/codec/modular/tree.h": "af85f94360bc3654e8d56ee854800ec5b74cf1b1ff4648e5428996b2c188e1c8",
+    "src/codec/modular/tree_learning.cpp": "2149ad434ba0a942c0fe52b4f4e5ae727ab4db3c2478146ffbe1e549e2e1a783",
+    "src/codec/modular/tree_learning.h": "2dc656a3cda4c44063115e099ee0cfdecc9da950e0d86504443d88f333c5a9ea",
+    "src/codestream/modular/gpu_workflow.cpp": "336e317cc6122ff828eb5e988279358da81bd2696d2e7466f2a07081d04124ae",
+    "src/codestream/modular/gpu_workflow.h": "0060ad42ee692f6fdad732bfc42cf4348ec4d703b45533c8aed2ba141a3dd7ae",
+    "src/codestream/modular/search.cpp": "2fd857f29e2dfe45ecd4ad31fb7f057b9aca78d6cbb44c84fe2b0ce0346c0852",
+    "src/codestream/modular/search.h": "e132973cf97a490d79ef0f16418240e740fda6a518107a5e01ba0eafb495fde1",
+    "src/codestream/modular/storage_plan.cpp": "3833c13ad0cee79f3bcbe348fc558f6f16086b9e810a954b40ed12ddbf2a38cb",
+    "src/codestream/modular/storage_plan.h": "fc78150e41721ee6ac577d2f8198dce108b45bc5a4215e23f5f1ad002cc10849",
+    "src/codestream/modular/tokenization.cpp": "fa5f1bcbb3189100b38db83c124f5a38652073d39b9df4d162870aa93289f8ef",
+    "src/codestream/modular/tokenization.h": "2711897c3c5b5fb8fb19bf4f283581eedcbec8e5cea3e9b4a63e6fb0efd18c8c",
+    "src/codestream/modular/workflow.cpp": "b2bf64d7713013e08d6c8180585d40c9133f5f918e5d714316369a03bce73ac4",
+    "src/codestream/modular/workflow.h": "a5cf32728e2e44eae391c870afccc38462442cdb19fa91a2f3280fdd92c47360",
+    "src/gpu/ops/modular_token_storage_plan.cpp": "8f0901be738f72307474ec897077893f84e306c72545494ca4514c157d51027b",
+    "src/gpu/ops/modular_tokenization.h": "c23f25ddaa76d70384b032c0ca9fc1772b009c68b200b150177e8adf6fcc347a",
+    "tests/modular_gpu_workflow_test.cpp": "f8b5df0871460fbbbfcbe00c3a1fb9ee398687403da7eb8880213e0055ebc38a",
+    "tests/modular_training_budget_test.cpp": "6bc6df6076debe48a803d9e3d849ff791c1e02aa9147e5c2cca5bcde5e6331f9"
+  },
+  "artifact_sha256": {
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/source.json": "51a8b7d1df59ce98a451be3b9c8330fce229b507bd04b0b982cf4ad9ffbd56f9",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/source.patch": "9c5f0df28bbaf958e997dab1c28c95725d81167664a0fb6c2dc2e15c3db4029f",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/final-build.log": "23e2947c6e8638fd73598f9b6d573c6f52eb27a1095735d0e824997f26affa22",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/final-tests.log": "e2fbef2ecb4b3e7e529065886d23e7171cc7fab0a23d5c9c151afe820f6a28c8",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/final-tests.xml": "702bf929c56ca077e2d55e48320973f283edae68a7f5a34c0b3cf6054465dffb",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/Testing/Temporary/LastTest.log": "f01181a7cc06051ff93396a46fb3865f37940b46557f34434f06bb3276c7f15c",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/workflow-shard.log": "4311748be8b018ed0efe3e6d09963277795860787a2ed292a6675f926c3bcd08",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/sanitize-build.log": "ba5ee721522b43b3bd65253b8be819ec7fcc72f3ca63b370d77918b04cd67f16",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/sanitize-tests.log": "a17b801abe8b47ec2592671268dee2eb405ba432fe529fa3ad5be17dd9c1fd15",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/asan-tests.log": "e52064c40ee3774a3d1dfcb7982ae7b78f14be5ba634c8b0a78f7802e6c6894f",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/manifest.json": "3206b1d14bab74af68cffcd06ab34aa9d15cbe43f0d413778b69704495848069",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/results.jsonl": "61c4317f42c0306a6ec0bf806e365edae07ca3b1467f2783c12c6977d966a2cd",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/verify.log": "39cf88266fa86a78c89cc0d37dadc1708a71c6dd8f7fc7b054b013c4aded643a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/verify.py": "00d5154eccfc0bf12001bea8d2bdc217a3ea6137b8fbedff9ec535c18ae8cf37",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/runner.cpp": "f4ff9007c7a8e979534a7d617db260516e0e6f71036e8d8f0d7f3da39406957c",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/reference_effort.cpp": "85d9e8f064efe80b98b45c887cbb294429f6c0817f2f79dedfcaac4f3655ef3b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/CMakeLists.txt": "b0a64c40e4b21e0f18421f7b6cf1c461c7c9a88cb532ffac80abf85581f61ec3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/rate/bin/rate_runner": "52191330ff82757fa9056c9861374951eb41cf0fb7328ba79d1e81d0a5953fc4",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/libgjxl.a": "7ff3380b4c51add936f0d8bee9e519753afb2e233a1f6c41b9c03a0284d15f7a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/libgjxl_codec.a": "0d813b863ce3986b99c45413d3abd04748fd3b4d83ec87dc5251e64bf4c62420",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/libgjxl_codestream.a": "f0d55d4fcdbfe9b91ffa598c0ff4d20b873cc9ce577300ee8ecd0728bc5acc02",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/libgjxl_gpu.a": "cbbce262615f0bb31c5863e376c8c10c6459eea0f8a515374ccca8ff14bc9d50",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/libgjxl_gpu_ops.a": "e5a99e3edb7e872e2cb976b30572b33d1153cd37ad3ea3e6971cdc1f690b5ea4",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/libgjxl_modular_reference.a": "2a5b3c9120f08a82006310bf192dd234978df4762b8b10529f013d568bca8ac9",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/libgjxl_pfm_io.a": "da73b526a73e380b972ab0e2e001f44d48eeb5222321defeb517977cca7fa61e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/gjxl_modular_api_test": "d5df9a3c35c244a856a69e4f1990edea3c2bd8945964c426da7277e42e9c0f71",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/gjxl_modular_capture": "14e582bf6bfda7b75d6095714f5da26fb2a5b2caba145dba809ed662356d46dd",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/gjxl_modular_conformance_test": "e62ac5d060777d74bf5eb0641490ba8b24b4e448e85c8c30e8dd5cfdae1ce6cd",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/gjxl_modular_foundation_test": "497e86c3f8ac9b37d96bba47c99706399d0aa4889b96627bf1545c2517beed44",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/gjxl_modular_gpu_input_test": "e938b3067eb4288fa68c22be445377479741181ae09b0df8a2f0593a0745c307",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/gjxl_modular_gpu_preparation_test": "63c2dd38dc0fc3307f568e533fac9984371cb47d19de6445b4f2429c33400da5",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/gjxl_modular_gpu_token_handoff_test": "f466cdbffed7f0d1cd59c1b018e3b37e0ebc3d7c390b289574bf1a6b80760387",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/gjxl_modular_gpu_token_plan_test": "94ed2aa26e660fa6c14e44eb13721e091f7884d5f8a8b1de9c86f91cc6cda4d1",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/gjxl_modular_gpu_workflow_test": "b765d821e93ce5c262a3b20f06d218c3770cc029b893e6b9033cc93d12b9002c",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/gjxl_modular_oracle_test": "b2e44f16f82b3ca08b406e5595800c13d7f039bf85244551a3ee0e61b65f7db0",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/gjxl_modular_policy_test": "093e259710d7e6efac3328a2bdff76b172064b2f35e615c9ef38a0bb4bbb0b1a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/gjxl_modular_reference_capture": "2ebf2184af73fa6aa93d27bb62e24d09a1530247ac037d5c272a7f5651e4627e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/gjxl_modular_stream_test": "4f9e2ae5a8cc93092c2e3d3b43963c7227368047a84b98c2637ac9a28d38d602",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/gjxl_modular_training_budget_test": "dba5a0570671d35332b6adcc62732dec0d401c341bda3f5b742c8afc471ce2c7",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/gjxl_modular_transform_test": "61c1c16d9f52b637e7fe829028dc8e7357ce3cd28c728ed29070ca0ee1b56795",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets/gjxl_modular_workflow_test": "0a34ca68aeb3fdea609184820fc1f43b483568000b6bfdba36fc2ad7c841fcfc",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets-sanitize/libgjxl_codec.a": "07579c8fca2df4ef80e29a16881f190579562212e3b67d7acf92734ab526e5d0",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets-sanitize/libgjxl_codestream.a": "318db5aefcf98127933802c554fd57c724b18ea1d36702d1e9cce593e2233ba7",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets-sanitize/libgjxl_gpu.a": "24330621a46381831752d047cf85f6243df73001a63e0707320859c5524b7577",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets-sanitize/libgjxl_gpu_ops.a": "291cf79cdba3e41f17382f9f83c9371f63a1a5a7f811657a21bcbf5022adca40",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets-sanitize/libgjxl_modular_reference.a": "48cbeeb51fb3f5bb5c80efec5cf53f454d5bea3ae5ddde26d6555f2e89631cd0",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets-sanitize/gjxl_modular_foundation_test": "12a93cf8ef11d16cce438dc20585f5cf25f5d0d2156ed9fa645f3d7b82885822",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets-sanitize/gjxl_modular_gpu_token_plan_test": "9d2b77a25a7fdf790ce09afd704462249e0ce1155e6f8e1aada5563b9a069ae3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets-sanitize/gjxl_modular_gpu_workflow_test": "8b8dbe0abc73c93834c728b3c712d8ece3464251f2ca78e404abc199f87123c6",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-budgets-sanitize/gjxl_modular_training_budget_test": "a8bbc7bf73901be70dd2a7de3f45ca613b0713ddf17861f8737a47366979b8e3"
+  },
+  "limitations": [
+    "No higher-budget compression-rate or throughput claim",
+    "No resident GPU qualification for trees larger than 31 nodes",
+    "Legacy workflow faults sampled, not repeated exhaustively",
+    "Current prefix-derived entropy partition remains capped at 32 clusters"
+  ]
+}

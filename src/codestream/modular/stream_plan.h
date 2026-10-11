@@ -7,6 +7,8 @@
 namespace gjxl::modular_internal {
 enum class StreamRole : uint8_t { kGlobal, kDcGroup, kGroup };
 struct ChannelSlice {
+  // Full-image storage index. Tree property 0 is the slice ordinal within
+  // its stream: grouped streams compact away metadata/global/other-group channels.
   size_t channel = 0;
   ModularRect rect;
   bool operator==(const ChannelSlice &) const = default;

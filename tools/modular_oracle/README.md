@@ -1,4 +1,4 @@
-# Frozen Modular CPU oracle, version 1
+# Frozen Modular CPU oracle, version 2
 
 `capture.cpp` generates deterministic stage fixtures and measures real workflow
 calls. `gjxl_modular_capture` links only native libraries. The separate
@@ -61,6 +61,16 @@ python tools/modular_oracle/prepare_photo.py third_party/libjxl/testdata/externa
 fixture/coder combinations. The manifest records the native base revision,
 pinned reference revision, capture source hash and input hash. Qualification
 records retain the complete source hashes for the working-tree additions.
+Version 2 retains the complete version-1 manifest and applies the two explicit
+corrections in `oracle-v2.json`, bound to the version-1 manifest hash. In the
+palette fixture, the dictionary is global and the index channel is channel 0
+inside each group. The two `decisions.bin` traces each correct 2,313 property-0
+values from 1 to 0. All other integers, learned policies, tokens, models and
+complete files are unchanged. Both native and pinned-reference captures agree.
+This fixes the trace adapter along with CPU tokenization/training; using the
+full-image storage index as a channel property can produce invalid files when
+a prescribed or learned tree distinguishes channels after transforms.
+
 `verify.py` never writes expected hashes. A mismatch retains actual files for
 inspection. Compare integer records and independently check the changed stage
 before proposing a separately reviewed oracle version; never regenerate the
@@ -82,7 +92,7 @@ and the file length; rows follow canonical stream/channel/raster order.
 | `source.bin`, `transformed-N.bin` | channel count, metadata count; per channel: width/height/hshift/vshift/role then signed raster samples. N=0 is after RCT; N>0 includes the first N transforms |
 | `streams.bin` | per stream: role/id/section/slice count/token count, then each slice: channel/x/y/width/height; includes empty streams |
 | `tree-tokens.bin`, `tokens.bin` | context/value pairs, respectively tree serialization and packed signed residuals |
-| `decisions.bin` | per sample: stream index/channel/x/y/leaf index/prediction/residual; 16 properties; predictions 0..13. WP value/property is zero when the prescribed tree does not use WP |
+| `decisions.bin` | per sample: stream index/channel/x/y/leaf index/prediction/residual; 16 properties (property 0 is the stream-local channel ordinal); predictions 0..13. WP value/property is zero when the prescribed tree does not use WP |
 | `model.bin` | mode/context count/cluster count/ANS alphabet log; context map; each HybridUint config: split/msb/lsb; prefix mode: each cluster's degenerate symbol, 128 depths, 128 codewords; ANS mode: each cluster's frequency count/method/omit position then normalized frequencies |
 | `populations.bin` | sorted cluster/symbol/count triples, from the resolved HybridUint configuration, before ANS normalization |
 | `model.raw` | serialized global entropy model, including no-LZ77 marker; last byte zero padded |

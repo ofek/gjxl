@@ -207,6 +207,7 @@ void Freeze(const Fixture &f, EntropyCodingMode mode, const fs::path &root) {
   for (size_t i = 0; i < layout.streams.size(); ++i) {
     auto s = layout.streams[i];
     streams.Row(s.role, s.id, s.section, s.slice_count, tokens.streams[i].size());
+    size_t property_channel = 0;
     for (auto slice : std::span(layout.slices).subspan(s.slice_begin, s.slice_count)) {
       auto rect = slice.rect;
       streams.Row(slice.channel, rect.x, rect.y, rect.extent.width, rect.extent.height);
@@ -222,7 +223,7 @@ void Freeze(const Fixture &f, EntropyCodingMode mode, const fs::path &root) {
           std::pair<int64_t, int64_t> weighted{};
           if (wp)
             weighted = wp->Predict(x, y, n.top, n.left, n.top_right, n.top_left, n.top_top);
-          auto props = Properties(n, slice.channel, s.id, x, y, previous, weighted.second);
+          auto props = Properties(n, property_channel, s.id, x, y, previous, weighted.second);
           previous = props[9];
           size_t leaf = Lookup(f.policy.tree, props);
           auto node = f.policy.tree.nodes[leaf];
@@ -242,6 +243,7 @@ void Freeze(const Fixture &f, EntropyCodingMode mode, const fs::path &root) {
             Check(wp->Update(v.Row(y)[x], x, y), "Weighted overflow");
         }
       }
+      ++property_channel;
     }
   }
   Check(next == tokens.tokens.size(), "Trace coverage mismatch");

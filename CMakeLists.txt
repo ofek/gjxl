@@ -287,6 +287,7 @@ add_library(
   src/codec/modular/image.cpp
   src/codec/modular/geometry.cpp
   src/codec/modular/tree_learning.cpp
+  src/codec/modular/quantized_tree_learning.cpp
   src/codec/modular/transform/transform.cpp
   src/codec/modular/transform/palette.cpp
   src/codec/modular/transform/squeeze.cpp
@@ -2351,6 +2352,19 @@ if(GJXL_BUILD_TESTS)
   add_executable(gjxl_modular_foundation_test tests/modular_foundation_test.cpp)
   target_link_libraries(gjxl_modular_foundation_test PRIVATE gjxl_codestream)
   add_test(NAME modular_foundation COMMAND gjxl_modular_foundation_test)
+
+  add_executable(gjxl_modular_training_budget_test tests/modular_training_budget_test.cpp)
+  target_link_libraries(gjxl_modular_training_budget_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_training_budget COMMAND gjxl_modular_training_budget_test)
+  set_tests_properties(modular_training_budget PROPERTIES TIMEOUT 300)
+  add_test(NAME modular_training_budget_faults COMMAND gjxl_modular_training_budget_test --allocations)
+  set_tests_properties(modular_training_budget_faults PROPERTIES TIMEOUT 600)
+  add_test(NAME modular_training_checkpoints COMMAND gjxl_modular_training_budget_test --checkpoints)
+  add_test(NAME modular_training_checkpoint_faults COMMAND gjxl_modular_training_budget_test --checkpoint-allocations)
+  set_tests_properties(modular_training_checkpoints modular_training_checkpoint_faults PROPERTIES TIMEOUT 600)
+  add_test(NAME modular_training_coverage COMMAND gjxl_modular_training_budget_test --coverage)
+  add_test(NAME modular_training_coverage_faults COMMAND gjxl_modular_training_budget_test --coverage-allocations)
+  set_tests_properties(modular_training_coverage modular_training_coverage_faults PROPERTIES TIMEOUT 600)
 
   add_executable(gjxl_modular_gpu_input_test tests/modular_gpu_input_test.cpp)
   target_link_libraries(gjxl_modular_gpu_input_test PRIVATE gjxl_gpu_ops)

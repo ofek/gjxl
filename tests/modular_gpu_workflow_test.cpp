@@ -163,6 +163,35 @@ void AdmissionAndRejection() {
   Ok(ExecutionDomain::Create({plan.peak_bytes - 1, 1}, &small));
   Ok(ExecutionDomain::Create({}, &foreign));
   std::vector<uint8_t> output{7, 8, 9};
+  // Learned CPU trees can now exceed the GPU ceiling. Both planning and the
+  // public-vector/owned entry points must reject them without copying policy
+  // storage, touching the device, or changing an existing result.
+  {
+    ModularEncodingOptions large;
+    large.coding.tree.nodes.resize(127);
+    large.coding.tree.size = 127;
+    for (size_t i = 0; i < 63; ++i)
+      large.coding.tree.nodes[2 * i] = {.property = 3,
+                                        .split = static_cast<int32_t>(i),
+                                        .left = static_cast<TreeIndex>(2 * i + 2),
+                                        .right = static_cast<TreeIndex>(2 * i + 1)};
+    GpuModularTokenWorkflowStoragePlan token_plan, unchanged;
+    codestream_internal::CodestreamBuffer owned;
+    ArmNextManagedHostAllocationFailureForTest();
+    Check(ComputeGpuModularTokenWorkflowStoragePlan(input.extent, input.row_stride, input.format,
+                                                    input.byte_order, large, limits, token_limits,
+                                                    &token_plan)
+                      .code() == StatusCode::kUnsupported &&
+              token_plan == unchanged &&
+              EncodeGpuModularTokensImage(backend, input, large, &output).code() ==
+                  StatusCode::kUnsupported &&
+              EncodeGpuModularTokensImageOwned(backend, input, large, &owned).code() ==
+                  StatusCode::kUnsupported &&
+              ManagedHostAllocationFailurePendingForTest() && backend.calls == 0 &&
+              output == std::vector<uint8_t>({7, 8, 9}) && owned.empty(),
+          "Unsupported large token policy copied before rejection or changed output");
+    DisarmManagedHostAllocationFailureForTest();
+  }
   ArmNextManagedHostAllocationFailureForTest();
   Check(EncodeGpuModularImage(backend, input, {.execution_domain = small}, &output).code() ==
                 StatusCode::kOutOfMemory &&
@@ -190,6 +219,29 @@ void AdmissionAndRejection() {
               backend.calls == 2 && domain->snapshot().active_reservations == 1,
           "Nested workflow did not share the outer reservation");
   }
+  // Large CPU trees are legal in this GPU-input/CPU-token workflow. Passing
+  // options and planning must not allocate policy copies before admission.
+  ModularEncodingOptions large;
+  large.coding.tree.nodes.resize(127);
+  large.coding.tree.size = 127;
+  for (size_t i = 0; i < 63; ++i)
+    large.coding.tree.nodes[2 * i] = {.property = 3,
+                                      .split = static_cast<int32_t>(i),
+                                      .left = static_cast<TreeIndex>(2 * i + 2),
+                                      .right = static_cast<TreeIndex>(2 * i + 1)};
+  ArmNextManagedHostAllocationFailureForTest();
+  Ok(ComputeGpuModularWorkflowStoragePlan(input.extent, input.row_stride, input.format,
+                                          input.byte_order, large, limits, &plan));
+  Check(ManagedHostAllocationFailurePendingForTest(), "Large GPU-input workflow planner allocated");
+  DisarmManagedHostAllocationFailureForTest();
+  Ok(ExecutionDomain::Create({plan.peak_bytes - 1, 1}, &large.execution_domain));
+  const auto calls = backend.calls;
+  ArmNextManagedHostAllocationFailureForTest();
+  Check(EncodeGpuModularImage(backend, input, large, &output).code() == StatusCode::kOutOfMemory &&
+            ManagedHostAllocationFailurePendingForTest() && backend.calls == calls &&
+            output == std::vector<uint8_t>({7, 8, 9}),
+        "Large policy copied before admission");
+  DisarmManagedHostAllocationFailureForTest();
   const auto s = domain->snapshot();
   Check(s.live_capacity_bytes == 0 && s.reserved_unbacked_bytes == 0 &&
             s.active_reservations == 0 && s.active_cpu_participants == 0,
