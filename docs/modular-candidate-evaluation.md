@@ -74,9 +74,11 @@ The existing training/profile and native adaptive workflow suites remain gates.
 CI explicitly builds both new tests before running its Modular qualification gate.
 
 Logs: `build/entropy-step3-{build,tests,cpu-build,cpu-tests}.log`. The tested profile
-binary will be frozen under `build/entropy-milestones/step3/`. Corpus qualification
-must still measure complete calls, winner recall and byte regret; unit-test
-success is not evidence of a speedup or rate neutrality.
+binary is frozen under `build/entropy-milestones/step3/`. The subsequent
+[pipeline qualification](modular-entropy-pipeline.md) measures complete calls,
+winner recall and byte regret. Exact sizing preserves every exhaustive winning
+file on 19 images. The shortlist recalls 14/19 winners and increases aggregate
+bytes by 0.3733%, with a 7.6910% regression on `splines`; it remains experimental.
 
 The profile executable accepts `--measure-all` or `--shortlist`, and independently
 `--candidate-ledger`, alongside the existing Metal and ANS-selector switches.

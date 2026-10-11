@@ -29,6 +29,11 @@ def render(results):
         f"or **{sums['original'] / sums['combined']:.3f}x** relative to that same directly measured control. "
         f"Its aggregate large-image byte change is **{large_rate:+.4f}%**. "
         'The shortlist is a separate rate/time trade-off and remains private.', '',
+        'Use GPU populations with exhaustive exact sizing as the next private performance baseline. '
+        f"The combined shortlist reduces measured complete time by only "
+        f"{(1 - sums['combined'] / sums['population']) * 100:.2f}% beyond it, "
+        f"while its worst corpus size regression is {worst['regret_percent']:.2f}%. "
+        'This does not justify automatic shortlist selection.', '',
         '## Complete-call timing', '',
         'Each large-image entry is the median of two serial complete calls. Aggregate ratios use the '
         'sum of the three image medians. Model/emission columns are means of the corresponding image '
@@ -74,9 +79,13 @@ def render(results):
         'winner, and emits one file. GPU population production applies only to eligible full models; '
         'sampled screening, small populations, unsupported shapes and wide values retain explicit '
         'bypass/fallback paths.', '',
-        '| Combined stage | Mean seconds per 12 MP image |', '|---|---:|']
+        '| Stage | GPU exact sizing s | Combined shortlist s |', '|---|---:|---:|']
     for k, seconds in stages['combined'].items():
-        lines.append(f'| {k} | {seconds:.3f} |')
+        lines.append(f"| {k} | {stages['population'][k]:.3f} | {seconds:.3f} |")
+    lines += ['', f"Learning and canonical token generation account for "
+        f"{(stages['population']['training'] + stages['population']['tokens']) / (sums['population'] / 3) * 100:.1f}% "
+        'of the exhaustive GPU-population route. Reducing that repeated work is the next major '
+        'complete-call opportunity; further entropy micro-optimization has a much smaller ceiling.']
     lines += ['', '| Mode | Largest measured managed peak MiB | Largest admission bound MiB |',
               '|---|---:|---:|']
     for v in LABELS:

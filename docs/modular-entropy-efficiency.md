@@ -83,8 +83,9 @@ policies and full files against each corresponding pre-change selector; zero
 duplicate ANS collection/aggregation; invalid input and allocation failure
 atomicity; actual complete-call timing and memory measurements.
 
-Status: implemented and correctness-qualified; complete-call performance
-comparison remains pending. `OptimizeEntropyCodeAndPrepareClusters` accepts a
+Status: implemented and qualified. The paired complete-call population-reuse
+milestone is 1.111x faster than its estimated pre-reuse control; see
+[the pipeline report](modular-entropy-pipeline.md). `OptimizeEntropyCodeAndPrepareClusters` accepts a
 null cost, and prepared ANS construction accepts the same optional GPU evaluator
 as the unprepared path. Both exact and estimated Modular routes retain the
 selected prefix populations only through model construction. The workflow plan
@@ -105,10 +106,9 @@ VarDCT encoder regressions pass as well.
 
 Logs: `build/entropy-step2-{build,tests,cpu-build,cpu-tests}.log`. Pre-reuse byte
 controls and their hashes are in `build/entropy-step1-native-byte-controls/`.
-Freeze the tested milestone binary before the next implementation step. Run
-performance comparisons serially once the remaining implementation builds are
-finished, so compilation cannot contend with measured calls. Do not infer a
-speedup from the removed counters before those complete-call measurements.
+The frozen milestone binary is in `build/entropy-milestones/step2/`. The final
+serial comparison includes it directly, with no concurrent compilation or model
+replay. The report records complete-call times, managed peaks and admission bounds.
 
 ## 3. Separate candidate evaluation and final emission
 
@@ -129,11 +129,13 @@ all candidates; tiny/empty streams, transforms, alpha/16-bit data, TOC threshold
 ties, admission and failure paths are covered. Qualify the shortlist's rate/time
 trade-off from actual outputs rather than a sum of estimated savings.
 
-Status: implemented; correctness qualification is recorded in
+Status: implemented and qualified; correctness qualification is recorded in
 [the candidate evaluation contract](modular-candidate-evaluation.md).
-Complete-call timing, shortlist winner recall and rate regret remain pending
-until the serial frozen-binary corpus study. The original emission oracle remains
-the default. Neither measured sizing nor shortlist selection changes public policy.
+Exact sizing is 1.137x faster than current exhaustive emission on the large pilot.
+The shortlist recalls 14/19 exhaustive winners, increases aggregate bytes by
+0.3733%, and regresses `splines` by 7.6910%. It remains experimental. The original
+emission oracle remains the default. Neither measured sizing nor shortlist
+selection changes public policy. See [full results](modular-entropy-pipeline.md).
 
 ## 4. GPU population production and reuse
 
@@ -148,10 +150,13 @@ and wide values; model/file equality; checked storage and ownership, explicit
 crossover/fallback counters, failure-atomic publication; complete-workflow
 performance including reductions, transfers, waits and remaining CPU work.
 
-Status: implemented and locally correctness-qualified; see
+Status: implemented and qualified on the retained corpus; see
 [the population contract](modular-gpu-populations.md). The operation and complete
-workflow remain private/opt-in. Full-call performance and the crossover's corpus
-coverage are pending the serial frozen-binary study.
+workflow remain private/opt-in. GPU populations plus exact sizing preserve all 19
+exhaustive winning files. Complete large-image time is 1.296x faster than exact
+sizing with CPU populations and 1.819x faster than the frozen original exact-ANS
+control. Small/wide fallback counters, bounded storage and all waits are included;
+[the report](modular-entropy-pipeline.md) describes power conditions and limits.
 
 ## 5. Controlled entropy rate study
 
@@ -236,5 +241,7 @@ rejects unrelated or duplicate replacements. Its raw sums remain available.
 The recheck verifies AC power before, during and after every call, as well as
 unchanged files, policies, candidate ledgers and training work. The reporting
 tool refuses unresolved power-transition comparisons. Positive/relocated capture
-audits and ten deliberately corrupted-capture cases pass; recheck-specific audit
-qualification follows the repeated calls.
+audits and ten deliberately corrupted-capture cases pass. The AC recheck also
+passes original/relocated audits and rejects four damaged rechecks. All 136 calls
+are audited; the qualified table uses the full eight-call replacement for the
+affected comparison. No other comparison is replaced.

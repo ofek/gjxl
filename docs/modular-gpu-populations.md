@@ -86,5 +86,9 @@ The later search-boundary correction passes the CPU population suite in both
 Release configurations and the native population/adaptive workflow suites (three
 Release suites, one CPU-only suite). Logs: `build/entropy-final-bound-*.log`.
 The frozen milestone binary is saved under `build/entropy-milestones/step4/`.
-Complete-workflow performance, coverage and combined rate/time results are still
-pending; operation correctness alone does not establish an end-to-end gain.
+[Complete-workflow qualification](modular-entropy-pipeline.md) covers 19 inputs
+and 136 audited calls, including a whole-comparison AC recheck. GPU populations
+with exact sizing preserve all exhaustive files and reduce the large-image mean
+complete time from 117.678 s to 64.685 s (1.819x). Against exact sizing with CPU
+populations alone, the ratio is 1.296x. These are active-desktop M4 Pro pilot
+results with explicit power conditions, not a universal crossover qualification.
