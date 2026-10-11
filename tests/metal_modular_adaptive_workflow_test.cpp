@@ -622,23 +622,25 @@ int main(int argc, char **argv) try {
   for (auto format : {PackedModularFormat::kGray8, PackedModularFormat::kRgb8,
                       PackedModularFormat::kRgba8, PackedModularFormat::kGray16,
                       PackedModularFormat::kRgb16, PackedModularFormat::kRgba16}) {
-    Fixture f(format, {96, 64});
+    Fixture f(format, {192, 128});
     ModularEncodingOptions options;
     options.search = true;
     options.entropy = EntropyCodingMode::kAns;
-    options.learning = {8192, 32};
+    options.learning = {32768, 32};
     options.tree_checkpoints = true;
     options.cpu_thread_count = format == PackedModularFormat::kRgba16 ? 4 : 1;
     Case(*gpu, f, options, format == PackedModularFormat::kGray8, true, false, true, true);
   }
   {
-    Fixture f(PackedModularFormat::kRgb8, {96, 64}, true);
+    Fixture f(PackedModularFormat::kRgb8, {192, 128}, true);
     ModularEncodingOptions options;
     options.search = true;
     options.entropy = EntropyCodingMode::kPrefix;
-    options.learning = {8192, 32, TreeLearningMode::kQuantized};
+    options.learning = {32768, 32, TreeLearningMode::kQuantized};
     options.tree_checkpoints = true;
-    Case(*gpu, f, options, false, false, false, true, true);
+    // The retained original-learner baseline has only 4096 samples, below the
+    // measured device crossover; expanded quantized learning stays scalar too.
+    Case(*gpu, f, options, false, false, false, true, false);
     Fixture small(PackedModularFormat::kGray8, {17, 13});
     options.learning = {512, 32};
     Case(*gpu, small, options, false, false, false, true, false);

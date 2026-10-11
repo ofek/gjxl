@@ -5,9 +5,10 @@
 #include "gpu/ops/modular_tree_statistics.h"
 
 namespace gjxl::modular_internal {
-// Initial private qualification setting; measure the crossover before adopting
-// it in the completed workflow. It affects scheduling, never threshold policy.
-inline constexpr size_t kMinimumGpuTreeStatisticsLeafSamples = 4096;
+// M4 Pro production-learner probes include first preparation, upload and wait.
+// Smaller leaves stay on the scalar scan; this changes scheduling only.
+// See docs/gpu-modular-learner-statistics.md for the measured scope.
+inline constexpr size_t kMinimumGpuTreeStatisticsLeafSamples = 16384;
 // One original-learner invocation owns this adapter. Prepared codes/count costs
 // are immutable and reused across its properties/leaves only. No global cache.
 class ModularGpuTreeStatistics final : public TreeSplitCostEvaluator {

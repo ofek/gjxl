@@ -1,8 +1,8 @@
 # Exact GPU statistics for the original Modular learner
 
 Status: native Metal operation and complete-search integration implemented;
-correctness checks pass, while crossover tuning and complete-call performance
-qualification remain in progress. This continues milestone 4 of [the adaptive GPU plan](gpu-adaptive-modular.md).
+correctness checks and local crossover probes pass, while complete-call
+performance qualification remains in progress. This continues milestone 4 of [the adaptive GPU plan](gpu-adaptive-modular.md).
 The current ANS qualification uses the frozen `2009da7` implementation and does
 not include this operation.
 
@@ -190,8 +190,8 @@ through full search and preserves the caller's old compressed output.
 
 `--metal-learn` enables GPU tokens, exact ANS costing and original-learner
 statistics. `--metal-ans` remains the control with CPU learning. Public defaults
-are unchanged. The initial private leaf crossover is provisional and must be
-replaced by a measured value before performance qualification.
+are unchanged. Leaves below 16,384 samples use the original scalar scan; this
+measured private crossover changes scheduling only.
 
 The optional `gjxl_modular_tree_statistics_benchmark root|tree REPETITIONS`
 measures the production learner with deterministic synthetic samples and rotated
@@ -207,3 +207,46 @@ Initial build/test logs are retained in `build/adaptive-integration/` under the
 explicit pre-gate build list now includes the newer training, profile, adaptive
 plan and learner-statistics contract executables, so the existing `^modular_`
 gate does not encounter unbuilt tests.
+
+## Measured leaf crossover
+
+The production-learner probes use implementation `61ddb15`, retained in
+`build/tree-statistics-crossover-20261011/`. Five rotated CPU/GPU repetitions per
+root population and three rotated repetitions per complete-tree configuration
+all preserve exact node arrays and checkpoints. The frozen binary, outputs,
+commands and checksums are recorded in the capture manifest; the checked-in
+[summary and provenance](gpu-modular-learner-statistics-crossover.json) retain the
+results. These synthetic probes ran without another task-owned build or encode,
+but the desktop was not isolated and no process-activity trace was collected.
+
+Root learning includes all 16 property sorts and first preparation. Median
+milliseconds, CPU versus forced GPU statistics:
+
+| Root samples | CPU | GPU |
+| ---: | ---: | ---: |
+| 256 | 0.181 | 4.215 |
+| 1,024 | 0.787 | 4.658 |
+| 2,048 | 1.835 | 5.224 |
+| 4,096 | 3.792 | 6.514 |
+| 8,192 | 7.524 | 9.197 |
+| 16,384 | 15.432 | 13.516 |
+| 65,536 | 62.540 | 46.634 |
+| 262,144 | 335.872 | 189.414 |
+
+The selected 16,384-sample crossover avoids the observed root regressions at
+smaller populations. Complete growth to 64 leaves confirms useful savings at
+larger budgets: CPU versus this crossover gives 2.221 versus 1.672 seconds at
+65,536 samples, and 10.598 versus 6.702 seconds at 262,144 samples. At a total
+budget of 16,384 samples the medians are 0.566 versus 0.576 seconds: accelerating
+only the root does not establish a small-tree speedup. Other tested thresholds
+were 1,024 and 4,096; the 4,096 cutoff is slightly faster in that small-tree probe,
+but has the explicit small-root regression above. The selected value is a
+conservative private M4 Pro scheduling choice, not a universal device threshold.
+
+The full-search fixtures are enlarged to exercise actual GPU learning above this
+cutoff; small-input and missing-capability fallback checks remain separate. The
+Release rebuild, native statistics, contract, profile, GPU workflow and enlarged
+complete-search tests pass. The quantized control explicitly expects CPU fallback
+for its retained 4,096-sample original-learner baseline below the new cutoff.
+Complete-image search qualification is still required before reporting an
+encoder improvement from learner statistics.
