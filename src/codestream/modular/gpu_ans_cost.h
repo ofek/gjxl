@@ -6,6 +6,10 @@
 #include "gpu/ops/ans_token_cost.h"
 
 namespace gjxl::modular_internal {
+// Conservative crossover for the current Metal recurrence implementation. The
+// standalone operation has no minimum; complete workflows keep low-parallelism
+// calls on the scalar counter, as required by the small-image measurements.
+inline constexpr size_t kMinimumGpuAnsCostSections = 64;
 // Call-local adapter; tokens/backend and their admitted backing outlive it.
 // No global/thread-local dispatch override and no retained model cache.
 class ModularGpuAnsCost final : public codestream_internal::AnsTokenCostEvaluator {

@@ -56,12 +56,16 @@ void Encode(MetalBackend &, MTL::ComputeCommandEncoder *encoder, const void *opa
   encoder->setBuffer(c.dispatch, 0, 2);
   encoder->setBuffer(c.output, 0, 3);
   encoder->setBytes(&c.params, sizeof(c.params), 4);
-  DispatchMetalThreads(encoder, MTL::Size(c.params.sections, c.params.candidates, 1),
+  DispatchMetalThreads(encoder,
+                       MTL::Size(size_t(c.params.sections) * c.pipeline->threadExecutionWidth(),
+                                 c.params.candidates, 1),
                        MTL::Size(64, 1, 1));
 }
 } // namespace
 AnsTokenCostDeviceLimits MetalBackend::ans_token_cost_limits() const noexcept {
-  return {size_t(PTRDIFF_MAX) / sizeof(uint32_t), UINT32_MAX, size_t(device_->maxBufferLength())};
+  return {size_t(PTRDIFF_MAX) / sizeof(uint32_t),
+          UINT32_MAX / size_t(ans_token_cost_pipeline_->threadExecutionWidth()),
+          size_t(device_->maxBufferLength())};
 }
 Status MetalBackend::MeasureAnsTokenCosts(const AnsTokenCostInput &input,
                                           std::unique_ptr<PreparedGpuAnsTokenCosts> *out) try {

@@ -93,7 +93,7 @@ AdaptiveModularWorkflowStoragePlan Plan(const Fixture &f, const ModularEncodingO
   return result;
 }
 void Case(GpuBackend &gpu, const Fixture &f, ModularEncodingOptions options, bool extra = false,
-          bool ans_cost = false) {
+          bool ans_cost = false, bool require_gpu_cost = false) {
   options.adaptive_ans_cost = ans_cost;
   const auto plan = Plan(f, options);
   options.adaptive_ans_cost = false;
@@ -125,11 +125,17 @@ void Case(GpuBackend &gpu, const Fixture &f, ModularEncodingOptions options, boo
                 actual.encoded_candidates + actual.adaptive_gpu.ans_gpu_groups,
         "Hybrid search changed bytes, selected policy, candidate count, or silently fell back");
   const auto &g = actual.adaptive_gpu;
-  Check(g.ans_cpu_fallback_groups == 0 && (ans_cost && options.entropy == EntropyCodingMode::kAns
-                                               ? g.ans_gpu_groups >= actual.encoded_candidates &&
-                                                     g.ans_gpu_states >= g.ans_gpu_groups
-                                               : g.ans_gpu_groups == 0 && g.ans_gpu_states == 0),
-        "Exact ANS cost route was omitted or silently fell back");
+  Check(g.ans_cpu_fallback_groups == g.ans_cpu_small_groups &&
+            (ans_cost && options.entropy == EntropyCodingMode::kAns
+                 ? g.ans_gpu_groups + g.ans_cpu_fallback_groups >= actual.encoded_candidates &&
+                       g.ans_gpu_states >= g.ans_gpu_groups
+                 : g.ans_gpu_groups == 0 && g.ans_gpu_states == 0 &&
+                       g.ans_cpu_fallback_groups == 0) &&
+            (!require_gpu_cost || (g.ans_gpu_groups > 0 && g.ans_cpu_fallback_groups == 0)),
+        "Exact ANS cost route was omitted or fallback attribution differs");
+  if (ans_cost && options.entropy == EntropyCodingMode::kAns && !require_gpu_cost)
+    Check(g.ans_gpu_groups == 0 && g.ans_cpu_small_groups > 0,
+          "Small workflow did not use the explicit scalar cost crossover");
   Check(g.feature_preparations + g.feature_reuses == g.encoded_candidates &&
             g.evictions + 1 == g.feature_preparations && g.feature_seconds > 0 &&
             g.token_seconds > 0 &&
@@ -486,6 +492,13 @@ int main(int argc, char **argv) try {
   Case(*gpu, grouped, prescribed, true, true);
   prescribed.entropy = EntropyCodingMode::kPrefix;
   Case(*gpu, grouped, prescribed, false, true);
+  {
+    Fixture large(PackedModularFormat::kRgb8, {2048, 2048});
+    ModularEncodingOptions options;
+    options.entropy = EntropyCodingMode::kAns;
+    options.coding.tree.nodes[0].predictor = Predictor::kWeighted;
+    Case(*gpu, large, options, false, true, true);
+  }
   FallbacksAndFailures(*gpu);
   AnsFallback(*gpu);
   AllocationSweep(*gpu);

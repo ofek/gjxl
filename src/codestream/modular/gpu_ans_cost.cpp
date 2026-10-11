@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Yunho Cho
 #include "codestream/modular/gpu_ans_cost.h"
 #include "codec/modular/profile.h"
+#include <algorithm>
 
 namespace gjxl::modular_internal {
 using namespace ans_gpu_internal;
@@ -26,6 +27,13 @@ Status ModularGpuAnsCost::TryMeasure(std::span<const EntropyTokenStreamView> sec
   if (owner.backend_id() != backend_.id() || sections.data() != tokens_.streams.data() ||
       sections.size() != tokens_.streams.size())
     return Status::InvalidArgument("Modular GPU ANS owner/stream provenance differs");
+  const size_t active_sections = std::count_if(
+      sections.begin(), sections.end(), [](const auto section) { return section.size() != 0; });
+  if (active_sections < kMinimumGpuAnsCostSections) {
+    if (active_modular_profile)
+      ++active_modular_profile->adaptive_gpu.ans_cpu_small_groups;
+    return fallback();
+  }
   size_t max_contexts = 0, max_clusters = 0;
   for (const auto *code : codes) {
     if (!code || code->mode != EntropyCodingMode::kAns ||

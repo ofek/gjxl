@@ -1800,7 +1800,10 @@ Status CreateMetalBackendImpl(
   NS::SharedPtr<MTL::ComputePipelineState> ans_token_cost_pipeline;
   status = CreatePipeline(device.get(), library.get(), "gjxl_ans_token_cost", &ans_token_cost_pipeline);
   if (!status.ok()) return status;
-  if (ans_token_cost_pipeline->maxTotalThreadsPerThreadgroup() < 64 || maximum_threads.width < 64)
+  if (ans_token_cost_pipeline->maxTotalThreadsPerThreadgroup() < 64 || maximum_threads.width < 64 ||
+      ans_token_cost_pipeline->threadExecutionWidth() == 0 ||
+      ans_token_cost_pipeline->threadExecutionWidth() > 64 ||
+      64 % ans_token_cost_pipeline->threadExecutionWidth() != 0)
     return Status::Unavailable("Metal cannot launch ANS token-cost threadgroups");
 
   AqPipelines aq_pipelines;

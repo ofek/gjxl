@@ -179,7 +179,8 @@ int main(int argc, char **argv) try {
             << ",\"cpu_fallback_candidates\":" << g.cpu_fallback_candidates
             << ",\"ans_gpu_groups\":" << g.ans_gpu_groups
             << ",\"ans_gpu_states\":" << g.ans_gpu_states
-            << ",\"ans_cpu_fallback_groups\":" << g.ans_cpu_fallback_groups << '}';
+            << ",\"ans_cpu_fallback_groups\":" << g.ans_cpu_fallback_groups
+            << ",\"ans_cpu_small_groups\":" << g.ans_cpu_small_groups << '}';
   std::cout << ",\"training\":{\"stages\":";
   const auto &t = profile.training_work;
   Stages(std::array{"rct_ranking", "palette_probe", "sample_gathering", "simple_learning",

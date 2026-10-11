@@ -30,8 +30,9 @@ tokens run in reverse order, starting from `0x13 << 16`:
 1. Map the token's context to a cluster and encode its value as HybridUint.
 2. Add its extra-bit count.
 3. If `state >> 20 >= frequency`, add 16 bits and shift the state right by 16.
-4. Compute the exact quotient using the existing `ceil(2^44 / frequency)`
-   reciprocal, then look up the symbol/remainder in the model's reverse map.
+4. Compute the exact integer quotient, then look up the symbol/remainder in
+   the model's reverse map. The native implementation derives a corrected
+   32-bit reciprocal from the supplied `ceil(2^44 / frequency)` table.
 5. Update the state to `(quotient << 12) + reverse_map[offset + remainder]`.
 
 Every section includes 32 final-state bits, including empty sections. There is no
@@ -104,7 +105,7 @@ may take an explicitly counted CPU route before dispatch.
 
 Metal now advertises this capability. The standalone operation borrows resident
 values/contexts, directly initializes shared descriptor/model backing, dispatches
-one lane per section/candidate and publishes a completed shared result arena
+one SIMD group per section/candidate and publishes a completed shared result arena
 after waiting and validating status. No token copy or token-sized scratch is
 introduced. The new kernel is included in external and embedded libraries.
 Encoder routing is now implemented as described below; complete-path performance
@@ -117,11 +118,11 @@ nonempty partition, count overflow, exact device capacity and one byte less,
 failure-atomic plans and device status decoding. Logs are retained under
 `build/adaptive-integration/ans-cost-contract-*`.
 
-Native qualification on Apple M4 Pro passes **829 cases, 224,848 exact bit-count
-and final-state pairs, and 1,713,380 token recurrences**. Coverage includes all 816
+Native qualification on Apple M4 Pro passes **1,853 cases, 237,136 exact bit-count
+and final-state pairs, and 2,766,052 token recurrences**. Coverage includes all 816
 valid HybridUint configurations, real scalar-generated models across alphabet
-widths 5–8, arbitrary valid-range reverse-map permutations, frequency extremes 1
-and 4,096 (including native single-symbol tables), edge uint32 values, context ID
+widths 5–8, arbitrary valid-range reverse-map permutations, all nonzero normalized frequencies 1
+through 4,096 (including native single-symbol tables), edge uint32 values, context ID
 65,535, 64 clusters, mixed-model batches, empty and irregular sections, and long
 ordered streams. The reference uses ordinary division and is checked against the
 production scalar counter; selected cases also check the final writer's bit count
@@ -135,8 +136,9 @@ Eight explicit failure-atomic checks cover allocation, submission, completion,
 malformed sections, foreign and nonnative buffer owners, and data-dependent
 context/absent-symbol failures. Failed attempts preserve the prior result and
 release all new backing and pending work. There is no managed host vector
-allocation inside the native operation; caller-view allocation fault coverage
-belongs to the upcoming workflow integration.
+allocation inside the native operation. A separate resident-token adapter sweep
+exercises three managed allocation failures in section/model views and cost
+publication; previous costs remain unchanged and all new backing is released.
 
 The full Release build succeeds. All 19 selected ANS/entropy, Metal Modular,
 submission-storage, external/embedded-library and Make/Ninja build-graph tests
@@ -162,7 +164,11 @@ mutable model state. The internal `AnsTokenCostEvaluator` hook is an explicit
 call argument, not a global or thread-local override.
 
 If the capability is absent or shape/device-limit preflight is unsupported, the
-adapter explicitly requests the original scalar cost measurement. A provider
+adapter explicitly requests the original scalar cost measurement. The current
+workflow also uses scalar costing below 64 nonempty sections, before allocating
+model views or dispatching work. This conservative crossover avoids the measured
+small-image regression; it is not a universally tuned threshold. The standalone
+operation accepts smaller section counts for direct qualification. A provider
 error, including Unsupported after work has begun, propagates immediately. The
 existing CPU optimizer and its other clients continue through the old entry
 point with no provider. The provider contract test checks identical models and
@@ -177,27 +183,71 @@ when a capability later falls back. The CPU optimizer's existing cost-vector
 bound covers result conversion and selection; no second token arena is added.
 
 Profiling reports `ans_gpu_groups`, `ans_gpu_states` and
-`ans_cpu_fallback_groups` inside `adaptive_gpu`. Successful GPU groups each add
+`ans_cpu_fallback_groups` inside `adaptive_gpu`; `ans_cpu_small_groups` identifies
+the low-parallelism subset of fallback groups. Successful GPU groups each add
 one actual submission. Cost upload, dispatch, wait and conversion are included in
 `entropy_work.ans_token_cost_ns`, itself nested in `stages.model`; those intervals
 must not be summed again. With profiling disabled, actual backend submission and
 allocation totals remain available. The capture route is
 `hybrid-ans-complete-search`.
 
-Integrated tests pass 39 complete CPU/hybrid file and selected-policy matches,
+Integrated tests pass 40 complete CPU/hybrid file and selected-policy matches,
 including 14 additional ANS-enabled/prefix-bypass cases covering all six formats,
 palette patterns, expanded checkpoint search, one/four CPU participants and
-grouped Squeeze/weighted prediction. Pinned libjxl decodes 92,908 source samples
+grouped Squeeze/weighted prediction, plus a 2048×2048 weighted case at the
+64-nonempty-section GPU boundary. Pinned libjxl decodes 12,675,820 source samples
 exactly. Profile-disabled and owned publication paths match too. Capability
 fallback is explicit and byte exact; ANS-inclusive one-byte-short admission and
 an ANS switch without a GPU are rejected before publication. The original and
 ANS-enabled tiny-input complete-search allocation sweeps plus existing device
-and late-candidate faults pass 3,905 injected failure-atomic checks. This count
+and late-candidate faults pass 3,900 injected failure-atomic checks. Small ANS
+workflows explicitly assert scalar costing; the separate adapter sweep above
+preserves GPU-cost allocation coverage. This count
 does not mean exhaustive allocation sweeps on the photographic corpus.
 
 The full Release build and all 19 selected integrated ANS/entropy, Modular GPU,
-profile, embedded-library and submission-storage regressions pass. Test logs use
-the `build/adaptive-integration/ans-cost-integrated-*` prefix. The CPU-only ANS
+profile, embedded-library and submission-storage regressions pass. Final SIMD/crossover test logs use
+the `build/adaptive-integration/ans-cost-simd32-*` prefix; earlier integration
+logs retain the `ans-cost-integrated-*` prefix. The CPU-only ANS
 contract/provider, Modular profile and GPU-token handoff tests also pass. Paired performance
 captures must now establish whether the exact operation improves complete calls
 on the original full-resolution inputs.
+
+## SIMD recurrence and measured crossover
+
+Each SIMD group prepares one reverse-order block of tokens in parallel: context
+lookup, HybridUint encoding, frequency, reverse offset and reciprocal. It then
+broadcasts these records in the original scalar order. All lanes maintain the
+same rANS state, so the dependent reverse-map load is uniform. This exposes
+parallel token preparation and coalesced reads while preserving the sequential
+state recurrence; it does not split a section or allocate token-sized scratch.
+
+For frequency `f > 1`, the supplied reciprocal gives
+`ceil(ceil(2^44/f)/2^12) = ceil(2^32/f)`. A 32-bit high multiply estimates the
+quotient at most one too high. Comparing `quotient*f` with the normalized state
+and subtracting one when needed gives ordinary integer division exactly. For
+`f < 4096`, normalized `state < f*2^20` leaves enough uint32 headroom that this
+product cannot overflow; `f = 4096` divides exactly. The `f = 1` case uses the
+state directly. Tests independently use ordinary division and exercise 27,655
+quotient corrections across all 4,096 possible positive frequencies.
+
+The first one-lane implementation was deliberately stopped during its planned
+performance capture after small-image regressions. Its partial artifacts remain
+under `build/adaptive-ans-qualification-20261011`; they are not a completed
+qualification. A SIMD diagnostic with a 44-bit per-step multiply is retained in
+`build/ans-cost-simd-probe-20261011`. The final corrected-32-bit diagnostic and
+64-section crossover are frozen, including source diff and binary hashes, in
+`build/ans-cost-simd32-probe-20261011`.
+
+| Diagnostic | 500×500 photo total / exact ANS seconds | 4000×3000 image 1029 total / exact ANS seconds |
+|---|---:|---:|
+| One lane per section/model | 42.793 / 14.748 | 114.460 / 17.161 |
+| SIMD preparation, 44-bit recurrence | 33.417 / 5.958 | 109.645 / 12.725 |
+| SIMD preparation, corrected 32-bit recurrence, small-work CPU crossover | 28.181 / 0.763 | 107.591 / 10.461 |
+
+All these completed diagnostic outputs match the prior complete CPU files and
+pass pinned sample-exact decoding. The final small-image run uses GPU tokens and
+140 explicitly counted CPU cost groups; 1029 uses GPU tokens and 140 GPU cost
+groups with no fallback. These separate single runs guided implementation only.
+They do not establish paired performance or an optimal crossover. Repeated fresh
+CPU/hybrid complete-search pairs are the remaining qualification step.

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 Yunho Cho
 #include "codestream/ans_internal.h"
+#include "codestream/modular/gpu_ans_cost.h"
 #include "core/resource_context.h"
 #include "gpu/metal/metal_backend.h"
 #include "gpu/ops/ans_token_cost.h"
@@ -17,6 +18,8 @@ using namespace gjxl::ans_gpu_internal;
 using namespace gjxl::codestream_internal;
 using namespace gjxl::resource_budget_internal;
 size_t cases = 0, states = 0, tokens_checked = 0, fault_checks = 0;
+size_t quotient_corrections = 0;
+size_t adapter_faults = 0;
 unsigned widths = 0;
 void Check(bool v, const char *message) {
   if (!v)
@@ -103,6 +106,11 @@ AnsTokenCostResult Reference(std::span<const EntropyToken> tokens, const Entropy
       r.bits += 16;
       r.final_state /= 65536;
     }
+    // Coverage only: the expected recurrence below still uses ordinary divide.
+    const uint64_t multiplier = ((uint64_t{1} << 32) + f - 1) / f;
+    const uint64_t estimate = f == 1 ? r.final_state : (uint64_t{r.final_state} * multiplier) >> 32;
+    Check(estimate * f <= UINT32_MAX, "Normalized reciprocal correction product can wrap");
+    quotient_corrections += estimate * f > r.final_state;
     // Ordinary division, independent of the GPU reciprocal implementation.
     r.final_state = (r.final_state / f) * 4096 +
                     h.reverse_map[h.reverse_offsets[encoded.symbol] + r.final_state % f];
@@ -201,6 +209,29 @@ void Configurations(GpuBackend &gpu) {
         Compare(gpu, input, codes);
       }
 }
+void Frequencies(GpuBackend &gpu) {
+  // Exercise every possible nonzero normalized frequency, including the
+  // non-power-of-two cases that require correcting a 32-bit reciprocal.
+  for (uint32_t base = 1; base <= 4096; base += 4) {
+    std::array<EntropyCode, 4> codes;
+    for (uint32_t i = 0; i < 4; ++i) {
+      codes[i] = Synthetic({1, 0, 0}, i);
+      const auto f = static_cast<uint16_t>(base + i);
+      const auto other = static_cast<uint16_t>(4096 - f);
+      for (auto &h : codes[i].ans_histograms) {
+        h.frequencies = {f, other};
+        h.reverse_offsets = {0, f};
+        h.reciprocal_frequencies = {AnsFrequencyReciprocal(f), AnsFrequencyReciprocal(other)};
+      }
+    }
+    std::vector<EntropyToken> tokens;
+    for (uint32_t i = 0; i < 257; ++i)
+      tokens.push_back({i % 3, base == 4093 ? 0u : (i * 7 + i / 3) % 2});
+    Input input(gpu, std::move(tokens), codes, 1);
+    Compare(gpu, input, codes);
+  }
+  Check(quotient_corrections > 0, "No native case exercised reciprocal quotient correction");
+}
 void Native(GpuBackend &gpu) {
   for (unsigned pattern = 0; pattern < 5; ++pattern) {
     std::vector<EntropyToken> tokens;
@@ -268,9 +299,100 @@ void MixedBatch(GpuBackend &gpu) {
   Ok(gpu.CopyDeviceToHost(*joined, after.data(), after.size()));
   Check(after == bytes, "ANS cost changed shared input ranges or padding");
 }
+void AdapterAllocations(GpuBackend &gpu) {
+  struct Owner final : modular_gpu_internal::PreparedGpuModularTokens {
+    BackendId backend;
+    std::vector<uint32_t> v;
+    std::vector<uint16_t> c;
+    std::unique_ptr<DeviceBuffer> vb, cb;
+    BackendId backend_id() const noexcept override { return backend; }
+    size_t token_count() const noexcept override { return v.size() - 2; }
+    size_t context_count() const noexcept override { return 3; }
+    DeviceMemoryRange values() const noexcept override { return {vb.get(), 4, token_count() * 4}; }
+    DeviceMemoryRange contexts() const noexcept override {
+      return {cb.get(), 2, token_count() * 2};
+    }
+    Status BorrowHostView(modular_gpu_internal::ModularTokenHostView *out) const override {
+      if (!out)
+        return Status::InvalidArgument("null fixture view");
+      *out = {std::span(v).subspan(1, token_count()), std::span(c).subspan(1, token_count())};
+      return Status::Ok();
+    }
+  };
+  std::array<EntropyCode, 1> codes{Synthetic({4, 2, 0}, 1)};
+  std::vector<EntropyToken> original(64 * 257);
+  for (size_t i = 0; i < original.size(); ++i)
+    original[i] = {static_cast<uint32_t>(i % 3), static_cast<uint32_t>(i * 7919)};
+  Input source(gpu, std::move(original), codes, 64);
+  auto owner = std::make_unique<Owner>();
+  owner->backend = gpu.id();
+  owner->v = std::move(source.values);
+  owner->c = std::move(source.contexts);
+  owner->vb = std::move(source.value_buffer);
+  owner->cb = std::move(source.context_buffer);
+  modular_gpu_internal::ModularTokenHostView view;
+  Ok(owner->BorrowHostView(&view));
+  modular_internal::PreparedModularTokens tokens;
+  for (auto s : source.sections)
+    tokens.streams.push_back(EntropyTokenStreamView::Split(
+        view.values.subspan(s.offset, s.count), view.contexts.subspan(s.offset, s.count)));
+  tokens.context_count = 3;
+  tokens.gpu_backing = std::move(owner);
+  modular_internal::ModularGpuAnsCost evaluator(gpu, tokens);
+  const std::array<const EntropyCode *, 1> models{&codes[0]};
+  const std::array<uint64_t, 1> model_bits{17};
+  AnsTokenCostStoragePlan plan;
+  Ok(ComputeAnsTokenCostStoragePlan(view.values.size(), tokens.streams.size(), 1, 3, 3, &plan));
+  const size_t capacity = plan.peak_bytes + 4 * tokens.streams.size() * sizeof(uint64_t);
+  bool complete = false;
+  for (size_t at = 0; at < 32; ++at) {
+    ResourceBudget budget(capacity);
+    ResourceReservation reservation;
+    Ok(budget.TryReserve(capacity, &reservation));
+    ResourceContextScope scope({&reservation, ResourceClass::kPreparation});
+    std::array<EntropyCodeCost, 1> costs;
+    costs[0].model_bits = 91;
+    costs[0].token_bits = 73;
+    bool handled = false;
+    ArmManagedHostAllocationFailureAfterForTest(at);
+    const auto status = evaluator.TryMeasure(tokens.streams, models, model_bits, costs, &handled);
+    const bool pending = ManagedHostAllocationFailurePendingForTest();
+    DisarmManagedHostAllocationFailureForTest();
+    if (pending) {
+      Ok(status);
+      Check(handled && costs[0].model_bits == 17 && costs[0].cluster_count == 3,
+            "Admitted adapter did not publish exact GPU costs");
+      uint64_t total = 0;
+      for (size_t i = 0; i < source.sections.size(); ++i) {
+        auto s = source.sections[i];
+        auto expected = Reference(std::span(source.tokens).subspan(s.offset, s.count), codes[0]);
+        Check(costs[0].section_token_bits[i] == expected.bits,
+              "Adapter changed per-section exact costs");
+        total += expected.bits;
+      }
+      Check(costs[0].token_bits == total, "Adapter sum differs");
+      complete = true;
+    } else {
+      Check(status.code() == StatusCode::kOutOfMemory && !handled && costs[0].model_bits == 91 &&
+                costs[0].token_bits == 73 && costs[0].section_token_bits.empty(),
+            "Adapter allocation error changed prior costs");
+      ++adapter_faults;
+    }
+    costs = {};
+    Check(budget.snapshot().total.live_capacity_bytes == 0 &&
+              budget.snapshot().total.pending_count == 0 &&
+              budget.snapshot().peak_backing_bytes <= capacity,
+          "Adapter failure leaked or exceeded composed admission");
+    if (complete)
+      break;
+  }
+  Check(complete && adapter_faults >= 3, "Adapter allocation sweep incomplete");
+}
 void FailureAndStorage(GpuBackend &gpu, GpuBackend &other) {
   std::array<EntropyCode, 1> codes{Synthetic({4, 2, 0}, 0)};
-  Input input(gpu, {{0, 1}, {1, 2}, {2, 3}, {0, 4}}, codes, 3);
+  // Bad first-forward-order data is in a nonzero SIMD lane during reverse
+  // preparation, so both errors must stop the entire SIMD group's recurrence.
+  Input input(gpu, {{0, 1}, {1, 2}, {2, 3}, {0, 4}}, codes, 1);
   auto &op = Operation(gpu);
   AnsTokenCostStoragePlan plan;
   Ok(ValidateAnsTokenCostInput(input.request, gpu.id(), &plan));
@@ -370,8 +492,10 @@ int main() try {
     Ok(CreateEmbeddedMetalBackend({}, &embedded));
     std::cout << "ANS token-cost device: " << gpu->name() << std::endl;
     Configurations(*gpu);
+    Frequencies(*gpu);
     Native(*gpu);
     MixedBatch(*gpu);
+    AdapterAllocations(*gpu);
     FailureAndStorage(*gpu, *embedded);
     Native(*embedded);
   }
@@ -379,7 +503,9 @@ int main() try {
             DefaultResourceBudget().snapshot().total.pending_count == 0,
         "ANS device tests leaked managed backing");
   std::cout << cases << " cases, " << states << " exact cost/state pairs, " << tokens_checked
-            << " token recurrences, " << fault_checks << " failure-atomic checks\n";
+            << " token recurrences, " << fault_checks << " failure-atomic checks, "
+            << quotient_corrections << " quotient corrections exercised, " << adapter_faults
+            << " adapter allocation failures\n";
 } catch (const std::exception &e) {
   std::cerr << e.what() << '\n';
   return 1;
