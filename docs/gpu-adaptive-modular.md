@@ -115,6 +115,16 @@ training (20.1%). No GPU speedup has been established by this effort yet.
 
 The [adaptive token contract](gpu-adaptive-modular-token-contract.md), private
 operation interfaces, fixed-width records, tree eligibility, and storage planner
-are implemented and tested with Metal enabled and disabled. Exact CPU feature
-production, Metal tree evaluation, and bounded per-search feature reuse are next.
-The original prescribed GPU path remains available with its original eligibility.
+are implemented and tested with Metal enabled and disabled. CPU transformed-plane
+and weighted-feature preparation, Metal learned-tree evaluation, and completed
+token continuation are now implemented. Device qualification on Apple M4 Pro
+matches 3,778,462 scalar tokens and 34 complete files, with exact pinned-decoder
+reconstruction of every source sample. Large trees, weighted property 15, palette
+and Squeeze layouts, signed arithmetic, bounded storage and failure publication
+are covered; the contract document records the precise scope.
+
+The new operation is not yet connected to full adaptive search. Bounded per-search
+feature reuse, composed admission/fallback accounting, and complete-search CPU/GPU
+comparisons remain next. CPU transformation and weighted-history construction are
+still part of the required measured path. The original prescribed GPU path remains
+available with its original eligibility; public encoding defaults are unchanged.

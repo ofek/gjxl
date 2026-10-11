@@ -69,6 +69,10 @@ public:
   [[nodiscard]] virtual size_t token_count() const noexcept = 0;
   [[nodiscard]] virtual std::span<const AdaptiveModularTokenSlice> slices() const noexcept = 0;
   [[nodiscard]] virtual bool has_weighted_features() const noexcept = 0;
+  // Optional completed shared-buffer borrowing for diagnostics/CPU consumers.
+  // No copy, allocation or added charge. Owner outlives the borrowed span.
+  [[nodiscard]] virtual Status
+  BorrowWeightedHostView(std::span<const AdaptiveModularWeightedFeature> *out) const = 0;
 
 protected:
   PreparedGpuAdaptiveModularFeatures() = default;

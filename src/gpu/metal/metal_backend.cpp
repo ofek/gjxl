@@ -699,7 +699,7 @@ MetalBackend::MetalBackend(
   AcStrategyPipelines ac_strategy_pipelines,
   PrimitivePipelines primitive_pipelines,
   NS::SharedPtr<MTL::ComputePipelineState> modular_input_pipeline,
-  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 3> modular_token_pipelines,
+  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 5> modular_token_pipelines,
   AqPipelines aq_pipelines,
   ButteraugliPipelines butteraugli_pipelines,
   bool test_fail_submission,
@@ -1784,9 +1784,10 @@ Status CreateMetalBackendImpl(
       maximum_threads.width < 8 || maximum_threads.height < 8)
     return Status::Unavailable("Metal cannot launch Modular input threadgroups");
 
-  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 3> modular_token_pipelines;
+  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 5> modular_token_pipelines;
   const char* token_kernels[] = {"gjxl_modular_tokens_gradient", "gjxl_modular_tokens_tree",
-                                 "gjxl_modular_tokens_diagnostic"};
+                                 "gjxl_modular_tokens_diagnostic", "gjxl_modular_adaptive_tokens",
+                                 "gjxl_modular_adaptive_diagnostic"};
   for (size_t i = 0; i < modular_token_pipelines.size(); ++i) {
     status = CreatePipeline(device.get(), library.get(), token_kernels[i], &modular_token_pipelines[i]);
     if (!status.ok()) return status;

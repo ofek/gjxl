@@ -27,6 +27,7 @@
 #include "gpu/metal/metal_backend.h"
 #include "gpu/metal/metal_modular_input.h"
 #include "gpu/metal/metal_modular_tokens.h"
+#include "gpu/metal/metal_modular_adaptive_tokens.h"
 #include "gpu/metal/kernels/modular_input_params.h"
 #include "gpu/metal/metal_submission_storage_plan.h"
 #include "gpu/ops/ac_strategy.h"
@@ -371,6 +372,7 @@ class MetalBackend final
     public GpuResidentInputPreparation,
     public modular_gpu_internal::GpuModularInputPreparation,
     public modular_gpu_internal::GpuModularTokenGeneration,
+    public modular_gpu_internal::GpuAdaptiveModularTokenGeneration,
     public DeviceButteraugliOperation {
 public:
   MetalBackend(
@@ -382,7 +384,7 @@ public:
     AcStrategyPipelines ac_strategy_pipelines,
     PrimitivePipelines primitive_pipelines,
     NS::SharedPtr<MTL::ComputePipelineState> modular_input_pipeline,
-    std::array<NS::SharedPtr<MTL::ComputePipelineState>, 3> modular_token_pipelines,
+    std::array<NS::SharedPtr<MTL::ComputePipelineState>, 5> modular_token_pipelines,
     AqPipelines aq_pipelines,
     ButteraugliPipelines butteraugli_pipelines,
     bool test_fail_submission,
@@ -530,6 +532,20 @@ public:
     const modular_gpu_internal::ModularTokenizationOptions& options,
     std::span<const modular_gpu_internal::ModularTokenSlice> slices,
     resource_budget_internal::ManagedVector<ModularTokenDiagnostic>* out);
+  modular_gpu_internal::ModularTokenDeviceLimits adaptive_modular_limits() const noexcept override;
+  Status PrepareAdaptiveModularFeatures(
+    const modular_internal::ModularEncoderFrame& frame,
+    std::span<const modular_gpu_internal::AdaptiveModularTokenSlice> slices,
+    const modular_internal::WeightedPredictorParameters& parameters, bool weighted,
+    std::unique_ptr<modular_gpu_internal::PreparedGpuAdaptiveModularFeatures>* out) override;
+  Status GenerateAdaptiveModularTokens(
+    const modular_gpu_internal::PreparedGpuAdaptiveModularFeatures& features,
+    const modular_internal::DecisionTree& tree,
+    std::unique_ptr<modular_gpu_internal::PreparedGpuModularTokens>* out) override;
+  Status DiagnoseAdaptiveModularTokens(
+    const modular_gpu_internal::PreparedGpuAdaptiveModularFeatures& features,
+    const modular_internal::DecisionTree& tree,
+    resource_budget_internal::ManagedVector<AdaptiveModularDiagnostic>* out);
 
   Status Prepare(
     GpuBackend& backend,
@@ -545,6 +561,11 @@ public:
   }
 
 private:
+  Status GenerateAdaptiveModularTokensImpl(
+    const modular_gpu_internal::PreparedGpuAdaptiveModularFeatures& features,
+    const modular_internal::DecisionTree& tree,
+    std::unique_ptr<modular_gpu_internal::PreparedGpuModularTokens>* out,
+    DeviceBuffer* diagnostics = nullptr);
   Status ResolveModularInputDispatch(const MetalModularInputDispatch& dispatch,
                                     MetalModularInputEncoding* encoding);
   Status GenerateModularTokensImpl(
@@ -853,7 +874,7 @@ private:
   AcStrategyPipelines ac_strategy_pipelines_;
   PrimitivePipelines primitive_pipelines_;
   NS::SharedPtr<MTL::ComputePipelineState> modular_input_pipeline_;
-  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 3> modular_token_pipelines_;
+  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 5> modular_token_pipelines_;
   AqPipelines aq_pipelines_;
   ButteraugliPipelines butteraugli_pipelines_;
   bool test_fail_submission_ = false;

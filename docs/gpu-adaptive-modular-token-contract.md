@@ -1,9 +1,11 @@
 # Adaptive Modular token operation and storage contract
 
-Status: private operation interfaces, ABI records, tree eligibility, and checked
-storage planning are implemented. CPU feature production and Metal dispatch are
-the next milestone. The existing prescribed producer is unchanged; this contract
-is separate from its 31-node, four-equal-plane ABI.
+Status: private operation interfaces, ABI records, canonical descriptors, checked
+storage planning, CPU feature production, Metal dispatch, and completed-token
+handoff are implemented and device-qualified. Complete-search integration and
+bounded reuse across candidates remain the next milestone. The existing
+prescribed producer is unchanged; this contract is separate from its 31-node,
+four-equal-plane ABI.
 
 ## Measured motivation
 
@@ -113,8 +115,9 @@ pointer-range check is allocation-free and failure-atomic.
 - Initial CPU bridge peak includes the transformed CPU frame, weighted-feature
   staging, five two-row weighted-state arrays per active CPU participant,
   canonical layout, and overlapping resident plane/feature uploads. Shared
-  direct initialization may later eliminate a copy, but no unplanned staging is
-  permitted.
+  direct initialization eliminates full-image staging in the Metal implementation.
+  The original conservative allowance remains in the plan; no unplanned staging
+  is permitted. Weighted state is computed serially per slice in this first bridge.
 - Token generation includes retained feature arenas, output, dispatch and any
   dispatch staging. CPU modeling/emission retains the compact token arena once,
   along with any reusable feature owner. Views and resource tickets do not
@@ -145,9 +148,53 @@ unchanged previous output on failure. Qualification must record which operations
 ran on the GPU and include feature preparation/cache creation and CPU fallbacks
 in complete-search timing. A winning-policy replay is a separate diagnostic.
 
-The initial `modular_adaptive_token_plan` test passes in Release builds with
-Metal enabled and disabled. It covers a 511-node weighted/property-15 tree,
-allocation-free validation and failure publication, independently sized metadata
-and shifted planes, dynamic dispatch sizing, retained feature lifetime accounting,
-exact device-capacity admission and one-byte-short rejection. Device execution
-and the remaining qualification gates above are not yet implemented.
+The `modular_adaptive_token_plan` test passes in Release builds with Metal enabled
+and disabled. It covers a 511-node weighted/property-15 tree, allocation-free
+validation and failure publication, independently sized metadata and shifted
+planes, dynamic dispatch sizing, retained feature lifetime accounting, exact
+device-capacity admission and one-byte-short rejection.
+
+## Implemented device qualification
+
+`metal_modular_adaptive` runs both file-loaded and embedded Metal libraries on
+Apple M4 Pro. The standalone producer/continuation suite checks:
+
+- 203 production cases and 3,778,462 exact token comparisons with the scalar
+  implementation; all six packed formats, padded/misaligned source rows, both
+  16-bit byte orders, one-pixel and group edges, all 14 predictors and 16 properties.
+- 2,831,887 exact weighted-feature pairs and 2,831,912 guarded diagnostic samples.
+  These compare every property, every prediction, selected leaf/context, and
+  packed residual, including nondefault weighted parameters and slice resets.
+- Palette metadata, both Squeeze insertion orders, combined palette/Squeeze,
+  unequal plane shapes, and DC-group placement. The independent CPU stream planner
+  checks physical plane addressing and compact stream-local channel ordinals.
+- A 511-node tree through complete serialization, the maximum 16383-node tree
+  through token generation, and a 2047-node/depth-1024 weighted-property chain.
+- General signed `int32` plane arithmetic using `int64` intermediates. Synthetic
+  extreme planes test overflow and division semantics only; they are explicitly
+  excluded from the valid-source and independent-decoder claims.
+- 34 byte-identical complete files across prefix and ANS coding; the pinned
+  libjxl decoder reconstructs 6,198,994 source samples exactly. This is prescribed
+  candidate continuation, not adaptive search or its performance qualification.
+- Exact implementation allocation peaks and one-byte-short failures for feature
+  preparation and token dispatch; retained-arena accounting; feature lifetime after
+  releasing CPU input; token lifetime after releasing features; CPU participation
+  release/reacquisition at successful and failed waits.
+- Malformed descriptors, invalid/image-ineligible trees, missing weighted maps,
+  foreign or nonnative feature owners, unrepresentable residuals, weighted-state
+  overflow, managed-host allocation sweeps, device allocation/submission/completion
+  faults, and diagnostic/handoff allocation failures. Existing outputs and live
+  resource charges are preserved on failure; pending work is drained.
+
+Logs and complete-file artifacts are retained under `build/adaptive-integration/`
+and `build/release/metal-modular-adaptive/`. The Release build and all 29 focused
+Modular regression tests passed (`ctest -R modular -E '^modular_workflow$'`),
+including the existing prescribed Metal paths and pinned/frozen oracles. The
+Metal-disabled adaptive-plan and token-handoff tests also passed. The exhaustive
+`modular_workflow` allocation sweep was not repeated for this producer milestone;
+its earlier shard evidence is recorded in the integration document.
+
+Complete-search admission, cache
+eviction, selected-policy equality, CPU fallback attribution, and end-to-end timing
+still require the enclosing workflow implementation. The producer has no silent
+fallback and does not alter encoder defaults.
