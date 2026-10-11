@@ -23,6 +23,8 @@ Status Encode(PackedModularImageView input, const ModularEncodingOptions &option
     return s;
   if (options.adaptive_ans_cost && !options.adaptive_gpu)
     return Status::InvalidArgument("GPU ANS cost requires the adaptive GPU route");
+  if (options.adaptive_tree_statistics && (!options.adaptive_gpu || !options.search))
+    return Status::InvalidArgument("GPU learner statistics requires the adaptive GPU search route");
   if (auto s = ValidateTreeLearningOptions(options.learning); !s.ok())
     return s;
   if (options.search)
@@ -114,8 +116,10 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
   if (requested.adaptive_gpu)
     adaptive_cache.emplace(*requested.adaptive_gpu, input, true, requested.adaptive_ans_cost);
   auto *cache = adaptive_cache ? &*adaptive_cache : nullptr;
+  auto *tree_gpu = requested.adaptive_tree_statistics ? requested.adaptive_gpu : nullptr;
   auto options = requested;
   options.search = false;
+  options.adaptive_tree_statistics = false;
   // Always retain the exact default learner and candidate order. Experimental
   // budgets/modes append candidates after this complete baseline search.
   options.learning = {};
@@ -146,7 +150,7 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
           !s.ok())
         return s;
       if (auto s =
-              LearnModularPolicies(frame, layout, rct, &single, &split, &entropy, options.learning);
+              LearnModularPolicies(frame, layout, rct, &single, &split, &entropy, options.learning, nullptr, nullptr, tree_gpu);
           !s.ok())
         return s;
     }
@@ -218,7 +222,7 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
           !s.ok())
         return s;
       if (auto s =
-              LearnModularPolicies(frame, layout, rct, &single, &split, &learned, options.learning);
+              LearnModularPolicies(frame, layout, rct, &single, &split, &learned, options.learning, nullptr, nullptr, tree_gpu);
           !s.ok())
         return s;
     }
@@ -256,7 +260,7 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
                                           &layout); !s.ok())
         return s;
       if (auto s = LearnModularPolicies(frame, layout, candidates[i], &single, &split, &learned,
-                                        options.learning);
+                                        options.learning, nullptr, nullptr, tree_gpu);
           !s.ok())
         return s;
     }
@@ -291,7 +295,7 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
           return s;
         if (auto s = LearnModularPolicies(frame, layout, base, &single, &split, &learned,
                                           requested.learning, nullptr,
-                                          requested.tree_checkpoints ? &checkpoints : nullptr);
+                                          requested.tree_checkpoints ? &checkpoints : nullptr, tree_gpu);
             !s.ok())
           return s;
       }

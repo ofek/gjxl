@@ -73,9 +73,10 @@ Status LearnDecisionTrees(std::span<const TrainingSample> samples, DecisionTree 
 }
 
 namespace {
-constexpr size_t kPredictors = 14, kSymbols = 128, kThresholds = 32;
+constexpr size_t kPredictors = kTreeCostPredictors, kSymbols = kTreeCostSymbols,
+                 kThresholds = kTreeCostThresholds;
 constexpr int64_t kCostUnit = 4096;
-constexpr size_t kMinimumLeafSamples = 8;
+constexpr size_t kMinimumLeafSamples = kTreeCostMinimumSide;
 
 using entropy_estimate::EncodeResidual;
 using entropy_estimate::Log2;
@@ -96,7 +97,7 @@ struct Leaf {
 struct LearningWorkspace {
   resource_budget_internal::ManagedVector<int64_t> count_log_count;
   resource_budget_internal::ManagedVector<uint32_t> order;
-  resource_budget_internal::ManagedVector<std::array<ResidualCode, kPredictors>> codes;
+  resource_budget_internal::ManagedVector<TreeLearningCodes> codes;
   std::array<Histogram, kPredictors> parent{}, low{}, high{};
   resource_budget_internal::ManagedVector<Leaf> leaves;
 };
@@ -132,8 +133,8 @@ std::pair<size_t, int64_t> Best(const std::array<Histogram, kPredictors> &histog
   }
   return {predictor, cost};
 }
-void FindSplit(std::span<const TrainingSample> samples, Leaf &leaf, DecisionTree &tree,
-               LearningWorkspace &w) {
+Status FindSplit(std::span<const TrainingSample> samples, Leaf &leaf, DecisionTree &tree,
+                 LearningWorkspace &w, TreeSplitCostEvaluator *evaluator) {
   const size_t count = leaf.end - leaf.begin;
   if (active_modular_profile)
     ++active_modular_profile->training_work.split_evaluations;
@@ -150,7 +151,7 @@ void FindSplit(std::span<const TrainingSample> samples, Leaf &leaf, DecisionTree
   }
   leaf.split = {};
   if (count < 2 * kMinimumLeafSamples || leaf.depth >= kMaximumTreeDepth)
-    return;
+    return Status::Ok();
   for (size_t property = 0; property < kPropertyCount; ++property) {
     auto begin = w.order.begin() + leaf.begin, end = w.order.begin() + leaf.end;
     {
@@ -165,6 +166,69 @@ void FindSplit(std::span<const TrainingSample> samples, Leaf &leaf, DecisionTree
       }
     }
     TrainingProfileScope profile(TrainingProfileStage::kSplitScanning);
+    if (evaluator && evaluator->WantsEvaluation(count)) {
+      // The scalar scan below remains the independent fallback. Enumerate the
+      // same valid quantile boundaries without updating fourteen histograms per
+      // sample, then let the provider evaluate their exact low/high costs.
+      std::array<uint32_t, kThresholds> low_counts{};
+      std::array<int32_t, kThresholds> thresholds{};
+      size_t selected = 0, quantile = 1;
+      for (size_t i = 0; i + 1 < count; ++i) {
+        const size_t low = i + 1, high = count - low;
+        if (low < kMinimumLeafSamples || high < kMinimumLeafSamples ||
+            low * (kThresholds + 1) < quantile * count)
+          continue;
+        const int64_t threshold = samples[begin[i]].properties[property];
+        if (threshold == samples[begin[i + 1]].properties[property] || threshold < INT32_MIN ||
+            threshold >= INT32_MAX)
+          continue;
+        while (quantile * count <= low * (kThresholds + 1))
+          ++quantile;
+        if (selected == kThresholds)
+          return Status::Internal("Modular tree threshold bound exceeded");
+        low_counts[selected] = static_cast<uint32_t>(low);
+        thresholds[selected++] = static_cast<int32_t>(threshold);
+      }
+      if (!selected)
+        continue;
+      std::array<TreeSplitCosts, kThresholds> costs;
+      for (size_t i = 0; i < selected; ++i) {
+        costs[i].low.fill(-1);
+        costs[i].high.fill(-1);
+      }
+      bool handled = false;
+      if (auto s = evaluator->TryMeasure(w.codes, w.count_log_count,
+                                         std::span<const uint32_t>(w.order).subspan(leaf.begin, count),
+                                         std::span(low_counts).first(selected),
+                                         std::span(costs).first(selected), &handled); !s.ok())
+        return s;
+      if (handled) {
+        // A malformed provider must not overflow signed gain arithmetic. Actual
+        // counts/codes are bounded by the canonical Q12 table and 29 extra bits.
+        const int64_t maximum = w.count_log_count[count] +
+            (29 * static_cast<int64_t>(count) + 2 * static_cast<int64_t>(kSymbols) + 8) * kCostUnit;
+        for (size_t i = 0; i < selected; ++i)
+          for (size_t p = 0; p < kPredictors; ++p)
+            if (costs[i].low[p] < 0 || costs[i].low[p] > maximum ||
+                costs[i].high[p] < 0 || costs[i].high[p] > maximum)
+              return Status::Internal("Modular tree provider returned invalid costs");
+        const auto best_cost = [](const auto &values) {
+          int64_t result = values[5];
+          for (size_t p = 0; p < kPredictors; ++p)
+            if (values[p] < result)
+              result = values[p];
+          return result;
+        };
+        for (size_t i = 0; i < selected; ++i) {
+          const int64_t split_bits = 12 + ResidualWidth(thresholds[i]);
+          const int64_t gain = cost - best_cost(costs[i].low) - best_cost(costs[i].high) -
+                               split_bits * kCostUnit;
+          if (gain > leaf.split.gain)
+            leaf.split = {gain, static_cast<int32_t>(property), thresholds[i]};
+        }
+        continue;
+      }
+    }
     w.low = {};
     w.high = w.parent;
     size_t quantile = 1;
@@ -192,6 +256,7 @@ void FindSplit(std::span<const TrainingSample> samples, Leaf &leaf, DecisionTree
         leaf.split = {gain, static_cast<int32_t>(property), static_cast<int32_t>(threshold)};
     }
   }
+  return Status::Ok();
 }
 } // namespace
 
@@ -261,9 +326,10 @@ Status ComputeTreeLearningStorageBound(resource_budget_internal::HostStorageBoun
   *out = bound;
   return Status::Ok();
 }
-Status LearnEntropyTree(std::span<const TrainingSample> samples, DecisionTree *out,
-                        TreeLearningOptions options, size_t population,
-                        TreeLearningCheckpoints *checkpoints) try {
+namespace {
+Status LearnEntropyTreeImpl(std::span<const TrainingSample> samples, DecisionTree *out,
+                            TreeLearningOptions options, size_t population,
+                            TreeLearningCheckpoints *checkpoints, TreeSplitCostEvaluator *evaluator) try {
   if (auto s = ValidateTreeLearningOptions(options); !s.ok())
     return s;
   if (!out || samples.empty() || samples.size() > options.maximum_samples)
@@ -295,7 +361,8 @@ Status LearnEntropyTree(std::span<const TrainingSample> samples, DecisionTree *o
   w.leaves[0] = {0, samples.size(), 0, 1, {}};
   size_t leaves = 1;
   preparation_profile.Stop();
-  FindSplit(samples, w.leaves[0], tree, w);
+  if (auto s = FindSplit(samples, w.leaves[0], tree, w, evaluator); !s.ok())
+    return s;
   while (leaves < options.maximum_leaves) {
     size_t best = 0;
     for (size_t i = 1; i < leaves; ++i)
@@ -317,8 +384,10 @@ Status LearnEntropyTree(std::span<const TrainingSample> samples, DecisionTree *o
                              .right = right};
     w.leaves[best] = {leaf.begin, boundary, left, leaf.depth + 1, {}};
     w.leaves[leaves] = {boundary, leaf.end, right, leaf.depth + 1, {}};
-    FindSplit(samples, w.leaves[best], tree, w);
-    FindSplit(samples, w.leaves[leaves++], tree, w);
+    if (auto s = FindSplit(samples, w.leaves[best], tree, w, evaluator); !s.ok())
+      return s;
+    if (auto s = FindSplit(samples, w.leaves[leaves++], tree, w, evaluator); !s.ok())
+      return s;
     if (checkpoints)
       if (auto s = retained.Capture(tree); !s.ok())
         return s;
@@ -339,6 +408,22 @@ Status LearnEntropyTree(std::span<const TrainingSample> samples, DecisionTree *o
   return Status::OutOfMemory("Modular learning allocation failed");
 } catch (const std::length_error &) {
   return Status::InvalidArgument("Modular learning storage overflow");
+}
+
+} // namespace
+Status LearnEntropyTree(std::span<const TrainingSample> samples, DecisionTree *out,
+                        TreeLearningOptions options, size_t population,
+                        TreeLearningCheckpoints *checkpoints) {
+  return LearnEntropyTreeImpl(samples, out, options, population, checkpoints, nullptr);
+}
+Status LearnEntropyTreeWithCostEvaluator(std::span<const TrainingSample> samples, DecisionTree *out,
+                                         TreeSplitCostEvaluator &evaluator, TreeLearningOptions options,
+                                         size_t population, TreeLearningCheckpoints *checkpoints) {
+  if (auto s = ValidateTreeLearningOptions(options); !s.ok())
+    return s;
+  if (options.mode != TreeLearningMode::kLegacy)
+    return Status::Unsupported("Modular tree cost provider supports only the original learner");
+  return LearnEntropyTreeImpl(samples, out, options, population, checkpoints, &evaluator);
 }
 
 Status MakeFixedWeightedTree(uint32_t bits, DecisionTree *out) {

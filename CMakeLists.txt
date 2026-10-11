@@ -360,6 +360,7 @@ add_library(
   src/codestream/modular/prepared_encoder.cpp
   src/codestream/modular/adaptive_gpu_workflow.cpp
   src/codestream/modular/gpu_ans_cost.cpp
+  src/codestream/modular/gpu_tree_statistics.cpp
   src/codestream/modular/gpu_workflow.cpp
   src/codestream/modular/gpu_token_workflow.cpp
   src/codestream/huffman.cpp
@@ -592,6 +593,7 @@ add_library(
   src/gpu/ops/ac_strategy_search.cpp
   src/gpu/ops/ac_strategy_storage_plan.cpp
   src/gpu/ops/ans_token_cost.cpp
+  src/gpu/ops/modular_tree_statistics.cpp
   src/gpu/ops/modular_input_storage_plan.cpp
   src/gpu/ops/modular_token_storage_plan.cpp
   src/gpu/ops/modular_adaptive_token_storage_plan.cpp
@@ -823,6 +825,8 @@ set(GJXL_MODULAR_ADAPTIVE_METAL_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/meta
 set(GJXL_MODULAR_ADAPTIVE_METAL_IR "${GJXL_METAL_DIR}/modular_adaptive_tokens.ir")
 set(GJXL_ANS_COST_METAL_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/metal/kernels/ans_token_cost.metal")
 set(GJXL_ANS_COST_METAL_IR "${GJXL_METAL_DIR}/ans_token_cost.ir")
+set(GJXL_TREE_STATISTICS_METAL_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/metal/kernels/modular_tree_statistics.metal")
+set(GJXL_TREE_STATISTICS_METAL_IR "${GJXL_METAL_DIR}/modular_tree_statistics.ir")
 
 set(
   GJXL_PRIMITIVES_METAL_IR
@@ -1116,6 +1120,14 @@ add_custom_command(OUTPUT "${GJXL_ANS_COST_METAL_IR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/metal/kernels/ans_token_cost_params.h"
   COMMENT "Compiling exact Metal ANS token-cost evaluation" VERBATIM)
 
+add_custom_command(OUTPUT "${GJXL_TREE_STATISTICS_METAL_IR}"
+  COMMAND "${CMAKE_COMMAND}" -E make_directory "${GJXL_METAL_DIR}"
+  COMMAND "${XCRUN_EXECUTABLE}" -sdk macosx metal -std=metal3.1
+    ${GJXL_METAL_PROFILING_FLAGS} -c "${GJXL_TREE_STATISTICS_METAL_SOURCE}" -o "${GJXL_TREE_STATISTICS_METAL_IR}"
+  DEPENDS "${GJXL_TREE_STATISTICS_METAL_SOURCE}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/metal/kernels/modular_tree_statistics_params.h"
+  COMMENT "Compiling exact Metal Modular learner statistics" VERBATIM)
+
 add_custom_command(OUTPUT "${GJXL_AQ_METADATA_METAL_IR}"
   COMMAND "${CMAKE_COMMAND}" -E make_directory "${GJXL_METAL_DIR}"
   COMMAND "${XCRUN_EXECUTABLE}" -sdk macosx metal -std=metal3.1
@@ -1150,6 +1162,7 @@ add_custom_command(
     "${GJXL_MODULAR_TOKENS_METAL_IR}"
     "${GJXL_MODULAR_ADAPTIVE_METAL_IR}"
     "${GJXL_ANS_COST_METAL_IR}"
+    "${GJXL_TREE_STATISTICS_METAL_IR}"
     "${GJXL_PRIMITIVES_METAL_IR}"
     "${GJXL_AQ_REDUCTION_METAL_IR}"
     "${GJXL_AQ_RECONSTRUCTION_METAL_IR}"
@@ -1165,6 +1178,7 @@ add_custom_command(
     "${GJXL_MODULAR_TOKENS_METAL_IR}"
     "${GJXL_MODULAR_ADAPTIVE_METAL_IR}"
     "${GJXL_ANS_COST_METAL_IR}"
+    "${GJXL_TREE_STATISTICS_METAL_IR}"
     "${GJXL_PRIMITIVES_METAL_IR}"
     "${GJXL_AQ_REDUCTION_METAL_IR}"
     "${GJXL_AQ_RECONSTRUCTION_METAL_IR}"
@@ -1275,6 +1289,7 @@ add_library(
   src/gpu/metal/metal_modular_tokens.cpp
   src/gpu/metal/metal_modular_adaptive_tokens.cpp
   src/gpu/metal/metal_ans_token_cost.cpp
+  src/gpu/metal/metal_modular_tree_statistics.cpp
   src/gpu/metal/metal_submission.cpp
   src/gpu/metal/metal_submission_storage_plan.cpp
   src/gpu/metal/metal_storage_plan.cpp
@@ -2417,6 +2432,11 @@ if(GJXL_BUILD_TESTS)
   target_link_libraries(gjxl_ans_token_cost_plan_test PRIVATE gjxl_codestream gjxl_gpu_ops)
   add_test(NAME ans_token_cost_plan COMMAND gjxl_ans_token_cost_plan_test)
   set_tests_properties(ans_token_cost_plan PROPERTIES TIMEOUT 30)
+
+  add_executable(gjxl_modular_tree_statistics_plan_test tests/modular_tree_statistics_plan_test.cpp)
+  target_link_libraries(gjxl_modular_tree_statistics_plan_test PRIVATE gjxl_gpu_ops)
+  add_test(NAME modular_tree_statistics_plan COMMAND gjxl_modular_tree_statistics_plan_test)
+  set_tests_properties(modular_tree_statistics_plan PROPERTIES TIMEOUT 30)
 
   add_executable(gjxl_modular_gpu_token_handoff_test tests/modular_gpu_token_handoff_test.cpp)
   target_link_libraries(gjxl_modular_gpu_token_handoff_test PRIVATE gjxl_codestream)
@@ -3643,6 +3663,12 @@ if(GJXL_BUILD_TESTS)
   add_test(NAME metal_ans_token_cost COMMAND gjxl_metal_ans_token_cost_test)
   set_tests_properties(metal_ans_token_cost PROPERTIES TIMEOUT 180)
 
+  add_executable(gjxl_metal_modular_tree_statistics_test tests/metal_modular_tree_statistics_test.cpp)
+  target_link_libraries(gjxl_metal_modular_tree_statistics_test PRIVATE gjxl_codestream gjxl_metal)
+  target_compile_definitions(gjxl_metal_modular_tree_statistics_test PRIVATE GJXL_METALLIB_PATH="${GJXL_METALLIB}")
+  add_test(NAME metal_modular_tree_statistics COMMAND gjxl_metal_modular_tree_statistics_test)
+  set_tests_properties(metal_modular_tree_statistics PROPERTIES TIMEOUT 180)
+
   add_executable(gjxl_metal_modular_adaptive_test tests/metal_modular_adaptive_test.cpp)
   target_link_libraries(gjxl_metal_modular_adaptive_test PRIVATE gjxl_codestream gjxl_metal)
   target_compile_definitions(gjxl_metal_modular_adaptive_test PRIVATE GJXL_METALLIB_PATH="${GJXL_METALLIB}")
@@ -3855,6 +3881,9 @@ endif()
 if(GJXL_BUILD_BENCHMARKS)
 
   if(GJXL_ENABLE_METAL)
+    add_executable(gjxl_modular_tree_statistics_benchmark
+      tools/modular_training_study/tree_statistics_benchmark.cpp)
+    target_link_libraries(gjxl_modular_tree_statistics_benchmark PRIVATE gjxl_codestream gjxl_metal)
     add_executable(gjxl_modular_gpu_benchmark benchmarks/modular_gpu_benchmark.cpp src/io/pnm.cpp)
     target_link_libraries(gjxl_modular_gpu_benchmark PRIVATE gjxl_codestream gjxl_metal)
     if(TARGET gjxl_modular_reference)

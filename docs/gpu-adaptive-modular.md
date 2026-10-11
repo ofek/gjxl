@@ -179,3 +179,11 @@ build bucket histograms and evaluate all predictor/threshold costs on the GPU.
 Greedy growth, integer costs, sample budgets and checkpoint ties remain unchanged.
 That operation is not yet implemented or qualified; completing the ANS report
 alone does not complete the full adaptive GPU effort.
+
+
+The learner-statistics operation and full-search adapter are now implemented.
+Native cost equality, complete tree/checkpoint identity, independent image decode,
+failure publication and Metal-disabled contract checks pass. The private
+`--metal-learn` route includes this work in the full-search timer. Its measured
+crossover and complete-call qualification remain pending; the repeated ANS result
+above predates this operation and still uses CPU learning.

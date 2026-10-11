@@ -51,6 +51,11 @@ struct AdaptiveGpuWorkProfile {
   // Exact ANS cost is nested in kModel/entropy_work.ans_token_cost_nanoseconds.
   size_t ans_gpu_groups = 0, ans_gpu_states = 0, ans_cpu_fallback_groups = 0;
   size_t ans_cpu_small_groups = 0; // Subset of fallback groups, low parallelism.
+  // Nested inside training/split scanning, not additional caller-wall phases.
+  double tree_prepare_seconds = 0, tree_evaluate_seconds = 0;
+  size_t tree_gpu_preparations = 0, tree_gpu_groups = 0, tree_gpu_samples = 0;
+  size_t tree_cpu_fallback_properties = 0, tree_cpu_small_properties = 0;
+  size_t tree_cpu_unsupported_learning_calls = 0;
   bool operator==(const AdaptiveGpuWorkProfile &) const = default;
 };
 struct ModularProfile {

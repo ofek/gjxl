@@ -1,7 +1,8 @@
 # Exact GPU statistics for the original Modular learner
 
-Status: operation and integration design; implementation and qualification remain
-required. This continues milestone 4 of [the adaptive GPU plan](gpu-adaptive-modular.md).
+Status: native Metal operation and complete-search integration implemented;
+correctness checks pass, while crossover tuning and complete-call performance
+qualification remain in progress. This continues milestone 4 of [the adaptive GPU plan](gpu-adaptive-modular.md).
 The current ANS qualification uses the frozen `2009da7` implementation and does
 not include this operation.
 
@@ -163,3 +164,46 @@ Sorting remains an explicit CPU cost in this first statistics implementation.
 GPU sorting or shared weighted features between learning and encoding are later
 optimizations, contingent on the new measurements; they are not substitutes for
 implementing and qualifying the statistics operation above.
+
+## Implemented validation (Apple M4 Pro)
+
+The Release build and all 38 selected existing Modular/entropy/Metal regressions
+pass. The new allocation-free contract also passes with Metal disabled, alongside
+the CPU profile, training-budget and completed-token-handoff tests.
+
+The native test compares 346 exact batches, including 87,752 predictor costs and
+3,288,320 indexed samples, with independent scalar histograms. It covers external
+and embedded libraries, all residual symbols, one million prepared samples,
+reordered and repeated indices, exact storage limits, owner lifetimes, invalid
+indices and allocation/submission/completion errors. The production learner
+adapter additionally preserves complete trees and all retained checkpoints with
+profiling enabled or disabled. Injected device failures on either the first
+property or a later reuse propagate without scalar retry, preserve existing
+outputs and release the call-local prepared owner.
+
+Complete-search tests compare 48 CPU/hybrid files and independently decode every
+sample, covering integer grayscale/RGB/RGBA formats, palette layouts, checkpoints,
+legacy and expanded quantized-search fallback, profile-disabled calls and owned
+publication. Admission below the composed bound rejects before work. An attempted
+statistics preparation that returns either Unsupported or DeviceError is terminal
+through full search and preserves the caller's old compressed output.
+
+`--metal-learn` enables GPU tokens, exact ANS costing and original-learner
+statistics. `--metal-ans` remains the control with CPU learning. Public defaults
+are unchanged. The initial private leaf crossover is provisional and must be
+replaced by a measured value before performance qualification.
+
+The optional `gjxl_modular_tree_statistics_benchmark root|tree REPETITIONS`
+measures the production learner with deterministic synthetic samples and rotated
+CPU/GPU order. It verifies complete tree and checkpoint identity, includes CPU
+sorting, original parent histograms, threshold enumeration, first preparation,
+uploads, waits and output publication, and records nested scanning/sorting times.
+Root tests isolate different leaf populations; tree tests retain full growth to
+64 leaves. These probes select a scheduling crossover; only complete-image search
+captures can establish an encoder speedup.
+
+Initial build/test logs are retained in `build/adaptive-integration/` under the
+`tree-statistics-` prefix. Hosted CI has not been run. The native workflow's
+explicit pre-gate build list now includes the newer training, profile, adaptive
+plan and learner-statistics contract executables, so the existing `^modular_`
+gate does not encounter unbuilt tests.

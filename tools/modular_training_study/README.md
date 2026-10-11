@@ -212,3 +212,22 @@ matrix and pair order, complete-file/policy/training parity, routes and resource
 before reporting per-image medians/ranges and actual paired ratios. It rejects
 incomplete captures and corrupted checksums. The small-section CPU crossover is
 reported by `ans_cpu_small_groups`, a subset of `ans_cpu_fallback_groups`.
+
+
+`--metal-learn` adds exact original-learner split statistics to `--metal-ans`.
+Its route is `hybrid-learning-complete-search`. CPU property sorting, threshold
+selection, greedy growth, checkpoints and quantized learning remain on the CPU.
+The `tree_prepare_seconds` and `tree_evaluate_seconds` counters are nested within
+training/split scanning; do not add them to total training time. Preparation
+copies immutable residual codes and count costs once per eligible learning call;
+it does not submit device work. Each `tree_gpu_groups` count is one submission
+containing histogram and cost dispatches. Total submissions therefore equal GPU
+token candidates plus ANS groups plus learner groups. Small-leaf properties are
+an explicit subset of `tree_cpu_fallback_properties`, and quantized learning calls
+are reported separately by `tree_cpu_unsupported_learning_calls`.
+
+The operation, validation scope and performance qualification requirements are in
+[`gpu-modular-learner-statistics.md`](../../docs/gpu-modular-learner-statistics.md).
+The opt-in `gjxl_modular_tree_statistics_benchmark root|tree REPETITIONS` runs
+production-learner crossover probes with exact tree/checkpoint comparisons. Its
+synthetic timings are diagnostic, not complete-image throughput measurements.

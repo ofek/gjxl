@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 Yunho Cho
 #include "codestream/modular/search.h"
+#include "codestream/modular/gpu_tree_statistics.h"
 #include "codec/modular/entropy_estimate.h"
 #include "codec/modular/profile.h"
 #include "codec/modular/transform/rct.h"
@@ -323,17 +324,17 @@ Status ComputeModularSearchStoragePlan(Extent2D extent, PackedModularFormat form
 Status LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStreamPlan &plan,
                             uint8_t rct, ModularCodingPolicy *single, ModularCodingPolicy *split,
                             ModularCodingPolicy *entropy, TreeLearningOptions learning,
-                            TrainingCoverage *coverage, TreeLearningCheckpoints *checkpoints) {
+                            TrainingCoverage *coverage, TreeLearningCheckpoints *checkpoints, GpuBackend *tree_gpu) {
   ModularCodingPolicy base;
   base.rct = rct;
   return LearnModularPolicies(frame, plan, base, single, split, entropy, learning, coverage,
-                              checkpoints);
+                              checkpoints, tree_gpu);
 }
 Status LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStreamPlan &plan,
                             const ModularCodingPolicy &base, ModularCodingPolicy *single,
                             ModularCodingPolicy *split, ModularCodingPolicy *entropy,
                             TreeLearningOptions learning, TrainingCoverage *coverage,
-                            TreeLearningCheckpoints *checkpoints) try {
+                            TreeLearningCheckpoints *checkpoints, GpuBackend *tree_gpu) try {
   if (auto s = ValidateTreeLearningOptions(learning); !s.ok())
     return s;
   const auto &metadata = frame.metadata();
@@ -512,8 +513,17 @@ Status LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStrea
   if (entropy) {
     if (sampled != stratified.size())
       return Status::InvalidArgument("Incomplete Modular entropy sampling coverage");
-    if (auto s = LearnEntropyTree(stratified, &learned.tree, learning, total, checkpoints); !s.ok())
-      return s;
+    if (tree_gpu && learning.mode == TreeLearningMode::kLegacy) {
+      ModularGpuTreeStatistics evaluator(*tree_gpu);
+      if (auto s = LearnEntropyTreeWithCostEvaluator(stratified, &learned.tree, evaluator,
+                                                     learning, total, checkpoints); !s.ok())
+        return s;
+    } else {
+      if (tree_gpu && active_modular_profile)
+        ++active_modular_profile->adaptive_gpu.tree_cpu_unsupported_learning_calls;
+      if (auto s = LearnEntropyTree(stratified, &learned.tree, learning, total, checkpoints); !s.ok())
+        return s;
+    }
     *entropy = std::move(learned);
   }
   *single = std::move(leaf);

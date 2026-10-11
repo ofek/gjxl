@@ -701,6 +701,7 @@ MetalBackend::MetalBackend(
   NS::SharedPtr<MTL::ComputePipelineState> modular_input_pipeline,
   std::array<NS::SharedPtr<MTL::ComputePipelineState>, 5> modular_token_pipelines,
   NS::SharedPtr<MTL::ComputePipelineState> ans_token_cost_pipeline,
+  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 2> tree_statistics_pipelines,
   AqPipelines aq_pipelines,
   ButteraugliPipelines butteraugli_pipelines,
   bool test_fail_submission,
@@ -718,6 +719,7 @@ MetalBackend::MetalBackend(
     modular_input_pipeline_(std::move(modular_input_pipeline)),
     modular_token_pipelines_(std::move(modular_token_pipelines)),
     ans_token_cost_pipeline_(std::move(ans_token_cost_pipeline)),
+    tree_statistics_pipelines_(std::move(tree_statistics_pipelines)),
     aq_pipelines_(std::move(aq_pipelines)),
     butteraugli_pipelines_(std::move(butteraugli_pipelines)),
     test_fail_submission_(test_fail_submission),
@@ -1806,6 +1808,16 @@ Status CreateMetalBackendImpl(
       64 % ans_token_cost_pipeline->threadExecutionWidth() != 0)
     return Status::Unavailable("Metal cannot launch ANS token-cost threadgroups");
 
+  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 2> tree_statistics_pipelines;
+  const char* statistics_kernels[] = {"gjxl_tree_bucket_histograms", "gjxl_tree_split_costs"};
+  for (size_t i = 0; i < tree_statistics_pipelines.size(); ++i) {
+    status = CreatePipeline(device.get(), library.get(), statistics_kernels[i], &tree_statistics_pipelines[i]);
+    if (!status.ok()) return status;
+    if (tree_statistics_pipelines[i]->maxTotalThreadsPerThreadgroup() < 128 || maximum_threads.width < 128 ||
+        tree_statistics_pipelines[i]->staticThreadgroupMemoryLength() > device->maxThreadgroupMemoryLength())
+      return Status::Unavailable("Metal cannot launch Modular tree statistics threadgroups");
+  }
+
   AqPipelines aq_pipelines;
   status = CreateAqPipelines(device.get(), library.get(), &aq_pipelines);
   if (!status.ok()) {
@@ -1831,6 +1843,7 @@ Status CreateMetalBackendImpl(
       std::move(modular_input_pipeline),
       std::move(modular_token_pipelines),
       std::move(ans_token_cost_pipeline),
+      std::move(tree_statistics_pipelines),
       std::move(aq_pipelines),
       std::move(butteraugli_pipelines),
       options.test_fail_submission,

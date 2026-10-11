@@ -7,13 +7,14 @@
 #include "codestream/modular/search.h"
 #include "gpu/ops/modular_adaptive_layout.h"
 #include "gpu/ops/ans_token_cost.h"
+#include "gpu/ops/modular_tree_statistics.h"
 
 namespace gjxl::modular_internal {
 using namespace modular_gpu_internal;
 using namespace resource_budget_internal;
 namespace {
 Status AdditionalBound(const ModularInputProfile &source, const ModularFrameGeometry &geometry,
-                       const TransformSequence &transforms, size_t nodes, bool ans_cost, size_t *out) {
+                       const TransformSequence &transforms, size_t nodes, bool ans_cost, size_t *out, size_t *samples) {
   std::array<ChannelShape, kMaximumTransforms + 1> shapes;
   if (auto s = PlanTransforms(source.channels(), 0, transforms, &shapes); !s.ok())
     return s;
@@ -53,6 +54,7 @@ Status AdditionalBound(const ModularInputProfile &source, const ModularFrameGeom
       return Status::InvalidArgument("Adaptive Modular ANS storage overflow");
   }
   *out = additional.peak_bytes;
+  *samples = total;
   return Status::Ok();
 }
 class WorkTimer {
@@ -77,7 +79,8 @@ private:
 Status ComputeAdaptiveModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat format,
                                                  const ModularEncodingOptions &options,
                                                  AdaptiveModularWorkflowStoragePlan *out) {
-  if (!out || (options.search && options.coding != ModularCodingPolicy{}))
+  if (!out || (options.search && options.coding != ModularCodingPolicy{}) ||
+      (options.adaptive_tree_statistics && !options.search))
     return Status::InvalidArgument("Invalid adaptive Modular workflow plan request");
   if (auto s = ValidateTreeLearningOptions(options.learning); !s.ok())
     return s;
@@ -98,9 +101,10 @@ Status ComputeAdaptiveModularWorkflowStoragePlan(Extent2D extent, PackedModularF
       std::max(kDefaultTreeLeaves, options.learning.maximum_leaves),
       MaximumGlobalTreeLeaves(uint64_t{extent.width} * extent.height * source.channel_count));
   const size_t nodes = options.search ? 2 * leaves - 1 : options.coding.tree.size;
+  size_t maximum_samples = 0;
   const bool ans_cost = options.adaptive_ans_cost && options.entropy == EntropyCodingMode::kAns;
   if (auto s = AdditionalBound(source, result.cpu.geometry, options.coding.transforms, nodes,
-                               ans_cost, &result.additional_peak_bytes);
+                               ans_cost, &result.additional_peak_bytes, &maximum_samples);
       !s.ok())
     return s;
   if (options.search) {
@@ -111,12 +115,32 @@ Status ComputeAdaptiveModularWorkflowStoragePlan(Extent2D extent, PackedModularF
         !s.ok())
       return s;
     for (size_t i = 0; i < count; ++i) {
-      size_t bound;
+      size_t bound, samples;
       if (auto s =
-              AdditionalBound(source, result.cpu.geometry, candidates[i].transforms, nodes, ans_cost, &bound);
+              AdditionalBound(source, result.cpu.geometry, candidates[i].transforms, nodes, ans_cost, &bound, &samples);
           !s.ok())
         return s;
       result.additional_peak_bytes = std::max(result.additional_peak_bytes, bound);
+      maximum_samples = std::max(maximum_samples, samples);
+    }
+  }
+  if (options.adaptive_tree_statistics && options.search) {
+    // A retained feature layout can differ from the layout currently learning.
+    // Add the independent maxima, not only the largest same-layout sum.
+    const size_t samples = std::min(maximum_samples,
+        std::max(kDefaultTrainingSamples, options.learning.maximum_samples));
+    if (samples >= 2 * kTreeCostMinimumSide) {
+      tree_gpu_internal::TreeStatisticsPreparationPlan prepared;
+      tree_gpu_internal::TreeStatisticsStoragePlan evaluated;
+      if (auto s = tree_gpu_internal::ComputeTreeStatisticsPreparationPlan(samples, &prepared); !s.ok())
+        return s;
+      if (auto s = tree_gpu_internal::ComputeTreeStatisticsStoragePlan(samples, samples,
+              std::min(kTreeCostThresholds, samples - 2 * kTreeCostMinimumSide + 1), &evaluated); !s.ok())
+        return s;
+      const size_t peak = std::max(prepared.peak_bytes, evaluated.peak_bytes);
+      if (peak > SIZE_MAX - result.additional_peak_bytes)
+        return Status::InvalidArgument("Adaptive Modular learner statistics storage overflow");
+      result.additional_peak_bytes += peak;
     }
   }
   if (result.additional_peak_bytes > SIZE_MAX - result.cpu.working.peak_bytes)

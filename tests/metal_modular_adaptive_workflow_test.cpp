@@ -6,6 +6,7 @@
 #include "codestream/workflow_admission_test.h"
 #include "core/cpu_execution.h"
 #include "gpu/metal/metal_backend.h"
+#include "gpu/ops/modular_tree_statistics.h"
 #if GJXL_MODULAR_ADAPTIVE_REFERENCE
 #include "modular_reference.h"
 #endif
@@ -93,10 +94,13 @@ AdaptiveModularWorkflowStoragePlan Plan(const Fixture &f, const ModularEncodingO
   return result;
 }
 void Case(GpuBackend &gpu, const Fixture &f, ModularEncodingOptions options, bool extra = false,
-          bool ans_cost = false, bool require_gpu_cost = false) {
+          bool ans_cost = false, bool require_gpu_cost = false, bool tree_statistics = false,
+          bool require_gpu_statistics = false) {
   options.adaptive_ans_cost = ans_cost;
+  options.adaptive_tree_statistics = tree_statistics;
   const auto plan = Plan(f, options);
   options.adaptive_ans_cost = false;
+  options.adaptive_tree_statistics = false;
   std::vector<uint8_t> cpu, hybrid{7, 8, 9};
   ModularProfile baseline, actual;
   Ok(ExecutionDomain::Create({plan.cpu.working.peak_bytes, options.cpu_thread_count},
@@ -112,6 +116,7 @@ void Case(GpuBackend &gpu, const Fixture &f, ModularEncodingOptions options, boo
                              &options.execution_domain));
   options.adaptive_gpu = &gpu;
   options.adaptive_ans_cost = ans_cost;
+  options.adaptive_tree_statistics = tree_statistics;
   const auto before = gpu.stats();
   {
     ProfileSession profile(&actual);
@@ -122,7 +127,7 @@ void Case(GpuBackend &gpu, const Fixture &f, ModularEncodingOptions options, boo
             actual.adaptive_gpu.encoded_candidates == actual.encoded_candidates &&
             actual.adaptive_gpu.cpu_fallback_candidates == 0 &&
             gpu.stats().committed_submissions - before.committed_submissions ==
-                actual.encoded_candidates + actual.adaptive_gpu.ans_gpu_groups,
+                actual.encoded_candidates + actual.adaptive_gpu.ans_gpu_groups + actual.adaptive_gpu.tree_gpu_groups,
         "Hybrid search changed bytes, selected policy, candidate count, or silently fell back");
   const auto &g = actual.adaptive_gpu;
   Check(g.ans_cpu_fallback_groups == g.ans_cpu_small_groups &&
@@ -136,6 +141,24 @@ void Case(GpuBackend &gpu, const Fixture &f, ModularEncodingOptions options, boo
   if (ans_cost && options.entropy == EntropyCodingMode::kAns && !require_gpu_cost)
     Check(g.ans_gpu_groups == 0 && g.ans_cpu_small_groups > 0,
           "Small workflow did not use the explicit scalar cost crossover");
+  if (tree_statistics) {
+    Check(require_gpu_statistics
+              ? g.tree_gpu_preparations > 0 && g.tree_gpu_groups > 0 && g.tree_gpu_samples > 0
+              : g.tree_gpu_groups == 0 && g.tree_cpu_small_properties > 0,
+          "Learner statistics route differs from the required GPU/small-leaf path");
+    Check(g.tree_cpu_small_properties <= g.tree_cpu_fallback_properties &&
+              g.tree_prepare_seconds + g.tree_evaluate_seconds <=
+                  actual.training_work.seconds[static_cast<size_t>(TrainingProfileStage::kSplitScanning)] + 1e-6,
+          "Learner statistics fallback/timing attribution differs");
+    Check(options.learning.mode == TreeLearningMode::kQuantized
+              ? g.tree_cpu_unsupported_learning_calls > 0 : g.tree_cpu_unsupported_learning_calls == 0,
+          "Alternative learner CPU fallback was omitted or uncounted");
+  } else {
+    Check(g.tree_gpu_preparations == 0 && g.tree_gpu_groups == 0 && g.tree_gpu_samples == 0 &&
+              g.tree_cpu_fallback_properties == 0 && g.tree_cpu_unsupported_learning_calls == 0 &&
+              g.tree_prepare_seconds == 0 && g.tree_evaluate_seconds == 0,
+          "Disabled learner statistics invoked the new route");
+  }
   Check(g.feature_preparations + g.feature_reuses == g.encoded_candidates &&
             g.evictions + 1 == g.feature_preparations && g.feature_seconds > 0 &&
             g.token_seconds > 0 &&
@@ -353,6 +376,103 @@ void AnsFallback(GpuBackend &gpu) {
             actual == std::vector<uint8_t>({7, 8, 9}),
         "ANS switch without adaptive GPU was not rejected");
 }
+void TreeFallbackAndAdmission(GpuBackend &gpu) {
+  Fixture f(PackedModularFormat::kGray8, {64, 64});
+  ModularEncodingOptions options;
+  options.search = true;
+  options.learning = {4096, 16};
+  std::vector<uint8_t> expected, actual;
+  Ok(EncodeModularImage(f.view, options, &expected));
+  FaultCapability tokens_only(gpu);
+  options.adaptive_gpu = &tokens_only;
+  options.adaptive_tree_statistics = true;
+  const auto plan = Plan(f, options);
+  Ok(ExecutionDomain::Create({plan.peak_bytes, 1}, &options.execution_domain));
+  ModularProfile profile;
+  {
+    ProfileSession session(&profile);
+    Ok(EncodeModularImage(f.view, options, &actual));
+  }
+  Check(actual == expected && profile.adaptive_gpu.tree_gpu_groups == 0 &&
+            profile.adaptive_gpu.tree_gpu_preparations == 0 &&
+            profile.adaptive_gpu.tree_cpu_fallback_properties > 0 &&
+            profile.adaptive_gpu.tree_cpu_small_properties == 0,
+        "Missing learner statistics capability did not use explicit scalar fallback");
+  profile.resolved = {};
+  Empty(*options.execution_domain);
+  options.adaptive_gpu = &gpu;
+  Ok(ExecutionDomain::Create({plan.peak_bytes - 1, 1}, &options.execution_domain));
+  actual = {7, 8, 9};
+  const auto before = gpu.stats();
+  ArmNextManagedHostAllocationFailureForTest();
+  const auto status = EncodeModularImage(f.view, options, &actual);
+  const bool pending = ManagedHostAllocationFailurePendingForTest();
+  DisarmManagedHostAllocationFailureForTest();
+  Check(status.code() == StatusCode::kOutOfMemory && pending && actual == std::vector<uint8_t>({7, 8, 9}) &&
+            gpu.stats().successful_allocations == before.successful_allocations &&
+            gpu.stats().committed_submissions == before.committed_submissions,
+        "Statistics-inclusive admission allocated, submitted or published below the bound");
+  Empty(*options.execution_domain);
+  options.execution_domain.reset();
+  options.adaptive_gpu = nullptr;
+  Check(EncodeModularImage(f.view, options, &actual).code() == StatusCode::kInvalidArgument &&
+            actual == std::vector<uint8_t>({7, 8, 9}), "Statistics switch without GPU was accepted");
+  options.adaptive_gpu = &gpu;
+  options.search = false;
+  Check(EncodeModularImage(f.view, options, &actual).code() == StatusCode::kInvalidArgument &&
+            actual == std::vector<uint8_t>({7, 8, 9}), "Statistics switch without search was accepted");
+  ++fault_checks;
+}
+void TreeAttemptFailure() {
+  using namespace tree_gpu_internal;
+  struct FailingStatistics final : NoCapability, GpuModularTreeStatistics {
+    bool unsupported = false;
+    size_t calls = 0;
+    TreeStatisticsDeviceLimits tree_statistics_limits() const noexcept override {
+      return {kMaximumTreeStatisticsSamples, kMaximumTreeStatisticsSamples, SIZE_MAX};
+    }
+    Status PrepareTreeStatistics(const TreeStatisticsPreparationInput &,
+                                 std::unique_ptr<PreparedGpuTreeStatistics> *) override {
+      Check(CurrentResourceContext().reservation && thread_budget_internal::HasCpuParticipation(),
+            "Learner statistics attempt started without admission");
+      ++calls;
+      return unsupported ? Status::Unsupported("Injected post-preflight statistics rejection")
+                         : Status::DeviceError("Injected statistics preparation failure");
+    }
+    Status MeasureTreeSplitCosts(const TreeStatisticsInput &,
+                                 std::unique_ptr<PreparedGpuTreeSplitCosts> *) override {
+      throw std::runtime_error("Failed statistics preparation reached measurement");
+    }
+  } backend;
+  Fixture f(PackedModularFormat::kGray8, {128, 128});
+  ModularEncodingOptions options;
+  options.search = true;
+  options.learning = {16384, 32};
+  options.tree_checkpoints = true;
+  options.adaptive_gpu = &backend;
+  options.adaptive_tree_statistics = true;
+  const auto plan = Plan(f, options);
+  Ok(ExecutionDomain::Create({plan.peak_bytes, 1}, &options.execution_domain));
+  for (bool unsupported : {false, true}) {
+    backend.unsupported = unsupported;
+    backend.calls = 0;
+    std::vector<uint8_t> output{7, 8, 9};
+    ModularProfile profile;
+    Status status;
+    {
+      ProfileSession session(&profile);
+      status = EncodeModularImage(f.view, options, &output);
+    }
+    Check(status.code() == (unsupported ? StatusCode::kUnsupported : StatusCode::kDeviceError) &&
+              backend.calls == 1 && output == std::vector<uint8_t>({7, 8, 9}) &&
+              profile.adaptive_gpu.tree_gpu_preparations == 0 &&
+              profile.adaptive_gpu.tree_gpu_groups == 0,
+          "Complete search retried failed statistics or replaced old output");
+    profile.resolved = {};
+    Empty(*options.execution_domain);
+    ++fault_checks;
+  }
+}
 void AllocationSweep(GpuBackend &gpu, bool ans_cost = false) {
   Fixture f(PackedModularFormat::kGray8, {1, 1});
   ModularEncodingOptions options;
@@ -499,8 +619,34 @@ int main(int argc, char **argv) try {
     options.coding.tree.nodes[0].predictor = Predictor::kWeighted;
     Case(*gpu, large, options, false, true, true);
   }
+  for (auto format : {PackedModularFormat::kGray8, PackedModularFormat::kRgb8,
+                      PackedModularFormat::kRgba8, PackedModularFormat::kGray16,
+                      PackedModularFormat::kRgb16, PackedModularFormat::kRgba16}) {
+    Fixture f(format, {96, 64});
+    ModularEncodingOptions options;
+    options.search = true;
+    options.entropy = EntropyCodingMode::kAns;
+    options.learning = {8192, 32};
+    options.tree_checkpoints = true;
+    options.cpu_thread_count = format == PackedModularFormat::kRgba16 ? 4 : 1;
+    Case(*gpu, f, options, format == PackedModularFormat::kGray8, true, false, true, true);
+  }
+  {
+    Fixture f(PackedModularFormat::kRgb8, {96, 64}, true);
+    ModularEncodingOptions options;
+    options.search = true;
+    options.entropy = EntropyCodingMode::kPrefix;
+    options.learning = {8192, 32, TreeLearningMode::kQuantized};
+    options.tree_checkpoints = true;
+    Case(*gpu, f, options, false, false, false, true, true);
+    Fixture small(PackedModularFormat::kGray8, {17, 13});
+    options.learning = {512, 32};
+    Case(*gpu, small, options, false, false, false, true, false);
+  }
   FallbacksAndFailures(*gpu);
   AnsFallback(*gpu);
+  TreeFallbackAndAdmission(*gpu);
+  TreeAttemptFailure();
   AllocationSweep(*gpu);
   AllocationSweep(*gpu, true);
   SameAddress(*gpu);

@@ -3,6 +3,7 @@
 #pragma once
 #include "codestream/modular/storage_plan.h"
 #include "codec/modular/tree_learning.h"
+namespace gjxl { class GpuBackend; }
 namespace gjxl::modular_internal {
 inline constexpr size_t kMaximumRctSamples = 2048;
 inline constexpr size_t kMaximumAdditionalRcts = 3;
@@ -42,7 +43,8 @@ struct TrainingCoverage {
                                           ModularCodingPolicy *entropy = nullptr,
                                           TreeLearningOptions learning = {},
                                           TrainingCoverage *coverage = nullptr,
-                                          TreeLearningCheckpoints *checkpoints = nullptr);
+                                          TreeLearningCheckpoints *checkpoints = nullptr,
+                                          GpuBackend *tree_gpu = nullptr);
 // Frame and layout must describe the completed transforms in base. Learn on
 // those channels (including metadata), preserving transforms and WP parameters.
 [[nodiscard]] Status
@@ -50,7 +52,8 @@ LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStreamPlan &
                      const ModularCodingPolicy &base, ModularCodingPolicy *single,
                      ModularCodingPolicy *split, ModularCodingPolicy *entropy = nullptr,
                      TreeLearningOptions learning = {}, TrainingCoverage *coverage = nullptr,
-                     TreeLearningCheckpoints *checkpoints = nullptr);
+                     TreeLearningCheckpoints *checkpoints = nullptr,
+                                          GpuBackend *tree_gpu = nullptr);
 [[nodiscard]] Status
 ComputeModularSearchStoragePlan(Extent2D extent, PackedModularFormat format, EntropyCodingMode mode,
                                 ModularWorkflowStoragePlan *out, size_t cpu_threads = 1,

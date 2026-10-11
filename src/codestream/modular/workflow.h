@@ -25,6 +25,8 @@ struct ModularEncodingOptions {
   // Private qualification switch; requires adaptive_gpu. The old hybrid route
   // remains available as a paired control while exact ANS costing is qualified.
   bool adaptive_ans_cost = false;
+  // Private original-learner statistics route; requires adaptive_gpu and search.
+  bool adaptive_tree_statistics = false;
 };
 [[nodiscard]] Status EncodeRgb8ModularOwned(Rgb8View input, const ModularEncodingOptions &options,
                                             codestream_internal::CodestreamBuffer *out);
