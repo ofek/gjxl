@@ -31,6 +31,7 @@
 #include "gpu/metal/kernels/modular_input_params.h"
 #include "gpu/metal/metal_submission_storage_plan.h"
 #include "gpu/ops/ac_strategy.h"
+#include "gpu/ops/ans_token_cost.h"
 #include "gpu/ops/ac_strategy_selection.h"
 #include "gpu/ops/aq_evaluation.h"
 #include "gpu/ops/aq_evaluation_internal.h"
@@ -373,6 +374,7 @@ class MetalBackend final
     public modular_gpu_internal::GpuModularInputPreparation,
     public modular_gpu_internal::GpuModularTokenGeneration,
     public modular_gpu_internal::GpuAdaptiveModularTokenGeneration,
+    public ans_gpu_internal::GpuAnsTokenCost,
     public DeviceButteraugliOperation {
 public:
   MetalBackend(
@@ -385,6 +387,7 @@ public:
     PrimitivePipelines primitive_pipelines,
     NS::SharedPtr<MTL::ComputePipelineState> modular_input_pipeline,
     std::array<NS::SharedPtr<MTL::ComputePipelineState>, 5> modular_token_pipelines,
+    NS::SharedPtr<MTL::ComputePipelineState> ans_token_cost_pipeline,
     AqPipelines aq_pipelines,
     ButteraugliPipelines butteraugli_pipelines,
     bool test_fail_submission,
@@ -533,6 +536,10 @@ public:
     std::span<const modular_gpu_internal::ModularTokenSlice> slices,
     resource_budget_internal::ManagedVector<ModularTokenDiagnostic>* out);
   modular_gpu_internal::ModularTokenDeviceLimits adaptive_modular_limits() const noexcept override;
+  ans_gpu_internal::AnsTokenCostDeviceLimits ans_token_cost_limits() const noexcept override;
+  Status MeasureAnsTokenCosts(
+    const ans_gpu_internal::AnsTokenCostInput& input,
+    std::unique_ptr<ans_gpu_internal::PreparedGpuAnsTokenCosts>* out) override;
   Status PrepareAdaptiveModularFeatures(
     const modular_internal::ModularEncoderFrame& frame,
     std::span<const modular_gpu_internal::AdaptiveModularTokenSlice> slices,
@@ -875,6 +882,7 @@ private:
   PrimitivePipelines primitive_pipelines_;
   NS::SharedPtr<MTL::ComputePipelineState> modular_input_pipeline_;
   std::array<NS::SharedPtr<MTL::ComputePipelineState>, 5> modular_token_pipelines_;
+  NS::SharedPtr<MTL::ComputePipelineState> ans_token_cost_pipeline_;
   AqPipelines aq_pipelines_;
   ButteraugliPipelines butteraugli_pipelines_;
   bool test_fail_submission_ = false;

@@ -700,6 +700,7 @@ MetalBackend::MetalBackend(
   PrimitivePipelines primitive_pipelines,
   NS::SharedPtr<MTL::ComputePipelineState> modular_input_pipeline,
   std::array<NS::SharedPtr<MTL::ComputePipelineState>, 5> modular_token_pipelines,
+  NS::SharedPtr<MTL::ComputePipelineState> ans_token_cost_pipeline,
   AqPipelines aq_pipelines,
   ButteraugliPipelines butteraugli_pipelines,
   bool test_fail_submission,
@@ -716,6 +717,7 @@ MetalBackend::MetalBackend(
     primitive_pipelines_(std::move(primitive_pipelines)),
     modular_input_pipeline_(std::move(modular_input_pipeline)),
     modular_token_pipelines_(std::move(modular_token_pipelines)),
+    ans_token_cost_pipeline_(std::move(ans_token_cost_pipeline)),
     aq_pipelines_(std::move(aq_pipelines)),
     butteraugli_pipelines_(std::move(butteraugli_pipelines)),
     test_fail_submission_(test_fail_submission),
@@ -1795,6 +1797,12 @@ Status CreateMetalBackendImpl(
       return Status::Unavailable("Metal cannot launch Modular token threadgroups");
   }
 
+  NS::SharedPtr<MTL::ComputePipelineState> ans_token_cost_pipeline;
+  status = CreatePipeline(device.get(), library.get(), "gjxl_ans_token_cost", &ans_token_cost_pipeline);
+  if (!status.ok()) return status;
+  if (ans_token_cost_pipeline->maxTotalThreadsPerThreadgroup() < 64 || maximum_threads.width < 64)
+    return Status::Unavailable("Metal cannot launch ANS token-cost threadgroups");
+
   AqPipelines aq_pipelines;
   status = CreateAqPipelines(device.get(), library.get(), &aq_pipelines);
   if (!status.ok()) {
@@ -1819,6 +1827,7 @@ Status CreateMetalBackendImpl(
       std::move(primitive_pipelines),
       std::move(modular_input_pipeline),
       std::move(modular_token_pipelines),
+      std::move(ans_token_cost_pipeline),
       std::move(aq_pipelines),
       std::move(butteraugli_pipelines),
       options.test_fail_submission,

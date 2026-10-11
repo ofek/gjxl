@@ -90,7 +90,7 @@ may take an explicitly counted CPU route before dispatch.
    boundary, malformed-model, exact-capacity and allocation-free validation tests,
    including borrowed views of a real scalar-optimized ANS model.
 2. Implement a native Metal section/candidate kernel and completed-result owner.
-   Compare every section's bits and final state to the scalar recurrence across
+   Implemented and qualified against scalar section bits and final states across
    alphabet widths, HybridUint configurations, cluster maps and edge values.
 3. Route only the existing exact-cost call through the capability for resident
    adaptive tokens. Compose storage and preserve all optimizer decisions and
@@ -101,9 +101,13 @@ may take an explicitly counted CPU route before dispatch.
    cache creation, all candidates, CPU work and publication. Preserve compressed
    sizes and document resource changes before making throughput claims.
 
-At the contract milestone, no backend advertises this capability and no encode
-route is changed. A native kernel and complete-path measurements are still
-required; the hybrid pilot predates this operation.
+Metal now advertises this capability. The standalone operation borrows resident
+values/contexts, directly initializes shared descriptor/model backing, dispatches
+one lane per section/candidate and publishes a completed shared result arena
+after waiting and validating status. No token copy or token-sized scratch is
+introduced. The new kernel is included in external and embedded libraries.
+Encoder routing and complete-path measurements are still required; the hybrid
+pilot predates this operation.
 
 `ans_token_cost_plan` passes in the Release/Metal and CPU-only builds. Tests cover
 normalized native model tables, malformed configuration/frequency/offset/map and
@@ -111,3 +115,31 @@ reciprocal data, disjoint resident ranges and foreign owners, empty sections in 
 nonempty partition, count overflow, exact device capacity and one byte less,
 failure-atomic plans and device status decoding. Logs are retained under
 `build/adaptive-integration/ans-cost-contract-*`.
+
+Native qualification on Apple M4 Pro passes **829 cases, 224,848 exact bit-count
+and final-state pairs, and 1,713,380 token recurrences**. Coverage includes all 816
+valid HybridUint configurations, real scalar-generated models across alphabet
+widths 5–8, arbitrary valid-range reverse-map permutations, frequency extremes 1
+and 4,096 (including native single-symbol tables), edge uint32 values, context ID
+65,535, 64 clusters, mixed-model batches, empty and irregular sections, and long
+ordered streams. The reference uses ordinary division and is checked against the
+production scalar counter; selected cases also check the final writer's bit count
+and emitted 32-bit state. General synthetic table cases establish arithmetic
+equivalence, not independent decoder-valid model serialization.
+
+Disjoint ranges sharing one buffer, naturally aligned nonzero offsets, input and
+padding immutability, completed-result lifetime and exact live backing are
+checked. Exact native allocation capacity and one byte less behave as planned.
+Eight explicit failure-atomic checks cover allocation, submission, completion,
+malformed sections, foreign and nonnative buffer owners, and data-dependent
+context/absent-symbol failures. Failed attempts preserve the prior result and
+release all new backing and pending work. There is no managed host vector
+allocation inside the native operation; caller-view allocation fault coverage
+belongs to the upcoming workflow integration.
+
+The full Release build succeeds. All 19 selected ANS/entropy, Metal Modular,
+submission-storage, external/embedded-library and Make/Ninja build-graph tests
+pass. Logs are retained under `build/adaptive-integration/ans-cost-*`; the final
+test details and frozen native test artifacts are recorded in
+`build/ans-cost-device-20261011/manifest.json`. This establishes operation
+correctness, not a complete-encode speedup or changed compression rate.

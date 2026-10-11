@@ -154,5 +154,9 @@ The [exact ANS token-cost contract](gpu-ans-token-cost.md) now defines resident
 input ownership, section/candidate independence, borrowed normalized tables,
 completed bit-count/final-state results and bounded transient storage. Its
 allocation-free validation and storage tests pass with Metal enabled and disabled,
-including compatibility with a real scalar-optimized model. Native device
-implementation and workflow routing are subsequent milestones.
+including compatibility with a real scalar-optimized model. The native Metal
+kernel and completed-result owner now pass 829 cases and 224,848 exact
+bit-count/final-state comparisons, with bounded storage and failure publication.
+All 19 selected ANS/entropy and Metal regressions pass. Workflow routing and
+complete-path qualification of this optimization remain subsequent milestones;
+the published hybrid pilot still uses CPU ANS costing.
