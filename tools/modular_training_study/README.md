@@ -185,3 +185,10 @@ belongs to the separate prescribed unpack/RCT/token route and stays zero here.
 The CPU-only build rejects `--metal` explicitly. Compare complete bytes and the
 entire winning policy, including weighted parameters, before interpreting paired
 CPU/hybrid timings.
+
+The frozen one-pair pilot and validation command are documented in
+[`gpu-adaptive-modular-hybrid.md`](../../docs/gpu-adaptive-modular-hybrid.md).
+`analyze_adaptive_hybrid.py` verifies the saved hashes, routes, complete-file and
+policy parity, training work counters and cache accounting before regenerating
+the report. It reports timings as diagnostic observations, alongside exact
+ANS attribution and the increased managed backing/admission requirement.

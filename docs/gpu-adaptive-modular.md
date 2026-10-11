@@ -110,8 +110,9 @@ The full-resolution CPU control and default libjxl e7/e9 captures are complete:
 see [`gpu-adaptive-modular-profile.md`](gpu-adaptive-modular-profile.md). All
 outputs decode exactly. Summed GJXL bytes are 1.20% above e7 and 2.18% above e9;
 complete CPU searches take 199–225 seconds per image in these diagnostic runs.
-Token generation is the largest phase (38.8%), followed by modeling (30.7%) and
-training (20.1%). No GPU speedup has been established by this effort yet.
+Token generation is the largest CPU phase (38.8%), followed by modeling (30.7%)
+and training (20.1%); the paired hybrid pilot below measures the subsequent GPU
+implementation against fresh CPU controls.
 
 The [adaptive token contract](gpu-adaptive-modular-token-contract.md), private
 operation interfaces, fixed-width records, tree eligibility, and storage planner
@@ -133,6 +134,18 @@ also pass. The original candidate order and tie behavior remain intact.
 The profile capture tool now accepts `--metal` and reports actual GPU submissions,
 feature preparations/reuses, GPU candidates and CPU fallbacks. CPU transformation,
 weighted-history construction and every candidate remain inside the timed call.
-Paired full-resolution measurements are next; no adaptive end-to-end GPU speedup
-has yet been established. The original prescribed GPU path remains available with
-its original eligibility; public encoding defaults are unchanged.
+The [full-resolution hybrid pilot](gpu-adaptive-modular-hybrid.md) observes a
+1.49× aggregate CPU/hybrid time ratio with identical files, full winning policies,
+training work counters and candidate counts. All 207 full-resolution candidates
+use Metal; no CPU fallback occurs. Three additional photographic, palette and
+16-bit-alpha smoke outputs also match the saved CPU files. The capture retains
+44 hashed artifacts, including the frozen binary, inputs' provenance, outputs
+and process-activity snapshots.
+
+These are one-pair diagnostic measurements on a busy desktop, not repeated
+throughput qualification or evidence of a speedup over default libjxl. Weighted
+features remain CPU-generated and increase retained backing. Exact ANS token-cost
+simulation is the largest remaining individual measured task, so the next slice
+will parallelize independent section/candidate states while retaining exact
+recurrence, pruning and selection ties. The original prescribed GPU path remains
+available with its original eligibility; public encoding defaults are unchanged.
