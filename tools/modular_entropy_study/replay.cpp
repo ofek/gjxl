@@ -248,8 +248,11 @@ Result Reference(const PreparedModularTokens &tokens, JxlMemoryManager *manager,
   result.map = code.context_map;
   result.clusters = code.encoding_info.size(); result.width = code.log_alpha_size;
   jxl::BitWriter map(manager);
-  if (tokens.context_count > 1) Require(bool(jxl::EncodeContextMap(code.context_map, result.clusters,
-      &map, jxl::LayerType::ModularGlobal, nullptr)), "Reference context map writer failed");
+  // The singleton-map branch writes three bits directly; other branches open
+  // nested allotments. Match the caller reservation used by the model builder.
+  if (tokens.context_count > 1) Require(bool(map.WithMaxBits(3, jxl::LayerType::ModularGlobal,
+      nullptr, [&] { return jxl::EncodeContextMap(code.context_map, result.clusters,
+          &map, jxl::LayerType::ModularGlobal, nullptr); })), "Reference context map writer failed");
   result.map_bits = map.BitsWritten();
   result.header = Copy(&header);
   const auto emitted = Clock::now();

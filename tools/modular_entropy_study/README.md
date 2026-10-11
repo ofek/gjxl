@@ -58,6 +58,14 @@ invented by merely changing an option. A production expansion would need separat
 representation, storage, decoding and rate/time qualification. A policy is promoted
 only after material measured benefit; a negative result is useful evidence.
 
-The local pilot decodes all 14 model cells, preserves their complete files after
-measurement instrumentation changes, and rejects truncated, extended, wrong-magic,
-wrong-count and overwrite inputs. Full corpus qualification is pending.
+The local pilot decodes all 14 model cells for both a single-context tree and a
+split tree with an empty context. The latter also checks the reference writer's
+required reservation for the three-bit singleton context map. It preserves frozen
+archives and rejects truncated, extended, wrong-magic, wrong-count and overwrite
+inputs. Run it with:
+
+```sh
+python3 tools/modular_entropy_study/test_replay.py build/entropy-replay/entropy_replay
+```
+
+Full corpus qualification is pending.

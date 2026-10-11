@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import statistics
 import subprocess
@@ -79,7 +80,9 @@ def basic(result, variant):
             (262144, 256, True, 1), 'Training/thread policy changed')
     require(result['ans_selection'] == ('exact' if variant == 'original' else 'estimated'), 'Selector differs')
     require(0 < result['seconds'] and result['peak_backing'] <= result['planned_capacity'], 'Invalid time/storage')
-    require(sum(result['stages'].values()) <= result['seconds'] + 1e-5, 'Overlapping wall stages')
+    require(sum(result['stages'].values()) <= result['seconds'] + 1e-5 and
+            sum(result['training']['stages'].values()) <= result['stages']['training'] + 1e-5,
+            'Overlapping wall or training stages')
     g, e = result['adaptive_gpu'], result['entropy_work']
     require(result['route'] == 'hybrid-learning-complete-search', 'Hybrid route missing')
     if variant not in CURRENT:
@@ -112,12 +115,17 @@ def basic(result, variant):
     ledger = result['candidate_ledger']
     require(len(ledger) == n + (min(4, n) if short else 0), 'Ledger is incomplete')
     require([r['index'] for r in ledger[:n]] == list(range(n)), 'Candidate order/index differs')
+    incumbent = None
     for r in ledger:
         if r['exact']:
+            key = (r['bytes'], r['checkpoint'], r['index'])
+            improved = incumbent is None or key < incumbent
+            require(r['improved'] == improved, 'Ledger incumbent improvement differs')
+            if improved: incumbent = key
             require(sum(r[k] for k in ('payload_bits', 'tree_bits', 'model_bits', 'stream_header_bits',
                     'frame_header_bits', 'toc_bits', 'padding_bits')) == 8 * r['bytes'], 'Cost categories do not cover file')
         else:
-            require(short and r['bytes'] == 0 and r['estimated_bits'] > 0 and r['sampled_tokens'] > 0,
+            require(short and not r['improved'] and r['bytes'] == 0 and r['estimated_bits'] > 0 and r['sampled_tokens'] > 0,
                     'Screen estimate was presented as exact')
     exact = [r for r in ledger if r['exact']]
     winner = min(exact, key=lambda r: (r['bytes'], r['checkpoint'], r['index']))
@@ -253,6 +261,8 @@ def audit(root):
         require({k: v for k, v in result.items() if k != 'candidate_ledger'} == row['result'] and result['encoded_bytes'] == row['files'][row['tag'] + '.jxl']['bytes'],
                 'Result or complete bytes differ from artifact')
         basic(result, row['variant'])
+        require(all(result[k] == m['inputs'][row['image']][k] for k in ('width', 'height', 'channels', 'bits')),
+                'Profile dimensions differ from frozen input')
         row['result'] = result  # Audited full ledger, in memory only.
         lookup[row['image'], row['repetition'], row['variant']] = row
         activity = [json.loads(line) for line in (root / (row['tag'] + '-activity.jsonl')).read_text().splitlines()]
@@ -300,21 +310,80 @@ def audit(root):
     return m, lookup, cases
 
 
+def power_transitions(root, manifest):
+    events = []
+    previous = None
+    begin = datetime.datetime.fromisoformat(manifest['started_utc'])
+    end = datetime.datetime.fromisoformat(manifest['ended_utc'])
+    for line in (root / 'sleep-events.log').read_text().splitlines():
+        source = re.search(r'Using (AC|Batt)\b', line)
+        if not source:
+            continue
+        try:
+            stamp = datetime.datetime.strptime(line[:25], '%Y-%m-%d %H:%M:%S %z')
+        except ValueError:
+            continue
+        current = source.group(1)
+        if previous is not None and current != previous and begin <= stamp <= end:
+            events.append(dict(utc=stamp.astimezone(datetime.timezone.utc).isoformat(),
+                               source=current, previous=previous, evidence=line.strip()))
+        previous = current
+    affected = set()
+    for image in LARGE:
+        for repetition in (1, 2):
+            rows = [r for r in manifest['commands'] if r['image'] == image and r['repetition'] == repetition]
+            start = min(datetime.datetime.fromisoformat(r['started_utc']) for r in rows)
+            stop = max(datetime.datetime.fromisoformat(r['ended_utc']) for r in rows)
+            if any(start <= datetime.datetime.fromisoformat(e['utc']) <= stop for e in events):
+                affected.add((image, repetition))
+    return events, affected
+
+
 def analyze(args):
     m, lookup, cases = audit(args.root)
+    events, affected = power_transitions(args.root, m)
+    raw_sums = {v: sum(statistics.median(lookup[i, n, v]['result']['seconds'] for n in (1, 2))
+                       for i in LARGE) for v in VARIANTS}
+    rechecks = []
+    covered = set()
+    for root in args.recheck:
+        from recheck_entropy_pipeline import audit_recheck
+        recheck = audit_recheck(root, lookup)
+        group = (recheck['image'], recheck['repetition'])
+        require(group in affected and group not in covered, 'Recheck is not a unique affected comparison')
+        require(recheck['source']['sha256'] == sha(args.root / 'manifest.json'), 'Recheck belongs to another capture')
+        covered.add(group)
+        for row in recheck['commands']:
+            lookup[row['image'], row['repetition'], row['variant']] = row
+        rechecks.append(dict(manifest=str(root.resolve() / 'manifest.json'), manifest_sha256=sha(root / 'manifest.json'),
+            image=group[0], repetition=group[1], reason=recheck['reason'], calls=len(recheck['commands'])))
     table = {}
     for image in LARGE:
-        table[image] = {v: dict(median_seconds=statistics.median(lookup[image, n, v]['result']['seconds'] for n in (1, 2)),
-            seconds=[lookup[image, n, v]['result']['seconds'] for n in (1, 2)],
-            bytes=lookup[image, 1, v]['result']['encoded_bytes']) for v in VARIANTS}
+        table[image] = {}
+        for v in VARIANTS:
+            rows = [lookup[image, n, v]['result'] for n in (1, 2)]
+            table[image][v] = dict(median_seconds=statistics.median(r['seconds'] for r in rows),
+                seconds=[r['seconds'] for r in rows], bytes=rows[0]['encoded_bytes'],
+                stages={k: statistics.median(r['stages'][k] for r in rows) for k in rows[0]['stages']},
+                entropy_work={k: statistics.median(r['entropy_work'][k] for r in rows) for k in rows[0]['entropy_work']},
+                adaptive_gpu={k: statistics.median(r['adaptive_gpu'][k] for r in rows) for k in rows[0]['adaptive_gpu']},
+                managed_peak_bytes=[r['peak_backing'] for r in rows],
+                planned_capacity=rows[0]['planned_capacity'], candidates=rows[0]['candidates'])
     unique = [r for r in cases if r['repetition'] == 1]
     result = dict(schema=1, manifest=str(args.root.resolve() / 'manifest.json'),
-        manifest_sha256=sha(args.root / 'manifest.json'), audited_calls=len(m['commands']),
+        manifest_sha256=sha(args.root / 'manifest.json'), audited_calls=len(m['commands']) + sum(r['calls'] for r in rechecks),
+        binaries=m['binaries'], environment=m['environment'], environment_after=m['environment_after'],
+        started_utc=m['started_utc'], ended_utc=m['ended_utc'],
+        raw_audited_calls=len(m['commands']), raw_sum_large_medians=raw_sums,
+        power_transitions=events, rechecks=rechecks, qualified_time_comparisons=affected == covered,
+        unresolved_power_comparisons=[dict(image=i, repetition=n) for i, n in sorted(affected - covered)],
         large=table, candidate_cases=cases,
         aggregate_regret_percent=(sum(r['shortlist_bytes'] for r in unique) / sum(r['base_bytes'] for r in unique) - 1) * 100,
         worst_regret=max(unique, key=lambda r: r['regret_percent']),
         winner_recall=sum(r['winner_recalled'] for r in unique), images=len(unique),
         sum_large_medians={v: sum(table[i][v]['median_seconds'] for i in LARGE) for v in VARIANTS},
+        mean_large_stages={v: {k: statistics.mean(table[i][v]['stages'][k] for i in LARGE)
+                              for k in table[LARGE[0]][v]['stages']} for v in VARIANTS},
         scope=m['scope'])
     write(args.json, result)
     print(json.dumps(result, indent=2))
@@ -325,5 +394,6 @@ if __name__ == '__main__':
     sub = parser.add_subparsers(dest='command', required=True)
     c = sub.add_parser('capture'); c.add_argument('--root', type=Path, required=True)
     a = sub.add_parser('analyze'); a.add_argument('--root', type=Path, required=True); a.add_argument('--json', type=Path, required=True)
+    a.add_argument('--recheck', type=Path, action='append', default=[])
     args = parser.parse_args()
     (capture if args.command == 'capture' else analyze)(args)

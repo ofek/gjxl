@@ -217,3 +217,24 @@ real emission, exhaustive winner bytes, shortlist finalists/regret and populatio
 byte neutrality. A heartbeat interruption requires an explicit repeated whole
 comparison; no sleep subtraction or fastest-run selection. The rate study runs
 serially afterward, using the newly qualified exhaustive winning policies.
+
+The 128-call raw capture completed and passes its independent artifact audit.
+The power log records battery/AC transitions during `1039-r1-measure`; therefore
+the entire first 1039 comparison is repeated, preserving all original artifacts:
+
+```sh
+python3 tools/modular_training_study/recheck_entropy_pipeline.py \
+  --source build/entropy-pipeline-qualified-20261011 \
+  --root build/entropy-pipeline-power-recheck-20261011 \
+  --image 1039 --repetition 1 \
+  --reason 'Battery to AC transition during original comparison'
+```
+
+Pass that directory to `analyze --recheck` for qualified timing tables. The
+analyzer identifies affected comparison groups from the retained power log and
+rejects unrelated or duplicate replacements. Its raw sums remain available.
+The recheck verifies AC power before, during and after every call, as well as
+unchanged files, policies, candidate ledgers and training work. The reporting
+tool refuses unresolved power-transition comparisons. Positive/relocated capture
+audits and ten deliberately corrupted-capture cases pass; recheck-specific audit
+qualification follows the repeated calls.
