@@ -188,7 +188,8 @@ Status ComputeQuantizedTreeLearningStorageBound(resource_budget_internal::HostSt
   return Status::Ok();
 }
 Status LearnQuantizedEntropyTree(std::span<const TrainingSample> samples, DecisionTree *out,
-                                 TreeLearningOptions options, size_t population) {
+                                 TreeLearningOptions options, size_t population,
+                                 TreeLearningCheckpoints *checkpoints) {
   ManagedVector<Workspace> storage(1);
   auto &w = storage[0];
   w.logs.resize(samples.size() + 1);
@@ -209,6 +210,7 @@ Status LearnQuantizedEntropyTree(std::span<const TrainingSample> samples, Decisi
               static_cast<int64_t>((uint64_t{89 * 9 * kUnit} * samples.size() / population) / 10);
   w.change_penalty = 800 * kUnit * kUnit / (100 * kUnit + w.penalty);
   DecisionTree tree;
+  TreeLearningCheckpoints retained;
   tree.nodes.resize(2 * options.maximum_leaves - 1);
   tree.nodes[0].predictor = kPredictor[0];
   w.leaves[0] = {0, samples.size(), 0, 1, 0, {}};
@@ -239,10 +241,18 @@ Status LearnQuantizedEntropyTree(std::span<const TrainingSample> samples, Decisi
     w.leaves[leaves] = {boundary, leaf.end, right, leaf.depth + 1, leaf.split.low_predictor, {}};
     FindSplit(w.leaves[best], w);
     FindSplit(w.leaves[leaves++], w);
+    if (checkpoints)
+      if (auto s = retained.Capture(tree); !s.ok())
+        return s;
   }
   TreeLayout layout;
   if (auto s = ValidateTree(tree, &layout); !s.ok())
     return s;
+  if (checkpoints) {
+    if (auto s = retained.Capture(tree, true); !s.ok())
+      return s;
+    *checkpoints = std::move(retained);
+  }
   *out = std::move(tree);
   return Status::Ok();
 }

@@ -7,7 +7,8 @@ namespace gjxl::modular_internal {
 // Internal implementation; callers validate budgets and catch allocation errors.
 [[nodiscard]] Status LearnQuantizedEntropyTree(std::span<const TrainingSample> samples,
                                                DecisionTree *out, TreeLearningOptions options,
-                                               size_t population);
+                                               size_t population,
+                                               TreeLearningCheckpoints *checkpoints);
 [[nodiscard]] Status
 ComputeQuantizedTreeLearningStorageBound(resource_budget_internal::HostStorageBound *out,
                                          TreeLearningOptions options);

@@ -216,7 +216,8 @@ Status BuildTransformCandidates(Extent2D extent, PackedModularFormat format, uin
 }
 Status ComputeModularSearchStoragePlan(Extent2D extent, PackedModularFormat format,
                                        EntropyCodingMode mode, ModularWorkflowStoragePlan *out,
-                                       size_t cpu_threads, TreeLearningOptions learning_options) {
+                                       size_t cpu_threads, TreeLearningOptions learning_options,
+                                       bool tree_checkpoints) {
   if (!out)
     return Status::InvalidArgument("Null Modular search plan");
   if (auto s = ValidateTreeLearningOptions(learning_options); !s.ok())
@@ -305,21 +306,33 @@ Status ComputeModularSearchStoragePlan(Extent2D extent, PackedModularFormat form
     return Status::InvalidArgument("Modular search policy storage overflow");
   if (!plan.working.Add(policies))
     return Status::InvalidArgument("Modular search policy overlap overflow");
+  if (tree_checkpoints) {
+    HostStorageBound checkpoints;
+    if (auto s = ComputeTreeLearningCheckpointStorageBound(learning_options.maximum_leaves,
+                                                           &checkpoints);
+        !s.ok())
+      return s;
+    // Snapshots coexist with training and then with each complete-file encode.
+    if (!plan.working.Add(checkpoints))
+      return Status::InvalidArgument("Modular search checkpoint overlap overflow");
+  }
   *out = plan;
   return Status::Ok();
 }
 Status LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStreamPlan &plan,
                             uint8_t rct, ModularCodingPolicy *single, ModularCodingPolicy *split,
                             ModularCodingPolicy *entropy, TreeLearningOptions learning,
-                            TrainingCoverage *coverage) {
+                            TrainingCoverage *coverage, TreeLearningCheckpoints *checkpoints) {
   ModularCodingPolicy base;
   base.rct = rct;
-  return LearnModularPolicies(frame, plan, base, single, split, entropy, learning, coverage);
+  return LearnModularPolicies(frame, plan, base, single, split, entropy, learning, coverage,
+                              checkpoints);
 }
 Status LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStreamPlan &plan,
                             const ModularCodingPolicy &base, ModularCodingPolicy *single,
                             ModularCodingPolicy *split, ModularCodingPolicy *entropy,
-                            TreeLearningOptions learning, TrainingCoverage *coverage) try {
+                            TreeLearningOptions learning, TrainingCoverage *coverage,
+                            TreeLearningCheckpoints *checkpoints) try {
   if (auto s = ValidateTreeLearningOptions(learning); !s.ok())
     return s;
   const auto &metadata = frame.metadata();
@@ -330,7 +343,8 @@ Status LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStrea
       learning.maximum_leaves, MaximumGlobalTreeLeaves(uint64_t{metadata.extent.width} *
                                                        metadata.extent.height * source_channels));
   ProfileScope profile_scope(ProfileStage::kTraining);
-  if (!single || !split || plan.geometry.source() != frame.metadata().extent)
+  if (!single || !split || (checkpoints && !entropy) ||
+      plan.geometry.source() != frame.metadata().extent)
     return Status::InvalidArgument("Null Modular learned policy");
   if (auto s = ValidateCodingPolicy(base); !s.ok())
     return s;
@@ -489,7 +503,7 @@ Status LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStrea
   if (entropy) {
     if (sampled != stratified.size())
       return Status::InvalidArgument("Incomplete Modular entropy sampling coverage");
-    if (auto s = LearnEntropyTree(stratified, &learned.tree, learning, total); !s.ok())
+    if (auto s = LearnEntropyTree(stratified, &learned.tree, learning, total, checkpoints); !s.ok())
       return s;
     *entropy = std::move(learned);
   }

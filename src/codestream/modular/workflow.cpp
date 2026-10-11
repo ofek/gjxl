@@ -63,9 +63,9 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
   if (requested.coding != ModularCodingPolicy{})
     return Status::InvalidArgument("Search cannot override a prescribed Modular policy");
   ModularWorkflowStoragePlan storage;
-  if (auto s =
-          ComputeModularSearchStoragePlan(input.extent, input.format, requested.entropy, &storage,
-                                          requested.cpu_thread_count, requested.learning);
+  if (auto s = ComputeModularSearchStoragePlan(input.extent, input.format, requested.entropy,
+                                               &storage, requested.cpu_thread_count,
+                                               requested.learning, requested.tree_checkpoints);
       !s.ok())
     return s;
   codestream_internal::WorkflowAdmission admission;
@@ -235,9 +235,11 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
         best_policy = learned;
     }
   }
-  if (requested.learning != TreeLearningOptions{}) {
+  if (requested.learning != TreeLearningOptions{} || requested.tree_checkpoints) {
+    bool best_is_checkpoint = false;
     auto try_learning = [&](const ModularCodingPolicy &base) -> Status {
       ModularCodingPolicy single, split, learned;
+      TreeLearningCheckpoints checkpoints;
       {
         ModularEncoderFrame frame;
         if (auto s = ModularEncoderFrame::Prepare(input, base, &frame); !s.ok())
@@ -251,19 +253,36 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
             !s.ok())
           return s;
         if (auto s = LearnModularPolicies(frame, layout, base, &single, &split, &learned,
-                                          requested.learning);
+                                          requested.learning, nullptr,
+                                          requested.tree_checkpoints ? &checkpoints : nullptr);
             !s.ok())
           return s;
       }
-      options.coding = learned;
-      codestream_internal::CodestreamBuffer candidate;
-      if (auto s = Encode(input, options, &candidate); !s.ok())
+      auto consider = [&](const DecisionTree &tree, bool checkpoint) -> Status {
+        options.coding.rct = learned.rct;
+        options.coding.transforms = learned.transforms;
+        options.coding.weighted = learned.weighted;
+        options.coding.tree = tree;
+        codestream_internal::CodestreamBuffer candidate;
+        if (auto s = Encode(input, options, &candidate); !s.ok())
+          return s;
+        // All pre-existing final-tree candidates outrank checkpoints on ties,
+        // including final candidates from later transforms in the search.
+        if (candidate.view().size() < best.view().size() ||
+            (candidate.view().size() == best.view().size() && best_is_checkpoint && !checkpoint)) {
+          best = std::move(candidate);
+          best_is_checkpoint = checkpoint;
+          if (active_modular_profile)
+            best_policy = options.coding;
+        }
+        return Status::Ok();
+      };
+      if (auto s = consider(learned.tree, false); !s.ok())
         return s;
-      if (candidate.view().size() < best.view().size()) {
-        best = std::move(candidate);
-        if (active_modular_profile)
-          best_policy = learned;
-      }
+      for (size_t i = 0; i < checkpoints.size; ++i)
+        if (checkpoints.trees[i].size != learned.tree.size)
+          if (auto s = consider(checkpoints.trees[i], true); !s.ok())
+            return s;
       return Status::Ok();
     };
     for (uint8_t rct : {uint8_t{0}, uint8_t{6}, uint8_t{9}}) {

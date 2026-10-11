@@ -1,0 +1,2053 @@
+{
+  "schema": 1,
+  "base_revision": "9218790846a022482b84c4255599458b525fb9a1",
+  "worktree": "/Users/yunhocho/GitHub/gjxl-modular-training-budgets",
+  "branch": "feat/modular-training-budgets",
+  "libjxl_revision": "e8ff09762481785938d8e4e01333ed3917571161",
+  "implementation": "Private CPU checkpoint selection; public defaults and GPU capacity unchanged",
+  "qualification": {
+    "release_tests": 21,
+    "sanitizer_tests": 3,
+    "measured_sample_exact_files": 311,
+    "saved_byte_controls": {
+      "native_fixed": 48,
+      "native_search": 32,
+      "reference": 22
+    },
+    "workflow_failure_injections": 58913,
+    "large_checkpoint_learner_failure_injections": {
+      "legacy": 10,
+      "quantized": 11
+    },
+    "sanitizer": "ASan+UBSan, O1 RelWithDebInfo; reference archives not instrumented",
+    "excluded_suite": "Full legacy modular_workflow sweep not rerun",
+    "excluded_initial_failure": "checkpoints-test.log: invalid exact-256-leaf assertion corrected to allow valid early stopping"
+  },
+  "rate": {
+    "schema": 1,
+    "files": {
+      "native_fixed": 176,
+      "native_search": 80,
+      "reference": 55
+    },
+    "png_reference_bytes": 7673910,
+    "groups": {
+      "png": {
+        "input": [
+          "alpha-flower",
+          "alpha-ria",
+          "chessboard",
+          "gray-macan",
+          "gray-patches",
+          "palette-358",
+          "photo-bliznaca",
+          "photo-flower",
+          "photo-macan",
+          "photo-ria",
+          "splines"
+        ],
+        "fixed": {
+          "checkpoint-65536-16": {
+            "raw_bytes": 8220789,
+            "checkpoint_selection_bytes": 8216633
+          },
+          "checkpoint-65536-32": {
+            "raw_bytes": 8022747,
+            "checkpoint_selection_bytes": 8022747
+          },
+          "checkpoint-65536-64": {
+            "raw_bytes": 8097497,
+            "checkpoint_selection_bytes": 7976561
+          },
+          "checkpoint-65536-128": {
+            "raw_bytes": 8081527,
+            "checkpoint_selection_bytes": 7959961
+          },
+          "checkpoint-65536-256": {
+            "raw_bytes": 8079780,
+            "checkpoint_selection_bytes": 7958234
+          },
+          "checkpoint-262144-16": {
+            "raw_bytes": 8287325,
+            "checkpoint_selection_bytes": 8272683
+          },
+          "checkpoint-262144-32": {
+            "raw_bytes": 8008795,
+            "checkpoint_selection_bytes": 8008795
+          },
+          "checkpoint-262144-64": {
+            "raw_bytes": 7949012,
+            "checkpoint_selection_bytes": 7934080
+          },
+          "checkpoint-262144-128": {
+            "raw_bytes": 7926685,
+            "checkpoint_selection_bytes": 7908396
+          },
+          "checkpoint-262144-256": {
+            "raw_bytes": 7868177,
+            "checkpoint_selection_bytes": 7864047
+          }
+        },
+        "search": {
+          "baseline": 8368624,
+          "search-control-65536-64": 7986788,
+          "search-checkpoint-65536-64": 7956945,
+          "search-checkpoint-65536-256": 7946633,
+          "search-checkpoint-262144-256": 7863872
+        },
+        "positive_factorial_interaction_bytes": {
+          "raw_bytes": 63118,
+          "checkpoint_selection_bytes": 51706
+        }
+      },
+      "synthetic": {
+        "input": [
+          "alpha16-ramp",
+          "gray16-ramp",
+          "noise16",
+          "palette-pattern",
+          "screen-pattern"
+        ],
+        "fixed": {
+          "checkpoint-65536-16": {
+            "raw_bytes": 834078,
+            "checkpoint_selection_bytes": 834078
+          },
+          "checkpoint-65536-32": {
+            "raw_bytes": 831762,
+            "checkpoint_selection_bytes": 831762
+          },
+          "checkpoint-65536-64": {
+            "raw_bytes": 829867,
+            "checkpoint_selection_bytes": 829867
+          },
+          "checkpoint-65536-128": {
+            "raw_bytes": 829867,
+            "checkpoint_selection_bytes": 829867
+          },
+          "checkpoint-65536-256": {
+            "raw_bytes": 829867,
+            "checkpoint_selection_bytes": 829867
+          },
+          "checkpoint-262144-16": {
+            "raw_bytes": 834478,
+            "checkpoint_selection_bytes": 834478
+          },
+          "checkpoint-262144-32": {
+            "raw_bytes": 830443,
+            "checkpoint_selection_bytes": 830443
+          },
+          "checkpoint-262144-64": {
+            "raw_bytes": 829664,
+            "checkpoint_selection_bytes": 829664
+          },
+          "checkpoint-262144-128": {
+            "raw_bytes": 829664,
+            "checkpoint_selection_bytes": 829664
+          },
+          "checkpoint-262144-256": {
+            "raw_bytes": 829664,
+            "checkpoint_selection_bytes": 829664
+          }
+        },
+        "search": {
+          "baseline": 837274,
+          "search-control-65536-64": 827321,
+          "search-checkpoint-65536-64": 827321,
+          "search-checkpoint-65536-256": 827321,
+          "search-checkpoint-262144-256": 824290
+        },
+        "positive_factorial_interaction_bytes": {
+          "raw_bytes": 0,
+          "checkpoint_selection_bytes": 0
+        }
+      },
+      "all": {
+        "input": [
+          "alpha-flower",
+          "alpha-ria",
+          "alpha16-ramp",
+          "chessboard",
+          "gray-macan",
+          "gray-patches",
+          "gray16-ramp",
+          "noise16",
+          "palette-358",
+          "palette-pattern",
+          "photo-bliznaca",
+          "photo-flower",
+          "photo-macan",
+          "photo-ria",
+          "screen-pattern",
+          "splines"
+        ],
+        "fixed": {
+          "checkpoint-65536-16": {
+            "raw_bytes": 9054867,
+            "checkpoint_selection_bytes": 9050711
+          },
+          "checkpoint-65536-32": {
+            "raw_bytes": 8854509,
+            "checkpoint_selection_bytes": 8854509
+          },
+          "checkpoint-65536-64": {
+            "raw_bytes": 8927364,
+            "checkpoint_selection_bytes": 8806428
+          },
+          "checkpoint-65536-128": {
+            "raw_bytes": 8911394,
+            "checkpoint_selection_bytes": 8789828
+          },
+          "checkpoint-65536-256": {
+            "raw_bytes": 8909647,
+            "checkpoint_selection_bytes": 8788101
+          },
+          "checkpoint-262144-16": {
+            "raw_bytes": 9121803,
+            "checkpoint_selection_bytes": 9107161
+          },
+          "checkpoint-262144-32": {
+            "raw_bytes": 8839238,
+            "checkpoint_selection_bytes": 8839238
+          },
+          "checkpoint-262144-64": {
+            "raw_bytes": 8778676,
+            "checkpoint_selection_bytes": 8763744
+          },
+          "checkpoint-262144-128": {
+            "raw_bytes": 8756349,
+            "checkpoint_selection_bytes": 8738060
+          },
+          "checkpoint-262144-256": {
+            "raw_bytes": 8697841,
+            "checkpoint_selection_bytes": 8693711
+          }
+        },
+        "search": {
+          "baseline": 9205898,
+          "search-control-65536-64": 8814109,
+          "search-checkpoint-65536-64": 8784266,
+          "search-checkpoint-65536-256": 8773954,
+          "search-checkpoint-262144-256": 8688162
+        },
+        "positive_factorial_interaction_bytes": {
+          "raw_bytes": 63118,
+          "checkpoint_selection_bytes": 51706
+        }
+      }
+    },
+    "reference": {
+      "base": {
+        "bytes": 7673910,
+        "gap_percent": 0.0
+      },
+      "s65536-l64": {
+        "bytes": 7900684,
+        "gap_percent": 2.9551297839041535
+      },
+      "s65536-l256": {
+        "bytes": 7769152,
+        "gap_percent": 1.241114373246499
+      },
+      "s262144-l64": {
+        "bytes": 7888933,
+        "gap_percent": 2.802000544702765
+      },
+      "s262144-l256": {
+        "bytes": 7690026,
+        "gap_percent": 0.21001028159048918
+      }
+    },
+    "per_image": [
+      {
+        "input": "alpha-flower",
+        "category": "real-rgba8",
+        "reference_bytes": 3715769,
+        "search": {
+          "baseline": {
+            "bytes": 3970554,
+            "leaves": 14,
+            "candidates": 24
+          },
+          "search-control-65536-64": {
+            "bytes": 3830474,
+            "leaves": 64,
+            "candidates": 33
+          },
+          "search-checkpoint-65536-64": {
+            "bytes": 3830474,
+            "leaves": 64,
+            "candidates": 51
+          },
+          "search-checkpoint-65536-256": {
+            "bytes": 3830474,
+            "leaves": 64,
+            "candidates": 59
+          },
+          "search-checkpoint-262144-256": {
+            "bytes": 3833995,
+            "leaves": 256,
+            "candidates": 69
+          }
+        },
+        "regressed_vs_previous_64k": true,
+        "fixed": {
+          "checkpoint-65536-16": {
+            "bytes": 3941973,
+            "leaves": 16
+          },
+          "checkpoint-65536-32": {
+            "bytes": 3871807,
+            "leaves": 32
+          },
+          "checkpoint-65536-64": {
+            "bytes": 3838373,
+            "leaves": 64
+          },
+          "checkpoint-65536-128": {
+            "bytes": 3835347,
+            "leaves": 106
+          },
+          "checkpoint-65536-256": {
+            "bytes": 3835347,
+            "leaves": 106
+          },
+          "checkpoint-262144-16": {
+            "bytes": 3945828,
+            "leaves": 16
+          },
+          "checkpoint-262144-32": {
+            "bytes": 3869931,
+            "leaves": 32
+          },
+          "checkpoint-262144-64": {
+            "bytes": 3846914,
+            "leaves": 64
+          },
+          "checkpoint-262144-128": {
+            "bytes": 3842380,
+            "leaves": 128
+          },
+          "checkpoint-262144-256": {
+            "bytes": 3833995,
+            "leaves": 256
+          }
+        }
+      },
+      {
+        "input": "alpha-ria",
+        "category": "real-rgba8",
+        "reference_bytes": 228013,
+        "search": {
+          "baseline": {
+            "bytes": 251925,
+            "leaves": 16,
+            "candidates": 22
+          },
+          "search-control-65536-64": {
+            "bytes": 238976,
+            "leaves": 64,
+            "candidates": 31
+          },
+          "search-checkpoint-65536-64": {
+            "bytes": 238976,
+            "leaves": 64,
+            "candidates": 49
+          },
+          "search-checkpoint-65536-256": {
+            "bytes": 238976,
+            "leaves": 64,
+            "candidates": 58
+          },
+          "search-checkpoint-262144-256": {
+            "bytes": 237730,
+            "leaves": 64,
+            "candidates": 67
+          }
+        },
+        "regressed_vs_previous_64k": false,
+        "fixed": {
+          "checkpoint-65536-16": {
+            "bytes": 244458,
+            "leaves": 16
+          },
+          "checkpoint-65536-32": {
+            "bytes": 239517,
+            "leaves": 32
+          },
+          "checkpoint-65536-64": {
+            "bytes": 238976,
+            "leaves": 64
+          },
+          "checkpoint-65536-128": {
+            "bytes": 239195,
+            "leaves": 105
+          },
+          "checkpoint-65536-256": {
+            "bytes": 239195,
+            "leaves": 105
+          },
+          "checkpoint-262144-16": {
+            "bytes": 244101,
+            "leaves": 16
+          },
+          "checkpoint-262144-32": {
+            "bytes": 239307,
+            "leaves": 32
+          },
+          "checkpoint-262144-64": {
+            "bytes": 237730,
+            "leaves": 64
+          },
+          "checkpoint-262144-128": {
+            "bytes": 240694,
+            "leaves": 128
+          },
+          "checkpoint-262144-256": {
+            "bytes": 239799,
+            "leaves": 256
+          }
+        }
+      },
+      {
+        "input": "alpha16-ramp",
+        "category": "synthetic",
+        "reference_bytes": null,
+        "search": {
+          "baseline": {
+            "bytes": 26121,
+            "leaves": 15,
+            "candidates": 25
+          },
+          "search-control-65536-64": {
+            "bytes": 19838,
+            "leaves": 45,
+            "candidates": 34
+          },
+          "search-checkpoint-65536-64": {
+            "bytes": 19838,
+            "leaves": 45,
+            "candidates": 47
+          },
+          "search-checkpoint-65536-256": {
+            "bytes": 19838,
+            "leaves": 45,
+            "candidates": 49
+          },
+          "search-checkpoint-262144-256": {
+            "bytes": 19866,
+            "leaves": 64,
+            "candidates": 56
+          }
+        },
+        "regressed_vs_previous_64k": true,
+        "fixed": {
+          "checkpoint-65536-16": {
+            "bytes": 23850,
+            "leaves": 16
+          },
+          "checkpoint-65536-32": {
+            "bytes": 21733,
+            "leaves": 32
+          },
+          "checkpoint-65536-64": {
+            "bytes": 19838,
+            "leaves": 45
+          },
+          "checkpoint-65536-128": {
+            "bytes": 19838,
+            "leaves": 45
+          },
+          "checkpoint-65536-256": {
+            "bytes": 19838,
+            "leaves": 45
+          },
+          "checkpoint-262144-16": {
+            "bytes": 24382,
+            "leaves": 16
+          },
+          "checkpoint-262144-32": {
+            "bytes": 20645,
+            "leaves": 32
+          },
+          "checkpoint-262144-64": {
+            "bytes": 19866,
+            "leaves": 64
+          },
+          "checkpoint-262144-128": {
+            "bytes": 19866,
+            "leaves": 64
+          },
+          "checkpoint-262144-256": {
+            "bytes": 19866,
+            "leaves": 64
+          }
+        }
+      },
+      {
+        "input": "chessboard",
+        "category": "graphics-rgb8",
+        "reference_bytes": 136329,
+        "search": {
+          "baseline": {
+            "bytes": 141670,
+            "leaves": 16,
+            "candidates": 22
+          },
+          "search-control-65536-64": {
+            "bytes": 103400,
+            "leaves": 64,
+            "candidates": 31
+          },
+          "search-checkpoint-65536-64": {
+            "bytes": 103400,
+            "leaves": 64,
+            "candidates": 49
+          },
+          "search-checkpoint-65536-256": {
+            "bytes": 96500,
+            "leaves": 117,
+            "candidates": 60
+          },
+          "search-checkpoint-262144-256": {
+            "bytes": 62805,
+            "leaves": 256,
+            "candidates": 67
+          }
+        },
+        "regressed_vs_previous_64k": false,
+        "fixed": {
+          "checkpoint-65536-16": {
+            "bytes": 131484,
+            "leaves": 16
+          },
+          "checkpoint-65536-32": {
+            "bytes": 108249,
+            "leaves": 32
+          },
+          "checkpoint-65536-64": {
+            "bytes": 107359,
+            "leaves": 64
+          },
+          "checkpoint-65536-128": {
+            "bytes": 96500,
+            "leaves": 117
+          },
+          "checkpoint-65536-256": {
+            "bytes": 96500,
+            "leaves": 117
+          },
+          "checkpoint-262144-16": {
+            "bytes": 131109,
+            "leaves": 16
+          },
+          "checkpoint-262144-32": {
+            "bytes": 105563,
+            "leaves": 32
+          },
+          "checkpoint-262144-64": {
+            "bytes": 89084,
+            "leaves": 64
+          },
+          "checkpoint-262144-128": {
+            "bytes": 72422,
+            "leaves": 128
+          },
+          "checkpoint-262144-256": {
+            "bytes": 62805,
+            "leaves": 256
+          }
+        }
+      },
+      {
+        "input": "gray-macan",
+        "category": "real-gray8",
+        "reference_bytes": 90153,
+        "search": {
+          "baseline": {
+            "bytes": 94001,
+            "leaves": 16,
+            "candidates": 13
+          },
+          "search-control-65536-64": {
+            "bytes": 90842,
+            "leaves": 64,
+            "candidates": 18
+          },
+          "search-checkpoint-65536-64": {
+            "bytes": 90842,
+            "leaves": 64,
+            "candidates": 28
+          },
+          "search-checkpoint-65536-256": {
+            "bytes": 90842,
+            "leaves": 64,
+            "candidates": 35
+          },
+          "search-checkpoint-262144-256": {
+            "bytes": 90319,
+            "leaves": 128,
+            "candidates": 38
+          }
+        },
+        "regressed_vs_previous_64k": false,
+        "fixed": {
+          "checkpoint-65536-16": {
+            "bytes": 93298,
+            "leaves": 16
+          },
+          "checkpoint-65536-32": {
+            "bytes": 91704,
+            "leaves": 32
+          },
+          "checkpoint-65536-64": {
+            "bytes": 91173,
+            "leaves": 64
+          },
+          "checkpoint-65536-128": {
+            "bytes": 91017,
+            "leaves": 112
+          },
+          "checkpoint-65536-256": {
+            "bytes": 91017,
+            "leaves": 112
+          },
+          "checkpoint-262144-16": {
+            "bytes": 93216,
+            "leaves": 16
+          },
+          "checkpoint-262144-32": {
+            "bytes": 91450,
+            "leaves": 32
+          },
+          "checkpoint-262144-64": {
+            "bytes": 90610,
+            "leaves": 64
+          },
+          "checkpoint-262144-128": {
+            "bytes": 90484,
+            "leaves": 128
+          },
+          "checkpoint-262144-256": {
+            "bytes": 90558,
+            "leaves": 256
+          }
+        }
+      },
+      {
+        "input": "gray-patches",
+        "category": "graphics-gray8",
+        "reference_bytes": 4912,
+        "search": {
+          "baseline": {
+            "bytes": 25917,
+            "leaves": 16,
+            "candidates": 13
+          },
+          "search-control-65536-64": {
+            "bytes": 21588,
+            "leaves": 64,
+            "candidates": 18
+          },
+          "search-checkpoint-65536-64": {
+            "bytes": 21588,
+            "leaves": 64,
+            "candidates": 28
+          },
+          "search-checkpoint-65536-256": {
+            "bytes": 18731,
+            "leaves": 256,
+            "candidates": 38
+          },
+          "search-checkpoint-262144-256": {
+            "bytes": 18299,
+            "leaves": 256,
+            "candidates": 38
+          }
+        },
+        "regressed_vs_previous_64k": false,
+        "fixed": {
+          "checkpoint-65536-16": {
+            "bytes": 24796,
+            "leaves": 16
+          },
+          "checkpoint-65536-32": {
+            "bytes": 22609,
+            "leaves": 32
+          },
+          "checkpoint-65536-64": {
+            "bytes": 21709,
+            "leaves": 64
+          },
+          "checkpoint-65536-128": {
+            "bytes": 20458,
+            "leaves": 128
+          },
+          "checkpoint-65536-256": {
+            "bytes": 18731,
+            "leaves": 256
+          },
+          "checkpoint-262144-16": {
+            "bytes": 25258,
+            "leaves": 16
+          },
+          "checkpoint-262144-32": {
+            "bytes": 22559,
+            "leaves": 32
+          },
+          "checkpoint-262144-64": {
+            "bytes": 21504,
+            "leaves": 64
+          },
+          "checkpoint-262144-128": {
+            "bytes": 20209,
+            "leaves": 128
+          },
+          "checkpoint-262144-256": {
+            "bytes": 18299,
+            "leaves": 256
+          }
+        }
+      },
+      {
+        "input": "gray16-ramp",
+        "category": "synthetic",
+        "reference_bytes": null,
+        "search": {
+          "baseline": {
+            "bytes": 1431,
+            "leaves": 4,
+            "candidates": 11
+          },
+          "search-control-65536-64": {
+            "bytes": 1293,
+            "leaves": 8,
+            "candidates": 15
+          },
+          "search-checkpoint-65536-64": {
+            "bytes": 1293,
+            "leaves": 8,
+            "candidates": 17
+          },
+          "search-checkpoint-65536-256": {
+            "bytes": 1293,
+            "leaves": 8,
+            "candidates": 17
+          },
+          "search-checkpoint-262144-256": {
+            "bytes": 1292,
+            "leaves": 10,
+            "candidates": 17
+          }
+        },
+        "regressed_vs_previous_64k": false,
+        "fixed": {
+          "checkpoint-65536-16": {
+            "bytes": 1293,
+            "leaves": 8
+          },
+          "checkpoint-65536-32": {
+            "bytes": 1293,
+            "leaves": 8
+          },
+          "checkpoint-65536-64": {
+            "bytes": 1293,
+            "leaves": 8
+          },
+          "checkpoint-65536-128": {
+            "bytes": 1293,
+            "leaves": 8
+          },
+          "checkpoint-65536-256": {
+            "bytes": 1293,
+            "leaves": 8
+          },
+          "checkpoint-262144-16": {
+            "bytes": 1292,
+            "leaves": 10
+          },
+          "checkpoint-262144-32": {
+            "bytes": 1292,
+            "leaves": 10
+          },
+          "checkpoint-262144-64": {
+            "bytes": 1292,
+            "leaves": 10
+          },
+          "checkpoint-262144-128": {
+            "bytes": 1292,
+            "leaves": 10
+          },
+          "checkpoint-262144-256": {
+            "bytes": 1292,
+            "leaves": 10
+          }
+        }
+      },
+      {
+        "input": "noise16",
+        "category": "synthetic",
+        "reference_bytes": null,
+        "search": {
+          "baseline": {
+            "bytes": 808588,
+            "leaves": 3,
+            "candidates": 25
+          },
+          "search-control-65536-64": {
+            "bytes": 805318,
+            "leaves": 46,
+            "candidates": 34
+          },
+          "search-checkpoint-65536-64": {
+            "bytes": 805318,
+            "leaves": 46,
+            "candidates": 38
+          },
+          "search-checkpoint-65536-256": {
+            "bytes": 805318,
+            "leaves": 46,
+            "candidates": 38
+          },
+          "search-checkpoint-262144-256": {
+            "bytes": 802309,
+            "leaves": 138,
+            "candidates": 50
+          }
+        },
+        "regressed_vs_previous_64k": false,
+        "fixed": {
+          "checkpoint-65536-16": {
+            "bytes": 807864,
+            "leaves": 11
+          },
+          "checkpoint-65536-32": {
+            "bytes": 807864,
+            "leaves": 11
+          },
+          "checkpoint-65536-64": {
+            "bytes": 807864,
+            "leaves": 11
+          },
+          "checkpoint-65536-128": {
+            "bytes": 807864,
+            "leaves": 11
+          },
+          "checkpoint-65536-256": {
+            "bytes": 807864,
+            "leaves": 11
+          },
+          "checkpoint-262144-16": {
+            "bytes": 807736,
+            "leaves": 16
+          },
+          "checkpoint-262144-32": {
+            "bytes": 807683,
+            "leaves": 25
+          },
+          "checkpoint-262144-64": {
+            "bytes": 807683,
+            "leaves": 25
+          },
+          "checkpoint-262144-128": {
+            "bytes": 807683,
+            "leaves": 25
+          },
+          "checkpoint-262144-256": {
+            "bytes": 807683,
+            "leaves": 25
+          }
+        }
+      },
+      {
+        "input": "palette-358",
+        "category": "graphics-rgba8",
+        "reference_bytes": 1243,
+        "search": {
+          "baseline": {
+            "bytes": 1061,
+            "leaves": 7,
+            "candidates": 22
+          },
+          "search-control-65536-64": {
+            "bytes": 1045,
+            "leaves": 29,
+            "candidates": 31
+          },
+          "search-checkpoint-65536-64": {
+            "bytes": 1045,
+            "leaves": 29,
+            "candidates": 42
+          },
+          "search-checkpoint-65536-256": {
+            "bytes": 1045,
+            "leaves": 29,
+            "candidates": 42
+          },
+          "search-checkpoint-262144-256": {
+            "bytes": 1045,
+            "leaves": 29,
+            "candidates": 42
+          }
+        },
+        "regressed_vs_previous_64k": false,
+        "fixed": {
+          "checkpoint-65536-16": {
+            "bytes": 1058,
+            "leaves": 16
+          },
+          "checkpoint-65536-32": {
+            "bytes": 1055,
+            "leaves": 28
+          },
+          "checkpoint-65536-64": {
+            "bytes": 1055,
+            "leaves": 28
+          },
+          "checkpoint-65536-128": {
+            "bytes": 1055,
+            "leaves": 28
+          },
+          "checkpoint-65536-256": {
+            "bytes": 1055,
+            "leaves": 28
+          },
+          "checkpoint-262144-16": {
+            "bytes": 1058,
+            "leaves": 16
+          },
+          "checkpoint-262144-32": {
+            "bytes": 1055,
+            "leaves": 28
+          },
+          "checkpoint-262144-64": {
+            "bytes": 1055,
+            "leaves": 28
+          },
+          "checkpoint-262144-128": {
+            "bytes": 1055,
+            "leaves": 28
+          },
+          "checkpoint-262144-256": {
+            "bytes": 1055,
+            "leaves": 28
+          }
+        }
+      },
+      {
+        "input": "palette-pattern",
+        "category": "synthetic",
+        "reference_bytes": null,
+        "search": {
+          "baseline": {
+            "bytes": 670,
+            "leaves": 9,
+            "candidates": 27
+          },
+          "search-control-65536-64": {
+            "bytes": 463,
+            "leaves": 22,
+            "candidates": 37
+          },
+          "search-checkpoint-65536-64": {
+            "bytes": 463,
+            "leaves": 22,
+            "candidates": 56
+          },
+          "search-checkpoint-65536-256": {
+            "bytes": 463,
+            "leaves": 22,
+            "candidates": 62
+          },
+          "search-checkpoint-262144-256": {
+            "bytes": 438,
+            "leaves": 27,
+            "candidates": 68
+          }
+        },
+        "regressed_vs_previous_64k": false,
+        "fixed": {
+          "checkpoint-65536-16": {
+            "bytes": 662,
+            "leaves": 16
+          },
+          "checkpoint-65536-32": {
+            "bytes": 463,
+            "leaves": 22
+          },
+          "checkpoint-65536-64": {
+            "bytes": 463,
+            "leaves": 22
+          },
+          "checkpoint-65536-128": {
+            "bytes": 463,
+            "leaves": 22
+          },
+          "checkpoint-65536-256": {
+            "bytes": 463,
+            "leaves": 22
+          },
+          "checkpoint-262144-16": {
+            "bytes": 663,
+            "leaves": 16
+          },
+          "checkpoint-262144-32": {
+            "bytes": 438,
+            "leaves": 27
+          },
+          "checkpoint-262144-64": {
+            "bytes": 438,
+            "leaves": 27
+          },
+          "checkpoint-262144-128": {
+            "bytes": 438,
+            "leaves": 27
+          },
+          "checkpoint-262144-256": {
+            "bytes": 438,
+            "leaves": 27
+          }
+        }
+      },
+      {
+        "input": "photo-bliznaca",
+        "category": "photos-rgb8",
+        "reference_bytes": 240347,
+        "search": {
+          "baseline": {
+            "bytes": 250237,
+            "leaves": 14,
+            "candidates": 24
+          },
+          "search-control-65536-64": {
+            "bytes": 244280,
+            "leaves": 59,
+            "candidates": 33
+          },
+          "search-checkpoint-65536-64": {
+            "bytes": 244280,
+            "leaves": 59,
+            "candidates": 51
+          },
+          "search-checkpoint-65536-256": {
+            "bytes": 244280,
+            "leaves": 59,
+            "candidates": 56
+          },
+          "search-checkpoint-262144-256": {
+            "bytes": 242885,
+            "leaves": 229,
+            "candidates": 69
+          }
+        },
+        "regressed_vs_previous_64k": false,
+        "fixed": {
+          "checkpoint-65536-16": {
+            "bytes": 246747,
+            "leaves": 16
+          },
+          "checkpoint-65536-32": {
+            "bytes": 244678,
+            "leaves": 32
+          },
+          "checkpoint-65536-64": {
+            "bytes": 244280,
+            "leaves": 59
+          },
+          "checkpoint-65536-128": {
+            "bytes": 244280,
+            "leaves": 59
+          },
+          "checkpoint-65536-256": {
+            "bytes": 244280,
+            "leaves": 59
+          },
+          "checkpoint-262144-16": {
+            "bytes": 246659,
+            "leaves": 16
+          },
+          "checkpoint-262144-32": {
+            "bytes": 244448,
+            "leaves": 32
+          },
+          "checkpoint-262144-64": {
+            "bytes": 243564,
+            "leaves": 64
+          },
+          "checkpoint-262144-128": {
+            "bytes": 243258,
+            "leaves": 128
+          },
+          "checkpoint-262144-256": {
+            "bytes": 242885,
+            "leaves": 229
+          }
+        }
+      },
+      {
+        "input": "photo-flower",
+        "category": "photos-rgb8",
+        "reference_bytes": 2537909,
+        "search": {
+          "baseline": {
+            "bytes": 2748396,
+            "leaves": 13,
+            "candidates": 24
+          },
+          "search-control-65536-64": {
+            "bytes": 2624437,
+            "leaves": 64,
+            "candidates": 33
+          },
+          "search-checkpoint-65536-64": {
+            "bytes": 2624437,
+            "leaves": 64,
+            "candidates": 51
+          },
+          "search-checkpoint-65536-256": {
+            "bytes": 2624437,
+            "leaves": 64,
+            "candidates": 59
+          },
+          "search-checkpoint-262144-256": {
+            "bytes": 2609893,
+            "leaves": 64,
+            "candidates": 69
+          }
+        },
+        "regressed_vs_previous_64k": false,
+        "fixed": {
+          "checkpoint-65536-16": {
+            "bytes": 2705670,
+            "leaves": 16
+          },
+          "checkpoint-65536-32": {
+            "bytes": 2637732,
+            "leaves": 32
+          },
+          "checkpoint-65536-64": {
+            "bytes": 2631733,
+            "leaves": 64
+          },
+          "checkpoint-65536-128": {
+            "bytes": 2630425,
+            "leaves": 114
+          },
+          "checkpoint-65536-256": {
+            "bytes": 2630425,
+            "leaves": 114
+          },
+          "checkpoint-262144-16": {
+            "bytes": 2705447,
+            "leaves": 16
+          },
+          "checkpoint-262144-32": {
+            "bytes": 2636489,
+            "leaves": 32
+          },
+          "checkpoint-262144-64": {
+            "bytes": 2609893,
+            "leaves": 64
+          },
+          "checkpoint-262144-128": {
+            "bytes": 2625218,
+            "leaves": 128
+          },
+          "checkpoint-262144-256": {
+            "bytes": 2611880,
+            "leaves": 256
+          }
+        }
+      },
+      {
+        "input": "photo-macan",
+        "category": "photos-rgb8",
+        "reference_bytes": 252153,
+        "search": {
+          "baseline": {
+            "bytes": 268426,
+            "leaves": 16,
+            "candidates": 25
+          },
+          "search-control-65536-64": {
+            "bytes": 263843,
+            "leaves": 64,
+            "candidates": 34
+          },
+          "search-checkpoint-65536-64": {
+            "bytes": 263843,
+            "leaves": 64,
+            "candidates": 52
+          },
+          "search-checkpoint-65536-256": {
+            "bytes": 263288,
+            "leaves": 123,
+            "candidates": 67
+          },
+          "search-checkpoint-262144-256": {
+            "bytes": 260654,
+            "leaves": 256,
+            "candidates": 70
+          }
+        },
+        "regressed_vs_previous_64k": false,
+        "fixed": {
+          "checkpoint-65536-16": {
+            "bytes": 272582,
+            "leaves": 16
+          },
+          "checkpoint-65536-32": {
+            "bytes": 266327,
+            "leaves": 32
+          },
+          "checkpoint-65536-64": {
+            "bytes": 263843,
+            "leaves": 64
+          },
+          "checkpoint-65536-128": {
+            "bytes": 264217,
+            "leaves": 128
+          },
+          "checkpoint-65536-256": {
+            "bytes": 264197,
+            "leaves": 141
+          },
+          "checkpoint-262144-16": {
+            "bytes": 273751,
+            "leaves": 16
+          },
+          "checkpoint-262144-32": {
+            "bytes": 267043,
+            "leaves": 32
+          },
+          "checkpoint-262144-64": {
+            "bytes": 263011,
+            "leaves": 64
+          },
+          "checkpoint-262144-128": {
+            "bytes": 262876,
+            "leaves": 128
+          },
+          "checkpoint-262144-256": {
+            "bytes": 260654,
+            "leaves": 256
+          }
+        }
+      },
+      {
+        "input": "photo-ria",
+        "category": "photos-rgb8",
+        "reference_bytes": 208131,
+        "search": {
+          "baseline": {
+            "bytes": 219767,
+            "leaves": 11,
+            "candidates": 22
+          },
+          "search-control-65536-64": {
+            "bytes": 212082,
+            "leaves": 64,
+            "candidates": 31
+          },
+          "search-checkpoint-65536-64": {
+            "bytes": 212082,
+            "leaves": 64,
+            "candidates": 49
+          },
+          "search-checkpoint-65536-256": {
+            "bytes": 212082,
+            "leaves": 64,
+            "candidates": 55
+          },
+          "search-checkpoint-262144-256": {
+            "bytes": 211044,
+            "leaves": 256,
+            "candidates": 67
+          }
+        },
+        "regressed_vs_previous_64k": false,
+        "fixed": {
+          "checkpoint-65536-16": {
+            "bytes": 215028,
+            "leaves": 16
+          },
+          "checkpoint-65536-32": {
+            "bytes": 213091,
+            "leaves": 32
+          },
+          "checkpoint-65536-64": {
+            "bytes": 212082,
+            "leaves": 64
+          },
+          "checkpoint-65536-128": {
+            "bytes": 212119,
+            "leaves": 75
+          },
+          "checkpoint-65536-256": {
+            "bytes": 212119,
+            "leaves": 75
+          },
+          "checkpoint-262144-16": {
+            "bytes": 214911,
+            "leaves": 16
+          },
+          "checkpoint-262144-32": {
+            "bytes": 213043,
+            "leaves": 32
+          },
+          "checkpoint-262144-64": {
+            "bytes": 212808,
+            "leaves": 64
+          },
+          "checkpoint-262144-128": {
+            "bytes": 211691,
+            "leaves": 128
+          },
+          "checkpoint-262144-256": {
+            "bytes": 211044,
+            "leaves": 256
+          }
+        }
+      },
+      {
+        "input": "screen-pattern",
+        "category": "synthetic",
+        "reference_bytes": null,
+        "search": {
+          "baseline": {
+            "bytes": 464,
+            "leaves": 7,
+            "candidates": 23
+          },
+          "search-control-65536-64": {
+            "bytes": 409,
+            "leaves": 16,
+            "candidates": 33
+          },
+          "search-checkpoint-65536-64": {
+            "bytes": 409,
+            "leaves": 16,
+            "candidates": 45
+          },
+          "search-checkpoint-65536-256": {
+            "bytes": 409,
+            "leaves": 16,
+            "candidates": 49
+          },
+          "search-checkpoint-262144-256": {
+            "bytes": 385,
+            "leaves": 19,
+            "candidates": 50
+          }
+        },
+        "regressed_vs_previous_64k": false,
+        "fixed": {
+          "checkpoint-65536-16": {
+            "bytes": 409,
+            "leaves": 16
+          },
+          "checkpoint-65536-32": {
+            "bytes": 409,
+            "leaves": 16
+          },
+          "checkpoint-65536-64": {
+            "bytes": 409,
+            "leaves": 16
+          },
+          "checkpoint-65536-128": {
+            "bytes": 409,
+            "leaves": 16
+          },
+          "checkpoint-65536-256": {
+            "bytes": 409,
+            "leaves": 16
+          },
+          "checkpoint-262144-16": {
+            "bytes": 405,
+            "leaves": 16
+          },
+          "checkpoint-262144-32": {
+            "bytes": 385,
+            "leaves": 19
+          },
+          "checkpoint-262144-64": {
+            "bytes": 385,
+            "leaves": 19
+          },
+          "checkpoint-262144-128": {
+            "bytes": 385,
+            "leaves": 19
+          },
+          "checkpoint-262144-256": {
+            "bytes": 385,
+            "leaves": 19
+          }
+        }
+      },
+      {
+        "input": "splines",
+        "category": "graphics-rgb8",
+        "reference_bytes": 258951,
+        "search": {
+          "baseline": {
+            "bytes": 396670,
+            "leaves": 7,
+            "candidates": 25
+          },
+          "search-control-65536-64": {
+            "bytes": 355821,
+            "leaves": 37,
+            "candidates": 34
+          },
+          "search-checkpoint-65536-64": {
+            "bytes": 325978,
+            "leaves": 32,
+            "candidates": 52
+          },
+          "search-checkpoint-65536-256": {
+            "bytes": 325978,
+            "leaves": 32,
+            "candidates": 52
+          },
+          "search-checkpoint-262144-256": {
+            "bytes": 295203,
+            "leaves": 188,
+            "candidates": 69
+          }
+        },
+        "regressed_vs_previous_64k": false,
+        "fixed": {
+          "checkpoint-65536-16": {
+            "bytes": 343695,
+            "leaves": 16
+          },
+          "checkpoint-65536-32": {
+            "bytes": 325978,
+            "leaves": 32
+          },
+          "checkpoint-65536-64": {
+            "bytes": 446914,
+            "leaves": 55
+          },
+          "checkpoint-65536-128": {
+            "bytes": 446914,
+            "leaves": 55
+          },
+          "checkpoint-65536-256": {
+            "bytes": 446914,
+            "leaves": 55
+          },
+          "checkpoint-262144-16": {
+            "bytes": 405987,
+            "leaves": 16
+          },
+          "checkpoint-262144-32": {
+            "bytes": 317907,
+            "leaves": 32
+          },
+          "checkpoint-262144-64": {
+            "bytes": 332839,
+            "leaves": 64
+          },
+          "checkpoint-262144-128": {
+            "bytes": 316398,
+            "leaves": 128
+          },
+          "checkpoint-262144-256": {
+            "bytes": 295203,
+            "leaves": 188
+          }
+        }
+      }
+    ],
+    "reference_positive_factorial_interaction_bytes": 67375
+  },
+  "limitations": [
+    "Small related-image corpus; not broad parity qualification.",
+    "Concurrent-worker timings are diagnostic only.",
+    "Fixed checkpoint selection is a measured-file envelope, not another normal-search run.",
+    "Reference and native have different transform pipelines and learning algorithms.",
+    "Larger sample budgets do not guarantee per-image nonregression against smaller experimental sample sets.",
+    "Quantized checkpoint path tested for correctness, not included in this rate sweep.",
+    "No GPU execution or capacity change."
+  ],
+  "source_sha256": {
+    "CMakeLists.txt": "4ffee17d11da5820bb98efe78e04dda08b136a088130b7d4791a4925d8b5520b",
+    "docs/modular-tree-checkpoints.md": "c9b1d372d509d559583d4e6e5fc4ceef7b48a6cf2ef719488b15c4861445dd84",
+    "src/codec/modular/quantized_tree_learning.cpp": "af58a6d9b24077f790453603190e037c57af51e461be8d30c2e668aa79b45513",
+    "src/codec/modular/quantized_tree_learning.h": "dabf2f376d3a0cfc2b17f135c813e5db9fc6fdfc3bb31b20adfebd1dd4018aa2",
+    "src/codec/modular/tree_learning.cpp": "476e804e4c2ddbf5ea296842b8cfb9968aa6e683768507cdd445cb5d7cf8442d",
+    "src/codec/modular/tree_learning.h": "90a451c2a2334b3c1b2cd3133aaacf463cf3d694c47661a08c355d9b6421c730",
+    "src/codestream/modular/search.cpp": "80d1e176595d6570c460ed192ac843bfe6d727aac62a7b3129df4e3b22a2dd17",
+    "src/codestream/modular/search.h": "6d5b3dd28039a23d1987d499b920e9f0c9396d29b2cd68159beed7c6bda41a49",
+    "src/codestream/modular/workflow.cpp": "75f7f75cf9b981ef7e71d32f42923faa504d08a653a5b73ab3daeb7837d29e3a",
+    "src/codestream/modular/workflow.h": "35ddf04d6828efcdb4b190598d072fa9e855a9e2e074dc34499bac2f3d34199c",
+    "tests/modular_training_budget_test.cpp": "fb12d2492a7a587e177bd00c3aa78b82d72284835efb0082624c21d6b0ef1e6a",
+    "tools/modular_training_study/README.md": "cfddda3dcca0966915eb6080715f84e44f11372da5b25a39747631c4efa5cb74",
+    "tools/modular_training_study/analyze_checkpoints.py": "36aea3b26bb016de1b7d5585a15cd9bcd383b86e29891aa67452c9dca4749c79",
+    "tools/modular_training_study/checkpoint_reference.py": "0f1b8503c0635e5b3679b2205278dba5397793d4c51afbd464c73a26c9ab2b16",
+    "tools/modular_training_study/checkpoints.py": "9b5e7a5e3f0ad8653f03f11e5817e265b6ca16ec2cc4b93660c699ea4c463925",
+    "tools/modular_training_study/runner.cpp": "f5d9e3212673e1e7c945a9e91bd422644f8367b669d66b0b36d1ae63fd9a8db3"
+  },
+  "artifact_sha256": {
+    "/Users/yunhocho/GitHub/gjxl-modular/build/modular-rate-20261010/results.jsonl": "fca28c360fa35c798b31239a092062fba1d7f9dd3a8e5d5da5954e860bdd1508",
+    "/Users/yunhocho/GitHub/gjxl-modular-libjxl-study/docs/modular-libjxl-attribution-results.json": "e98f751f48155548edf1c0c504ff54872638172105f493c92a77b8212da9dd2d",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/CMakeCache.txt": "78c386b0de5b2a32d938ffa65231b1257593decc250f2666859cc6d890091813",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/analysis.log": "782c52ed6e0d09a3a13d755eb016a68df63675df356cf5615683af41cac5bc9b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/build.log": "781421675537a301075ed1eea556bfa55d856295d3b52ac2b45d267d41934050",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/checkpoints-test-final.log": "0723d671986ac339af5d978ac03031157792edf68481016c6bda07dff13bd700",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/checkpoints-test.log": "387201533fc46eb45062f4bcf45fe8c84fab52c1a317b65b426d45648113fa1d",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/configure.log": "88b4936166c1d9aeda3fd2b152ace3b6e0676f5fba5b63ba56a061eb07b3a92d",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/final-build.log": "194513b7b224b14fac35f279745d1d51665c76268135f7bfb3760bfa8fa50de0",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/finalize.py": "af0fd8935fdb18a679a2e7ac7ca2d301c61e58f0ab048bcbd9a9521eada92205",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-flower/baseline.jxl": "86bcd9ade7d9d11e1c0db64d438b72ec1902c108bb8bf5e908df5aec61a528d1",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-flower/checkpoint-262144-128.jxl": "1cebef04164faa6756e465f443a0540d24704abb2d10fdbfb932aa1648d45d29",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-flower/checkpoint-262144-16.jxl": "4e500a589f86492bebe08e4e3cc0572eef70bff524118c0aaad812448ceceaef",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-flower/checkpoint-262144-256.jxl": "dc3e300605e7dc2c08873583ff04cb2304a02bae3492f0a8874d6dd8c4fa86b7",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-flower/checkpoint-262144-32.jxl": "5ce96efb8d4e07060ae6ef69742437193caab0606ad627076ae0f09b5c227188",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-flower/checkpoint-262144-64.jxl": "da3cc7f4e77866d7f410ed2f3362bff8b6c114249412ddd1bdcfdb3b85bbc498",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-flower/checkpoint-65536-128.jxl": "384cfc21804f292b06b2015f024b75fcc9ada455b34d3dbea35f9c72621b2d3a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-flower/checkpoint-65536-16.jxl": "24bea2c86db25e6dca458b34a1d607f562a1bf7b67e4bc7bcdd5566ac558a2f1",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-flower/checkpoint-65536-256.jxl": "384cfc21804f292b06b2015f024b75fcc9ada455b34d3dbea35f9c72621b2d3a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-flower/checkpoint-65536-32.jxl": "b9ac06e200d2dce4d7c942825ce6b1deb9b905f6bbaa733b4774f842e472438e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-flower/checkpoint-65536-64.jxl": "768ecad80a17b5103d49c9cfc32986a165f0a390ff5da96bad10ca7811e07082",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-flower/runner.jsonl": "519ba90b29a892824cb3eec5547188f2d7a468f2ea1eec903f40065fac45dcb8",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-flower/stderr.log": "950d31cded9cadf33a2191cb611ad491693b842283c599de8f3239662fbee03d",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-ria/baseline.jxl": "6fee22c4b96ba8adb34ffd617c4dce6c129a282dffa8920fd04bd22a62d31c58",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-ria/checkpoint-262144-128.jxl": "d062b0e78ba6eb0d3328ef1e0fca88799a9bb596855201b46727f579a5b5f983",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-ria/checkpoint-262144-16.jxl": "8ca2303b7a4e500d2d2825949cf238e50155cea7536f691b7c20ee9b49453e05",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-ria/checkpoint-262144-256.jxl": "0a3831b592f69db6d90a629096246e01bd47145cca3d8e82f2538ddbf7e0130d",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-ria/checkpoint-262144-32.jxl": "6f09e1c3cd12c2b1cb59b2a0357d2be19fbd59c3dd3127a5f0f5a73d0bd3ebcb",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-ria/checkpoint-262144-64.jxl": "075743bf9dff92f9e2b90b829277f80473d5cee18e88213c8bd3296f16030cbc",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-ria/checkpoint-65536-128.jxl": "4bca45b20bdedcfd668d43a1a638d00f376e10d540f777b233a7dacf96bd3160",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-ria/checkpoint-65536-16.jxl": "ff54d4bf613561223096ebe69cf1eb932b50cc042a3b7cab659cbbe2a590ad5b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-ria/checkpoint-65536-256.jxl": "4bca45b20bdedcfd668d43a1a638d00f376e10d540f777b233a7dacf96bd3160",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-ria/checkpoint-65536-32.jxl": "c933d8dbae493bd0e5bedafbd8667dcc6a0f1904da7214dea2252d54cfad779c",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-ria/checkpoint-65536-64.jxl": "a7fce0cdf992c7658d11e28aed3ace02bb4d3ae3124e6966d94aa4d20f6a58e5",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-ria/runner.jsonl": "ac4f46f9044c8707411d8bb57864631b0286a3ac37abafd6fe0158df025d3a49",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha-ria/stderr.log": "a9b6f2d77324f74db419b61b48fc507316d74aa13006549bb55cf186f1ffa7d7",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha16-ramp/baseline.jxl": "a48598deb2e35da5b5534f3f31c1b7931dfcbe2fc66f2f2d3ca78a17d599d00f",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha16-ramp/checkpoint-262144-128.jxl": "fcdb81b054fd4d484f290a40829b985d927c226bb732d02d4359ff92133ffdb1",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha16-ramp/checkpoint-262144-16.jxl": "5775a57f5efe554256db89f7df4b87df486aa4f258d237b0b8adc61459a07a11",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha16-ramp/checkpoint-262144-256.jxl": "fcdb81b054fd4d484f290a40829b985d927c226bb732d02d4359ff92133ffdb1",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha16-ramp/checkpoint-262144-32.jxl": "f13de3407690ba713a4410954744a9113c920446ce610d562340b4927d3b0669",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha16-ramp/checkpoint-262144-64.jxl": "fcdb81b054fd4d484f290a40829b985d927c226bb732d02d4359ff92133ffdb1",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha16-ramp/checkpoint-65536-128.jxl": "96e1ff409f916938165064b3d31c7e61f978199fa684b0b24d9c072761fa50ec",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha16-ramp/checkpoint-65536-16.jxl": "6c35825619e16525f3c21e3ad8bca44b58b85a54853fcb62e97168c5378d4bc3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha16-ramp/checkpoint-65536-256.jxl": "96e1ff409f916938165064b3d31c7e61f978199fa684b0b24d9c072761fa50ec",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha16-ramp/checkpoint-65536-32.jxl": "6ab873efe0475ad9708a9728de9973aa7cf17f590d78e4e4b5a51157c4eecd3a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha16-ramp/checkpoint-65536-64.jxl": "96e1ff409f916938165064b3d31c7e61f978199fa684b0b24d9c072761fa50ec",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha16-ramp/runner.jsonl": "b5d0818291ebe237159023801cf95e9ef01a0b0f9322c80f3846ac04638fe93b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/alpha16-ramp/stderr.log": "cf78159b73007a93da9ef796e290e0a4194708b8be9b377e362946f146f1614d",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/chessboard/baseline.jxl": "e8ab11475c525f29316b7edb4bc99525b68808663cc7b04434d2317ba7613571",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/chessboard/checkpoint-262144-128.jxl": "7897101c38fc75617bee943c5dc705727a7b54021f5ffcd87523153f3f727c23",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/chessboard/checkpoint-262144-16.jxl": "9b2e3c17a04983d791c2c2586c0a6dda0523ca25bda44b7465a693fa2662095f",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/chessboard/checkpoint-262144-256.jxl": "ff0eedf5abe30b8fcc0894be037800d9bbd01b8780bae321ba4415db3249c260",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/chessboard/checkpoint-262144-32.jxl": "b972782d2cf3e689ad370cc4c5a3855516acfde17d8582922630a0f1619d9440",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/chessboard/checkpoint-262144-64.jxl": "e8d8e56cb0bb19e8a6f14f397a448b782a54ef03c1008c878a4f3c0e41924a6f",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/chessboard/checkpoint-65536-128.jxl": "c0565bdbbea8cade4d7d6c633065356f939b7d6c81714370faa536efe98a921e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/chessboard/checkpoint-65536-16.jxl": "3527ef56e1dd22587d42101ef2f2801d54c0b88e4ce2e8cdc07166637e9b683b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/chessboard/checkpoint-65536-256.jxl": "c0565bdbbea8cade4d7d6c633065356f939b7d6c81714370faa536efe98a921e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/chessboard/checkpoint-65536-32.jxl": "29dcba4e2421d7b3c04969d5d4e636165b66fecf8bea0ff310da6a59dda95ef7",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/chessboard/checkpoint-65536-64.jxl": "6d8dfaec0a956f6f6258a0c2c79566a8590ef22364b6dba3e6a479e76809ff70",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/chessboard/runner.jsonl": "12cf2e21f6d14089e80c97089e1c253dad737fdbfb3049c149fe06a17c215eae",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/chessboard/stderr.log": "e87a6430ed22b8d2eb3998f4eb54ce25cd6d67045346d85f80dd628d6fcf3383",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-macan/baseline.jxl": "c0c5af331d1f91f7714303425d0a8f3bfbd7571b6dadc34d70ad4797e289ab44",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-macan/checkpoint-262144-128.jxl": "67a8237c031a6155a4feedfca43fe891aad0ef4f8f65ceeb9b5be444d874642c",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-macan/checkpoint-262144-16.jxl": "010766b5136447e76f81e17911405b3d7a0e75711391b48144feaf125f2a13af",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-macan/checkpoint-262144-256.jxl": "c602eb9b9c670bbe0d57899936114ded6c21a99b461ec7617509a525ac7e0470",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-macan/checkpoint-262144-32.jxl": "0f553811cd353c4bbb69c8fedae3763a05046388ed0d486eb75c2d059d8ae869",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-macan/checkpoint-262144-64.jxl": "2ab7e7e3397ff8cd5c3c014a04244da00e3b997e90bf23abae6865cea89c3fe9",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-macan/checkpoint-65536-128.jxl": "edf57ac8e12ecdb165eab59550b8f9fcb77aeb4db2951345821eef78beb9ea79",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-macan/checkpoint-65536-16.jxl": "86df19ac18738974c468f67b12e5554bef8d8657059e8c802f4990ecb2957645",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-macan/checkpoint-65536-256.jxl": "edf57ac8e12ecdb165eab59550b8f9fcb77aeb4db2951345821eef78beb9ea79",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-macan/checkpoint-65536-32.jxl": "c26b0b596c0d32ca32368bd572d131c751964a849c53fe2d184bac946c2229da",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-macan/checkpoint-65536-64.jxl": "61e54fa7d1762c6690db20d708d77bf414be69495fd2eaeaf664935a50bf304d",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-macan/runner.jsonl": "bfd272987f1460833f5ece5d8b572b982a102413584773eb51649696e0f3f855",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-macan/stderr.log": "eac9f3533d94652fb999842a7c6ac008fa1a79c3960c13d2078280a5b275ae2d",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-patches/baseline.jxl": "539e75c439d66503c67d9da3804f52404480599a102d6659d8646fef752f44ae",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-patches/checkpoint-262144-128.jxl": "28de27f7bbc43eb8fbda794bfcbeec3cc782553104a32cd6460fe53ce96c0c24",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-patches/checkpoint-262144-16.jxl": "8ae043f1230dc0b9b92b45246f8683404c5dc4cfda5dbf220bc67616def6a43f",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-patches/checkpoint-262144-256.jxl": "fab305d9d2012871373e2e221ca3302e08550b89f0581e39248ee9276cb15753",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-patches/checkpoint-262144-32.jxl": "93d909d8bb6d751f424a7c9731abe20c905bc8646f1128f9714cd475d3ffe8b8",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-patches/checkpoint-262144-64.jxl": "6f9b8091a7123b0aea901059e4838ba399c0da34321e7eb5e538ce55bbe309c3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-patches/checkpoint-65536-128.jxl": "6e115b7f19af26117c09c77ed8d842341a9ed5cba8acf325b956ea14498df124",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-patches/checkpoint-65536-16.jxl": "f6032bdcd2ee16ecb00915240ca1e96729909a608e3762d41296293e8c4ed72b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-patches/checkpoint-65536-256.jxl": "92668ba03be64fa94a9aa559c2c173491fdfd23faede3616179eca9e65c27ae9",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-patches/checkpoint-65536-32.jxl": "b7076af33e6daaf943106e9009007b18cfc6b6eb0ff0d65f242209166e12ddd7",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-patches/checkpoint-65536-64.jxl": "50f62a8b7d8514d119d87e6cc095ef172607e9d8f411c5fdace524f32c2df64e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-patches/runner.jsonl": "7f14dc1ff9700db397564cca28eaab5eef920a0340f9fbe22f6f0757a9e0c5a4",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray-patches/stderr.log": "2e90b207fda7f835dad640987ce1437ad5fc76af061ff58c60f950e23d8e7af0",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray16-ramp/baseline.jxl": "be62f425b67b1ba63214b2adf76af893068e1528389ad006ff87746dbe2f8a7e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray16-ramp/checkpoint-262144-128.jxl": "452c0817287d772ba87c26cd08fe5008bf0b9bb61b4b8d5848e8a5dfacdda3e4",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray16-ramp/checkpoint-262144-16.jxl": "452c0817287d772ba87c26cd08fe5008bf0b9bb61b4b8d5848e8a5dfacdda3e4",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray16-ramp/checkpoint-262144-256.jxl": "452c0817287d772ba87c26cd08fe5008bf0b9bb61b4b8d5848e8a5dfacdda3e4",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray16-ramp/checkpoint-262144-32.jxl": "452c0817287d772ba87c26cd08fe5008bf0b9bb61b4b8d5848e8a5dfacdda3e4",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray16-ramp/checkpoint-262144-64.jxl": "452c0817287d772ba87c26cd08fe5008bf0b9bb61b4b8d5848e8a5dfacdda3e4",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray16-ramp/checkpoint-65536-128.jxl": "57d5e1699e747d822aaf84363c8fc89fb93cad136196ce10985180e19168f937",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray16-ramp/checkpoint-65536-16.jxl": "57d5e1699e747d822aaf84363c8fc89fb93cad136196ce10985180e19168f937",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray16-ramp/checkpoint-65536-256.jxl": "57d5e1699e747d822aaf84363c8fc89fb93cad136196ce10985180e19168f937",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray16-ramp/checkpoint-65536-32.jxl": "57d5e1699e747d822aaf84363c8fc89fb93cad136196ce10985180e19168f937",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray16-ramp/checkpoint-65536-64.jxl": "57d5e1699e747d822aaf84363c8fc89fb93cad136196ce10985180e19168f937",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray16-ramp/runner.jsonl": "dc42339835fb685757d80da33055288c9b06685ef6a600291ba10bfce95a4b72",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/gray16-ramp/stderr.log": "e2d80d49b27221e9d4b06bec765eaea5ef0bcf555c1d8d09f343f0f6299a2573",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/manifest.json": "bb4e7981fb250019cc74812c6b48c59b49e83c191341ceb267b479d15c3a9585",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/noise16/baseline.jxl": "ec8c2124c3ecfcc6b497802e3de163596116917a69cbf8a755559f6a332d4cbb",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/noise16/checkpoint-262144-128.jxl": "2ecf58616197cbd5968a2980b3903dfb61ece7ec24c24ab1d142f81899614c81",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/noise16/checkpoint-262144-16.jxl": "1a9d27e9bf97abca1479e8d1869fbd04b606f966d7c903296950e543a3f9fc6d",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/noise16/checkpoint-262144-256.jxl": "2ecf58616197cbd5968a2980b3903dfb61ece7ec24c24ab1d142f81899614c81",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/noise16/checkpoint-262144-32.jxl": "2ecf58616197cbd5968a2980b3903dfb61ece7ec24c24ab1d142f81899614c81",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/noise16/checkpoint-262144-64.jxl": "2ecf58616197cbd5968a2980b3903dfb61ece7ec24c24ab1d142f81899614c81",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/noise16/checkpoint-65536-128.jxl": "574ef07faef27195050646110c8baa9077b88965779fee86bf8bbd6872a1cf33",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/noise16/checkpoint-65536-16.jxl": "574ef07faef27195050646110c8baa9077b88965779fee86bf8bbd6872a1cf33",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/noise16/checkpoint-65536-256.jxl": "574ef07faef27195050646110c8baa9077b88965779fee86bf8bbd6872a1cf33",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/noise16/checkpoint-65536-32.jxl": "574ef07faef27195050646110c8baa9077b88965779fee86bf8bbd6872a1cf33",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/noise16/checkpoint-65536-64.jxl": "574ef07faef27195050646110c8baa9077b88965779fee86bf8bbd6872a1cf33",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/noise16/runner.jsonl": "7a21eeba478717e2415d77584f6388ecb9028fab9ec8dc77ca0ced5a5e6cd5f3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/noise16/stderr.log": "85b5e2a6203ad4dbbddcb89c0292cdc40ff96a0c682cf3f7f022ebb939c52283",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-358/baseline.jxl": "c4d2d06e19c75886d26a433a8d69cf5425fa07c03905da9c2c10ad693b1fff85",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-358/checkpoint-262144-128.jxl": "df58eae00f5898bfd2f3a1b4333e00fdd548588a37973de1def157797ec5ae44",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-358/checkpoint-262144-16.jxl": "02e24c37584beadff11f8b0719d44bf7128cc14e13b6ae9047b50bf5bffe7cb3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-358/checkpoint-262144-256.jxl": "df58eae00f5898bfd2f3a1b4333e00fdd548588a37973de1def157797ec5ae44",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-358/checkpoint-262144-32.jxl": "df58eae00f5898bfd2f3a1b4333e00fdd548588a37973de1def157797ec5ae44",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-358/checkpoint-262144-64.jxl": "df58eae00f5898bfd2f3a1b4333e00fdd548588a37973de1def157797ec5ae44",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-358/checkpoint-65536-128.jxl": "df58eae00f5898bfd2f3a1b4333e00fdd548588a37973de1def157797ec5ae44",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-358/checkpoint-65536-16.jxl": "02e24c37584beadff11f8b0719d44bf7128cc14e13b6ae9047b50bf5bffe7cb3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-358/checkpoint-65536-256.jxl": "df58eae00f5898bfd2f3a1b4333e00fdd548588a37973de1def157797ec5ae44",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-358/checkpoint-65536-32.jxl": "df58eae00f5898bfd2f3a1b4333e00fdd548588a37973de1def157797ec5ae44",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-358/checkpoint-65536-64.jxl": "df58eae00f5898bfd2f3a1b4333e00fdd548588a37973de1def157797ec5ae44",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-358/runner.jsonl": "f3bb0f0d9610d65df1aa41e7da36181fd20ab0f0d5e99bdc95a8f3c306f3aaac",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-358/stderr.log": "d64e0455168867e941517b52769d472043f98c692c74e6ef24b2c2eabed36abe",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-pattern/baseline.jxl": "e4a3257e06bf6d1bcad7c3f4c9f69e8135f5063a4fce6d00f69de366d2b0a1bb",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-pattern/checkpoint-262144-128.jxl": "82a2e6e98f08f910081295887c7104ffd16afd563b4cfdf5bcfdc2d66e83b0f8",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-pattern/checkpoint-262144-16.jxl": "6fe2bd91ecee84a8057a2ea4def33336d417ba259c67224f72a95c8771af2a8e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-pattern/checkpoint-262144-256.jxl": "82a2e6e98f08f910081295887c7104ffd16afd563b4cfdf5bcfdc2d66e83b0f8",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-pattern/checkpoint-262144-32.jxl": "82a2e6e98f08f910081295887c7104ffd16afd563b4cfdf5bcfdc2d66e83b0f8",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-pattern/checkpoint-262144-64.jxl": "82a2e6e98f08f910081295887c7104ffd16afd563b4cfdf5bcfdc2d66e83b0f8",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-pattern/checkpoint-65536-128.jxl": "75f47323b111bd125ba20af78301780d14d4e3fe05cf356d4fffd3820b063a30",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-pattern/checkpoint-65536-16.jxl": "7bac02f6f32c03a5ad36c631814d89dca47de4674959179bb11bef3658aa931a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-pattern/checkpoint-65536-256.jxl": "75f47323b111bd125ba20af78301780d14d4e3fe05cf356d4fffd3820b063a30",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-pattern/checkpoint-65536-32.jxl": "75f47323b111bd125ba20af78301780d14d4e3fe05cf356d4fffd3820b063a30",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-pattern/checkpoint-65536-64.jxl": "75f47323b111bd125ba20af78301780d14d4e3fe05cf356d4fffd3820b063a30",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-pattern/runner.jsonl": "ef15917561f20eb288a1a0ad6c8aa36b06a992f404e08adaddc68772800473bd",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/palette-pattern/stderr.log": "cc833c701b6ee14065ae44a473bbd9f88f1f6d0212c527cf00d47c4a4a34f558",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-bliznaca/baseline.jxl": "c1770de2c54076a17c4496569806f25fb2e30975bd0dd0a3d0cff38a765bf8d4",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-bliznaca/checkpoint-262144-128.jxl": "12ac6ccbc40d8e93a0a06cbe011fe12e9e803836767897cfa1de357dbad9c919",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-bliznaca/checkpoint-262144-16.jxl": "c3b051bfe918c6fe831ff0061ab1fa0fa78fc547ceed07110f4cabb32114417d",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-bliznaca/checkpoint-262144-256.jxl": "f495a5fd5ff5df033c549f39883b45c10b5ad9db5d42f77da2aed17cd3fee793",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-bliznaca/checkpoint-262144-32.jxl": "15d602a7b37d5c1340e5550d12fd3521368518f8264586d5edb0a8f6312bc9f2",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-bliznaca/checkpoint-262144-64.jxl": "7d520c0bb6e8bde53b2887536bec341841364eb89738b2e359ccd8a4f81c05f3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-bliznaca/checkpoint-65536-128.jxl": "436bd4856c81350e1e8b94b4547cbf8a6821ae914e687fc719b0c90e9a0c549e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-bliznaca/checkpoint-65536-16.jxl": "a69c747ccb0255e4429c155a67eedd1a61ca4019247cb30b1097b8e869333057",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-bliznaca/checkpoint-65536-256.jxl": "436bd4856c81350e1e8b94b4547cbf8a6821ae914e687fc719b0c90e9a0c549e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-bliznaca/checkpoint-65536-32.jxl": "e4323fc73b16e064f65e9e0f784aeeb8944853a1af315d8c9bd88dce4ff3a25b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-bliznaca/checkpoint-65536-64.jxl": "436bd4856c81350e1e8b94b4547cbf8a6821ae914e687fc719b0c90e9a0c549e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-bliznaca/runner.jsonl": "64861b80d4bba5a0f57fab11d03595e69317d18f4ff46553df9d771777bdd9a5",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-bliznaca/stderr.log": "1b4a89239f95b627bf516e6e161506187157b99dd12ad72ed602832a9c0c2f9b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-flower/baseline.jxl": "4b34cd5599e78f7b8d53f8e1c49179b54de58fe601f5e72cb93b5207e9c0f3d3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-flower/checkpoint-262144-128.jxl": "3863faada84e45d4f3ddc83dfec94923504f8776973e7662ff3eeafa457b3666",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-flower/checkpoint-262144-16.jxl": "8491cad5b92fe453512e4c70f93f0e864e4188d706999cd2a6a90d6f02e4f2e1",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-flower/checkpoint-262144-256.jxl": "f8b19de2b4a5bcd44ba13536b5ecfd4aaad998d28955dafe85659bf672285205",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-flower/checkpoint-262144-32.jxl": "de0c640af8cb436afebbe85b3c036e5ce3dc23365654391255748acce125dcc0",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-flower/checkpoint-262144-64.jxl": "d5944657fc4cfd32aec65cf50059529b715da0f0ca9943dcae94f2b907d9695d",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-flower/checkpoint-65536-128.jxl": "1f590661509c32becce7081182f805f989d3d353c885e51bfeec08bab9c9171e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-flower/checkpoint-65536-16.jxl": "af3fa32025f6e7668e04cb486e21e349c8d83dc7d9000f6a897e60aac1767c08",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-flower/checkpoint-65536-256.jxl": "1f590661509c32becce7081182f805f989d3d353c885e51bfeec08bab9c9171e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-flower/checkpoint-65536-32.jxl": "b13b6c3a7b6504b4c75714d8ffce3dfa1f1a59b0788a1dcad97b560224f62c54",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-flower/checkpoint-65536-64.jxl": "e4f12bb634e08331eff592085a0870cf9a9eb5fb6174e5b0d39d7cf3dece5009",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-flower/runner.jsonl": "dc401e1257c0a4e7119436a68ae1ab5b8cda5f40101ed61fd52b017252ccd17f",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-flower/stderr.log": "3763b7c0ff0f8f5cb10dd2c1f2ccf1cd6f3c23101521c11411b104b81bd67532",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-macan/baseline.jxl": "1ebc175dc6af8393a1b6030ff570c2c64ff45f9e433b36f2a76107012c88da2a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-macan/checkpoint-262144-128.jxl": "7644bb4134d189bb43aade71f058845e08e35757783b883375756132a1c6685b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-macan/checkpoint-262144-16.jxl": "6c641237e662091e26a161631b7795710d5581d85fe3def8c8076336631b29ef",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-macan/checkpoint-262144-256.jxl": "dbb46cb6a84c4daa4ffa694bda27cd718537def8983490ceb8af103997055639",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-macan/checkpoint-262144-32.jxl": "287ffea10ff7b87fecfcfc3da1e48291ee45a9e9dccb7ed30ffad8602d4ff61d",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-macan/checkpoint-262144-64.jxl": "27da6e83184910b2b4a8a5cb08aca66ed5cb6ccfab200f16f1a05e096558697b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-macan/checkpoint-65536-128.jxl": "b70ea2ec60ffd40c4a58b5674b245bc035ca36d5b8129b5b8c281b5318141238",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-macan/checkpoint-65536-16.jxl": "4c1f72e35a5da05c440931cd901b07658170bb4aaa1a1be8f9f83f923a2b8862",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-macan/checkpoint-65536-256.jxl": "7ee50de3d21efd946b896df12097615d3926969b6802e08146d5165538371d1a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-macan/checkpoint-65536-32.jxl": "a8b75ada6c6f4ff6249363edaa37d8e654315155c359702727f08348ae5828e8",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-macan/checkpoint-65536-64.jxl": "0fb70bbbeb8fb582e209ed0bfdb710924f562ee06f534da0e6148429ce93f1dc",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-macan/runner.jsonl": "37f11eed4cec18992c0c2563acab231c7d4677b4d97e460f6d9f8f0e8a15694a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-macan/stderr.log": "1cf51698dbf47939b81e607f2604d1d334af6988130eafd1c74ff6c3cbbb5032",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-ria/baseline.jxl": "88a99eef4966968a311db0780d1cadba06c3b87e554a0a181f5a1d2061675046",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-ria/checkpoint-262144-128.jxl": "a636f448b2bf42e5a64f9cbdfd3a10e7ca16007034c046d560469f559d1c2aaa",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-ria/checkpoint-262144-16.jxl": "4668602b2d4bf21b310b7f9143bb4de539681a810ca6a094282b347eac2b220e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-ria/checkpoint-262144-256.jxl": "2d277e8098bdfb0b96b44bc2674dc98dc710b7706af884602afeeb7bd38e1a03",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-ria/checkpoint-262144-32.jxl": "669d4427e998648a61f80103282ffb373f8c7d3beba473aff662e9a08bfde57c",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-ria/checkpoint-262144-64.jxl": "35872df0b514af545eca3e0a4c4a2a5b15938adfdf1b13532934812adc1a3d36",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-ria/checkpoint-65536-128.jxl": "230e4cf425ec676b219b3814e4ab6e7c60c9426e4e63c63f85b1510f304b7253",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-ria/checkpoint-65536-16.jxl": "a2a5f1553ead960959d964db1c4aaaaabbe95ecd4c76883b1bde744a53cf1ca2",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-ria/checkpoint-65536-256.jxl": "230e4cf425ec676b219b3814e4ab6e7c60c9426e4e63c63f85b1510f304b7253",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-ria/checkpoint-65536-32.jxl": "4cc88c5217be73e2eb5c7864618de42c1797aa14bdff31ed7067fc6d950bbb55",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-ria/checkpoint-65536-64.jxl": "7b3d5e310937713a9e210e2543e4e97e48a75490eecafd276a9dc6ba18182436",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-ria/runner.jsonl": "f5a7762b0e48c4d757a39d8cc043f325ec1bf90cfe93bff7ef6101f44a98408c",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/photo-ria/stderr.log": "678706f5d4ea380054206dcea9c6097a5614b9430acbfb9a636a892758cafbce",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/results.jsonl": "770c7cb584d415794ee88a9bbbc29e7910f2008a59dcc774ac986b55ad669be2",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/screen-pattern/baseline.jxl": "f9efbc27b2daaff9bc3bc1751fd9d77f3be627288a207d02af9a9bd69b77a8e4",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/screen-pattern/checkpoint-262144-128.jxl": "b176d722350393ec9557f4cfa2d5fad14761a307be456b72ccaee66a2fae5996",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/screen-pattern/checkpoint-262144-16.jxl": "7d82b6f748e00609c604c2194d61a8ebaf2c5f8fb4096aea4e5fd8636ebc6898",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/screen-pattern/checkpoint-262144-256.jxl": "b176d722350393ec9557f4cfa2d5fad14761a307be456b72ccaee66a2fae5996",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/screen-pattern/checkpoint-262144-32.jxl": "b176d722350393ec9557f4cfa2d5fad14761a307be456b72ccaee66a2fae5996",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/screen-pattern/checkpoint-262144-64.jxl": "b176d722350393ec9557f4cfa2d5fad14761a307be456b72ccaee66a2fae5996",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/screen-pattern/checkpoint-65536-128.jxl": "b023300dc967a2cce45c0f353c809c9e728674dd6ad9e9f088b88a5252f1b7c3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/screen-pattern/checkpoint-65536-16.jxl": "b023300dc967a2cce45c0f353c809c9e728674dd6ad9e9f088b88a5252f1b7c3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/screen-pattern/checkpoint-65536-256.jxl": "b023300dc967a2cce45c0f353c809c9e728674dd6ad9e9f088b88a5252f1b7c3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/screen-pattern/checkpoint-65536-32.jxl": "b023300dc967a2cce45c0f353c809c9e728674dd6ad9e9f088b88a5252f1b7c3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/screen-pattern/checkpoint-65536-64.jxl": "b023300dc967a2cce45c0f353c809c9e728674dd6ad9e9f088b88a5252f1b7c3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/screen-pattern/runner.jsonl": "b7da7abd0d42706ecbb0eef5f78e87c2d5d7e4710a2d68fbf9bf9f9521d6b788",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/screen-pattern/stderr.log": "ac407d67916f5b73412dfc7ec2e7c387ede7782017fd171809dff709a8f4caf8",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/splines/baseline.jxl": "29fdf320a043470fa5e384364221d106d528a0c37d6628721bb36b6eeaa8275a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/splines/checkpoint-262144-128.jxl": "9933290d04e7155cb37923ac8b2c0b36266bdf157efb38f8b9d52848cdf67caa",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/splines/checkpoint-262144-16.jxl": "5e09ec1814f55e891bd91d350c758adcba4adcb1fbe97f3cccce8fcb3c024672",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/splines/checkpoint-262144-256.jxl": "d545199521079d6e8323bccacbe7c017cd9c8eb10594a9ef2d6049b77717d22a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/splines/checkpoint-262144-32.jxl": "5f5689d8f2e11ea2ec2085d15f7af21c98c8eeb5ee50ff7caa60af06626bb983",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/splines/checkpoint-262144-64.jxl": "307e737afda9d7812a82d47372490914b01f0c94cdd9e1a26fd850520c214b15",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/splines/checkpoint-65536-128.jxl": "289b217180e04cc03f7df10983ac650cf404e5bcccf61dc26a3fea8f737d9570",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/splines/checkpoint-65536-16.jxl": "6e4fb703082bdb35e1e9e955c5f71efedc1dc4c91f9ead798fb5287de1ed9a2d",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/splines/checkpoint-65536-256.jxl": "289b217180e04cc03f7df10983ac650cf404e5bcccf61dc26a3fea8f737d9570",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/splines/checkpoint-65536-32.jxl": "647063cf0f1078d44d412fa5b6792c9ce779c609c7b6e2929d64647ae6c5bbcd",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/splines/checkpoint-65536-64.jxl": "289b217180e04cc03f7df10983ac650cf404e5bcccf61dc26a3fea8f737d9570",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/splines/runner.jsonl": "2a0f6acbfa045b455304d10d6a969ddf109d00f111e1f2a4fadb756ccd5a6ef0",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed/splines/stderr.log": "d1efaa8181d8c1ccc4d2df7dc43abafe2093b5a0e0ff8a40fc373fe08395aef2",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/fixed.log": "f869bc17f5f66588d56c42bce13d113551f93fdc1259ce2c6d60dc0c44b3e65c",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/prior-artifact-verification.json": "c007402ec7532f350a7cd28be15dd127977c97d20f35e5bf5f43e8f6be742b26",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/manifest.json": "272b8245d701bae20e2f0ee8d3c78c02afc30ad74a658abc5b05a2b090785b2b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-flower-base/output.jxl": "806636ee766511891f213a0950247c1e2c90854947698b9bc73301904c61bb4a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-flower-base/stderr.log": "d82aee0dd2d3b60207b00f79c11345b7be006288a99bbf2e225d6af2100ab373",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-flower-base/trace.json": "3f6567e91549c7a6e4b9eb9833b2f75e5d4f9970ac4d1f41cfd8abe297fd9556",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-flower-s262144-l256/output.jxl": "a308c1661af73effb49d02ec8b971fdaba88b0de5f60203580d60c8827aeba4a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-flower-s262144-l256/stderr.log": "28bc04509cea7cc8e29c25d1ab2dbcfd0b729de3b64a08228d193d457ab56377",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-flower-s262144-l256/trace.json": "d3ae54aa00dd38da053a3d4b0d5a5eceb60377e4a817a665f9af0a0d1eb49abd",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-flower-s262144-l64/output.jxl": "41657cd480cd649bb4ff53dd7959cedca3f3c86542eb7c43b140dcde49b913d9",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-flower-s262144-l64/stderr.log": "fd23b31199bda054e6876a8505383c50bfb59138966ffe802ac52c3c7c4c906e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-flower-s262144-l64/trace.json": "a836d5a6568e92edc2de718e971e1a3421b4000d407e35a579f4a7639e62a54c",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-flower-s65536-l256/output.jxl": "f95346ec255488ed9e6f7e88917f060d3435521036a10614fda55fc2e2d7967b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-flower-s65536-l256/stderr.log": "6389722e0a3499605d1040b01b65dd61195a380bc970dc824780084360669d98",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-flower-s65536-l256/trace.json": "9b023ee4c1d7aba6732f739729a91ae1ad47660fcf29b96376c8aaf7396a2892",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-flower-s65536-l64/output.jxl": "665b34f999ab24627e7b4fcdfb648f5df746c53aacb3c3889129006071752a85",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-flower-s65536-l64/stderr.log": "9f49bfe0fb69cd958a65e59947007d07c311f3165e1cc210e1347fd4d04d4c34",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-flower-s65536-l64/trace.json": "d59bb3f5aba13a6d2705bd9a86963d4c1e4a5ea36ded51f115f68a0ade5d4c55",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-ria-base/output.jxl": "1c61802cb89428169348549823ce087644279c6e65fd0adcfbc3265261bf8608",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-ria-base/stderr.log": "83a11795f288aabbbaf424fd93e35fa2d3a1b1d4c1872f9ecb7bf99442381534",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-ria-base/trace.json": "383f4615298d78f6e0bbe32c2e92d1412ea010e51a00bd6c4e8f0ce360bcd411",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-ria-s262144-l256/output.jxl": "90e5ac7bb7045a1451fd9f4a2882a4c5c9abb5ed884b669b1c5cf92475ce7a49",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-ria-s262144-l256/stderr.log": "1b7f0e99f40a1bf1e5fb14d2c05493ed76239dd172bebcaeafdf3f90029d2c36",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-ria-s262144-l256/trace.json": "fb4e250d131ffca0173347315c6529ad184880501e902338413c469393b0b18b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-ria-s262144-l64/output.jxl": "c3134c385eea39f3bffc655d68fbc61e526708bafa6e4608cbf939d4ebeaa5aa",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-ria-s262144-l64/stderr.log": "051500fd5d4c5831cdc5a1c8869aee99b8a1a3c5fab8405ffbe8dac09f97a280",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-ria-s262144-l64/trace.json": "2564f276c6e15aa428fa50cc097bff7ca3e73483a5648e2560a2386dfa196451",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-ria-s65536-l256/output.jxl": "88afac997eafbf2f2cfbe3cb0dd80defd32f9d2e7dc061b26d19f78a8f4ffcac",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-ria-s65536-l256/stderr.log": "1f8e45b8f3f324f98aae8034279279c52d6e6134beb3ee7444359a698d40baaa",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-ria-s65536-l256/trace.json": "987eb2332eb04a6d3ee0637aeac4891a81df6b3ee651dfe920f002a7343bfe4f",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-ria-s65536-l64/output.jxl": "f18acebb8a97ca6c1c47cb732644d620d200240874a030f7119b3129bf298121",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-ria-s65536-l64/stderr.log": "f879966bf96509ac78686f50b17cb35394185e1d2afd7a37a160e12af56b7c79",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/alpha-ria-s65536-l64/trace.json": "a6e4a5400cedf116ccc061bd33a8907c9490e7f65f4a401a4282d7cd97d95ce3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/chessboard-base/output.jxl": "70ec1107462fcf65573cf0eee7234bf4a5b969706bd83f01ae9beff973e90a44",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/chessboard-base/stderr.log": "3a1830baf501cef81442fb6dbb60a3867fa10daf1dd6dfb91b579b5d7fe86fb1",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/chessboard-base/trace.json": "f4678b896e8669852cad4cf2918ea4c35abc7c61d2125d5c83901affcda4bc2b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/chessboard-s262144-l256/output.jxl": "3988d48c6bee3351b04ba2b58e8b74a96ff5d9c33b50ebda9fc61f72425934fd",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/chessboard-s262144-l256/stderr.log": "2b39ca5a08791b76bd7e75770a4ecf8e43e962563f681709cde2b189c2b1bf56",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/chessboard-s262144-l256/trace.json": "022f7efa0366e01ae484711d219ff448768976497f60553a0adf439a670fa231",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/chessboard-s262144-l64/output.jxl": "7c74ebaedb620076e27a08772c034e8f31c88262fe62cd07b2836639e88a07ec",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/chessboard-s262144-l64/stderr.log": "1bb049a472ef95d9bdef2c7694ae4586fdbe55c0af860d439cc617b6c54f7bb7",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/chessboard-s262144-l64/trace.json": "7a9f61c0e8327097794912fafdbdb09a354cac046ae0273b39480359e51b03dd",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/chessboard-s65536-l256/output.jxl": "52eb11aaeff425fdf4159059f30942d3fa15969b556118d079f497cfda9c5b1e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/chessboard-s65536-l256/stderr.log": "74aaab2881e056f3ac515192a688f8a85f75f901c986a6d6709c84af7eb18b22",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/chessboard-s65536-l256/trace.json": "2903cc06ca28250cfc33a8426dd8d5b196b46a5a7d1461ccda1f029184dc6399",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/chessboard-s65536-l64/output.jxl": "959fbfd9c6a525667efabdf71c3839fb8f13bcf33d0ff3539ca7b944d0c40ded",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/chessboard-s65536-l64/stderr.log": "84a82707f3b59f55ce323551016f3dc7f24942f1ccf1a305af5968140932359a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/chessboard-s65536-l64/trace.json": "bd5027348be48724229b0eb6b9d341d0cb51ef7b3341687b5d4b3cb3caac833a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-macan-base/output.jxl": "84468776d364f0e6af4158b6061cc31a363adf8b8fb2d71a0215de4dad2760bb",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-macan-base/stderr.log": "29ac20053bf2babd9903a6797b9fef5fdabad16e12e404c6686dc0980c36a108",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-macan-base/trace.json": "1308e56f1fe7aabd100f2f397b03a881a1cd7ed9fe9e7b23482be1fa9263b00b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-macan-s262144-l256/output.jxl": "b6bae060c44a0bd0185db93f6e3d319eac7d899cb33930df7049a01140673329",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-macan-s262144-l256/stderr.log": "7be03b7a011926e6b27da9f8cb63e6de0479a0b22e041860519ba486666a7d12",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-macan-s262144-l256/trace.json": "eec426eeb76d81df6185ceee4eaa8c2a3857bbcadb514501dd57720afd0a1dcf",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-macan-s262144-l64/output.jxl": "17e1380c1950a0e7dcf5e00dfa36039c390567b9c202d7f918ea908fc3138fd4",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-macan-s262144-l64/stderr.log": "a11bce072e29071065f3f894f0e493fd3ff01fad8ba31d9c9a0881910fa7f1d9",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-macan-s262144-l64/trace.json": "9b531e4abdaac70fe106baaf3e723a7134b36f5e58c988611ea45e1822308b5b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-macan-s65536-l256/output.jxl": "1c972aab1aed1658b6cfe6ac41f0ae5616d92e29fdd15785e180b579e4b80bd4",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-macan-s65536-l256/stderr.log": "e2d0f554e48ea8c37072144074fc634e82963b6fd2850034d4fef5f1c6720b12",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-macan-s65536-l256/trace.json": "7d1fee6af1d9688b94e75e1b558003b7f22d992b108dbc0f1df6cb654ce85007",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-macan-s65536-l64/output.jxl": "9085eaf688ce90d5e0727a145fe7fd95d77c539afa0267cf6f6a26b1c548ed4b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-macan-s65536-l64/stderr.log": "612232afb960afdfbaf46d86fe8f32efb130b2373d046d3eb6cd13af4cf9b764",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-macan-s65536-l64/trace.json": "15c66811cd11bc0bd524ab407b4c4ad48db49c120e957ecc38688f96eafce8ce",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-patches-base/output.jxl": "ebc1ed2ecc7f057be4df8da1dc75e874b752038a889e8382ec70a42b705aaf1e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-patches-base/stderr.log": "a70179b647c6c62dd7fff156c48d0f49f581818f84127478abf66623fe47a5e0",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-patches-base/trace.json": "22bf76ae20b4f8b24cd6e308bccf4d52077853daa9300df8480c740aa5213c67",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-patches-s262144-l256/output.jxl": "476cd11b6237d97e6123591ea6de4aa427b430e392f90d9ff585fec493b90da1",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-patches-s262144-l256/stderr.log": "a9184abd4860a9f299d12ecd927c0e4f20a27f13ef8084aaa561de55ac8ea085",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-patches-s262144-l256/trace.json": "8f55b5a5304a442891064fac4cdd2f62191d076ba78ee34da6f2e8aa38647076",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-patches-s262144-l64/output.jxl": "476cd11b6237d97e6123591ea6de4aa427b430e392f90d9ff585fec493b90da1",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-patches-s262144-l64/stderr.log": "a9184abd4860a9f299d12ecd927c0e4f20a27f13ef8084aaa561de55ac8ea085",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-patches-s262144-l64/trace.json": "8f55b5a5304a442891064fac4cdd2f62191d076ba78ee34da6f2e8aa38647076",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-patches-s65536-l256/output.jxl": "e1bfda070e20d153549dfa2e4cea1e3e106340ededddc210fbcbe643051841f8",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-patches-s65536-l256/stderr.log": "0b4aa571a53140584d28ad7ef332b12291772ee972c330c6d5a5d8303b90f6d6",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-patches-s65536-l256/trace.json": "bd3fe75398821bf0a81b6a9ba110ebf728e148224947054c859fdb7503bf5073",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-patches-s65536-l64/output.jxl": "e1bfda070e20d153549dfa2e4cea1e3e106340ededddc210fbcbe643051841f8",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-patches-s65536-l64/stderr.log": "0b4aa571a53140584d28ad7ef332b12291772ee972c330c6d5a5d8303b90f6d6",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/gray-patches-s65536-l64/trace.json": "bd3fe75398821bf0a81b6a9ba110ebf728e148224947054c859fdb7503bf5073",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/palette-358-base/output.jxl": "871ce202149d7d57969a54fb8c0e95dc52b45a28ad247af42a85561db0509483",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/palette-358-base/stderr.log": "90195c9394ee57d3c87f88403c9431c6134faa3f279e4135361333f08314a104",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/palette-358-base/trace.json": "3d118d2c56d9cfad89deb34d21a9d564e075680e0fe3246b0d5b6855bae725c5",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/palette-358-s262144-l256/output.jxl": "a452b63f8d6e5e5ba93b209e7a3a609debeffc18b88edf8ebca08c6d9172049b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/palette-358-s262144-l256/stderr.log": "24e3b767440b8e55818866352665e6d075a8e67bc3fb1dd8b858305db638999e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/palette-358-s262144-l256/trace.json": "43fd3781abc326a3e99a1f38f7748b1edb338f80ed8c5ac3b86ac0e318b96c27",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/palette-358-s262144-l64/output.jxl": "a452b63f8d6e5e5ba93b209e7a3a609debeffc18b88edf8ebca08c6d9172049b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/palette-358-s262144-l64/stderr.log": "24e3b767440b8e55818866352665e6d075a8e67bc3fb1dd8b858305db638999e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/palette-358-s262144-l64/trace.json": "43fd3781abc326a3e99a1f38f7748b1edb338f80ed8c5ac3b86ac0e318b96c27",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/palette-358-s65536-l256/output.jxl": "a452b63f8d6e5e5ba93b209e7a3a609debeffc18b88edf8ebca08c6d9172049b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/palette-358-s65536-l256/stderr.log": "24e3b767440b8e55818866352665e6d075a8e67bc3fb1dd8b858305db638999e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/palette-358-s65536-l256/trace.json": "43fd3781abc326a3e99a1f38f7748b1edb338f80ed8c5ac3b86ac0e318b96c27",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/palette-358-s65536-l64/output.jxl": "a452b63f8d6e5e5ba93b209e7a3a609debeffc18b88edf8ebca08c6d9172049b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/palette-358-s65536-l64/stderr.log": "24e3b767440b8e55818866352665e6d075a8e67bc3fb1dd8b858305db638999e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/palette-358-s65536-l64/trace.json": "43fd3781abc326a3e99a1f38f7748b1edb338f80ed8c5ac3b86ac0e318b96c27",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-bliznaca-base/output.jxl": "d5901b5bce5f14784630bb4b44ac75d5fbdc151ba16b496c3dc8e92ee94b7c07",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-bliznaca-base/stderr.log": "99927e1e9dfbe6fd68789e397769ad37136bef140b787dfb6a1558fcd7d6b64c",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-bliznaca-base/trace.json": "cf8bf6a50321a22bf3586056121051ad9bd5f57823bb98c9e54645f8243ea81c",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-bliznaca-s262144-l256/output.jxl": "588b43a0b408baf5dbd00693f387e3bc806116523de34aadd95ef5e3594027d7",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-bliznaca-s262144-l256/stderr.log": "5c4bf322db7ec304ce4c870dee055623e8575bc0dcb6ab272f74f40facc7c677",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-bliznaca-s262144-l256/trace.json": "61db260978ee17e5415ee9fd9057f66378b0f28f4b92874c915abbdadc8dda48",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-bliznaca-s262144-l64/output.jxl": "6f2a402a9963d90f6063cd25ada184a5c02b64665dfdae67b07491873fd1098d",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-bliznaca-s262144-l64/stderr.log": "f39af3221677c822137a278dda95914b3114b1075892cd4cd106e910bb7e0835",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-bliznaca-s262144-l64/trace.json": "2e32509b068375eb6991ecc5b221c1c8eed613da3dafdefc05a5e86151394d15",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-bliznaca-s65536-l256/output.jxl": "eb9a571debde6c46118c9ab352c481c4f74ed40eec4b94f5fc04e636b9d53aa3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-bliznaca-s65536-l256/stderr.log": "c7075e1e848d2044c7319ccfae99e64eca7c16bad2570657cbe2fc91cbcf05b4",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-bliznaca-s65536-l256/trace.json": "14a9dfe0e2aff456095c9dc01343e416851b17c44339ca19cf804dce692ce7bb",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-bliznaca-s65536-l64/output.jxl": "cbbb59d74b30a2e1a2e0337ad8430c3e2fb1fb425347814c399854a65cae9905",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-bliznaca-s65536-l64/stderr.log": "25847063e0054a54c465076033ee2b44d59211697550135610ed6fad874690f0",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-bliznaca-s65536-l64/trace.json": "7023f251f35f254ea6285afe09d5a4bb4269d8d8e3236fe65b2ab9ff41d14282",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-flower-base/output.jxl": "24efaad77743d4eb947702c9d18990df24f9c6d67416314aaf2c5b81d45389c6",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-flower-base/stderr.log": "8b3e94194f33dbbc62ca0f95e62ec6319ce44c78eb76805971c8f0d3fb8151f1",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-flower-base/trace.json": "5b533896862a2441335eabd89e8575390cb1fa44e67b08944c9257b0065d581c",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-flower-s262144-l256/output.jxl": "4d42afbd4c95d3516ed6153fab2da0e41783659123a3258b1ffeff5a8b508d51",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-flower-s262144-l256/stderr.log": "7ec48f212952f7e295a4be4a1173348f1bf4dd53fb8b7b278f4dcce700e51ee3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-flower-s262144-l256/trace.json": "2d97d90db5f5708498794d6e36ff88c9e95c612c318dc88a3dd193d849237a4e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-flower-s262144-l64/output.jxl": "36613fc4f1fc55a15d514058bc473a649434f734082e5f58bc042ddfeb7ec07f",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-flower-s262144-l64/stderr.log": "2291a8c15550c1ccd3958a0cbcaae17181c5bc6d4f9f2d37601fc7cfbbb14dbb",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-flower-s262144-l64/trace.json": "65ed7fd680d5c4f8d3209720ac75f90041c28273fac20ca526de8af1fe0a3d84",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-flower-s65536-l256/output.jxl": "8b0a7d57de93bb38a035a7634b2c9402771104c5430993afc9844aeea89d98c6",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-flower-s65536-l256/stderr.log": "99f347348e3fba48310c0fd0d47a12e473dd9597951d98114d7c2985f1c90de4",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-flower-s65536-l256/trace.json": "93c2efefc3d16838aed1724cfdd1e7d69c3169bc9e4e8f602b872bdb45ab4f23",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-flower-s65536-l64/output.jxl": "bfec07d0f7de7d04640c536243e5a69a5ca0901e8686b10de359e768c5a9cf18",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-flower-s65536-l64/stderr.log": "66954f763b46d1b7e1fea3365452246a77296cc441c741b5890a045cf447d0f0",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-flower-s65536-l64/trace.json": "ade326eb0b3232c34e64c0ace172a690f57876562a4928480ed6d3df2fd9ae2b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-macan-base/output.jxl": "b278d4bcfa51b004e5aa9beca6df26b0d281c06b9e6e397e67b60ed7be153645",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-macan-base/stderr.log": "de4a2545b65ab3b14bce5bdd72518383cfd8cf6cad456d0e9eab5090a7351350",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-macan-base/trace.json": "6d616167147761a2b7e5bd781ea6c321e2404ae6a0f134da69aa078f42196b27",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-macan-s262144-l256/output.jxl": "4ed36bb03d715260404674f17029fafc830245aea2a426d1c3df6e3d832b6d7f",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-macan-s262144-l256/stderr.log": "4480dbba97b54b59efa9a1dc41b98aa42cb2da40833bb65bfd0333a08a6cf515",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-macan-s262144-l256/trace.json": "a1af1edebb8f560be3e650c206532e2a48afdcdb448e2cbf53c16b137adc497e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-macan-s262144-l64/output.jxl": "14c63e8a039a08ed66bb3683513425371db87ab46c1e5dd7f2709c48121e9b5d",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-macan-s262144-l64/stderr.log": "73043a480bb9f9a93d815b6ef6ac73984cfa403b7239fe015da70ce3c731b236",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-macan-s262144-l64/trace.json": "c701be63a2f411adc568e651fea9a7de9ea44dc8d41373c5ccc8a6f5d9966ebd",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-macan-s65536-l256/output.jxl": "1ed8c33c6565ba68b6a3a0de20012391a196b0a7ba321a07dfadf70709f4a060",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-macan-s65536-l256/stderr.log": "8d1a1e8548e8223b538ddbe96c74d05613307dd32181334f184152f72ca39a03",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-macan-s65536-l256/trace.json": "75b2a55f7eaad235596ece3bcca18567ab7c1727624703e6d5b3efa6c61d9f2d",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-macan-s65536-l64/output.jxl": "832fb94216a1ccf4d7b4b6a4647bf8fee33b6561db618c6f107fb9c607992dab",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-macan-s65536-l64/stderr.log": "16bb78a97353d991e8a968561987918bf9b1ba8c8671a236073db917f7f69d64",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-macan-s65536-l64/trace.json": "7e217bb64502192a3673f345234a9c4b64a24c972b3de40820fd37176ac827f2",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-ria-base/output.jxl": "542a9d6baa7e3be559ec08d383adbbbdf473236b0e122513dbfae044e75ad68a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-ria-base/stderr.log": "58bf6b16131bbfd81cae02b7f8028bf65cfa63c92c0dd62170294858f1e75999",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-ria-base/trace.json": "61e81474e0c6c4716411b0bc6630649164bb407e96f52995f0a46ff9ce8e7db2",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-ria-s262144-l256/output.jxl": "06454ca9ff6f628312ac442dd15551f8c82f61e9c40c9a6c9a1a0ee8d12549f8",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-ria-s262144-l256/stderr.log": "a3ab6de0d86d21693f75c2c92699163b3510ff366c50449c683c9af7705b1ff5",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-ria-s262144-l256/trace.json": "313013da0780c18d742af1f83f8d7de4c3b82243a8a763b89325f78b9000eab7",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-ria-s262144-l64/output.jxl": "c2bf878c4ecfa113e7449f01889a411efa8910268eb9723b105f38b18e14fd92",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-ria-s262144-l64/stderr.log": "d12428c551a87485625eddcce6b7e4d416f60145d3cfe6fec698cec9608a9a87",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-ria-s262144-l64/trace.json": "d45d7da723ab5dc91c7785327f32219d9a5a945311687fbef88c79e4b93f1b42",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-ria-s65536-l256/output.jxl": "49ecf9241662183f0ea153be3349d2ad480e841628e6e3b415406c98b51f4bef",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-ria-s65536-l256/stderr.log": "19f0599efab80dc59fcb804b227cc5fff59aee48bafb9efb9f8a95b763150d29",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-ria-s65536-l256/trace.json": "b3987bce857999f8b9fb61ad84593e7cab611f5da09a3d2896b0843ed0a25750",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-ria-s65536-l64/output.jxl": "e94eb47dbf79d4d7f373b17fae484bc50f1299c69b1c57d96bffa23a6aedb461",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-ria-s65536-l64/stderr.log": "9be5852542c720585adcb42694277e9967fb87671a07e3c46cf1d946f81a002a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/photo-ria-s65536-l64/trace.json": "6668c54be7dbac742b5e01a4120a3ef9e900115e23ea5bb8319643883495b091",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/splines-base/output.jxl": "052d33732933adb592a90218b8b95630acc91d44e29a9fcae8840f49f6bad149",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/splines-base/stderr.log": "275c247a77fb9a2460b512c6aa2a843dfa8f3c267bd66b2e4e3eae53127cba1e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/splines-base/trace.json": "fad8183c88a687f7002e8e90b157ed9fdab2800157e9da4b9fe7ea177aa214cf",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/splines-s262144-l256/output.jxl": "f7c5eee82b2d403208d506d730bd85e57efbe3692fa26e13aa8f04633f84d754",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/splines-s262144-l256/stderr.log": "7690f4fb7ca912040c0262e01bcc363abec1a10eab59140ecefb7998210ad4d4",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/splines-s262144-l256/trace.json": "0b13027eb10ca5fc93f4455520d781afe90bfe6cabbd1182605287958597655f",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/splines-s262144-l64/output.jxl": "9ba8828773b0b02e99d2efea961eeb5513602a19a8608f7bc7f793eca72df537",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/splines-s262144-l64/stderr.log": "54b19a380dc6cb2741e21d48596a77a25c2fe0fdd2037cffde5962ac3b41b1df",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/splines-s262144-l64/trace.json": "6bd3eeea1a6445095e09b3479d47fb674586ac8393df9c6498724aa8a3d06915",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/splines-s65536-l256/output.jxl": "78b80f77d4a38cc4e112eb84827cd9f331eac4e324719cc620190a91cf35750d",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/splines-s65536-l256/stderr.log": "3a2dc3502ad0578cd95e30e98386f6087a2a07526df71ea33abcc82b34268b47",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/splines-s65536-l256/trace.json": "c6ee92420d92713647f878b31a1122d1e0b9ea1d38b69a461c615061a9e4f505",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/splines-s65536-l64/output.jxl": "b78a5edba36081750a80679bae059d65ebf6d37599fc83fd86f4dd4169d34d87",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/splines-s65536-l64/stderr.log": "3b05354ec19ba580e8a9e1248dafa4f658cedbf47904ba7302b195d2f605906c",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/outputs/splines-s65536-l64/trace.json": "9867d50ccd0468a004b98a0602fc04a97647f49ed573f7a4fc91baf597a6953d",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference/results.jsonl": "768fc8280e3d2df0573e8ead137f51e72968dfdafef67add8c50eb273ef04bad",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference-provenance/bin/study_runner": "df4e13c55f6accd229a98c3a29f65a636b0660499459cbe0d3a1552e16fcdb14",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference-provenance/build.log": "0a9ba0e0911aa83bed5c0c10556f7351d425d9dcfe4cc49e044c79c0ae0dcddf",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference-provenance/configure.log": "af8d05366a6a3e7dcbc61fe01b3d7d112025f89a3fbf1e79dd2f0c3a19e26cc7",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference-provenance/manifest.json": "b6c715c16906b42f55353d4ad005d3c09e801b181f1c47ff2a22254c44594241",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference-provenance/overrides/lib/jxl/enc_modular.cc": "de5b5ff060471bd20431bbab40215f61971a61a22a62d067e1a1bf634401c041",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference-provenance/overrides/lib/jxl/modular/encoding/enc_encoding.cc": "c3bb2631c0eb83eb82b02801398218709877ad6360711e350461c15c0d71c9f3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference-provenance/overrides/lib/jxl/modular/encoding/enc_ma.cc": "039c0ef34f17ff92461a8e5d3c5a97887884d8ea2b49205b9af9ea87a2bccde5",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference-provenance/reference_effort.cpp": "4cdc5048ec75945f8d593409da63373b76723f2ac9705e3b5153a8259e548e53",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference-provenance/results.jsonl": "b522e09844289360e5e20ea29f95a61e9d051c480d68aa5d07a84a5e0e15bd73",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference-provenance/source.json": "68e26ada245611d22a0b8e37b96f4e6c8d2467f1275fbdbb57a3c29fbf87fed1",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference-provenance/tests/modular_reference.h": "357d7e563e8cdf04690dee47bc0386726041cb560967647ca6f3436c5323d45b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference-provenance/tools/CMakeLists.txt": "4d8d71e6a4c998d94e6516caa83e042abc0b14f11cb6e1353d68433ef6c1c05f",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference-provenance/tools/README.md": "e0adbeb7c40b312083353f1577e7ca7ca7f9f96fc4d550cc9b83db50033482f4",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference-provenance/tools/analyze.py": "eb339097ca0b7afc2ab3a949388c659e382e6bca743fab4c1685f172ffa67a0a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference-provenance/tools/controls.py": "51ca98178c6e41ca910fe87a11d35476787544d03d93000d7abfacb65ef6d071",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference-provenance/tools/followup.py": "c7651572a167881339d8f44c29356a2c6d0737995dc354e1ac5811e0a79dfd16",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference-provenance/tools/prepare.py": "bb270459659774c9be6775737b561cb28d7de6cdc190c72c431062d1e030c1d8",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference-provenance/tools/replay.cpp": "492295000c0f040ae5cf16d58d923d7f0097d02c7ef9f9db124222eab65d9ea3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference-provenance/tools/run.py": "2ccf2db32bede52c07dd69812b2640a7e742ea45ef1fc011a2e47847ffca9149",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference-provenance/tools/runner.cpp": "a7f95439ab1b85db7abdf1e3976b779ed593e393a3ec1b16fd5e947f437a3d0c",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference-provenance/tools/study.h": "b1c9439d8a30e11c17936bde3a7527d77a000b146ba0f429d0e1e53c4c1fe7c3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/reference.log": "014d9fc4078868f33bfb17e4d3fbb3cf6553626f03e2b7bec289186878beb298",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/sanitize-build.log": "7492a2129d301924381a18f93db2b859c9ba4b1043af6cd7f115ae24a6c7b9b6",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/sanitize-configure.log": "dc9994c6d80ddd95bd4f74388ea9232cb4704f70b43bcf41dde7e6d2edec9454",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/sanitize-tests.log": "5dde89409270a960bd7c2d95a385cfeeca37392db561ffea19f096da80268f00",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/alpha-flower/baseline.jxl": "86bcd9ade7d9d11e1c0db64d438b72ec1902c108bb8bf5e908df5aec61a528d1",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/alpha-flower/runner.jsonl": "df6966d3d48da6e0801d45127c0ee6e95e288d06f9be3fb895b8a558b65abe9a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/alpha-flower/search-checkpoint-262144-256.jxl": "dc3e300605e7dc2c08873583ff04cb2304a02bae3492f0a8874d6dd8c4fa86b7",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/alpha-flower/search-checkpoint-65536-256.jxl": "417e183a642fc3624863dcf5eadf7eea5c6033b471274e056a4a070d268a4600",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/alpha-flower/search-checkpoint-65536-64.jxl": "417e183a642fc3624863dcf5eadf7eea5c6033b471274e056a4a070d268a4600",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/alpha-flower/search-control-65536-64.jxl": "417e183a642fc3624863dcf5eadf7eea5c6033b471274e056a4a070d268a4600",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/alpha-flower/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/alpha-ria/baseline.jxl": "6fee22c4b96ba8adb34ffd617c4dce6c129a282dffa8920fd04bd22a62d31c58",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/alpha-ria/runner.jsonl": "528968e83b9f1ad131df9ed39554e4ca31bf416d924f2384a885f8c61e0ac94f",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/alpha-ria/search-checkpoint-262144-256.jxl": "075743bf9dff92f9e2b90b829277f80473d5cee18e88213c8bd3296f16030cbc",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/alpha-ria/search-checkpoint-65536-256.jxl": "a7fce0cdf992c7658d11e28aed3ace02bb4d3ae3124e6966d94aa4d20f6a58e5",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/alpha-ria/search-checkpoint-65536-64.jxl": "a7fce0cdf992c7658d11e28aed3ace02bb4d3ae3124e6966d94aa4d20f6a58e5",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/alpha-ria/search-control-65536-64.jxl": "a7fce0cdf992c7658d11e28aed3ace02bb4d3ae3124e6966d94aa4d20f6a58e5",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/alpha-ria/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/alpha16-ramp/baseline.jxl": "a48598deb2e35da5b5534f3f31c1b7931dfcbe2fc66f2f2d3ca78a17d599d00f",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/alpha16-ramp/runner.jsonl": "ac4155b194fceb6c027f5a13c2793cca7ee54736ce66625c082c2975a783f310",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/alpha16-ramp/search-checkpoint-262144-256.jxl": "fcdb81b054fd4d484f290a40829b985d927c226bb732d02d4359ff92133ffdb1",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/alpha16-ramp/search-checkpoint-65536-256.jxl": "96e1ff409f916938165064b3d31c7e61f978199fa684b0b24d9c072761fa50ec",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/alpha16-ramp/search-checkpoint-65536-64.jxl": "96e1ff409f916938165064b3d31c7e61f978199fa684b0b24d9c072761fa50ec",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/alpha16-ramp/search-control-65536-64.jxl": "96e1ff409f916938165064b3d31c7e61f978199fa684b0b24d9c072761fa50ec",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/alpha16-ramp/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/chessboard/baseline.jxl": "e8ab11475c525f29316b7edb4bc99525b68808663cc7b04434d2317ba7613571",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/chessboard/runner.jsonl": "cceb16aab3bd7a247d5c53114f42f57522c2c0b67b9acd56bb0beb3abb610120",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/chessboard/search-checkpoint-262144-256.jxl": "ff0eedf5abe30b8fcc0894be037800d9bbd01b8780bae321ba4415db3249c260",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/chessboard/search-checkpoint-65536-256.jxl": "c0565bdbbea8cade4d7d6c633065356f939b7d6c81714370faa536efe98a921e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/chessboard/search-checkpoint-65536-64.jxl": "248ae35b4ba4aa313b2c655d1e57f42b4103b26d920a7795ec386f4b63e36925",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/chessboard/search-control-65536-64.jxl": "248ae35b4ba4aa313b2c655d1e57f42b4103b26d920a7795ec386f4b63e36925",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/chessboard/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/gray-macan/baseline.jxl": "c0c5af331d1f91f7714303425d0a8f3bfbd7571b6dadc34d70ad4797e289ab44",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/gray-macan/runner.jsonl": "93d9f81c782107045fe61858797d054d4c533b81fa745b3eb63821d6385c5424",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/gray-macan/search-checkpoint-262144-256.jxl": "7781b4c6f9ca5073c9212de121dc7b9c67f59161b2f0767d451d688e6a51f9ae",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/gray-macan/search-checkpoint-65536-256.jxl": "ac9d7836d6b8d105de83643ed96ad1b75225e9e9b220044f5bbfb1342b23a2a8",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/gray-macan/search-checkpoint-65536-64.jxl": "ac9d7836d6b8d105de83643ed96ad1b75225e9e9b220044f5bbfb1342b23a2a8",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/gray-macan/search-control-65536-64.jxl": "ac9d7836d6b8d105de83643ed96ad1b75225e9e9b220044f5bbfb1342b23a2a8",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/gray-macan/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/gray-patches/baseline.jxl": "539e75c439d66503c67d9da3804f52404480599a102d6659d8646fef752f44ae",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/gray-patches/runner.jsonl": "a8758be0c626928e4b96e84d39d65fe88648aae27939da18231f1985ccc90406",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/gray-patches/search-checkpoint-262144-256.jxl": "fab305d9d2012871373e2e221ca3302e08550b89f0581e39248ee9276cb15753",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/gray-patches/search-checkpoint-65536-256.jxl": "92668ba03be64fa94a9aa559c2c173491fdfd23faede3616179eca9e65c27ae9",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/gray-patches/search-checkpoint-65536-64.jxl": "b76704b05319903cf2bcea2a5135c9b3eba11fa6ed975713ce68b981707b9ecf",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/gray-patches/search-control-65536-64.jxl": "b76704b05319903cf2bcea2a5135c9b3eba11fa6ed975713ce68b981707b9ecf",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/gray-patches/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/gray16-ramp/baseline.jxl": "be62f425b67b1ba63214b2adf76af893068e1528389ad006ff87746dbe2f8a7e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/gray16-ramp/runner.jsonl": "f91895f33c00eb8e6ed90b61d31cc881a0cedb0c48ff236b5dc6066965ef8b5e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/gray16-ramp/search-checkpoint-262144-256.jxl": "452c0817287d772ba87c26cd08fe5008bf0b9bb61b4b8d5848e8a5dfacdda3e4",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/gray16-ramp/search-checkpoint-65536-256.jxl": "57d5e1699e747d822aaf84363c8fc89fb93cad136196ce10985180e19168f937",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/gray16-ramp/search-checkpoint-65536-64.jxl": "57d5e1699e747d822aaf84363c8fc89fb93cad136196ce10985180e19168f937",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/gray16-ramp/search-control-65536-64.jxl": "57d5e1699e747d822aaf84363c8fc89fb93cad136196ce10985180e19168f937",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/gray16-ramp/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/manifest.json": "33600c09b909c7472b2cb3c83bacc9396cbc00dc88d6294bfb5514137a55c13c",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/noise16/baseline.jxl": "ec8c2124c3ecfcc6b497802e3de163596116917a69cbf8a755559f6a332d4cbb",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/noise16/runner.jsonl": "06f46b071d0d8e4f59ff7d71637681ba38e06259f657384092c9b2bf7389e47d",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/noise16/search-checkpoint-262144-256.jxl": "28e6d2d28b3a9e283f459b0a6b3cdd62cfec3803ca49867a336a21c2a93f659b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/noise16/search-checkpoint-65536-256.jxl": "b4c03c714f93a94bbbb4ebf585eecd22af1420829dcc4b8acec01867e9c753f2",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/noise16/search-checkpoint-65536-64.jxl": "b4c03c714f93a94bbbb4ebf585eecd22af1420829dcc4b8acec01867e9c753f2",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/noise16/search-control-65536-64.jxl": "b4c03c714f93a94bbbb4ebf585eecd22af1420829dcc4b8acec01867e9c753f2",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/noise16/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/palette-358/baseline.jxl": "c4d2d06e19c75886d26a433a8d69cf5425fa07c03905da9c2c10ad693b1fff85",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/palette-358/runner.jsonl": "5756beea19fe972455d75ba1996745c37367ff78da938ac8cf30328b1f2ce987",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/palette-358/search-checkpoint-262144-256.jxl": "6ac6ea5408961a41dcd2017aa74f303a1b2aca3308130d437f027f808ef962ab",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/palette-358/search-checkpoint-65536-256.jxl": "6ac6ea5408961a41dcd2017aa74f303a1b2aca3308130d437f027f808ef962ab",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/palette-358/search-checkpoint-65536-64.jxl": "6ac6ea5408961a41dcd2017aa74f303a1b2aca3308130d437f027f808ef962ab",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/palette-358/search-control-65536-64.jxl": "6ac6ea5408961a41dcd2017aa74f303a1b2aca3308130d437f027f808ef962ab",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/palette-358/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/palette-pattern/baseline.jxl": "e4a3257e06bf6d1bcad7c3f4c9f69e8135f5063a4fce6d00f69de366d2b0a1bb",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/palette-pattern/runner.jsonl": "052102f635c362e16ed664657c7491a7b62b79d4aeb4c49bc9d729c2fa768cc7",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/palette-pattern/search-checkpoint-262144-256.jxl": "82a2e6e98f08f910081295887c7104ffd16afd563b4cfdf5bcfdc2d66e83b0f8",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/palette-pattern/search-checkpoint-65536-256.jxl": "75f47323b111bd125ba20af78301780d14d4e3fe05cf356d4fffd3820b063a30",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/palette-pattern/search-checkpoint-65536-64.jxl": "75f47323b111bd125ba20af78301780d14d4e3fe05cf356d4fffd3820b063a30",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/palette-pattern/search-control-65536-64.jxl": "75f47323b111bd125ba20af78301780d14d4e3fe05cf356d4fffd3820b063a30",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/palette-pattern/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-bliznaca/baseline.jxl": "c1770de2c54076a17c4496569806f25fb2e30975bd0dd0a3d0cff38a765bf8d4",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-bliznaca/runner.jsonl": "24dded64db970948acee8d43d40c4949a87a8d6f677ffb3371a368a15d4aee2c",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-bliznaca/search-checkpoint-262144-256.jxl": "f495a5fd5ff5df033c549f39883b45c10b5ad9db5d42f77da2aed17cd3fee793",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-bliznaca/search-checkpoint-65536-256.jxl": "436bd4856c81350e1e8b94b4547cbf8a6821ae914e687fc719b0c90e9a0c549e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-bliznaca/search-checkpoint-65536-64.jxl": "436bd4856c81350e1e8b94b4547cbf8a6821ae914e687fc719b0c90e9a0c549e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-bliznaca/search-control-65536-64.jxl": "436bd4856c81350e1e8b94b4547cbf8a6821ae914e687fc719b0c90e9a0c549e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-bliznaca/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-flower/baseline.jxl": "4b34cd5599e78f7b8d53f8e1c49179b54de58fe601f5e72cb93b5207e9c0f3d3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-flower/runner.jsonl": "28dc83e7f742f8ba8559f58fb699ed228c4c14dbdc52d96f3e1f69f21af1de2c",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-flower/search-checkpoint-262144-256.jxl": "d5944657fc4cfd32aec65cf50059529b715da0f0ca9943dcae94f2b907d9695d",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-flower/search-checkpoint-65536-256.jxl": "3d63aebd69fabd33e1d94bd0bc757649743516120225b37657981dc9fbedf4ac",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-flower/search-checkpoint-65536-64.jxl": "3d63aebd69fabd33e1d94bd0bc757649743516120225b37657981dc9fbedf4ac",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-flower/search-control-65536-64.jxl": "3d63aebd69fabd33e1d94bd0bc757649743516120225b37657981dc9fbedf4ac",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-flower/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-macan/baseline.jxl": "1ebc175dc6af8393a1b6030ff570c2c64ff45f9e433b36f2a76107012c88da2a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-macan/runner.jsonl": "1b08b5e1060d9e60d6cb511349795e4b461c562adbe2a003216bb5c5607d70d5",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-macan/search-checkpoint-262144-256.jxl": "dbb46cb6a84c4daa4ffa694bda27cd718537def8983490ceb8af103997055639",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-macan/search-checkpoint-65536-256.jxl": "46b97c4e3b3b604f66b64d8e6bbdcfed0198c5d47c5f0901729d12ab92b62974",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-macan/search-checkpoint-65536-64.jxl": "0fb70bbbeb8fb582e209ed0bfdb710924f562ee06f534da0e6148429ce93f1dc",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-macan/search-control-65536-64.jxl": "0fb70bbbeb8fb582e209ed0bfdb710924f562ee06f534da0e6148429ce93f1dc",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-macan/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-ria/baseline.jxl": "88a99eef4966968a311db0780d1cadba06c3b87e554a0a181f5a1d2061675046",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-ria/runner.jsonl": "656e52ce8bbc83b46c84d292b19fe83bf225a70441bfbde182336df01a24713e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-ria/search-checkpoint-262144-256.jxl": "2d277e8098bdfb0b96b44bc2674dc98dc710b7706af884602afeeb7bd38e1a03",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-ria/search-checkpoint-65536-256.jxl": "7b3d5e310937713a9e210e2543e4e97e48a75490eecafd276a9dc6ba18182436",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-ria/search-checkpoint-65536-64.jxl": "7b3d5e310937713a9e210e2543e4e97e48a75490eecafd276a9dc6ba18182436",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-ria/search-control-65536-64.jxl": "7b3d5e310937713a9e210e2543e4e97e48a75490eecafd276a9dc6ba18182436",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/photo-ria/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/results.jsonl": "0ff9f9e1bd9d38d96311e992e468c03b31d456e18cd00f874271d32116b118d2",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/screen-pattern/baseline.jxl": "f9efbc27b2daaff9bc3bc1751fd9d77f3be627288a207d02af9a9bd69b77a8e4",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/screen-pattern/runner.jsonl": "df3d6c49c246ded29b09acb7d859c6bba535bc58322aa44490f772f99c13eb04",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/screen-pattern/search-checkpoint-262144-256.jxl": "b176d722350393ec9557f4cfa2d5fad14761a307be456b72ccaee66a2fae5996",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/screen-pattern/search-checkpoint-65536-256.jxl": "b023300dc967a2cce45c0f353c809c9e728674dd6ad9e9f088b88a5252f1b7c3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/screen-pattern/search-checkpoint-65536-64.jxl": "b023300dc967a2cce45c0f353c809c9e728674dd6ad9e9f088b88a5252f1b7c3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/screen-pattern/search-control-65536-64.jxl": "b023300dc967a2cce45c0f353c809c9e728674dd6ad9e9f088b88a5252f1b7c3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/screen-pattern/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/splines/baseline.jxl": "29fdf320a043470fa5e384364221d106d528a0c37d6628721bb36b6eeaa8275a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/splines/runner.jsonl": "2ddb8309e1cf351040fe3d9dc833357fd45346716776e41fe8b1be0584a2c837",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/splines/search-checkpoint-262144-256.jxl": "d545199521079d6e8323bccacbe7c017cd9c8eb10594a9ef2d6049b77717d22a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/splines/search-checkpoint-65536-256.jxl": "647063cf0f1078d44d412fa5b6792c9ce779c609c7b6e2929d64647ae6c5bbcd",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/splines/search-checkpoint-65536-64.jxl": "647063cf0f1078d44d412fa5b6792c9ce779c609c7b6e2929d64647ae6c5bbcd",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/splines/search-control-65536-64.jxl": "d1dcf574d3126f4c9b0f85c44a57d34b51dc1c0b8b09607d17551826d80a26b4",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search/splines/stderr.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/search.log": "e63f889c4491f09e6878b787c60f8f2152769febb8b50cc5fb18b8008bee7b17",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/source/CMakeLists.txt": "4ffee17d11da5820bb98efe78e04dda08b136a088130b7d4791a4925d8b5520b",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/source/docs/modular-tree-checkpoints.md": "c9b1d372d509d559583d4e6e5fc4ceef7b48a6cf2ef719488b15c4861445dd84",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/source/src/codec/modular/quantized_tree_learning.cpp": "af58a6d9b24077f790453603190e037c57af51e461be8d30c2e668aa79b45513",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/source/src/codec/modular/quantized_tree_learning.h": "dabf2f376d3a0cfc2b17f135c813e5db9fc6fdfc3bb31b20adfebd1dd4018aa2",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/source/src/codec/modular/tree_learning.cpp": "476e804e4c2ddbf5ea296842b8cfb9968aa6e683768507cdd445cb5d7cf8442d",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/source/src/codec/modular/tree_learning.h": "90a451c2a2334b3c1b2cd3133aaacf463cf3d694c47661a08c355d9b6421c730",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/source/src/codestream/modular/search.cpp": "80d1e176595d6570c460ed192ac843bfe6d727aac62a7b3129df4e3b22a2dd17",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/source/src/codestream/modular/search.h": "6d5b3dd28039a23d1987d499b920e9f0c9396d29b2cd68159beed7c6bda41a49",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/source/src/codestream/modular/workflow.cpp": "75f7f75cf9b981ef7e71d32f42923faa504d08a653a5b73ab3daeb7837d29e3a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/source/src/codestream/modular/workflow.h": "35ddf04d6828efcdb4b190598d072fa9e855a9e2e074dc34499bac2f3d34199c",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/source/tests/modular_training_budget_test.cpp": "fb12d2492a7a587e177bd00c3aa78b82d72284835efb0082624c21d6b0ef1e6a",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/source/tools/modular_training_study/README.md": "cfddda3dcca0966915eb6080715f84e44f11372da5b25a39747631c4efa5cb74",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/source/tools/modular_training_study/analyze_checkpoints.py": "36aea3b26bb016de1b7d5585a15cd9bcd383b86e29891aa67452c9dca4749c79",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/source/tools/modular_training_study/checkpoint_reference.py": "0f1b8503c0635e5b3679b2205278dba5397793d4c51afbd464c73a26c9ab2b16",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/source/tools/modular_training_study/checkpoints.py": "9b5e7a5e3f0ad8653f03f11e5817e265b6ca16ec2cc4b93660c699ea4c463925",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/source/tools/modular_training_study/runner.cpp": "f5d9e3212673e1e7c945a9e91bd422644f8367b669d66b0b36d1ae63fd9a8db3",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/source.json": "e0e884fbc0e908697eb6beb46590a5add8a22eec2efa3d9687305d72b83df4de",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/source.patch": "527ce96943172f7b3d4593086318c27b01da39e9de1c7920ba8045fadda7a5d1",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/study/CMakeCache.txt": "ea229cdd6270748eb27a9fec2b81874b83f22c844fc37bb6708682de865c711c",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/study/training_runner": "0c0deebea799e788cc74776eee8040db45d5526de6e35000c994f254d7944a7d",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/study-build.log": "c77609eef914e2c20a89a924593fd84bcbca48d3d065f7d82189892175ee8a9e",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/study-configure.log": "59bb61e43a3fe01a48fce035c7acc16c836b89e3d513c373a47810146f8164f4",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/summary.json": "58f8efa5a59c3b3eb1d75bb85136fef5aee890efdace703649e8669a61d98741",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/tests.log": "d94252dc7b0e7f40a65d73c1fdd3ca9f545552793af8f18fa4edea4838002827",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints/tests.xml": "7a07b8d9d50355e82541e00bdc015388a7c18e483ba87923c60878edb6b543ec",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints-sanitize/CMakeCache.txt": "ae7746666a58866121486ea89341a0212d54b807fc4900a166d9402fe7347f81",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-checkpoints-sanitize/sanitize-tests.xml": "387ce145efabbfcef4b1b59fbb7cecbb59811236d81ddb13e2ac27d3473ccd51",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/build/training-coverage/rate/results.jsonl": "231a19e0515f65b058d9b486a992eeabc592c3f2c432bb411eb42669ad208b55",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/docs/modular-training-budgets-results.json": "fe51ecf4ca23e4efcbed9777e6715dcb9362502c15f0fbe1888bbf7c84244220",
+    "/Users/yunhocho/GitHub/gjxl-modular-training-budgets/docs/modular-training-coverage-results.json": "0182b9ae6abe99d9568e1e38907a4314bd20b957bf4f769f0a5a0029850f34d7"
+  }
+}

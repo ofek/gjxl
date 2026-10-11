@@ -15,6 +15,8 @@ struct ModularEncodingOptions {
   size_t cpu_thread_count = 1; // Serial oracle default; zero selects up to four.
   // Experimental CPU search budget. Public API defaults remain unchanged.
   TreeLearningOptions learning;
+  // Compare 16/32/... leaf checkpoints from each experimental learning pass.
+  bool tree_checkpoints = false;
 };
 [[nodiscard]] Status EncodeRgb8ModularOwned(Rgb8View input, const ModularEncodingOptions &options,
                                             codestream_internal::CodestreamBuffer *out);

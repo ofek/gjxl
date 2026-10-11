@@ -59,3 +59,75 @@ These differences are intentional and must not be described as libjxl parity.
 
 A single timed encode is diagnostic only. Concurrent workers, decoding, cold
 state and profiling prevent these numbers from establishing throughput claims.
+
+## Tree checkpoint and larger-budget study
+
+The private CPU workflow adds `tree_checkpoints=true`. One training pass retains
+16/32/64/... leaf trees through the requested cap, plus its final tree on early
+stopping or a non-power-of-two cap. Search first encodes the final tree, then the
+intermediate checkpoints. Pre-existing final-tree candidates have priority over
+checkpoints on equal complete sizes, even when that final candidate is evaluated
+later. The original default search remains available. Public defaults are unchanged.
+
+A checkpoint contains the same tree as an independent lower-cap run on the same
+sample set. The optional `TreeLearningCheckpoints` output and corresponding
+storage bounds account for live snapshots during both learning and encoding.
+Increasing the leaf cap with checkpoints preserves the lower checkpoints;
+increasing the sample budget changes the training set and has no corresponding
+per-image monotonicity guarantee relative to another experimental sample budget.
+
+Build into a fresh directory (for example `build/training-checkpoints`) using
+the commands above with the new directory substituted. The two native phases are:
+
+```sh
+python3 tools/modular_training_study/checkpoints.py \
+  --runner build/training-checkpoints/study/training_runner \
+  --manifest /absolute/baseline/manifest.json \
+  --prior /absolute/training-coverage/rate/results.jsonl \
+  --output build/training-checkpoints/fixed --phase checkpoints
+python3 tools/modular_training_study/checkpoints.py \
+  --runner build/training-checkpoints/study/training_runner \
+  --manifest /absolute/baseline/manifest.json \
+  --prior /absolute/training-coverage/rate/results.jsonl \
+  --output build/training-checkpoints/search --phase checkpoint-search
+```
+
+The fixed phase measures 64K/256K samples crossed with 16/32/64/128/256 leaf
+caps, using the existing learner and frozen baseline transforms. Each sample
+budget trains once to 256 leaves and emits the saved checkpoints; training time
+is recorded once per pass in stderr and individual file encoding time in JSON.
+Early stopping can make several cap settings emit identical files.
+
+The normal-search phase measures the saved 64K/64 control, then checkpoint search
+at 64K/64, 64K/256 and 256K/256. Both phases reproduce the original default
+baseline. Saved matching fixed and search controls must be byte-identical.
+All output files receive independent sample-exact decoding.
+
+For the reference comparison, reuse the frozen instrumented runner and data
+from the separate reference attribution study. The driver checks its binary hash,
+reruns default e9 and the earlier 64K/64 fixed-RCT control byte-identically, and
+measures the complete 64K/256K by 64/256-leaf factorial. It verifies identical
+reference transforms and channel layouts across learning budgets:
+
+```sh
+python3 tools/modular_training_study/checkpoint_reference.py \
+  --reference-data /absolute/modular-libjxl-controls \
+  --native-results /absolute/training-coverage/rate/results.jsonl \
+  --output build/training-checkpoints/reference
+python3 tools/modular_training_study/analyze_checkpoints.py \
+  --data build/training-checkpoints \
+  --prior /absolute/training-coverage/rate/results.jsonl \
+  --output build/training-checkpoints/summary.json
+```
+
+Reference controls force global coding and the same RCT type chosen by the
+native baseline. Other reference transforms, patch handling and channel layouts
+remain the reference's own, verified unchanged across budgets. They are not an
+assertion of identical complete native/reference transform pipelines. Reference
+capacity uses the previously qualified threshold-targeting procedure; native
+capacity uses best-first growth. See the retained reference-study manifest for
+exact instrumentation and build provenance.
+
+The analysis separates actual fixed-cap files, selection among measured
+checkpoint files, and actual normal-search outputs. It never substitutes a
+selection envelope for a newly measured full-search configuration.

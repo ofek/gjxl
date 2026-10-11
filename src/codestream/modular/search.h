@@ -41,17 +41,18 @@ struct TrainingCoverage {
                                           ModularCodingPolicy *single, ModularCodingPolicy *split,
                                           ModularCodingPolicy *entropy = nullptr,
                                           TreeLearningOptions learning = {},
-                                          TrainingCoverage *coverage = nullptr);
+                                          TrainingCoverage *coverage = nullptr,
+                                          TreeLearningCheckpoints *checkpoints = nullptr);
 // Frame and layout must describe the completed transforms in base. Learn on
 // those channels (including metadata), preserving transforms and WP parameters.
 [[nodiscard]] Status
 LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStreamPlan &plan,
                      const ModularCodingPolicy &base, ModularCodingPolicy *single,
                      ModularCodingPolicy *split, ModularCodingPolicy *entropy = nullptr,
-                     TreeLearningOptions learning = {}, TrainingCoverage *coverage = nullptr);
-[[nodiscard]] Status ComputeModularSearchStoragePlan(Extent2D extent, PackedModularFormat format,
-                                                     EntropyCodingMode mode,
-                                                     ModularWorkflowStoragePlan *out,
-                                                     size_t cpu_threads = 1,
-                                                     TreeLearningOptions learning = {});
+                     TreeLearningOptions learning = {}, TrainingCoverage *coverage = nullptr,
+                     TreeLearningCheckpoints *checkpoints = nullptr);
+[[nodiscard]] Status
+ComputeModularSearchStoragePlan(Extent2D extent, PackedModularFormat format, EntropyCodingMode mode,
+                                ModularWorkflowStoragePlan *out, size_t cpu_threads = 1,
+                                TreeLearningOptions learning = {}, bool tree_checkpoints = false);
 } // namespace gjxl::modular_internal

@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <iostream>
 #include <stdexcept>
+#include <tuple>
 using namespace gjxl;
 using namespace gjxl::modular_internal;
 namespace ref = gjxl::test::modular_reference;
@@ -36,8 +37,12 @@ void Policy(const ModularCodingPolicy &policy) {
   std::cout << "]}";
 }
 int main(int argc, char **argv) try {
-  if (argc != 3)
-    throw std::runtime_error("training_runner INPUT OUTPUT_DIRECTORY");
+  if (argc != 3 && argc != 4)
+    throw std::runtime_error(
+        "training_runner INPUT OUTPUT_DIRECTORY [checkpoints|checkpoint-search]");
+  const std::string phase = argc == 4 ? argv[3] : "coverage";
+  if (phase != "coverage" && phase != "checkpoints" && phase != "checkpoint-search")
+    throw std::runtime_error("Unknown study phase");
   io::IntegerImage image;
   Ok(io::ReadPnm(argv[1], &image));
   PackedModularImageView view{image.bytes, image.extent, image.row_stride,
@@ -94,6 +99,84 @@ int main(int argc, char **argv) try {
          std::chrono::duration<double>(Clock::now() - start).count(), {},
          profile.encoded_candidates, baseline.size());
   const auto fixed = profile.resolved;
+  if (phase == "checkpoints") {
+    for (size_t samples : {size_t{65536}, size_t{262144}}) {
+      start = Clock::now();
+      ModularCodingPolicy single, split, learned;
+      TrainingCoverage coverage;
+      TreeLearningCheckpoints checkpoints;
+      {
+        ModularEncoderFrame frame;
+        Ok(ModularEncoderFrame::Prepare(view, fixed, &frame));
+        ChannelShape shape;
+        Ok(DescribeImage(frame.image(), &shape));
+        ModularFrameGeometry geometry;
+        Ok(ModularFrameGeometry::Create(image.extent, &geometry));
+        ModularStreamPlan layout;
+        Ok(BuildModularStreamPlan(geometry, shape.channels(), shape.metadata, &layout));
+        Ok(LearnModularPolicies(frame, layout, fixed, &single, &split, &learned, {samples, 256},
+                                &coverage, &checkpoints));
+      }
+      const double training_seconds = std::chrono::duration<double>(Clock::now() - start).count();
+      std::cerr << "training " << samples << " samples: " << training_seconds << " seconds\n";
+      if (learned.rct != fixed.rct || learned.transforms != fixed.transforms ||
+          learned.weighted != fixed.weighted || !checkpoints.size ||
+          checkpoints.trees[checkpoints.size - 1] != learned.tree)
+        throw std::runtime_error("Frozen checkpoint policy changed");
+      for (size_t leaves : {size_t{16}, size_t{32}, size_t{64}, size_t{128}, size_t{256}}) {
+        size_t selected = 0;
+        for (size_t i = 0; i < checkpoints.size; ++i)
+          if ((checkpoints.trees[i].size + 1) / 2 <= leaves)
+            selected = i;
+        if ((checkpoints.trees[selected].size + 1) / 2 > leaves)
+          throw std::runtime_error("Missing intermediate tree checkpoint");
+        options.search = false;
+        options.coding = learned;
+        options.coding.tree = checkpoints.trees[selected];
+        std::vector<uint8_t> encoded;
+        start = Clock::now();
+        Ok(EncodeModularImage(view, options, &encoded));
+        report("checkpoint-" + std::to_string(samples) + "-" + std::to_string(leaves), encoded,
+               options.coding, std::chrono::duration<double>(Clock::now() - start).count(),
+               coverage, 1, baseline.size());
+      }
+    }
+    return 0;
+  }
+  if (phase == "checkpoint-search") {
+    std::vector<uint8_t> control;
+    for (const auto [samples, leaves, checkpoints] :
+         {std::tuple<size_t, size_t, bool>{65536, 64, false},
+          {65536, 64, true},
+          {65536, 256, true},
+          {262144, 256, true}}) {
+      options.search = true;
+      options.coding = {};
+      options.learning = {samples, leaves};
+      options.tree_checkpoints = checkpoints;
+      start = Clock::now();
+      ModularProfile searched;
+      std::vector<uint8_t> encoded;
+      {
+        ProfileSession session(&searched);
+        Ok(EncodeModularImage(view, options, &encoded));
+      }
+      if (!checkpoints)
+        control = encoded;
+      if (encoded.size() > baseline.size() || (samples == 65536 && encoded.size() > control.size()))
+        throw std::runtime_error("Checkpoint search regressed");
+      if (samples == 65536 && leaves == 64 && encoded.size() == control.size() &&
+          encoded != control)
+        throw std::runtime_error("Checkpoint displaced equal-size retained candidate");
+      report(checkpoints
+                 ? "search-checkpoint-" + std::to_string(samples) + "-" + std::to_string(leaves)
+                 : "search-control-65536-64",
+             encoded, searched.resolved,
+             std::chrono::duration<double>(Clock::now() - start).count(), {},
+             searched.encoded_candidates, baseline.size());
+    }
+    return 0;
+  }
   for (auto mode : {TreeLearningMode::kLegacy, TreeLearningMode::kQuantized})
     for (size_t samples : {size_t{4096}, size_t{65536}})
       for (size_t leaves : {size_t{16}, size_t{64}}) {

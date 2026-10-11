@@ -178,31 +178,75 @@ void FindSplit(std::span<const TrainingSample> samples, Leaf &leaf, DecisionTree
 }
 } // namespace
 
+Status TreeLearningCheckpoints::Capture(const DecisionTree &tree, bool final) {
+  const size_t leaves = (tree.size + 1) / 2;
+  if ((!final && (leaves < 16 || !std::has_single_bit(leaves))) ||
+      (size && trees[size - 1].size == tree.size))
+    return Status::Ok();
+  if (size == trees.size())
+    return Status::InvalidArgument("Modular tree checkpoint capacity exceeded");
+  trees[size] = tree;
+  ++size;
+  return Status::Ok();
+}
+Status ComputeTreeLearningCheckpointStorageBound(size_t maximum_leaves,
+                                                 resource_budget_internal::HostStorageBound *out) {
+  using namespace resource_budget_internal;
+  if (!out || !maximum_leaves || maximum_leaves > kMaximumTreeLeaves)
+    return Status::InvalidArgument("Invalid Modular checkpoint storage request");
+  HostStorageBound bound;
+  auto add = [&](size_t leaves) {
+    const size_t nodes = 2 * leaves - 1;
+    return nodes <= kInlineTreeNodes ||
+           bound.AddVector<DecisionNode>(nodes, VectorCapacityPolicy::kFreshExact);
+  };
+  // The final checkpoint may be between powers of two. Its backing is bounded
+  // by maximum_leaves, including an early stop before a power-of-two cap.
+  for (size_t leaves = 16; leaves < maximum_leaves; leaves *= 2)
+    if (!add(leaves))
+      return Status::InvalidArgument("Modular checkpoint storage overflow");
+  if (!add(maximum_leaves))
+    return Status::InvalidArgument("Modular checkpoint storage overflow");
+  *out = bound;
+  return Status::Ok();
+}
 Status ComputeTreeLearningStorageBound(resource_budget_internal::HostStorageBound *out,
-                                       TreeLearningOptions options) {
+                                       TreeLearningOptions options, bool retain_checkpoints) {
   using namespace resource_budget_internal;
   if (!out)
     return Status::InvalidArgument("Null Modular learning storage output");
   if (auto s = ValidateTreeLearningOptions(options); !s.ok())
     return s;
-  if (options.mode == TreeLearningMode::kQuantized)
-    return ComputeQuantizedTreeLearningStorageBound(out, options);
   HostStorageBound bound;
-  const size_t nodes = 2 * options.maximum_leaves - 1;
-  if (!bound.AddVector<LearningWorkspace>(1, VectorCapacityPolicy::kFreshExact) ||
-      !bound.AddVector<int64_t>(options.maximum_samples + 1, VectorCapacityPolicy::kFreshExact) ||
-      !bound.AddVector<uint32_t>(options.maximum_samples, VectorCapacityPolicy::kFreshExact) ||
-      !bound.AddVector<std::array<ResidualCode, kPredictors>>(options.maximum_samples,
-                                                              VectorCapacityPolicy::kFreshExact) ||
-      !bound.AddVector<Leaf>(options.maximum_leaves, VectorCapacityPolicy::kFreshExact) ||
-      (nodes > kInlineTreeNodes &&
-       !bound.AddVector<DecisionNode>(nodes, VectorCapacityPolicy::kFreshExact)))
-    return Status::InvalidArgument("Modular learning storage overflow");
+  if (options.mode == TreeLearningMode::kQuantized) {
+    if (auto s = ComputeQuantizedTreeLearningStorageBound(&bound, options); !s.ok())
+      return s;
+  } else {
+    const size_t nodes = 2 * options.maximum_leaves - 1;
+    if (!bound.AddVector<LearningWorkspace>(1, VectorCapacityPolicy::kFreshExact) ||
+        !bound.AddVector<int64_t>(options.maximum_samples + 1, VectorCapacityPolicy::kFreshExact) ||
+        !bound.AddVector<uint32_t>(options.maximum_samples, VectorCapacityPolicy::kFreshExact) ||
+        !bound.AddVector<std::array<ResidualCode, kPredictors>>(
+            options.maximum_samples, VectorCapacityPolicy::kFreshExact) ||
+        !bound.AddVector<Leaf>(options.maximum_leaves, VectorCapacityPolicy::kFreshExact) ||
+        (nodes > kInlineTreeNodes &&
+         !bound.AddVector<DecisionNode>(nodes, VectorCapacityPolicy::kFreshExact)))
+      return Status::InvalidArgument("Modular learning storage overflow");
+  }
+  if (retain_checkpoints) {
+    HostStorageBound checkpoints;
+    if (auto s = ComputeTreeLearningCheckpointStorageBound(options.maximum_leaves, &checkpoints);
+        !s.ok())
+      return s;
+    if (!bound.Add(checkpoints))
+      return Status::InvalidArgument("Modular learning checkpoint overlap overflow");
+  }
   *out = bound;
   return Status::Ok();
 }
 Status LearnEntropyTree(std::span<const TrainingSample> samples, DecisionTree *out,
-                        TreeLearningOptions options, size_t population) try {
+                        TreeLearningOptions options, size_t population,
+                        TreeLearningCheckpoints *checkpoints) try {
   if (auto s = ValidateTreeLearningOptions(options); !s.ok())
     return s;
   if (!out || samples.empty() || samples.size() > options.maximum_samples)
@@ -211,7 +255,7 @@ Status LearnEntropyTree(std::span<const TrainingSample> samples, DecisionTree *o
     return Status::InvalidArgument("Modular training population is smaller than sample count");
   if (options.mode == TreeLearningMode::kQuantized)
     return LearnQuantizedEntropyTree(samples, out, options,
-                                     population ? population : samples.size());
+                                     population ? population : samples.size(), checkpoints);
   resource_budget_internal::ManagedVector<LearningWorkspace> storage(1);
   auto &w = storage[0];
   w.count_log_count.resize(samples.size() + 1);
@@ -225,6 +269,7 @@ Status LearnEntropyTree(std::span<const TrainingSample> samples, DecisionTree *o
     for (size_t p = 0; p < kPredictors; ++p)
       w.codes[i][p] = EncodeResidual(samples[i].residuals[p]);
   DecisionTree tree;
+  TreeLearningCheckpoints retained;
   tree.nodes.resize(2 * options.maximum_leaves - 1);
   w.leaves[0] = {0, samples.size(), 0, 1, {}};
   size_t leaves = 1;
@@ -252,10 +297,18 @@ Status LearnEntropyTree(std::span<const TrainingSample> samples, DecisionTree *o
     w.leaves[leaves] = {boundary, leaf.end, right, leaf.depth + 1, {}};
     FindSplit(samples, w.leaves[best], tree, w);
     FindSplit(samples, w.leaves[leaves++], tree, w);
+    if (checkpoints)
+      if (auto s = retained.Capture(tree); !s.ok())
+        return s;
   }
   TreeLayout layout;
   if (auto s = ValidateTree(tree, &layout); !s.ok())
     return s;
+  if (checkpoints) {
+    if (auto s = retained.Capture(tree, true); !s.ok())
+      return s;
+    *checkpoints = std::move(retained);
+  }
   *out = std::move(tree);
   return Status::Ok();
 } catch (const resource_budget_internal::ManagedAllocationFailure &e) {

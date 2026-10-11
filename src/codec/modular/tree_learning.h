@@ -21,6 +21,18 @@ struct TreeLearningOptions {
     return Status::InvalidArgument("Invalid Modular tree learning budget");
   return Status::Ok();
 }
+// Powers of two from 16 through the representation ceiling, plus an early
+// final tree in place of the first unreached checkpoint. Default storage is inline.
+inline constexpr size_t kMaximumTreeCheckpoints = 10;
+static_assert((size_t{16} << (kMaximumTreeCheckpoints - 1)) == kMaximumTreeLeaves);
+struct TreeLearningCheckpoints {
+  std::array<DecisionTree, kMaximumTreeCheckpoints> trees;
+  size_t size = 0;
+  bool operator==(const TreeLearningCheckpoints &) const = default;
+  // Learner-internal: copies active nodes only; may throw a managed allocation
+  // failure. Call after predictors are finalized at this stage of tree growth.
+  [[nodiscard]] Status Capture(const DecisionTree &tree, bool final = false);
+};
 struct TrainingSample {
   PredictionProperties properties;
   std::array<int32_t, 14> residuals;
@@ -33,13 +45,20 @@ struct TrainingSample {
 // sampling-aware split penalty. population=0 means all samples are observed.
 // This is a native reference-inspired control, not a bit-exact libjxl learner. Its
 // cost is an integer estimate, not a serialized size; the caller must compare
-// complete codestreams. No entropy-writer or stream-plan dependencies.
+// complete codestreams. Optional checkpoints preserve the same growth path as
+// independent lower-cap runs on these samples. Both outputs publish on success.
+// No entropy-writer or stream-plan dependencies.
 [[nodiscard]] Status LearnEntropyTree(std::span<const TrainingSample> samples, DecisionTree *out,
-                                      TreeLearningOptions options = {}, size_t population = 0);
+                                      TreeLearningOptions options = {}, size_t population = 0,
+                                      TreeLearningCheckpoints *checkpoints = nullptr);
 // Allocation-free; bounds fresh learning scratch plus the returned tree. Input
 // samples and any old output are caller-owned and must be admitted separately.
 [[nodiscard]] Status
 ComputeTreeLearningStorageBound(resource_budget_internal::HostStorageBound *out,
-                                TreeLearningOptions options = {});
+                                TreeLearningOptions options = {}, bool retain_checkpoints = false);
+// Snapshot backings only, also needed while search encodes retained checkpoints.
+[[nodiscard]] Status
+ComputeTreeLearningCheckpointStorageBound(size_t maximum_leaves,
+                                          resource_budget_internal::HostStorageBound *out);
 [[nodiscard]] Status MakeFixedWeightedTree(uint32_t bits, DecisionTree *out);
 } // namespace gjxl::modular_internal

@@ -276,7 +276,91 @@ void QuantizedLearning() {
   Check(failures == 7, "Quantized learner allocation count changed");
   std::cout << "Quantized learner: 65537 samples, 64 leaves, seven allocation failures checked\n";
 }
-void Encodes(TreeLearningMode learner = TreeLearningMode::kLegacy) {
+void LearningCheckpoints() {
+  std::vector<TrainingSample> samples(65537);
+  for (size_t i = 0; i < samples.size(); ++i) {
+    const size_t region = i / 256;
+    samples[i].properties[0] = region;
+    for (size_t p = 0; p < 14; ++p)
+      samples[i].residuals[p] = static_cast<int32_t>((i * 977 + p * 131) % 65536);
+    samples[i].residuals[region % 2 ? size_t(Predictor::kWeighted) : size_t(Predictor::kGradient)] =
+        static_cast<int32_t>(region * 2);
+  }
+  for (auto mode : {TreeLearningMode::kLegacy, TreeLearningMode::kQuantized}) {
+    TreeLearningOptions options{samples.size(), 256, mode};
+    DecisionTree final;
+    TreeLearningCheckpoints checkpoints;
+    Ok(LearnEntropyTree(samples, &final, options, samples.size() * 10, &checkpoints));
+    Check(checkpoints.size == 5 && checkpoints.trees[4] == final && final.size > 255 &&
+              final.size <= 511,
+          "Learning missed checkpoints or final tree");
+    for (size_t i = 0; i < checkpoints.size; ++i) {
+      auto lower = options;
+      lower.maximum_leaves = size_t{16} << i;
+      DecisionTree independent;
+      Ok(LearnEntropyTree(samples, &independent, lower, samples.size() * 10));
+      Check(independent == checkpoints.trees[i], "Checkpoint changed the bounded growth path");
+    }
+    for (size_t limit : {size_t{1}, size_t{7}, size_t{17}, size_t{100}}) {
+      DecisionTree independent;
+      TreeLearningCheckpoints partial;
+      auto lower = options;
+      lower.maximum_leaves = limit;
+      Ok(LearnEntropyTree(samples, &independent, lower, samples.size() * 10, &partial));
+      Check(partial.size && partial.trees[partial.size - 1] == independent &&
+                (independent.size + 1) / 2 <= limit,
+            "Non-power-of-two final checkpoint missing");
+    }
+    HostStorageBound bound;
+    ArmNextManagedHostAllocationFailureForTest();
+    Ok(ComputeTreeLearningStorageBound(&bound, options, true));
+    Check(ManagedHostAllocationFailurePendingForTest(), "Checkpoint planning allocated");
+    DisarmManagedHostAllocationFailureForTest();
+    size_t failures = 0;
+    for (; failures < 20; ++failures) {
+      DecisionTree tree = Balanced(64), before = tree;
+      TreeLearningCheckpoints output;
+      output.size = 1;
+      output.trees[0] = before;
+      auto old = output;
+      ResourceBudget budget(bound.peak_bytes);
+      ResourceReservation reservation;
+      Ok(budget.Reserve(bound.peak_bytes, &reservation));
+      Status status;
+      bool pending;
+      {
+        ResourceContextScope scope({&reservation, ResourceClass::kPreparation});
+        ArmManagedHostAllocationFailureAfterForTest(failures);
+        status = LearnEntropyTree(samples, &tree, options, samples.size() * 10, &output);
+        pending = ManagedHostAllocationFailurePendingForTest();
+        DisarmManagedHostAllocationFailureForTest();
+      }
+      Check(budget.snapshot().peak_backing_bytes <= bound.peak_bytes,
+            "Checkpoint admission exceeded");
+      if (!status.ok())
+        Check(!pending && status.code() == StatusCode::kOutOfMemory && tree == before &&
+                  output == old,
+              "Checkpoint allocation failure published partial output");
+      tree = {};
+      output = {};
+      Check(!budget.snapshot().total.backing_count, "Checkpoint storage leaked");
+      if (status.ok()) {
+        Check(pending, "Successful checkpoint sweep consumed failure");
+        break;
+      }
+    }
+    Check(failures == (mode == TreeLearningMode::kLegacy ? 10 : 11),
+          "Checkpoint sweep missed backing allocations");
+    std::cout << "checkpoint learner mode " << int(mode) << ": " << failures
+              << " failures; 16/32/64/128/256 match independent runs\n";
+    TrainingSample constant{};
+    TreeLearningCheckpoints early;
+    Ok(LearnEntropyTree(std::span(&constant, 1), &final, {1, kMaximumTreeLeaves, mode}, 0, &early));
+    Check(early.size == 1 && early.trees[0] == final && final.size == 1,
+          "Early stopping created duplicate checkpoints");
+  }
+}
+void Encodes(TreeLearningMode learner = TreeLearningMode::kLegacy, bool checkpoints = false) {
   const Extent2D extent{257, 65};
   std::vector<uint8_t> bytes(extent.width * extent.height * 2);
   for (size_t i = 0; i < bytes.size() / 2; ++i) {
@@ -288,7 +372,8 @@ void Encodes(TreeLearningMode learner = TreeLearningMode::kLegacy) {
   for (bool search : {false, true})
     for (auto mode : {EntropyCodingMode::kPrefix, EntropyCodingMode::kAns})
       for (size_t leaves : {size_t{64}, size_t{256}, size_t{1024}}) {
-        if ((learner == TreeLearningMode::kQuantized && (!search || leaves != 64)) ||
+        if ((checkpoints && !search) ||
+            (learner == TreeLearningMode::kQuantized && (!search || leaves != 64)) ||
             (search && leaves == 1024))
           continue;
         std::cout << "encode search " << search << " mode " << static_cast<int>(mode) << " leaves "
@@ -297,12 +382,16 @@ void Encodes(TreeLearningMode learner = TreeLearningMode::kLegacy) {
         options.entropy = mode;
         options.search = search;
         options.learning = {65536, leaves, learner};
+        std::vector<uint8_t> previous;
+        if (checkpoints)
+          Ok(EncodeModularImage(view, options, &previous));
+        options.tree_checkpoints = checkpoints;
         if (!search)
           options.coding.tree = Balanced(leaves);
         ModularWorkflowStoragePlan plan;
         ArmNextManagedHostAllocationFailureForTest();
         Ok(search ? ComputeModularSearchStoragePlan(extent, view.format, mode, &plan, 1,
-                                                    options.learning)
+                                                    options.learning, checkpoints)
                   : ComputeModularWorkflowStoragePlan(extent, view.format, mode, options.coding,
                                                       &plan));
         Check(ManagedHostAllocationFailurePendingForTest(), "Encode planner allocated");
@@ -313,6 +402,10 @@ void Encodes(TreeLearningMode learner = TreeLearningMode::kLegacy) {
         std::vector<uint8_t> encoded, again;
         Ok(EncodeModularImage(view, options, &encoded));
         Empty(*options.execution_domain);
+        if (checkpoints)
+          Check(encoded.size() <= previous.size() &&
+                    (encoded.size() != previous.size() || encoded == previous),
+                "Checkpoint search regressed or displaced an equal-size final candidate");
         Check(options.execution_domain->snapshot().peak_backing_bytes <= plan.working.peak_bytes &&
                   encoded.size() <= plan.maximum_codestream_bytes,
               "Encode exceeded its storage plan");
@@ -329,7 +422,7 @@ void Encodes(TreeLearningMode learner = TreeLearningMode::kLegacy) {
         // Parallel tokenization/emission must preserve complete bytes.
         options.cpu_thread_count = 4;
         Ok(search ? ComputeModularSearchStoragePlan(extent, view.format, mode, &plan, 4,
-                                                    options.learning)
+                                                    options.learning, checkpoints)
                   : ComputeModularWorkflowStoragePlan(extent, view.format, mode, options.coding,
                                                       &plan, 4));
         Ok(ExecutionDomain::Create(
@@ -350,7 +443,8 @@ void Encodes(TreeLearningMode learner = TreeLearningMode::kLegacy) {
         Empty(*too_small);
       }
 }
-void TrainingPolicies(TreeLearningMode learner = TreeLearningMode::kLegacy) {
+void TrainingPolicies(TreeLearningMode learner = TreeLearningMode::kLegacy,
+                      bool checkpoints = false) {
   const Extent2D extent{257, 65};
   std::vector<uint8_t> bytes(extent.width * extent.height * 4);
   for (size_t i = 0; i < bytes.size(); ++i)
@@ -377,6 +471,26 @@ void TrainingPolicies(TreeLearningMode learner = TreeLearningMode::kLegacy) {
     TrainingCoverage coverage, again;
     Ok(LearnModularPolicies(frame, layout, base, &new_single, &new_split, &learned,
                             {65537, 64, learner}, &coverage));
+    if (checkpoints) {
+      auto final = learned;
+      TreeLearningCheckpoints trees;
+      Ok(LearnModularPolicies(frame, layout, base, &new_single, &new_split, &learned,
+                              {65537, 64, learner}, nullptr, &trees));
+      Check(learned == final && trees.size && trees.trees[trees.size - 1] == learned.tree,
+            "Transformed checkpoint changed the final tree");
+      for (size_t i = 0; i < trees.size; ++i) {
+        auto policy = learned;
+        policy.tree = trees.trees[i];
+        std::vector<uint8_t> file;
+        Ok(EncodeModularImage(view, {.entropy = EntropyCodingMode::kAns, .coding = policy}, &file));
+#ifdef GJXL_TRAINING_BUDGET_REFERENCE
+        const auto decoded = test::modular_reference::DecodeLossless(file);
+        Check(decoded.samples.size() == bytes.size(), "Checkpoint decode shape differs");
+        for (size_t j = 0; j < bytes.size(); ++j)
+          Check(decoded.samples[j] == bytes[j], "Checkpoint decode sample differs");
+#endif
+      }
+    }
     auto saved = learned;
     Ok(LearnModularPolicies(frame, layout, base, &new_single, &new_split, &learned,
                             {65537, 64, learner}, &again));
@@ -407,22 +521,24 @@ void TrainingPolicies(TreeLearningMode learner = TreeLearningMode::kLegacy) {
 #endif
   }
 }
-void AllocationFailures(TreeLearningMode learner = TreeLearningMode::kLegacy) {
+void AllocationFailures(TreeLearningMode learner = TreeLearningMode::kLegacy,
+                        bool checkpoints = false) {
   const std::array<uint8_t, 12> bytes{0, 3, 1, 4, 5, 9, 2, 6, 7, 0, 8, 3};
   const PackedModularImageView view{bytes, {3, 4}, 3, PackedModularFormat::kGray8};
   for (bool search : {false, true})
     for (auto mode : {EntropyCodingMode::kPrefix, EntropyCodingMode::kAns}) {
-      if (learner == TreeLearningMode::kQuantized && !search)
+      if ((checkpoints || learner == TreeLearningMode::kQuantized) && !search)
         continue;
       ModularEncodingOptions options;
       options.entropy = mode;
       options.search = search;
       options.learning = {65537, 64, learner};
+      options.tree_checkpoints = checkpoints;
       if (!search)
         options.coding.tree = Balanced(64);
       ModularWorkflowStoragePlan plan;
       Ok(search ? ComputeModularSearchStoragePlan(view.extent, view.format, mode, &plan, 1,
-                                                  options.learning)
+                                                  options.learning, checkpoints)
                 : ComputeModularWorkflowStoragePlan(view.extent, view.format, mode, options.coding,
                                                     &plan));
       Ok(ExecutionDomain::Create(
@@ -466,6 +582,19 @@ void AllocationFailures(TreeLearningMode learner = TreeLearningMode::kLegacy) {
 }
 } // namespace
 int main(int argc, char **argv) try {
+  if (argc == 2 && std::string_view(argv[1]) == "--checkpoints") {
+    LearningCheckpoints();
+    for (auto mode : {TreeLearningMode::kLegacy, TreeLearningMode::kQuantized}) {
+      TrainingPolicies(mode, true);
+      Encodes(mode, true);
+    }
+    return 0;
+  }
+  if (argc == 2 && std::string_view(argv[1]) == "--checkpoint-allocations") {
+    AllocationFailures(TreeLearningMode::kLegacy, true);
+    AllocationFailures(TreeLearningMode::kQuantized, true);
+    return 0;
+  }
   if (argc == 2 && std::string_view(argv[1]) == "--coverage") {
     QuantizedLearning();
     TrainingPolicies(TreeLearningMode::kQuantized);
