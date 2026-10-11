@@ -9,7 +9,7 @@
     "prescribed": 356,
     "checkpoint_search": 5892
   },
-  "rate_study": "pending",
+  "rate_study": "complete",
   "source_sha256": {
     "CMakeLists.txt": "3e3ff340bb66cd5061d9dc9cdb922d0a0d6751e3596e29bc9217a28d31dce767",
     "cmake/ModularOracle.cmake": "ac4418b2dc22f2d686eaa3acdfda3effa63510f65da51b8f3348f6dcc19d295b",
@@ -50,5 +50,6 @@
     "/Users/yunhocho/GitHub/gjxl-modular-ans-estimates/build/ans-selection/implementation-source/src/codestream/modular/workflow.h": "a87fc7615c385e6d14d8df2b5181573811f0d06eb127a14da2313bb467ad57e3",
     "/Users/yunhocho/GitHub/gjxl-modular-ans-estimates/build/ans-selection/implementation-source/src/codestream/modular/prepared_encoder.h": "3e7070b9cda9a2fc95350a61e0be887be91c15900b06b2c8152d6c741c95a7fe",
     "/Users/yunhocho/GitHub/gjxl-modular-ans-estimates/build/ans-selection/implementation-source/src/codestream/modular/gpu_workflow.cpp": "e65d5c96363f18f3146e7138aaabf018c46f09f66189c568d560b1a4b32988e5"
-  }
+  },
+  "rate_study_results": "docs/modular-ans-selection-results.json"
 }
