@@ -57,7 +57,8 @@ void Test() {
               p.prefix_config_search_nanoseconds <
                   inner.seconds[static_cast<size_t>(ProfileStage::kModel)] * 1e9,
           "Missing or incorrectly nested prefix counters");
-    Check((p.ans_value_collection_nanoseconds > 0) == (mode == EntropyCodingMode::kAns) &&
+    Check(p.ans_value_collection_nanoseconds == 0 && p.ans_value_aggregation_nanoseconds == 0 &&
+              p.prefix_section_measurement_count == 0 &&
               (p.ans_histogram_candidate_count > 0) == (mode == EntropyCodingMode::kAns),
           "ANS counters disagree with the selected mode");
     auto accumulated = p;

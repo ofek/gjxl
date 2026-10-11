@@ -1869,6 +1869,7 @@ Status OptimizeEntropyCodeImpl(
         return status;
       }
       if (cost != nullptr) {
+        if (profile != nullptr) ++profile->prefix_section_measurement_count;
         const ProfileClock::time_point section_bits_begin =
           ProfileBegin(profile);
         Status status = MeasureSectionTokenBits(
@@ -2094,6 +2095,7 @@ Status OptimizeEntropyCodeImpl(
         "Prepared values differ from the selected prefix partition");
     }
     if (cost != nullptr) {
+      if (profile != nullptr) ++profile->prefix_section_measurement_count;
       const ProfileClock::time_point section_bits_begin = ProfileBegin(profile);
       Status status = MeasureSectionTokenBits(
         section_tokens, best_code, best_cost.token_bits,
@@ -2139,7 +2141,7 @@ Status codestream_internal::OptimizeEntropyCodeAndPrepareClusters(
   EntropyCodeCost* cost,
   PreparedEntropyClusters* prepared,
   EntropyWorkProfile* profile) {
-  if (cost == nullptr || prepared == nullptr) {
+  if (prepared == nullptr) {
     return Status::InvalidArgument("Prepared entropy output is null");
   }
   return OptimizeEntropyCodeImpl(
@@ -2370,8 +2372,7 @@ Status codestream_internal::ComputePrefixOptimizationStoragePlan(
       o.initial_histograms > 256 || o.borrow_prepared_clusters ||
       (o.policy != EntropyStoragePolicy::kFastPrefix &&
        o.policy != EntropyStoragePolicy::kPrefix) ||
-      (o.retain_prepared_clusters &&
-       (o.policy == EntropyStoragePolicy::kFastPrefix || !o.return_cost)))
+      (o.retain_prepared_clusters && o.policy == EntropyStoragePolicy::kFastPrefix))
     return Status::InvalidArgument("Prefix optimization plan is invalid");
   const bool fast = o.policy == EntropyStoragePolicy::kFastPrefix;
   const size_t histograms = o.initial_histograms == 0

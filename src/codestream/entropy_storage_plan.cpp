@@ -154,7 +154,7 @@ Status ComputeEntropyOptimizationStoragePlan(
   case kPrefix:
     if (options.borrow_prepared_clusters ||
         (options.retain_prepared_clusters &&
-         (options.policy == kFastPrefix || !options.return_cost)))
+         options.policy == kFastPrefix))
       return Status::InvalidArgument("Prefix storage options are invalid");
     return ComputePrefixOptimizationStoragePlan(options, out);
   case kBalancedAns:

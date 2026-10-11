@@ -120,6 +120,8 @@ template <typename Allocator>
 }
 
 /// Builds the prefix model and retains its exact aggregated cluster values.
+/// Cost is optional. A null cost omits ordered per-section token measurement;
+/// population retention itself never requires that additional full token pass.
 /// All outputs remain unchanged on failure.
 [[nodiscard]] Status OptimizeEntropyCodeAndPrepareClusters(
   std::span<const EntropyTokenStreamView> section_tokens,

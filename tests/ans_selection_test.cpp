@@ -90,6 +90,14 @@ void Models() {
     EntropyCodeCost prefix_cost;
     Ok(OptimizeEntropyCodeAndPrepareClusters(streams, {.context_count = 3}, &prefix, &prefix_cost,
                                              &populations));
+    EntropyCode prefix_without_cost;
+    PreparedEntropyClusters retained;
+    EntropyWorkProfile retain_profile;
+    Ok(OptimizeEntropyCodeAndPrepareClusters(streams, {.context_count = 3}, &prefix_without_cost,
+                                             nullptr, &retained, &retain_profile));
+    Check(prefix_without_cost == prefix && retained == populations &&
+              retain_profile.prefix_section_measurement_count == 0,
+          "Population-only retention changed values/model or measured prefix sections");
     EntropyWorkProfile estimate_profile, exact_profile;
     Ok(OptimizeAnsEntropyCode(streams, prefix, &estimated, nullptr, &estimate_profile, kEstimated));
     Check(estimate_profile.ans_token_cost_nanoseconds == 0 &&
@@ -131,6 +139,20 @@ void Models() {
     Check(evaluated == estimated && evaluator.calls == 1 && evaluator.candidates == 1 &&
               evaluated_cost == cost,
           "Estimated selector did not measure exactly the requested selected model");
+    for (auto selection : {AnsSelectionMode::kExact, AnsSelectionMode::kEstimated}) {
+      EntropyCode unprepared_model, reused_model;
+      EntropyCodeCost unprepared_cost, reused_cost;
+      EntropyWorkProfile reuse_profile;
+      CostProbe probe;
+      Ok(OptimizeAnsEntropyCode(streams, prefix, &unprepared_model, &unprepared_cost, nullptr,
+                                 selection));
+      Ok(OptimizeAnsEntropyCodeWithPreparedClusters(streams, prefix, retained, &reused_model,
+          &reused_cost, &reuse_profile, selection, &probe));
+      Check(reused_model == unprepared_model && reused_cost == unprepared_cost && probe.calls > 0 &&
+                reuse_profile.ans_value_collection_nanoseconds == 0 &&
+                reuse_profile.ans_value_aggregation_nanoseconds == 0,
+            "Prepared provider changed model/cost or recollected token populations");
+    }
     PreparedAnsEntropyCode candidates;
     Ok(PrepareAnsEntropyCodeWithPreparedClusters(streams, prefix, populations, &candidates));
     const double chosen = EstimatedBits(streams, estimated);

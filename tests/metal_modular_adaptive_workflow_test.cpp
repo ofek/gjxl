@@ -130,6 +130,13 @@ void Case(GpuBackend &gpu, const Fixture &f, ModularEncodingOptions options, boo
                 actual.encoded_candidates + actual.adaptive_gpu.ans_gpu_groups + actual.adaptive_gpu.tree_gpu_groups,
         "Hybrid search changed bytes, selected policy, candidate count, or silently fell back");
   const auto &g = actual.adaptive_gpu;
+  if (options.entropy == EntropyCodingMode::kAns) {
+    for (const auto *p : {&baseline, &actual})
+      Check(p->entropy_work.ans_value_collection_nanoseconds == 0 &&
+                p->entropy_work.ans_value_aggregation_nanoseconds == 0 &&
+                p->entropy_work.prefix_section_measurement_count == 0,
+            "Modular model construction repeated value collection or measured prefix sections");
+  }
   Check(g.ans_cpu_fallback_groups == g.ans_cpu_small_groups &&
             (ans_cost && options.entropy == EntropyCodingMode::kAns &&
                  options.ans_selection == AnsSelectionMode::kExact

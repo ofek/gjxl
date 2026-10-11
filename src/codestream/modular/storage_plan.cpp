@@ -143,16 +143,21 @@ Status ComputeStoragePlan(Extent2D extent, PackedModularFormat format,
                                                   .tokens = p.tokens,
                                                   .contexts = contexts,
                                                   .sections = p.streams,
-                                                  .return_cost = false};
+                                                  .return_cost = false,
+                                                  .retain_prepared_clusters = mode == EntropyCodingMode::kAns};
   if (auto s = ComputeEntropyOptimizationStoragePlan(options, &prefix); !s.ok())
     return s;
   HostStorageBound model_work = prefix.working;
   if (mode == EntropyCodingMode::kAns) {
     auto ans_options = options;
     ans_options.policy = EntropyStoragePolicy::kAnsFromPrefix;
+    ans_options.retain_prepared_clusters = false;
+    ans_options.borrow_prepared_clusters = true;
     if (auto s = ComputeEntropyOptimizationStoragePlan(ans_options, &ans); !s.ok())
       return s;
     HostStorageBound concurrent = prefix.output;
+    // prefix.output includes its model and retained populations; the ANS
+    // optimizer borrows both and its own bound intentionally excludes them.
     if (!concurrent.Add(ans.working))
       return Overflow();
     model_work.peak_bytes = std::max(model_work.peak_bytes, concurrent.peak_bytes);

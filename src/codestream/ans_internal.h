@@ -212,7 +212,8 @@ DirectAnsHistogramPrecisionShifts(DirectAnsEntropyMode mode) noexcept;
 [[nodiscard]] Status OptimizeAnsEntropyCodeWithPreparedClusters(
     std::span<const EntropyTokenStreamView> section_tokens, const EntropyCode &prefix_partition,
     const PreparedEntropyClusters &prepared, EntropyCode *code, EntropyCodeCost *cost = nullptr,
-    EntropyWorkProfile *profile = nullptr, AnsSelectionMode selection = AnsSelectionMode::kExact);
+    EntropyWorkProfile *profile = nullptr, AnsSelectionMode selection = AnsSelectionMode::kExact,
+    AnsTokenCostEvaluator *evaluator = nullptr);
 
 [[nodiscard]] Status WriteAnsEntropyCodeModel(
   const EntropyCode& code,

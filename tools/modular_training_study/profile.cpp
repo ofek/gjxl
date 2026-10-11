@@ -214,6 +214,7 @@ int main(int argc, char **argv) try {
       {"prefix_config_search_ns", e.prefix_config_search_nanoseconds},
       {"prefix_value_aggregation_ns", e.prefix_value_aggregation_nanoseconds},
       {"prefix_exact_measurement_ns", e.prefix_exact_measurement_nanoseconds},
+      {"prefix_section_measurements", e.prefix_section_measurement_count},
       {"ans_prefix_validation_ns", e.ans_prefix_validation_nanoseconds},
       {"ans_value_collection_ns", e.ans_value_collection_nanoseconds},
       {"ans_value_aggregation_ns", e.ans_value_aggregation_nanoseconds},

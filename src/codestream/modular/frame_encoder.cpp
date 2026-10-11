@@ -29,24 +29,32 @@ Status EncodeModularFrame(const codec_internal::ImageMetadata &metadata,
       thread_budget_internal::EncodeScope serial(1);
       auto *entropy_profile = active_modular_profile ? &active_modular_profile->entropy_work
                                                     : nullptr;
-      if (auto s = OptimizeEntropyCode(
-              tokens.streams, {.context_count = static_cast<uint32_t>(tokens.context_count)},
-              &model, nullptr, entropy_profile);
-          !s.ok())
-        return s;
+      const EntropyCodeOptions options{.context_count = static_cast<uint32_t>(tokens.context_count)};
       if (mode == EntropyCodingMode::kAns) {
+        // The selected prefix partition already computed these exact raw-value
+        // populations. Keep them through ANS model construction, then release
+        // them before payload emission. No prefix section costs are requested.
+        PreparedEntropyClusters populations;
+        if (auto s = OptimizeEntropyCodeAndPrepareClusters(tokens.streams, options, &model,
+                                                            nullptr, &populations, entropy_profile);
+            !s.ok())
+          return s;
         EntropyCode ans;
         if (ans_gpu) {
           ModularGpuAnsCost evaluator(*ans_gpu, tokens);
-          if (auto s = OptimizeAnsEntropyCodeWithCostEvaluator(
-                tokens.streams, model, evaluator, &ans, nullptr, entropy_profile, selection); !s.ok())
+          if (auto s = OptimizeAnsEntropyCodeWithPreparedClusters(
+                tokens.streams, model, populations, &ans, nullptr, entropy_profile, selection,
+                &evaluator); !s.ok())
             return s;
         } else {
-          if (auto s = OptimizeAnsEntropyCode(tokens.streams, model, &ans, nullptr, entropy_profile,
-                                              selection); !s.ok())
+          if (auto s = OptimizeAnsEntropyCodeWithPreparedClusters(
+                tokens.streams, model, populations, &ans, nullptr, entropy_profile, selection); !s.ok())
             return s;
         }
         model = std::move(ans);
+      } else if (auto s = OptimizeEntropyCode(tokens.streams, options, &model, nullptr,
+                                               entropy_profile); !s.ok()) {
+        return s;
       }
     }
     ProfileScope emission_scope(ProfileStage::kEmission);

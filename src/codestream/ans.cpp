@@ -3311,13 +3311,13 @@ codestream_internal::DirectAnsHistogramPrecisionShifts(
 Status codestream_internal::OptimizeAnsEntropyCodeWithPreparedClusters(
     std::span<const EntropyTokenStreamView> section_tokens, const EntropyCode &prefix_partition,
     const PreparedEntropyClusters &prepared, EntropyCode *code, EntropyCodeCost *cost,
-    EntropyWorkProfile *profile, AnsSelectionMode selection) {
+    EntropyWorkProfile *profile, AnsSelectionMode selection, AnsTokenCostEvaluator *evaluator) {
   if (Status status = ValidateAnsSelectionMode(selection); !status.ok())
     return status;
   auto policy = kMaximumCompressionAnsPolicy;
   policy.estimate_alphabet_width = selection == AnsSelectionMode::kEstimated;
   return OptimizeAnsEntropyCodeImpl(section_tokens, prefix_partition, &prepared, policy, code, cost,
-                                    nullptr, profile);
+                                    nullptr, profile, evaluator);
 }
 
 Status OptimizeAnsEntropyCode(std::span<const std::vector<EntropyToken>> section_tokens,

@@ -358,23 +358,23 @@ bool OptimizationCase(size_t contexts, size_t n, size_t sections,
     population.maximum_symbol =
         std::max(population.maximum_symbol, token.symbol);
   }
-  for (size_t variant = 0; variant < 14; ++variant) {
+  for (size_t variant = 0; variant < 15; ++variant) {
     const std::array policies{kFastPrefix,     kPrefix,
                               kPrefix,         kBalancedAns,
                               kHighDensityAns, kAnsFromPrefix,
                               kAnsFromPrefix,  kDeferredAnsFromPrefix,
                               kBalancedAns,    kRateOptimizedAns,
                               kRateOptimizedAns, kDeferredRateOptimizedAns,
-                              kBalancedDcAns, kBalancedDcAns};
+                              kBalancedDcAns, kBalancedDcAns, kPrefix};
     EntropyOptimizationStorageOptions o{
         .policy = policies[variant],
         .tokens = n,
         .contexts = contexts,
         .sections = sections,
         .initial_histograms = initial_map ? 17ul : 0ul,
-        .return_cost = variant != 9 && variant != 12 &&
+        .return_cost = variant != 9 && variant != 12 && variant != 14 &&
                        (pattern != 0 || variant == 2),
-        .retain_prepared_clusters = variant == 2,
+        .retain_prepared_clusters = variant == 2 || variant == 14,
         .borrow_prepared_clusters = variant == 6 || variant == 7,
         .maximum_ans_clusters = maximum_ans_clusters,
     };

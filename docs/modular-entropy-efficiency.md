@@ -29,8 +29,13 @@ Repeat paired full-resolution complete searches and report rate differences,
 timing boundaries, resource peaks and actual execution routes. Existing fixed
 Gradient estimator timings do not qualify the adaptive hybrid.
 
-Status: implementation integrated; full-resolution performance qualification
-pending. The profile executable accepts `--estimated-ans` independently of
+Status: implemented and qualified. The complete full-resolution comparison
+shows an 8.44% time reduction (1.0922x) with identical files and policies on the
+three-image pilot. The raw sleep-interrupted matrix and the independently
+repeated whole pair are both retained; see
+[the qualification report](modular-entropy-estimated.md) and
+[machine-readable evidence](modular-entropy-estimated-results.json).
+The profile executable accepts `--estimated-ans` independently of
 `--metal`, `--metal-ans`, or `--metal-learn` and records `ans_selection`. The
 adaptive planner omits unused GPU ANS measurement scratch in estimated mode.
 The prescribed unpack/token GPU continuations propagate the same selector.
@@ -55,7 +60,7 @@ python3 tools/modular_training_study/entropy_efficiency.py capture \
   --baseline build/adaptive-baseline-20261011
 python3 tools/modular_training_study/entropy_efficiency.py analyze \
   --capture build/entropy-estimated-qualified-20261011 \
-  --json docs/modular-entropy-estimated-results.json
+  --json build/entropy-estimated-raw-analysis.json
 ```
 
 The capture runs three CPU estimated controls and two alternating GPU
@@ -78,7 +83,32 @@ policies and full files against each corresponding pre-change selector; zero
 duplicate ANS collection/aggregation; invalid input and allocation failure
 atomicity; actual complete-call timing and memory measurements.
 
-Status: pending.
+Status: implemented and correctness-qualified; complete-call performance
+comparison remains pending. `OptimizeEntropyCodeAndPrepareClusters` accepts a
+null cost, and prepared ANS construction accepts the same optional GPU evaluator
+as the unprepared path. Both exact and estimated Modular routes retain the
+selected prefix populations only through model construction. The workflow plan
+includes those retained populations in prefix output and excludes duplicate
+collection/aggregation scratch from the borrowing ANS optimizer. The new
+`prefix_section_measurement_count` distinguishes an ordered prefix token pass
+from the small model-header serialization included in the older timing field.
+
+All 12 selected Release suites and five CPU-only suites pass. The native tests
+include 55 CPU/hybrid adaptive comparisons with 26,119,113 independently decoded
+samples and 5,821 failure-atomic checks, plus the prescribed unpack and token
+workflow matrices. **All 1,649 complete files match the pre-reuse files byte for
+byte**, for each corresponding selector. The entropy storage matrix covers
+population retention without a cost, including 206 allocation failures in that
+new variant. Profile tests require zero duplicate ANS collection/aggregation and
+zero ordered prefix measurements in the Modular model-only route. Shared
+VarDCT encoder regressions pass as well.
+
+Logs: `build/entropy-step2-{build,tests,cpu-build,cpu-tests}.log`. Pre-reuse byte
+controls and their hashes are in `build/entropy-step1-native-byte-controls/`.
+Freeze the tested milestone binary before the next implementation step. Run
+performance comparisons serially once the remaining implementation builds are
+finished, so compilation cannot contend with measured calls. Do not infer a
+speedup from the removed counters before those complete-call measurements.
 
 ## 3. Separate candidate evaluation and final emission
 
