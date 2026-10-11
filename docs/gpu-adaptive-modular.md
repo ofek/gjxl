@@ -1,5 +1,9 @@
 # Adaptive Modular GPU implementation
 
+Status: the implementation milestones below and local M4 Pro qualification are
+complete. The [final three-route report](gpu-adaptive-modular-learning.md) preserves
+full CPU search policy and compressed files while measuring the GPU additions.
+
 ## Objective and comparison boundary
 
 Accelerate the richer lossless Modular search while retaining its compression
@@ -171,19 +175,37 @@ files, complete policies and training work, with no GPU fallback. The ratio of
 summed per-image median CPU/hybrid times is 1.88× (592.527 / 315.390 seconds).
 The capture contains 21 validated encodes and 100 hashed artifacts. These are
 local M4 Pro results with one CPU participant and the original expanded learner;
-none of the earlier single-run probes enters the repeated statistics. The original implementation
-outline also requires bulk learner statistics. The
-[learner-statistics operation design](gpu-modular-learner-statistics.md) specifies
-the next boundary: preserve CPU property sorting and threshold enumeration, then
-build bucket histograms and evaluate all predictor/threshold costs on the GPU.
-Greedy growth, integer costs, sample budgets and checkpoint ties remain unchanged.
-That operation is not yet implemented or qualified; completing the ANS report
-alone does not complete the full adaptive GPU effort.
+none of the earlier single-run probes enters the repeated statistics. That frozen
+capture uses CPU learning and does not include the subsequent statistics operation.
 
+The [learner-statistics operation](gpu-modular-learner-statistics.md) and full-search
+adapter are implemented in `61ddb15`. CPU property sorting and threshold selection
+feed exact GPU bucket histograms and predictor costs; greedy growth, integer costs,
+sample budgets and checkpoint ties remain unchanged. Native cost equality, complete
+tree/checkpoint identity, independent image decode, failure publication and
+Metal-disabled contract checks pass. The private `--metal-learn` route includes
+this work in the full-search timer.
 
-The learner-statistics operation and full-search adapter are now implemented.
-Native cost equality, complete tree/checkpoint identity, independent image decode,
-failure publication and Metal-disabled contract checks pass. The private
-`--metal-learn` route includes this work in the full-search timer. Its measured
-crossover and complete-call qualification remain pending; the repeated ANS result
-above predates this operation and still uses CPU learning.
+Commit `34586ea` selects a measured 16,384-sample leaf crossover. Smaller leaves
+retain the scalar scan, avoiding measured submission-overhead regressions. The
+production-learner probes preserve exact trees/checkpoints and include uploads,
+waits and CPU sorting. The [three-route qualification](gpu-adaptive-modular-learning.md)
+now verifies 21 complete captures and 89 hashed artifacts. Two rotated/reversed
+triplets per full-resolution image compare CPU, token/ANS hybrid and learner
+hybrid calls at the same budgets. Summed per-image medians are 593.539, 316.357
+and 298.896 seconds respectively: 1.99× CPU/learner-hybrid and 1.058× incremental
+speed ratios. Adding learner statistics reduces training from 112.710 to 95.545
+summed seconds, primarily by reducing split scanning from 40.215 to 23.169 seconds.
+
+All complete files, winning policies, training work counters and pinned-decoder
+samples match. Summed size remains 1.20% above default libjxl e7 and 2.18% above
+e9 on these photographs. Observed managed backing is unchanged from the ANS
+hybrid; conservative admission adds 18 MiB. The result is a local private Metal
+qualification, not a public-default change, hosted CI result or libjxl speedup.
+
+Remaining measured work includes CPU property sorting, sample/weighted-feature
+gathering, model value collection and aggregation, and repeated candidate
+emission. Further sorting or shared-feature work must preserve sample membership,
+stream boundaries, integer costs and ties; model optimizations must retain exact
+configuration selection. Those are follow-on optimizations, not unfinished parts
+of the implemented bulk-statistics operation.

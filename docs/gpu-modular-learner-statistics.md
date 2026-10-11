@@ -1,9 +1,10 @@
 # Exact GPU statistics for the original Modular learner
 
-Status: native Metal operation and complete-search integration implemented;
-correctness checks and local crossover probes pass, while complete-call
-performance qualification remains in progress. This continues milestone 4 of [the adaptive GPU plan](gpu-adaptive-modular.md).
-The current ANS qualification uses the frozen `2009da7` implementation and does
+Status: native Metal operation, complete-search integration and local M4 Pro
+qualification are complete. See the
+[three-route performance report](gpu-adaptive-modular-learning.md). This completes
+milestone 4 of [the adaptive GPU plan](gpu-adaptive-modular.md).
+The earlier ANS qualification uses the frozen `2009da7` implementation and does
 not include this operation.
 
 ## Measured target and policy boundary
@@ -23,6 +24,20 @@ samples on either side, and accepts only thresholds in `[INT32_MIN, INT32_MAX)`.
 Equal property values are never split. Invalid boundaries do not advance the
 quantile counter. Those exact rules determine the GPU input; the GPU does not
 choose alternate thresholds.
+
+```mermaid
+flowchart LR
+  A[CPU sample gathering and residual codes] --> B[One immutable GPU preparation per learning call]
+  A --> C[CPU property sorting and threshold selection]
+  B --> D[GPU bucket histograms]
+  C --> D
+  D --> E[GPU exact low and high predictor costs]
+  E --> F[CPU gain comparison and greedy tree growth]
+  C -->|Small leaf| G[Original CPU histogram scan]
+  G --> F
+  F -->|Next leaf or property| C
+  F --> H[Unchanged checkpoints and candidate encoding]
+```
 
 Parent predictor selection stays on the CPU in this slice. The GPU replaces the
 expensive incremental low/high histogram updates for eligible leaves. Each
@@ -59,6 +74,11 @@ properties and later leaves in the same learning call. This avoids repeated
 uploads of the immutable codes/count table. Property batches remain bounded;
 there is no `16 × N` array of independently sorted properties and no simultaneous
 encoding of unrelated tree candidates.
+
+An eligible property with no valid threshold skips histogram evaluation entirely.
+It still counts as a sorted property, but produces neither a GPU group nor a
+scalar-fallback property count. The incremental hybrid timing includes this exact
+CPU threshold preflight as well as device work; it is not a kernel-only speedup.
 
 The standalone operation accepts valid small batches for direct qualification.
 The workflow uses an explicit leaf-size crossover determined by measurement.
@@ -181,8 +201,8 @@ profiling enabled or disabled. Injected device failures on either the first
 property or a later reuse propagate without scalar retry, preserve existing
 outputs and release the call-local prepared owner.
 
-Complete-search tests compare 48 CPU/hybrid files and independently decode every
-sample, covering integer grayscale/RGB/RGBA formats, palette layouts, checkpoints,
+Complete-search tests compare 48 CPU/hybrid files, independently decode
+13,142,985 samples and complete 3,903 failure-atomic checks, covering integer grayscale/RGB/RGBA formats, palette layouts, checkpoints,
 legacy and expanded quantized-search fallback, profile-disabled calls and owned
 publication. Admission below the composed bound rejects before work. An attempted
 statistics preparation that returns either Unsupported or DeviceError is terminal
@@ -248,5 +268,11 @@ cutoff; small-input and missing-capability fallback checks remain separate. The
 Release rebuild, native statistics, contract, profile, GPU workflow and enlarged
 complete-search tests pass. The quantized control explicitly expects CPU fallback
 for its retained 4,096-sample original-learner baseline below the new cutoff.
-Complete-image search qualification is still required before reporting an
-encoder improvement from learner statistics.
+The [complete-image qualification](gpu-adaptive-modular-learning.md) now verifies
+two CPU/token-ANS/learner-hybrid triplets per original photograph, plus three
+smoke captures. All 21 calls reproduce the saved CPU files and policies; 89
+artifact hashes are verified. The ratio of summed per-image median CPU/hybrid
+times is 1.99×. Adding learner statistics to the token/ANS hybrid reduces elapsed
+time by 5.52%, with unchanged compressed sizes and observed peak backing. These
+full-resolution timings use one CPU participant; they are not a libjxl speedup
+or general throughput claim. Hosted CI and public API rollout are outside this qualification.

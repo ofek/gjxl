@@ -225,9 +225,32 @@ containing histogram and cost dispatches. Total submissions therefore equal GPU
 token candidates plus ANS groups plus learner groups. Small-leaf properties are
 an explicit subset of `tree_cpu_fallback_properties`, and quantized learning calls
 are reported separately by `tree_cpu_unsupported_learning_calls`.
+An eligible property with no valid threshold submits no GPU work and needs no
+scalar histogram scan. It remains in the semantic `sorted_properties` count, so
+GPU groups plus scalar-fallback properties need not equal all sorted properties.
 
 The operation, validation scope and performance qualification requirements are in
 [`gpu-modular-learner-statistics.md`](../../docs/gpu-modular-learner-statistics.md).
 The opt-in `gjxl_modular_tree_statistics_benchmark root|tree REPETITIONS` runs
 production-learner crossover probes with exact tree/checkpoint comparisons. Its
 synthetic timings are diagnostic, not complete-image throughput measurements.
+
+
+The completed [three-route learner qualification](../../docs/gpu-adaptive-modular-learning.md)
+uses frozen revision `34586ea`, two CPU/token-ANS/learner triplets per original
+full-resolution image, and three smoke captures. Regenerate it with:
+
+```sh
+python3 tools/modular_training_study/analyze_adaptive_learning.py \
+  --capture build/adaptive-learning-qualified-20261011 \
+  --baseline build/adaptive-baseline-20261011 \
+  --json docs/gpu-adaptive-modular-learning-results.json \
+  --markdown docs/gpu-adaptive-modular-learning.md
+```
+
+The analyzer checks all 89 artifact hashes, the 21-capture matrix and route order,
+input/output identity, complete policies and semantic training work, native
+submission accounting and resource bounds. It also verifies the saved smoke CPU
+files and default libjxl reference sizes. Incomplete captures and same-size
+corrupted outputs are rejected. Performance statistics use only this frozen
+three-route capture; earlier ANS and synthetic crossover runs remain separate.
