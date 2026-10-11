@@ -1,0 +1,2068 @@
+{
+  "schema": 1,
+  "source_revision": "c80bb2bc50d8776dbc1169e33cb622bfbd500615",
+  "artifact_root": "/Users/yunhocho/GitHub/gjxl-modular-adaptive-gpu/build/adaptive-baseline-20261011",
+  "started_utc": "2026-10-11T04:27:24.005140+00:00",
+  "finished_utc": "2026-10-11T04:44:11.449297+00:00",
+  "scope": "One CPU participant for GJXL; zero background workers for libjxl. Full GJXL search includes all retained baseline candidates, original learner at 262144 samples/256 leaves, checkpoint candidates and CPU encoding. All timings diagnostic on a busy desktop. Only 1029 GJXL is additionally sampled by Samply. No GPU work or throughput-speedup claim.",
+  "manifest_sha256": "ec3f4c0c8effe5a5894fae83e601c6170bf49343c9f504c89e3d890a3a60cd1c",
+  "sampler_analysis_sha256": "62fb5d8e2b447fbf025af8ebb994554822bf4f45d1457d16e8176fcc117ae0cd",
+  "binary_hashes": {
+    "/Users/yunhocho/GitHub/gjxl-modular-adaptive-gpu/build/adaptive-baseline-20261011/bin/gjxl_modular_search_profile": "8f9db62e2601ee80b3d061164c7ef3a844ef9ef8d1771a375af7fda578cead7a",
+    "/Users/yunhocho/GitHub/gjxl-modular/build/libjxl-modular-samply-20261011T005938Z/release/tools/cjxl": "e888e91b3faefb08141bcbdfa75efd74ed0f2ff3a913cdb9ce678c341874b977",
+    "/Users/yunhocho/GitHub/gjxl-modular/build/libjxl-modular-samply-20261011T005938Z/release/tools/djxl": "af98a29b90a0474890ded37d65aa25e1e51525135382670dda71d231b3fceb00",
+    "/Users/yunhocho/.cargo/bin/samply": "f694cf9364d6deec2daf4c87d762225e55a6684be63b090d474858085217cd41"
+  },
+  "images": [
+    {
+      "image": "1029",
+      "width": 4000,
+      "height": 3000,
+      "input_sha256": "a1c487b0160d8f3e8cb86753131b919ac3de28e908fde757050ebccdb4407b6d",
+      "gjxl_bytes": 10821744,
+      "gjxl_sha256": "6fd61f43586a04b1b71dd956cca3bc1a6b27b7653cb34036302fac4bd7525147",
+      "complete_search_seconds": 224.56995375,
+      "candidates": 70,
+      "stages_seconds": {
+        "input": 1.0793009980000001,
+        "transforms": 5.65508075,
+        "training": 45.725428209,
+        "tokens": 86.95254566399996,
+        "model": 67.87736842,
+        "emission": 17.158742332000003,
+        "assembly": 0.10043625200000002,
+        "gpu_input_tokens": 0
+      },
+      "training": {
+        "stages": {
+          "rct_ranking": 0.001488167,
+          "palette_probe": 2.1791e-05,
+          "sample_gathering": 9.580842374,
+          "simple_learning": 0.010791958000000004,
+          "entropy_preparation": 0.051219,
+          "split_histograms": 1.087890783000001,
+          "property_sorting": 17.052375754999776,
+          "split_scanning": 17.829260778000364,
+          "tree_control": 0.11138714099994049,
+          "quantized_learning": 0
+        },
+        "learning_calls": 18,
+        "population": 648000000,
+        "samples": 2396160,
+        "split_evaluations": 4872,
+        "sorted_properties": 77632,
+        "sorted_samples": 394018864
+      },
+      "entropy_work": {
+        "prefix_histogram_build_ns": 6018029622,
+        "prefix_histogram_cost_ns": 5050709,
+        "prefix_clustering_ns": 279143667,
+        "prefix_code_build_ns": 42282836,
+        "prefix_value_collection_ns": 7357806292,
+        "prefix_config_search_ns": 2949838708,
+        "prefix_value_aggregation_ns": 2920792869,
+        "prefix_exact_measurement_ns": 6586668,
+        "ans_prefix_validation_ns": 2330795,
+        "ans_value_collection_ns": 5405867206,
+        "ans_value_aggregation_ns": 3128416048,
+        "ans_prepared_value_validation_ns": 0,
+        "ans_uint_config_ns": 7983374,
+        "ans_histogram_build_ns": 106691350,
+        "ans_model_build_ns": 68454504,
+        "ans_token_cost_ns": 42492285078,
+        "ans_uint_config_candidates": 12344,
+        "ans_histogram_candidates": 160472,
+        "ans_alphabet_width_candidates": 280,
+        "selection_ns": 0
+      },
+      "planned_capacity": 5265015223,
+      "peak_backing": 722747759,
+      "selected_policy": {
+        "rct": 12,
+        "transforms": [],
+        "nodes": 511,
+        "leaves": 256,
+        "weighted_leaves": 57,
+        "weighted_properties": 29,
+        "sha256": "70d859541758a93964a2fa267449118480926fb0befd0006dca14992f34d199f"
+      },
+      "references": {
+        "7": {
+          "bytes": 10602863,
+          "sha256": "bb22a5d3473d6be711d797e2315fbf4767f88bc42be51eef07a2500e0a768a28",
+          "gjxl_size_delta_percent": 2.0643575230576916,
+          "reported_geomean_mpix_per_second": 1.408,
+          "derived_seconds": 8.522727272727273
+        },
+        "9": {
+          "bytes": 10558213,
+          "sha256": "e760b5a4bd04cab046c8fe73c0189b077c3d03ef79ea32a50215518c0754fc25",
+          "gjxl_size_delta_percent": 2.4959810907394964,
+          "reported_geomean_mpix_per_second": 0.269,
+          "derived_seconds": 44.60966542750929
+        }
+      }
+    },
+    {
+      "image": "1039",
+      "width": 4000,
+      "height": 3000,
+      "input_sha256": "22f487129343ed6d403346653ef99900e2552728ba2e4f5c63c90d058132f302",
+      "gjxl_bytes": 7230909,
+      "gjxl_sha256": "dc093d6151a216483b0b8364ca3a1bf5bad9d57bf5e41f5a5032b4701bdec8c0",
+      "complete_search_seconds": 202.672741542,
+      "candidates": 69,
+      "stages_seconds": {
+        "input": 1.0405260319999998,
+        "transforms": 5.510480218,
+        "training": 40.156055208999994,
+        "tokens": 78.77610995500001,
+        "model": 63.11976245700001,
+        "emission": 13.987768166000004,
+        "assembly": 0.07158891599999999,
+        "gpu_input_tokens": 0
+      },
+      "training": {
+        "stages": {
+          "rct_ranking": 0.000903625,
+          "palette_probe": 2.9625e-05,
+          "sample_gathering": 9.069516836999998,
+          "simple_learning": 0.010498331000000001,
+          "entropy_preparation": 0.042573958,
+          "split_histograms": 0.8384946240000014,
+          "property_sorting": 15.075339147999943,
+          "split_scanning": 15.011157106999956,
+          "tree_control": 0.10738774599996702,
+          "quantized_learning": 0
+        },
+        "learning_calls": 18,
+        "population": 648000000,
+        "samples": 2396160,
+        "split_evaluations": 4826,
+        "sorted_properties": 77024,
+        "sorted_samples": 397181920
+      },
+      "entropy_work": {
+        "prefix_histogram_build_ns": 5055027792,
+        "prefix_histogram_cost_ns": 4277084,
+        "prefix_clustering_ns": 296971833,
+        "prefix_code_build_ns": 41024008,
+        "prefix_value_collection_ns": 7706036790,
+        "prefix_config_search_ns": 3450773831,
+        "prefix_value_aggregation_ns": 3426353645,
+        "prefix_exact_measurement_ns": 6281709,
+        "ans_prefix_validation_ns": 2203123,
+        "ans_value_collection_ns": 5391405671,
+        "ans_value_aggregation_ns": 3648329487,
+        "ans_prepared_value_validation_ns": 0,
+        "ans_uint_config_ns": 4706546,
+        "ans_histogram_build_ns": 85046975,
+        "ans_model_build_ns": 60685623,
+        "ans_token_cost_ns": 37360822213,
+        "ans_uint_config_candidates": 12352,
+        "ans_histogram_candidates": 160576,
+        "ans_alphabet_width_candidates": 276,
+        "selection_ns": 0
+      },
+      "planned_capacity": 5265015223,
+      "peak_backing": 708485361,
+      "selected_policy": {
+        "rct": 12,
+        "transforms": [],
+        "nodes": 255,
+        "leaves": 128,
+        "weighted_leaves": 45,
+        "weighted_properties": 27,
+        "sha256": "b0c26ca22b240ed0397da584ed0d4cc239904f8f99fcc691b5ee80924d468b23"
+      },
+      "references": {
+        "7": {
+          "bytes": 7303959,
+          "sha256": "d4232acef4ef57eac55fb22a41091a1fc3b62665c7953f0e1b203ed1baf2d1d0",
+          "gjxl_size_delta_percent": -1.000142525444081,
+          "reported_geomean_mpix_per_second": 1.97,
+          "derived_seconds": 6.091370558375635
+        },
+        "9": {
+          "bytes": 7214879,
+          "sha256": "64d34eb2ce3a63c1c547ea33b468f8fd053a040ee374931b4c532ccfa372162d",
+          "gjxl_size_delta_percent": 0.22217974826743703,
+          "reported_geomean_mpix_per_second": 0.398,
+          "derived_seconds": 30.15075376884422
+        }
+      }
+    },
+    {
+      "image": "1049",
+      "width": 4000,
+      "height": 3000,
+      "input_sha256": "0b3feae4d3bf1a13f89d5f4c3d976c8ea1e93e49a65548919cb5474c3cd1d62d",
+      "gjxl_bytes": 7336102,
+      "gjxl_sha256": "7402890450b4a92995c945ee0e6f96e852f38f3a3f0011fb4c73ded918aeb0a1",
+      "complete_search_seconds": 199.35378525,
+      "candidates": 68,
+      "stages_seconds": {
+        "input": 0.9591334909999998,
+        "transforms": 5.4970055449999995,
+        "training": 40.361680752,
+        "tokens": 77.62483721099997,
+        "model": 61.104126626,
+        "emission": 13.730295252000003,
+        "assembly": 0.061133044,
+        "gpu_input_tokens": 0
+      },
+      "training": {
+        "stages": {
+          "rct_ranking": 0.000914708,
+          "palette_probe": 1.2417e-05,
+          "sample_gathering": 9.113855375999998,
+          "simple_learning": 0.010463248999999997,
+          "entropy_preparation": 0.047043458,
+          "split_histograms": 0.8384301349999996,
+          "property_sorting": 15.321674868000038,
+          "split_scanning": 14.918745715000005,
+          "tree_control": 0.11038882300000291,
+          "quantized_learning": 0
+        },
+        "learning_calls": 18,
+        "population": 648000000,
+        "samples": 2396160,
+        "split_evaluations": 4804,
+        "sorted_properties": 76496,
+        "sorted_samples": 394476864
+      },
+      "entropy_work": {
+        "prefix_histogram_build_ns": 4801180376,
+        "prefix_histogram_cost_ns": 3855585,
+        "prefix_clustering_ns": 291869720,
+        "prefix_code_build_ns": 40947202,
+        "prefix_value_collection_ns": 7159527417,
+        "prefix_config_search_ns": 3344355377,
+        "prefix_value_aggregation_ns": 3320625255,
+        "prefix_exact_measurement_ns": 5906293,
+        "ans_prefix_validation_ns": 2124668,
+        "ans_value_collection_ns": 5120598085,
+        "ans_value_aggregation_ns": 3514874540,
+        "ans_prepared_value_validation_ns": 0,
+        "ans_uint_config_ns": 4439778,
+        "ans_histogram_build_ns": 84085422,
+        "ans_model_build_ns": 62941836,
+        "ans_token_cost_ns": 36660417200,
+        "ans_uint_config_candidates": 12352,
+        "ans_histogram_candidates": 160576,
+        "ans_alphabet_width_candidates": 272,
+        "selection_ns": 0
+      },
+      "planned_capacity": 5265015223,
+      "peak_backing": 707681075,
+      "selected_policy": {
+        "rct": 13,
+        "transforms": [],
+        "nodes": 255,
+        "leaves": 128,
+        "weighted_leaves": 36,
+        "weighted_properties": 13,
+        "sha256": "73bdfa4dddcdebe0f2ee2c05c685f536b345d465c447b181d1be4368e6edfcb2"
+      },
+      "references": {
+        "7": {
+          "bytes": 7181942,
+          "sha256": "33c744a5053d687e258d8e5bfd1adaac82ccdd87f24252d1e627783b5aac55e9",
+          "gjxl_size_delta_percent": 2.1464946389152084,
+          "reported_geomean_mpix_per_second": 2.027,
+          "derived_seconds": 5.920078934385791
+        },
+        "9": {
+          "bytes": 7072878,
+          "sha256": "d123252bf3c9154356464db8065790dded670f7f6323acb420ae624b981b1852",
+          "gjxl_size_delta_percent": 3.7215967813950757,
+          "reported_geomean_mpix_per_second": 0.442,
+          "derived_seconds": 27.149321266968325
+        }
+      }
+    }
+  ],
+  "totals": {
+    "gjxl_bytes": 25388755,
+    "references": {
+      "7": {
+        "bytes": 25088764,
+        "gjxl_size_delta_percent": 1.1957185296174844
+      },
+      "9": {
+        "bytes": 24845970,
+        "gjxl_size_delta_percent": 2.1845997560167696
+      }
+    },
+    "stages_seconds": {
+      "input": 3.078960521,
+      "transforms": 16.662566512999998,
+      "training": 126.24316417,
+      "tokens": 243.35349282999994,
+      "model": 192.101257503,
+      "emission": 44.87680575000001,
+      "assembly": 0.233158212,
+      "gpu_input_tokens": 0
+    },
+    "complete_search_seconds": 626.596480542,
+    "training_stages_seconds": {
+      "rct_ranking": 0.0033065,
+      "palette_probe": 6.3833e-05,
+      "sample_gathering": 27.764214586999998,
+      "simple_learning": 0.031753538000000005,
+      "entropy_preparation": 0.14083641600000002,
+      "split_histograms": 2.7648155420000022,
+      "property_sorting": 47.44938977099976,
+      "split_scanning": 47.75916360000033,
+      "tree_control": 0.3291637099999104,
+      "quantized_learning": 0
+    }
+  },
+  "samply": {
+    "scope": "Serial EncodeModularImage subtree only. CPU-delta weights; inclusive functions overlap. Input reading, decoder validation, output-file writing excluded.",
+    "captures": {
+      "current": {
+        "encoder_cpu_ms": 219836.257,
+        "command_cpu_ms": 221178.362,
+        "resolved_leaf_percent": 99.93901870336157,
+        "categories": [
+          {
+            "name": "Prediction and token generation",
+            "cpu_ms": 85025.789,
+            "percent": 38.676872577938774
+          },
+          {
+            "name": "ANS modeling",
+            "cpu_ms": 50341.196,
+            "percent": 22.89940553345575
+          },
+          {
+            "name": "Learning: histogram and split evaluation",
+            "cpu_ms": 18804.097,
+            "percent": 8.553683207952362
+          },
+          {
+            "name": "Frame emission and assembly",
+            "cpu_ms": 16947.024,
+            "percent": 7.708930379032063
+          },
+          {
+            "name": "Learning: property sorting",
+            "cpu_ms": 16582.082,
+            "percent": 7.542924095546259
+          },
+          {
+            "name": "Prefix modeling",
+            "cpu_ms": 16031.293,
+            "percent": 7.292378981871039
+          },
+          {
+            "name": "Learning: sample gathering and other",
+            "cpu_ms": 9432.791,
+            "percent": 4.290825875915455
+          },
+          {
+            "name": "Input and transform preparation",
+            "cpu_ms": 6512.01,
+            "percent": 2.9622092774259707
+          },
+          {
+            "name": "Learning: preparation and tree control",
+            "cpu_ms": 132.055,
+            "percent": 0.060069709065324925
+          },
+          {
+            "name": "Other complete-encoder work",
+            "cpu_ms": 15.145,
+            "percent": 0.006889218460447132
+          },
+          {
+            "name": "Learning: simple predictor candidates",
+            "cpu_ms": 11.874,
+            "percent": 0.005401292835876477
+          },
+          {
+            "name": "RCT ranking",
+            "cpu_ms": 0.901,
+            "percent": 0.0004098505006842434
+          }
+        ],
+        "flat": [
+          {
+            "name": "gjxl::modular_internal::TokenizeModular(gjxl::modular_internal::ModularEncoderFrame const&, gjxl::modular_internal::ModularStreamPlan const&, gjxl::modular_internal::ModularCodingPolicy const&, gjxl::modular_internal::PreparedModularTokens*, unsigned long)::$_0::operator()(unsigned long) const",
+            "cpu_ms": 61024.495,
+            "percent": 27.75906751359945
+          },
+          {
+            "name": "gjxl::OptimizeAnsEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCode const&, gjxl::codestream_internal::PreparedEntropyClusters const*, gjxl::(anonymous namespace)::AnsOptimizationPolicy, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedAnsEntropyCode*, gjxl::codestream_internal::EntropyWorkProfile*)",
+            "cpu_ms": 33709.219,
+            "percent": 15.33378499980556
+          },
+          {
+            "name": "gjxl::modular_internal::WeightedPredictor<(gjxl::resource_budget_internal::ResourceClass)1>::Predict(unsigned long, unsigned long, long long, long long, long long, long long, long long)",
+            "cpu_ms": 29533.237,
+            "percent": 13.434197526388925
+          },
+          {
+            "name": "gjxl::modular_internal::(anonymous namespace)::FindSplit(std::__1::span<gjxl::modular_internal::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::(anonymous namespace)::Leaf&, gjxl::modular_internal::DecisionTree&, gjxl::modular_internal::(anonymous namespace)::LearningWorkspace&)",
+            "cpu_ms": 18770.809,
+            "percent": 8.538541028743953
+          },
+          {
+            "name": "std::__1::__introsort<std::__1::_ClassicAlgPolicy, gjxl::modular_internal::(anonymous namespace)::Quantize(std::__1::span<gjxl::modular_internal::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::(anonymous namespace)::Workspace&)::$_0&, unsigned int*, false>(unsigned int*, unsigned int*, gjxl::modular_internal::(anonymous namespace)::Quantize(std::__1::span<gjxl::modular_internal::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::(anonymous namespace)::Workspace&)::$_0&, std::__1::iterator_traits<unsigned int*>::difference_type, bool)",
+            "cpu_ms": 16507.49,
+            "percent": 7.508993386837004
+          },
+          {
+            "name": "gjxl::codestream_internal::WriteAnsTokenStream(gjxl::EntropyTokenStreamView, gjxl::EntropyCode const&, gjxl::BitWriter*)",
+            "cpu_ms": 15849.48,
+            "percent": 7.209675153812321
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::CountAnsTokenStreamBitsInternal(gjxl::EntropyTokenStreamView, gjxl::EntropyCode const&, unsigned long long*)",
+            "cpu_ms": 12608.664,
+            "percent": 5.735479748456598
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::BuildEntropyCodeForPartition(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCodeOptions const&, std::__1::span<unsigned char const, (unsigned long)18446744073709551615>, std::__1::span<gjxl::(anonymous namespace)::Histogram const, (unsigned long)18446744073709551615>, unsigned long, bool, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedEntropyClusters*, gjxl::codestream_internal::EntropyWorkProfile*)",
+            "cpu_ms": 6320.638,
+            "percent": 2.8751572130342447
+          },
+          {
+            "name": "gjxl::OptimizeEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCodeOptions const&, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedEntropyClusters*, bool, gjxl::codestream_internal::EntropyWorkProfile*)",
+            "cpu_ms": 5920.838,
+            "percent": 2.693294582430959
+          },
+          {
+            "name": "gjxl::codestream_internal::AggregateEntropyValues(std::__1::span<unsigned int, (unsigned long)18446744073709551615>, std::__1::vector<gjxl::codestream_internal::WeightedValue, gjxl::resource_budget_internal::ManagedAllocator<gjxl::codestream_internal::WeightedValue, (gjxl::resource_budget_internal::ResourceClass)6> >*)",
+            "cpu_ms": 5916.875,
+            "percent": 2.6914918770655745
+          },
+          {
+            "name": "gjxl::modular_internal::ApplySqueeze(gjxl::modular_internal::ModularImage const&, gjxl::modular_internal::TransformDescriptor const&, bool, gjxl::modular_internal::ModularImage*)",
+            "cpu_ms": 4351.836,
+            "percent": 1.9795806476090065
+          },
+          {
+            "name": "gjxl::modular_internal::LearnModularPolicies(gjxl::modular_internal::ModularEncoderFrame const&, gjxl::modular_internal::ModularStreamPlan const&, gjxl::modular_internal::ModularCodingPolicy const&, gjxl::modular_internal::ModularCodingPolicy*, gjxl::modular_internal::ModularCodingPolicy*, gjxl::modular_internal::ModularCodingPolicy*, gjxl::modular_internal::TreeLearningOptions, gjxl::modular_internal::TrainingCoverage*, gjxl::modular_internal::TreeLearningCheckpoints*)",
+            "cpu_ms": 3583.517,
+            "percent": 1.6300846133856801
+          },
+          {
+            "name": "gjxl::modular_internal::ModularEncoderFrame::Prepare(gjxl::modular_internal::PackedModularImageView, unsigned char, gjxl::modular_internal::ModularEncoderFrame*)",
+            "cpu_ms": 1683.957,
+            "percent": 0.7660051271706286
+          },
+          {
+            "name": "__bzero",
+            "cpu_ms": 1266.195,
+            "percent": 0.575971869826732
+          },
+          {
+            "name": "_platform_memmove",
+            "cpu_ms": 885.778,
+            "percent": 0.4029262561543704
+          },
+          {
+            "name": "_platform_memset",
+            "cpu_ms": 334.649,
+            "percent": 0.1522264819128539
+          },
+          {
+            "name": "gjxl::BitWriter::WriteBits(unsigned long, unsigned long long)",
+            "cpu_ms": 204.548,
+            "percent": 0.09304561621971211
+          },
+          {
+            "name": "gjxl::BitWriter::PrepareWrite(unsigned long)",
+            "cpu_ms": 181.216,
+            "percent": 0.08243226229966243
+          },
+          {
+            "name": "std::__1::vector<unsigned char, gjxl::resource_budget_internal::ManagedAllocator<unsigned char, (gjxl::resource_budget_internal::ResourceClass)6> >::resize(unsigned long, unsigned char const&)",
+            "cpu_ms": 143.468,
+            "percent": 0.06526130036866484
+          },
+          {
+            "name": "gjxl::modular_internal::LearnEntropyTree(std::__1::span<gjxl::modular_internal::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::DecisionTree*, gjxl::modular_internal::TreeLearningOptions, unsigned long, gjxl::modular_internal::TreeLearningCheckpoints*)",
+            "cpu_ms": 128.32,
+            "percent": 0.05837071725616216
+          },
+          {
+            "name": "gjxl::codestream_internal::CreateHuffmanTree(std::__1::span<unsigned long long const, (unsigned long)18446744073709551615>, unsigned char, std::__1::span<unsigned char, (unsigned long)18446744073709551615>)",
+            "cpu_ms": 95.862,
+            "percent": 0.04360609178312202
+          },
+          {
+            "name": "gjxl::codestream_internal::(anonymous namespace)::SetDepth(gjxl::codestream_internal::(anonymous namespace)::HuffmanNode const&, std::__1::span<gjxl::codestream_internal::(anonymous namespace)::HuffmanNode const, (unsigned long)18446744073709551615>, std::__1::span<unsigned char, (unsigned long)18446744073709551615>, unsigned char)",
+            "cpu_ms": 84.771,
+            "percent": 0.03856097313374472
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::BuildBestAnsHistogram(std::__1::array<unsigned long long, (unsigned long)256> const&, gjxl::(anonymous namespace)::AnsHistogramSearch, gjxl::AnsHistogram*, unsigned long*)",
+            "cpu_ms": 78.176,
+            "percent": 0.035561013031621985
+          },
+          {
+            "name": "std::__1::__introsort<std::__1::_ClassicAlgPolicy, gjxl::codestream_internal::CreateHuffmanTree(std::__1::span<unsigned long long const, (unsigned long)18446744073709551615>, unsigned char, std::__1::span<unsigned char, (unsigned long)18446744073709551615>)::$_0&, gjxl::codestream_internal::(anonymous namespace)::HuffmanNode*, false>(gjxl::codestream_internal::(anonymous namespace)::HuffmanNode*, gjxl::codestream_internal::(anonymous namespace)::HuffmanNode*, gjxl::codestream_internal::CreateHuffmanTree(std::__1::span<unsigned long long const, (unsigned long)18446744073709551615>, unsigned char, std::__1::span<unsigned char, (unsigned long)18446744073709551615>)::$_0&, std::__1::iterator_traits<gjxl::codestream_internal::(anonymous namespace)::HuffmanNode*>::difference_type, bool)",
+            "cpu_ms": 76.446,
+            "percent": 0.034774063679586756
+          },
+          {
+            "name": "0x5315bc",
+            "cpu_ms": 63.577,
+            "percent": 0.028920161245285396
+          },
+          {
+            "name": "std::__1::__insertion_sort_incomplete[abi:nqe220106]<std::__1::_ClassicAlgPolicy, gjxl::modular_internal::(anonymous namespace)::Quantize(std::__1::span<gjxl::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::Workspace&)::$_0&, unsigned int*>(unsigned int*, unsigned int*, gjxl::modular_internal::(anonymous namespace)::Quantize(std::__1::span<gjxl::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::Workspace&)::$_0&)",
+            "cpu_ms": 55.612,
+            "percent": 0.02529701003779372
+          },
+          {
+            "name": "gjxl::codestream_internal::AnsReverseBits::Append(unsigned int, gjxl::BitWriter*) const::{lambda()#1}::operator()() const",
+            "cpu_ms": 40.329,
+            "percent": 0.018345017582791178
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::BuildAnsEncoderTables(std::__1::span<unsigned short const, (unsigned long)18446744073709551615>, unsigned long, std::__1::vector<unsigned short, gjxl::resource_budget_internal::ManagedAllocator<unsigned short, (gjxl::resource_budget_internal::ResourceClass)6> >*, std::__1::vector<unsigned short, gjxl::resource_budget_internal::ManagedAllocator<unsigned short, (gjxl::resource_budget_internal::ResourceClass)6> >*, std::__1::vector<unsigned long long, gjxl::resource_budget_internal::ManagedAllocator<unsigned long long, (gjxl::resource_budget_internal::ResourceClass)6> >*)",
+            "cpu_ms": 30.175,
+            "percent": 0.013726125258764755
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::EstimateAnsHistogramCost(std::__1::array<unsigned long long, (unsigned long)256> const&, gjxl::AnsHistogram const&, double*)",
+            "cpu_ms": 23.196,
+            "percent": 0.01055148969353131
+          },
+          {
+            "name": "mach_absolute_time",
+            "cpu_ms": 19.354,
+            "percent": 0.008803825294387177
+          },
+          {
+            "name": "std::__1::__sort4[abi:nqe220106]<std::__1::_ClassicAlgPolicy, gjxl::modular_internal::(anonymous namespace)::Quantize(std::__1::span<gjxl::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::Workspace&)::$_0&, unsigned int*, 0>(unsigned int*, unsigned int*, unsigned int*, unsigned int*, gjxl::modular_internal::(anonymous namespace)::Quantize(std::__1::span<gjxl::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::Workspace&)::$_0&)",
+            "cpu_ms": 18.98,
+            "percent": 0.008633698671461642
+          },
+          {
+            "name": "gjxl::codestream_internal::ValidateAnsEntropyCode(gjxl::EntropyCode const&)",
+            "cpu_ms": 16.165,
+            "percent": 0.007353200159334955
+          },
+          {
+            "name": "mach_vm_reclaim_update_kernel_accounting_trap",
+            "cpu_ms": 15.364,
+            "percent": 0.006988838060502459
+          },
+          {
+            "name": "mach_continuous_time",
+            "cpu_ms": 14.694,
+            "percent": 0.006684065768095751
+          },
+          {
+            "name": "gjxl::resource_budget_internal::ManagedAllocator<unsigned long long, (gjxl::resource_budget_internal::ResourceClass)6>::allocate(unsigned long)",
+            "cpu_ms": 13.534,
+            "percent": 0.006156400306615482
+          },
+          {
+            "name": "gjxl::resource_budget_internal::ManagedAllocator<unsigned int, (gjxl::resource_budget_internal::ResourceClass)6>::allocate(unsigned long)",
+            "cpu_ms": 12.129,
+            "percent": 0.005517288260598433
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::WritePrefixCodesInternal(std::__1::span<gjxl::PrefixCode const, (unsigned long)18446744073709551615>, std::__1::span<gjxl::HybridUintConfig const, (unsigned long)18446744073709551615>, gjxl::BitWriter*)",
+            "cpu_ms": 12.121,
+            "percent": 0.0055136491884502925
+          },
+          {
+            "name": "pthread_mutex_lock",
+            "cpu_ms": 11.989,
+            "percent": 0.005453604498005986
+          },
+          {
+            "name": "gjxl::modular_internal::LearnDecisionTrees(std::__1::span<gjxl::modular_internal::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::DecisionTree*, gjxl::modular_internal::DecisionTree*)",
+            "cpu_ms": 11.874,
+            "percent": 0.005401292835876477
+          },
+          {
+            "name": "madvise",
+            "cpu_ms": 11.707,
+            "percent": 0.005325327204784059
+          },
+          {
+            "name": "0x14008",
+            "cpu_ms": 10.252,
+            "percent": 0.004663470957841136
+          },
+          {
+            "name": "gjxl::codestream_internal::ConvertBitDepthsToSymbols(std::__1::span<unsigned char const, (unsigned long)18446744073709551615>, std::__1::span<unsigned short, (unsigned long)18446744073709551615>)",
+            "cpu_ms": 10.073,
+            "percent": 0.004582046718526508
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::BitCountWriter::WriteBits(unsigned long, unsigned long long)",
+            "cpu_ms": 8.848,
+            "percent": 0.004024813795842603
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::ClusterHistogramsFromSeeds(std::__1::vector<gjxl::(anonymous namespace)::Histogram, gjxl::resource_budget_internal::ManagedAllocator<gjxl::(anonymous namespace)::Histogram, (gjxl::resource_budget_internal::ResourceClass)6> > const&, std::__1::span<unsigned long const, (unsigned long)18446744073709551615>, bool, unsigned long, std::__1::vector<gjxl::(anonymous namespace)::Histogram, gjxl::resource_budget_internal::ManagedAllocator<gjxl::(anonymous namespace)::Histogram, (gjxl::resource_budget_internal::ResourceClass)6> >*, std::__1::vector<unsigned char, gjxl::resource_budget_internal::ManagedAllocator<unsigned char, (gjxl::resource_budget_internal::ResourceClass)6> >*)",
+            "cpu_ms": 8.46,
+            "percent": 0.0038483187966578234
+          },
+          {
+            "name": "gjxl::resource_budget_internal::ResourceReservation::PrepareAllocation(gjxl::resource_budget_internal::ResourceClass, unsigned long, unsigned long, gjxl::resource_budget_internal::ResourceAllocation*)",
+            "cpu_ms": 7.87,
+            "percent": 0.0035799372257325143
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::HistogramDistance(gjxl::(anonymous namespace)::Histogram const&, gjxl::(anonymous namespace)::Histogram const&, double*)",
+            "cpu_ms": 6.462,
+            "percent": 0.002939460527659912
+          },
+          {
+            "name": "gjxl::resource_budget_internal::ResourceAllocation::Reset()",
+            "cpu_ms": 5.292,
+            "percent": 0.0024072462259944684
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::FastClusterHistograms(std::__1::vector<gjxl::(anonymous namespace)::Histogram, gjxl::resource_budget_internal::ManagedAllocator<gjxl::(anonymous namespace)::Histogram, (gjxl::resource_budget_internal::ResourceClass)6> > const&, unsigned long, bool, std::__1::vector<gjxl::(anonymous namespace)::Histogram, gjxl::resource_budget_internal::ManagedAllocator<gjxl::(anonymous namespace)::Histogram, (gjxl::resource_budget_internal::ResourceClass)6> >*, std::__1::vector<unsigned int, gjxl::resource_budget_internal::ManagedAllocator<unsigned int, (gjxl::resource_budget_internal::ResourceClass)6> >*, std::__1::vector<unsigned long, gjxl::resource_budget_internal::ManagedAllocator<unsigned long, (gjxl::resource_budget_internal::ResourceClass)6> >*)",
+            "cpu_ms": 4.88,
+            "percent": 0.0022198340103652694
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::WriteAnsHistogram(gjxl::AnsHistogram const&, gjxl::BitWriter*)",
+            "cpu_ms": 4.867,
+            "percent": 0.0022139205181245423
+          },
+          {
+            "name": "gjxl::OptimizeAnsEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCode const&, gjxl::codestream_internal::PreparedEntropyClusters const*, gjxl::(anonymous namespace)::AnsOptimizationPolicy, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedAnsEntropyCode*, gjxl::codestream_internal::EntropyWorkProfile*)::$_3::operator()(unsigned long, gjxl::codestream_internal::EntropyWorkProfile*) const",
+            "cpu_ms": 4.621,
+            "percent": 0.002102019049569244
+          },
+          {
+            "name": "pthread_mutex_unlock",
+            "cpu_ms": 3.998,
+            "percent": 0.001818626306032858
+          },
+          {
+            "name": "gjxl::codestream_internal::EncodeContextMap(std::__1::span<unsigned char const, (unsigned long)18446744073709551615>, gjxl::codestream_internal::ContextMapEncoding*)",
+            "cpu_ms": 3.86,
+            "percent": 0.0017558523114774465
+          },
+          {
+            "name": "pthread_cond_broadcast",
+            "cpu_ms": 3.709,
+            "percent": 0.0016871648246813082
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::WriteAnsStream<gjxl::codestream_internal::WriteContextMapAns(std::__1::span<gjxl::HybridUintToken const, (unsigned long)18446744073709551615>, gjxl::HybridUintConfig, bool, gjxl::BitWriter*)::$_0 const&>(unsigned long, gjxl::codestream_internal::WriteContextMapAns(std::__1::span<gjxl::HybridUintToken const, (unsigned long)18446744073709551615>, gjxl::HybridUintConfig, bool, gjxl::BitWriter*)::$_0 const&, gjxl::BitWriter*)",
+            "cpu_ms": 3.6,
+            "percent": 0.0016375824666629035
+          },
+          {
+            "name": "gjxl::resource_budget_internal::ManagedAllocator<unsigned int, (gjxl::resource_budget_internal::ResourceClass)6>::deallocate(unsigned int*, unsigned long)",
+            "cpu_ms": 3.596,
+            "percent": 0.0016357629305888337
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::WriteValue(unsigned int, gjxl::PrefixCode const&, gjxl::HybridUintConfig, gjxl::BitWriter*)",
+            "cpu_ms": 3.495,
+            "percent": 0.0015898196447185688
+          },
+          {
+            "name": "0x7e48",
+            "cpu_ms": 3.375,
+            "percent": 0.0015352335624964721
+          },
+          {
+            "name": "gjxl::AnsHistogram::operator=(gjxl::AnsHistogram&&)",
+            "cpu_ms": 3.002,
+            "percent": 0.0013655618235894546
+          },
+          {
+            "name": "gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)1>::allocate(unsigned long)",
+            "cpu_ms": 2.969,
+            "percent": 0.001350550650978378
+          },
+          {
+            "name": "std::__1::__allocate_at_least[abi:nqe220106]<gjxl::resource_budget_internal::ManagedAllocator<std::__1::__allocate_at_least[abi:nqe220106]::(anonymous namespace)::Histogram, (gjxl::ResourceClass)6>, std::__1::allocator_traits<gjxl::ResourceClass> >(gjxl::resource_budget_internal::ManagedAllocator<std::__1::__allocate_at_least[abi:nqe220106]::(anonymous namespace)::Histogram, (gjxl::ResourceClass)6>&, unsigned long)",
+            "cpu_ms": 2.946,
+            "percent": 0.001340088318552476
+          }
+        ],
+        "inclusive": [
+          {
+            "name": "start",
+            "cpu_ms": 219836.257,
+            "percent": 100.0
+          },
+          {
+            "name": "main",
+            "cpu_ms": 219836.257,
+            "percent": 100.0
+          },
+          {
+            "name": "gjxl::modular_internal::EncodeModularImage(gjxl::modular_internal::PackedModularImageView, gjxl::modular_internal::ModularEncodingOptions const&, std::__1::vector<unsigned char, std::__1::allocator<unsigned char> >*)",
+            "cpu_ms": 219836.257,
+            "percent": 100.0
+          },
+          {
+            "name": "gjxl::modular_internal::(anonymous namespace)::Encode(gjxl::modular_internal::PackedModularImageView, gjxl::modular_internal::ModularEncodingOptions const&, gjxl::resource_budget_internal::PublicationOutput<unsigned char>)",
+            "cpu_ms": 219836.257,
+            "percent": 100.0
+          },
+          {
+            "name": "gjxl::modular_internal::EncodePreparedModularFrame(gjxl::modular_internal::ModularEncoderFrame, gjxl::modular_internal::ModularCodingPolicy const&, gjxl::EntropyCodingMode, gjxl::modular_internal::ModularWorkflowStoragePlan const&, gjxl::resource_budget_internal::PublicationVector<unsigned char>*)",
+            "cpu_ms": 168355.421,
+            "percent": 76.582190443681
+          },
+          {
+            "name": "gjxl::modular_internal::(anonymous namespace)::EncodeSearch(gjxl::modular_internal::PackedModularImageView, gjxl::modular_internal::ModularEncodingOptions const&, gjxl::resource_budget_internal::PublicationOutput<unsigned char>)::$_0::operator()(gjxl::modular_internal::ModularCodingPolicy const&) const",
+            "cpu_ms": 166239.757,
+            "percent": 75.61980870152824
+          },
+          {
+            "name": "gjxl::modular_internal::(anonymous namespace)::EncodeSearch(gjxl::modular_internal::PackedModularImageView, gjxl::modular_internal::ModularEncodingOptions const&, gjxl::resource_budget_internal::PublicationOutput<unsigned char>)::$_0::operator()(gjxl::modular_internal::ModularCodingPolicy const&) const::{lambda(gjxl::modular_internal::DecisionTree const&, bool)#1}::operator()(gjxl::modular_internal::DecisionTree const&, bool) const",
+            "cpu_ms": 125438.277,
+            "percent": 57.05986751766793
+          },
+          {
+            "name": "gjxl::modular_internal::TokenizeModular(gjxl::modular_internal::ModularEncoderFrame const&, gjxl::modular_internal::ModularStreamPlan const&, gjxl::modular_internal::ModularCodingPolicy const&, gjxl::modular_internal::PreparedModularTokens*, unsigned long)",
+            "cpu_ms": 85025.789,
+            "percent": 38.676872577938774
+          },
+          {
+            "name": "gjxl::modular_internal::RunModularStreams<gjxl::modular_internal::TokenizeModular(gjxl::modular_internal::ModularEncoderFrame const&, gjxl::modular_internal::ModularStreamPlan const&, gjxl::modular_internal::ModularCodingPolicy const&, gjxl::modular_internal::PreparedModularTokens*, unsigned long)::$_0>(unsigned long, unsigned long, gjxl::thread_budget_internal::WorkerLaunchSite, gjxl::modular_internal::TokenizeModular(gjxl::modular_internal::ModularEncoderFrame const&, gjxl::modular_internal::ModularStreamPlan const&, gjxl::modular_internal::ModularCodingPolicy const&, gjxl::modular_internal::PreparedModularTokens*, unsigned long)::$_0&&)",
+            "cpu_ms": 84795.315,
+            "percent": 38.57203363865497
+          },
+          {
+            "name": "gjxl::modular_internal::TokenizeModular(gjxl::modular_internal::ModularEncoderFrame const&, gjxl::modular_internal::ModularStreamPlan const&, gjxl::modular_internal::ModularCodingPolicy const&, gjxl::modular_internal::PreparedModularTokens*, unsigned long)::$_0::operator()(unsigned long) const",
+            "cpu_ms": 84793.738,
+            "percent": 38.571316286557774
+          },
+          {
+            "name": "gjxl::modular_internal::EncodeModularFrame(gjxl::codec_internal::ImageMetadata const&, gjxl::modular_internal::ModularStreamPlan const&, gjxl::modular_internal::PreparedModularTokens&&, gjxl::EntropyCodingMode, gjxl::modular_internal::ModularWorkflowStoragePlan const&, gjxl::resource_budget_internal::PublicationVector<unsigned char>*)",
+            "cpu_ms": 83319.513,
+            "percent": 37.90071489435885
+          },
+          {
+            "name": "gjxl::OptimizeAnsEntropyCode(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCode const&, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::EntropyWorkProfile*)",
+            "cpu_ms": 50341.196,
+            "percent": 22.89940553345575
+          },
+          {
+            "name": "gjxl::OptimizeAnsEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCode const&, gjxl::codestream_internal::PreparedEntropyClusters const*, gjxl::(anonymous namespace)::AnsOptimizationPolicy, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedAnsEntropyCode*, gjxl::codestream_internal::EntropyWorkProfile*)",
+            "cpu_ms": 50341.196,
+            "percent": 22.89940553345575
+          },
+          {
+            "name": "gjxl::modular_internal::LearnModularPolicies(gjxl::modular_internal::ModularEncoderFrame const&, gjxl::modular_internal::ModularStreamPlan const&, gjxl::modular_internal::ModularCodingPolicy const&, gjxl::modular_internal::ModularCodingPolicy*, gjxl::modular_internal::ModularCodingPolicy*, gjxl::modular_internal::ModularCodingPolicy*, gjxl::modular_internal::TreeLearningOptions, gjxl::modular_internal::TrainingCoverage*, gjxl::modular_internal::TreeLearningCheckpoints*)",
+            "cpu_ms": 44962.899,
+            "percent": 20.45290418131528
+          },
+          {
+            "name": "gjxl::modular_internal::LearnEntropyTree(std::__1::span<gjxl::modular_internal::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::DecisionTree*, gjxl::modular_internal::TreeLearningOptions, unsigned long, gjxl::modular_internal::TreeLearningCheckpoints*)",
+            "cpu_ms": 35518.234,
+            "percent": 16.156677012563947
+          },
+          {
+            "name": "gjxl::modular_internal::(anonymous namespace)::FindSplit(std::__1::span<gjxl::modular_internal::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::(anonymous namespace)::Leaf&, gjxl::modular_internal::DecisionTree&, gjxl::modular_internal::(anonymous namespace)::LearningWorkspace&)",
+            "cpu_ms": 35386.179,
+            "percent": 16.096607303498622
+          },
+          {
+            "name": "gjxl::modular_internal::WeightedPredictor<(gjxl::resource_budget_internal::ResourceClass)1>::Predict(unsigned long, unsigned long, long long, long long, long long, long long, long long)",
+            "cpu_ms": 29533.237,
+            "percent": 13.434197526388925
+          },
+          {
+            "name": "gjxl::BitWriter::WithMaxBits(unsigned long, std::__1::function<gjxl::Status()> const&)",
+            "cpu_ms": 16919.294,
+            "percent": 7.6963164451985735
+          },
+          {
+            "name": "gjxl::modular_internal::EncodeModularFrame(gjxl::codec_internal::ImageMetadata const&, gjxl::modular_internal::ModularStreamPlan const&, gjxl::modular_internal::PreparedModularTokens&&, gjxl::EntropyCodingMode, gjxl::modular_internal::ModularWorkflowStoragePlan const&, gjxl::resource_budget_internal::PublicationVector<unsigned char>*)::$_1::operator()(unsigned long) const",
+            "cpu_ms": 16845.868,
+            "percent": 7.662916131254909
+          },
+          {
+            "name": "std::__1::__function::__func<gjxl::modular_internal::EncodeModularFrame(gjxl::codec_internal::ImageMetadata const&, gjxl::modular_internal::ModularStreamPlan const&, gjxl::modular_internal::PreparedModularTokens&&, gjxl::EntropyCodingMode, gjxl::modular_internal::ModularWorkflowStoragePlan const&, gjxl::resource_budget_internal::PublicationVector<unsigned char>*)::$_1::operator()(unsigned long) const::{lambda()#1}, gjxl::Status()>::operator()()",
+            "cpu_ms": 16836.163,
+            "percent": 7.658501481855198
+          },
+          {
+            "name": "gjxl::modular_internal::WriteStreamTokensWithValidatedModel(gjxl::EntropyTokenStreamView, gjxl::EntropyCode const&, gjxl::BitWriter*)",
+            "cpu_ms": 16833.486,
+            "percent": 7.657283757337626
+          },
+          {
+            "name": "gjxl::codestream_internal::WriteValidatedTokenStream(gjxl::EntropyTokenStreamView, gjxl::EntropyCode const&, gjxl::BitWriter*)",
+            "cpu_ms": 16833.486,
+            "percent": 7.657283757337626
+          },
+          {
+            "name": "gjxl::codestream_internal::WriteAnsTokenStream(gjxl::EntropyTokenStreamView, gjxl::EntropyCode const&, gjxl::BitWriter*)",
+            "cpu_ms": 16832.442,
+            "percent": 7.656808858422294
+          },
+          {
+            "name": "std::__1::__introsort<std::__1::_ClassicAlgPolicy, gjxl::modular_internal::(anonymous namespace)::Quantize(std::__1::span<gjxl::modular_internal::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::(anonymous namespace)::Workspace&)::$_0&, unsigned int*, false>(unsigned int*, unsigned int*, gjxl::modular_internal::(anonymous namespace)::Quantize(std::__1::span<gjxl::modular_internal::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::(anonymous namespace)::Workspace&)::$_0&, std::__1::iterator_traits<unsigned int*>::difference_type, bool)",
+            "cpu_ms": 16582.082,
+            "percent": 7.542924095546259
+          },
+          {
+            "name": "gjxl::OptimizeEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCodeOptions const&, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedEntropyClusters*, bool, gjxl::codestream_internal::EntropyWorkProfile*)",
+            "cpu_ms": 16031.293,
+            "percent": 7.292378981871039
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::MeasureAnsCode(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCode const&, unsigned long long, gjxl::EntropyCodeCost*)",
+            "cpu_ms": 12608.664,
+            "percent": 5.735479748456598
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::CountAnsTokenStreamBitsInternal(gjxl::EntropyTokenStreamView, gjxl::EntropyCode const&, unsigned long long*)",
+            "cpu_ms": 12608.664,
+            "percent": 5.735479748456598
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::BuildEntropyCodeForPartition(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCodeOptions const&, std::__1::span<unsigned char const, (unsigned long)18446744073709551615>, std::__1::span<gjxl::(anonymous namespace)::Histogram const, (unsigned long)18446744073709551615>, unsigned long, bool, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedEntropyClusters*, gjxl::codestream_internal::EntropyWorkProfile*)",
+            "cpu_ms": 9782.359,
+            "percent": 4.449838772500571
+          },
+          {
+            "name": "gjxl::modular_internal::ModularEncoderFrame::Prepare(gjxl::modular_internal::PackedModularImageView, gjxl::modular_internal::ModularCodingPolicy const&, gjxl::modular_internal::ModularEncoderFrame*)",
+            "cpu_ms": 6393.421,
+            "percent": 2.908265036554002
+          },
+          {
+            "name": "gjxl::codestream_internal::AggregateEntropyValues(std::__1::span<unsigned int, (unsigned long)18446744073709551615>, std::__1::vector<gjxl::codestream_internal::WeightedValue, gjxl::resource_budget_internal::ManagedAllocator<gjxl::codestream_internal::WeightedValue, (gjxl::resource_budget_internal::ResourceClass)6> >*)",
+            "cpu_ms": 5934.796,
+            "percent": 2.699643853561426
+          },
+          {
+            "name": "gjxl::modular_internal::(anonymous namespace)::Run(gjxl::modular_internal::ModularImage const&, gjxl::modular_internal::TransformSequence const&, std::__1::array<gjxl::modular_internal::ChannelShape, (unsigned long)9> const&, bool, gjxl::modular_internal::ModularImage*)",
+            "cpu_ms": 4552.431,
+            "percent": 2.070828107303519
+          },
+          {
+            "name": "gjxl::modular_internal::ForwardTransforms(gjxl::modular_internal::ModularImage const&, gjxl::modular_internal::TransformSequence const&, gjxl::modular_internal::ModularImage*)",
+            "cpu_ms": 4552.431,
+            "percent": 2.070828107303519
+          },
+          {
+            "name": "gjxl::modular_internal::ApplySqueeze(gjxl::modular_internal::ModularImage const&, gjxl::modular_internal::TransformDescriptor const&, bool, gjxl::modular_internal::ModularImage*)",
+            "cpu_ms": 4408.845,
+            "percent": 2.005513130620669
+          },
+          {
+            "name": "gjxl::modular_internal::LearnModularPolicies(gjxl::modular_internal::ModularEncoderFrame const&, gjxl::modular_internal::ModularStreamPlan const&, unsigned char, gjxl::modular_internal::ModularCodingPolicy*, gjxl::modular_internal::ModularCodingPolicy*, gjxl::modular_internal::ModularCodingPolicy*, gjxl::modular_internal::TreeLearningOptions, gjxl::modular_internal::TrainingCoverage*, gjxl::modular_internal::TreeLearningCheckpoints*)",
+            "cpu_ms": 3282.796,
+            "percent": 1.493291436453087
+          },
+          {
+            "name": "gjxl::OptimizeAnsEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCode const&, gjxl::codestream_internal::PreparedEntropyClusters const*, gjxl::(anonymous namespace)::AnsOptimizationPolicy, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedAnsEntropyCode*, gjxl::codestream_internal::EntropyWorkProfile*)::$_3::operator()(unsigned long, gjxl::codestream_internal::EntropyWorkProfile*) const",
+            "cpu_ms": 3184.33,
+            "percent": 1.4485008266857455
+          },
+          {
+            "name": "gjxl::modular_internal::ModularEncoderFrame::Prepare(gjxl::modular_internal::PackedModularImageView, unsigned char, gjxl::modular_internal::ModularEncoderFrame*)",
+            "cpu_ms": 1958.582,
+            "percent": 0.8909276507559897
+          },
+          {
+            "name": "__bzero",
+            "cpu_ms": 1266.195,
+            "percent": 0.575971869826732
+          },
+          {
+            "name": "gjxl::codestream_internal::AnsReverseBits::Append(unsigned int, gjxl::BitWriter*) const",
+            "cpu_ms": 940.965,
+            "percent": 0.42802994048429416
+          },
+          {
+            "name": "gjxl::codestream_internal::AnsReverseBits::Append(unsigned int, gjxl::BitWriter*) const::{lambda()#1}::operator()() const",
+            "cpu_ms": 938.035,
+            "percent": 0.426697130310038
+          },
+          {
+            "name": "gjxl::BitWriter::WriteBits(unsigned long, unsigned long long)",
+            "cpu_ms": 911.161,
+            "percent": 0.4144725771963994
+          },
+          {
+            "name": "_platform_memmove",
+            "cpu_ms": 885.778,
+            "percent": 0.4029262561543704
+          },
+          {
+            "name": "std::__1::vector<unsigned int, gjxl::resource_budget_internal::ManagedAllocator<unsigned int, (gjxl::resource_budget_internal::ResourceClass)6> >::emplace_back<unsigned int&>(unsigned int&)::{lambda()#2}::operator()() const",
+            "cpu_ms": 781.148,
+            "percent": 0.35533174129688716
+          },
+          {
+            "name": "gjxl::BitWriter::PrepareWrite(unsigned long)",
+            "cpu_ms": 723.582,
+            "percent": 0.3291458878869103
+          },
+          {
+            "name": "std::__1::vector<unsigned char, gjxl::resource_budget_internal::ManagedAllocator<unsigned char, (gjxl::resource_budget_internal::ResourceClass)6> >::resize(unsigned long, unsigned char const&)",
+            "cpu_ms": 542.366,
+            "percent": 0.24671362558724788
+          },
+          {
+            "name": "std::__1::vector<int, gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)10> >::resize(unsigned long)",
+            "cpu_ms": 418.211,
+            "percent": 0.19023750026821099
+          },
+          {
+            "name": "gjxl::modular_internal::ModularImage::Create(std::__1::span<gjxl::modular_internal::ChannelDescriptor const, (unsigned long)18446744073709551615>, unsigned long, gjxl::modular_internal::ModularImage*)",
+            "cpu_ms": 418.211,
+            "percent": 0.19023750026821099
+          },
+          {
+            "name": "_platform_memset",
+            "cpu_ms": 334.649,
+            "percent": 0.1522264819128539
+          },
+          {
+            "name": "gjxl::codestream_internal::CreateHuffmanTree(std::__1::span<unsigned long long const, (unsigned long)18446744073709551615>, unsigned char, std::__1::span<unsigned char, (unsigned long)18446744073709551615>)",
+            "cpu_ms": 262.82,
+            "percent": 0.1195526177467623
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::HistogramCountsBitCost(std::__1::span<unsigned long long const, (unsigned long)18446744073709551615>, unsigned long long, double*)",
+            "cpu_ms": 235.889,
+            "percent": 0.10730213624406824
+          },
+          {
+            "name": "std::__1::vector<gjxl::EntropyToken, gjxl::resource_budget_internal::ManagedAllocator<gjxl::EntropyToken, (gjxl::resource_budget_internal::ResourceClass)6> >::resize(unsigned long)",
+            "cpu_ms": 230.402,
+            "percent": 0.10480618763446287
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::HistogramDistance(gjxl::(anonymous namespace)::Histogram const&, gjxl::(anonymous namespace)::Histogram const&, double*)",
+            "cpu_ms": 221.202,
+            "percent": 0.10062125466410211
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::ClusterHistogramsFromSeeds(std::__1::vector<gjxl::(anonymous namespace)::Histogram, gjxl::resource_budget_internal::ManagedAllocator<gjxl::(anonymous namespace)::Histogram, (gjxl::resource_budget_internal::ResourceClass)6> > const&, std::__1::span<unsigned long const, (unsigned long)18446744073709551615>, bool, unsigned long, std::__1::vector<gjxl::(anonymous namespace)::Histogram, gjxl::resource_budget_internal::ManagedAllocator<gjxl::(anonymous namespace)::Histogram, (gjxl::resource_budget_internal::ResourceClass)6> >*, std::__1::vector<unsigned char, gjxl::resource_budget_internal::ManagedAllocator<unsigned char, (gjxl::resource_budget_internal::ResourceClass)6> >*)",
+            "cpu_ms": 162.076,
+            "percent": 0.073725782185238
+          },
+          {
+            "name": "gjxl::OptimizeEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCodeOptions const&, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedEntropyClusters*, bool, gjxl::codestream_internal::EntropyWorkProfile*)::$_0::operator()<gjxl::OptimizeEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCodeOptions const&, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedEntropyClusters*, bool, gjxl::codestream_internal::EntropyWorkProfile*)::$_10>(unsigned long long gjxl::codestream_internal::EntropyWorkProfile::*, gjxl::OptimizeEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCodeOptions const&, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedEntropyClusters*, bool, gjxl::codestream_internal::EntropyWorkProfile*)::$_10&&) const",
+            "cpu_ms": 149.708,
+            "percent": 0.06809977664421388
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::BuildBestAnsHistogram(std::__1::array<unsigned long long, (unsigned long)256> const&, gjxl::(anonymous namespace)::AnsHistogramSearch, gjxl::AnsHistogram*, unsigned long*)",
+            "cpu_ms": 110.31,
+            "percent": 0.05017825608266247
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::FastClusterHistograms(std::__1::vector<gjxl::(anonymous namespace)::Histogram, gjxl::resource_budget_internal::ManagedAllocator<gjxl::(anonymous namespace)::Histogram, (gjxl::resource_budget_internal::ResourceClass)6> > const&, unsigned long, bool, std::__1::vector<gjxl::(anonymous namespace)::Histogram, gjxl::resource_budget_internal::ManagedAllocator<gjxl::(anonymous namespace)::Histogram, (gjxl::resource_budget_internal::ResourceClass)6> >*, std::__1::vector<unsigned int, gjxl::resource_budget_internal::ManagedAllocator<unsigned int, (gjxl::resource_budget_internal::ResourceClass)6> >*, std::__1::vector<unsigned long, gjxl::resource_budget_internal::ManagedAllocator<unsigned long, (gjxl::resource_budget_internal::ResourceClass)6> >*)",
+            "cpu_ms": 97.178,
+            "percent": 0.04420471915149101
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::ClusterHistograms(std::__1::vector<gjxl::(anonymous namespace)::Histogram, gjxl::resource_budget_internal::ManagedAllocator<gjxl::(anonymous namespace)::Histogram, (gjxl::resource_budget_internal::ResourceClass)6> > const&, unsigned long, bool, unsigned long, std::__1::vector<gjxl::(anonymous namespace)::Histogram, gjxl::resource_budget_internal::ManagedAllocator<gjxl::(anonymous namespace)::Histogram, (gjxl::resource_budget_internal::ResourceClass)6> >*, std::__1::vector<unsigned char, gjxl::resource_budget_internal::ManagedAllocator<unsigned char, (gjxl::resource_budget_internal::ResourceClass)6> >*)",
+            "cpu_ms": 93.536,
+            "percent": 0.04254803155605037
+          },
+          {
+            "name": "gjxl::codestream_internal::(anonymous namespace)::SetDepth(gjxl::codestream_internal::(anonymous namespace)::HuffmanNode const&, std::__1::span<gjxl::codestream_internal::(anonymous namespace)::HuffmanNode const, (unsigned long)18446744073709551615>, std::__1::span<unsigned char, (unsigned long)18446744073709551615>, unsigned char)",
+            "cpu_ms": 84.771,
+            "percent": 0.03856097313374472
+          },
+          {
+            "name": "std::__1::__introsort<std::__1::_ClassicAlgPolicy, gjxl::codestream_internal::CreateHuffmanTree(std::__1::span<unsigned long long const, (unsigned long)18446744073709551615>, unsigned char, std::__1::span<unsigned char, (unsigned long)18446744073709551615>)::$_0&, gjxl::codestream_internal::(anonymous namespace)::HuffmanNode*, false>(gjxl::codestream_internal::(anonymous namespace)::HuffmanNode*, gjxl::codestream_internal::(anonymous namespace)::HuffmanNode*, gjxl::codestream_internal::CreateHuffmanTree(std::__1::span<unsigned long long const, (unsigned long)18446744073709551615>, unsigned char, std::__1::span<unsigned char, (unsigned long)18446744073709551615>)::$_0&, std::__1::iterator_traits<gjxl::codestream_internal::(anonymous namespace)::HuffmanNode*>::difference_type, bool)",
+            "cpu_ms": 77.966,
+            "percent": 0.035465487387733315
+          },
+          {
+            "name": "gjxl::resource_budget_internal::ManagedAllocator<unsigned int, (gjxl::resource_budget_internal::ResourceClass)6>::deallocate(unsigned int*, unsigned long)",
+            "cpu_ms": 65.131,
+            "percent": 0.029627051010061547
+          },
+          {
+            "name": "0x5315bc",
+            "cpu_ms": 63.577,
+            "percent": 0.028920161245285396
+          },
+          {
+            "name": "gjxl::OptimizeEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCodeOptions const&, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedEntropyClusters*, bool, gjxl::codestream_internal::EntropyWorkProfile*)::$_0::operator()<gjxl::OptimizeEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCodeOptions const&, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedEntropyClusters*, bool, gjxl::codestream_internal::EntropyWorkProfile*)::$_4>(unsigned long long gjxl::codestream_internal::EntropyWorkProfile::*, gjxl::OptimizeEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCodeOptions const&, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedEntropyClusters*, bool, gjxl::codestream_internal::EntropyWorkProfile*)::$_4&&) const",
+            "cpu_ms": 61.604,
+            "percent": 0.02802267507675042
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::BuildFixedEntropyCodeForPartition(gjxl::EntropyCodeOptions const&, std::__1::span<unsigned char const, (unsigned long)18446744073709551615>, std::__1::span<gjxl::(anonymous namespace)::Histogram const, (unsigned long)18446744073709551615>, unsigned long long, gjxl::EntropyCode*, gjxl::EntropyCodeCost*)",
+            "cpu_ms": 61.604,
+            "percent": 0.02802267507675042
+          },
+          {
+            "name": "gjxl::WriteTocAndSections(std::__1::span<gjxl::BitWriter const, (unsigned long)18446744073709551615>, gjxl::BitWriter*)",
+            "cpu_ms": 58.705,
+            "percent": 0.026703966307068266
+          },
+          {
+            "name": "gjxl::BitWriter::AppendByteAligned(std::__1::span<gjxl::BitWriter const, (unsigned long)18446744073709551615>)",
+            "cpu_ms": 57.796,
+            "percent": 0.02629047673423588
+          },
+          {
+            "name": "gjxl::codestream_internal::EncodeContextMap(std::__1::span<unsigned char const, (unsigned long)18446744073709551615>, gjxl::codestream_internal::ContextMapEncoding*)",
+            "cpu_ms": 56.427,
+            "percent": 0.02566774051288546
+          },
+          {
+            "name": "std::__1::__insertion_sort_incomplete[abi:nqe220106]<std::__1::_ClassicAlgPolicy, gjxl::modular_internal::(anonymous namespace)::Quantize(std::__1::span<gjxl::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::Workspace&)::$_0&, unsigned int*>(unsigned int*, unsigned int*, gjxl::modular_internal::(anonymous namespace)::Quantize(std::__1::span<gjxl::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::Workspace&)::$_0&)",
+            "cpu_ms": 55.612,
+            "percent": 0.02529701003779372
+          },
+          {
+            "name": "0x16437",
+            "cpu_ms": 50.82,
+            "percent": 0.023117205821057987
+          },
+          {
+            "name": "0x1eb0f",
+            "cpu_ms": 49.825,
+            "percent": 0.0226645962226331
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::BuildAnsEncoderTables(std::__1::span<unsigned short const, (unsigned long)18446744073709551615>, unsigned long, std::__1::vector<unsigned short, gjxl::resource_budget_internal::ManagedAllocator<unsigned short, (gjxl::resource_budget_internal::ResourceClass)6> >*, std::__1::vector<unsigned short, gjxl::resource_budget_internal::ManagedAllocator<unsigned short, (gjxl::resource_budget_internal::ResourceClass)6> >*, std::__1::vector<unsigned long long, gjxl::resource_budget_internal::ManagedAllocator<unsigned long long, (gjxl::resource_budget_internal::ResourceClass)6> >*)",
+            "cpu_ms": 46.153,
+            "percent": 0.020994262106636942
+          },
+          {
+            "name": "0x334ab",
+            "cpu_ms": 38.367,
+            "percent": 0.017452535138459895
+          },
+          {
+            "name": "gjxl::codestream_internal::WriteContextMapAns(std::__1::span<gjxl::HybridUintToken const, (unsigned long)18446744073709551615>, gjxl::HybridUintConfig, bool, gjxl::BitWriter*)",
+            "cpu_ms": 34.938,
+            "percent": 0.01589273783896348
+          },
+          {
+            "name": "gjxl::modular_internal::WeightedPredictor<(gjxl::resource_budget_internal::ResourceClass)1>::WeightedPredictor(unsigned long, gjxl::modular_internal::WeightedPredictorParameters)",
+            "cpu_ms": 34.844,
+            "percent": 0.015849978741222837
+          },
+          {
+            "name": "gjxl::resource_budget_internal::ManagedAllocator<unsigned int, (gjxl::resource_budget_internal::ResourceClass)6>::allocate(unsigned long)",
+            "cpu_ms": 33.358,
+            "percent": 0.01517402108970587
+          },
+          {
+            "name": "gjxl::resource_budget_internal::PublicationVector<unsigned char>::Construct<gjxl::resource_budget_internal::PublicationVector<unsigned char>::CopyFrom(std::__1::span<unsigned char const, (unsigned long)18446744073709551615>, gjxl::resource_budget_internal::PublicationVector<unsigned char>*, gjxl::resource_budget_internal::ResourceClass)::{lambda()#1}>(unsigned long, gjxl::resource_budget_internal::PublicationVector<unsigned char>*, gjxl::resource_budget_internal::ResourceClass, gjxl::resource_budget_internal::PublicationVector<unsigned char>::CopyFrom(std::__1::span<unsigned char const, (unsigned long)18446744073709551615>, gjxl::resource_budget_internal::PublicationVector<unsigned char>*, gjxl::resource_budget_internal::ResourceClass)::{lambda()#1}&&)",
+            "cpu_ms": 32.381,
+            "percent": 0.0147295994036143
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::EstimateAnsHistogramCost(std::__1::array<unsigned long long, (unsigned long)256> const&, gjxl::AnsHistogram const&, double*)",
+            "cpu_ms": 32.044,
+            "percent": 0.014576303489373912
+          },
+          {
+            "name": "gjxl::BuildPrefixCode(std::__1::span<unsigned long long const, (unsigned long)18446744073709551615>, gjxl::PrefixCode*)",
+            "cpu_ms": 29.856,
+            "percent": 0.01358101725685768
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::WritePrefixCodesInternal(std::__1::span<gjxl::PrefixCode const, (unsigned long)18446744073709551615>, std::__1::span<gjxl::HybridUintConfig const, (unsigned long)18446744073709551615>, gjxl::BitWriter*)",
+            "cpu_ms": 29.203,
+            "percent": 0.01328397799276577
+          },
+          {
+            "name": "gjxl::resource_budget_internal::ManagedAllocator<unsigned long long, (gjxl::resource_budget_internal::ResourceClass)6>::allocate(unsigned long)",
+            "cpu_ms": 27.722,
+            "percent": 0.012610294761341392
+          },
+          {
+            "name": "gjxl::WriteEntropyCode(gjxl::EntropyCode const&, gjxl::BitWriter*)",
+            "cpu_ms": 24.941,
+            "percent": 0.0113452623058443
+          },
+          {
+            "name": "std::__1::vector<gjxl::modular_internal::TrainingSample, gjxl::resource_budget_internal::ManagedAllocator<gjxl::modular_internal::TrainingSample, (gjxl::resource_budget_internal::ResourceClass)10> >::resize(unsigned long)",
+            "cpu_ms": 24.768,
+            "percent": 0.011266567370640777
+          },
+          {
+            "name": "gjxl::modular_internal::WeightedPredictor<(gjxl::resource_budget_internal::ResourceClass)1>::~WeightedPredictor()",
+            "cpu_ms": 22.962,
+            "percent": 0.01044504683319822
+          },
+          {
+            "name": "std::__1::__function::__func<gjxl::modular_internal::EncodeModularFrame(gjxl::codec_internal::ImageMetadata const&, gjxl::modular_internal::ModularStreamPlan const&, gjxl::modular_internal::PreparedModularTokens&&, gjxl::EntropyCodingMode, gjxl::modular_internal::ModularWorkflowStoragePlan const&, gjxl::resource_budget_internal::PublicationVector<unsigned char>*)::$_0, gjxl::Status()>::operator()()",
+            "cpu_ms": 20.489,
+            "percent": 0.009320118655404509
+          },
+          {
+            "name": "gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)1>::allocate(unsigned long)",
+            "cpu_ms": 20.197,
+            "percent": 0.009187292521997407
+          },
+          {
+            "name": "mach_absolute_time",
+            "cpu_ms": 19.354,
+            "percent": 0.008803825294387177
+          },
+          {
+            "name": "std::__1::__sort4[abi:nqe220106]<std::__1::_ClassicAlgPolicy, gjxl::modular_internal::(anonymous namespace)::Quantize(std::__1::span<gjxl::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::Workspace&)::$_0&, unsigned int*, 0>(unsigned int*, unsigned int*, unsigned int*, unsigned int*, gjxl::modular_internal::(anonymous namespace)::Quantize(std::__1::span<gjxl::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::Workspace&)::$_0&)",
+            "cpu_ms": 18.98,
+            "percent": 0.008633698671461642
+          },
+          {
+            "name": "0x55d3",
+            "cpu_ms": 17.435,
+            "percent": 0.007930902862852146
+          },
+          {
+            "name": "gjxl::resource_budget_internal::ResourceAllocation::Reset()",
+            "cpu_ms": 16.57,
+            "percent": 0.007537428186834531
+          },
+          {
+            "name": "0xf0ff",
+            "cpu_ms": 16.438,
+            "percent": 0.007477383496390225
+          },
+          {
+            "name": "gjxl::codestream_internal::ValidateAnsEntropyCode(gjxl::EntropyCode const&)",
+            "cpu_ms": 16.165,
+            "percent": 0.007353200159334955
+          },
+          {
+            "name": "0x1392b",
+            "cpu_ms": 16.036,
+            "percent": 0.007294520120946201
+          },
+          {
+            "name": "gjxl::modular_internal::WriteGlobalTreeInTransaction(std::__1::span<gjxl::EntropyToken const, (unsigned long)18446744073709551615>, gjxl::BitWriter*)",
+            "cpu_ms": 15.574,
+            "percent": 0.007084363704391128
+          },
+          {
+            "name": "mach_vm_reclaim_update_kernel_accounting",
+            "cpu_ms": 15.364,
+            "percent": 0.006988838060502459
+          },
+          {
+            "name": "mach_vm_reclaim_update_kernel_accounting_trap",
+            "cpu_ms": 15.364,
+            "percent": 0.006988838060502459
+          },
+          {
+            "name": "mach_continuous_time",
+            "cpu_ms": 14.694,
+            "percent": 0.006684065768095751
+          },
+          {
+            "name": "std::__1::vector<unsigned int, gjxl::resource_budget_internal::ManagedAllocator<unsigned int, (gjxl::resource_budget_internal::ResourceClass)1> >::resize(unsigned long)",
+            "cpu_ms": 13.653,
+            "percent": 0.006210531504819062
+          },
+          {
+            "name": "gjxl::codestream_internal::WriteAnsEntropyCodeModel(gjxl::EntropyCode const&, gjxl::BitWriter*)",
+            "cpu_ms": 13.62,
+            "percent": 0.0061955203322079854
+          },
+          {
+            "name": "0x146c7",
+            "cpu_ms": 13.044,
+            "percent": 0.005933507137541921
+          },
+          {
+            "name": "gjxl::OptimizeEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCodeOptions const&, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedEntropyClusters*, bool, gjxl::codestream_internal::EntropyWorkProfile*)::$_0::operator()<gjxl::OptimizeEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCodeOptions const&, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedEntropyClusters*, bool, gjxl::codestream_internal::EntropyWorkProfile*)::$_6>(unsigned long long gjxl::codestream_internal::EntropyWorkProfile::*, gjxl::OptimizeEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCodeOptions const&, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedEntropyClusters*, bool, gjxl::codestream_internal::EntropyWorkProfile*)::$_6&&) const",
+            "cpu_ms": 12.368,
+            "percent": 0.005626005541024109
+          },
+          {
+            "name": "0x16717",
+            "cpu_ms": 12.26,
+            "percent": 0.005576878067024222
+          },
+          {
+            "name": "0x14ccb",
+            "cpu_ms": 12.26,
+            "percent": 0.005576878067024222
+          }
+        ]
+      },
+      "previous": {
+        "encoder_cpu_ms": 219836.26,
+        "command_cpu_ms": 221178.362,
+        "resolved_leaf_percent": 99.94354161592814,
+        "categories": [
+          {
+            "name": "Prediction and token generation",
+            "cpu_ms": 85029.232,
+            "percent": 38.678438215788425
+          },
+          {
+            "name": "ANS modeling",
+            "cpu_ms": 50329.758,
+            "percent": 22.894202257625743
+          },
+          {
+            "name": "Learning: histogram and split evaluation",
+            "cpu_ms": 19283.623,
+            "percent": 8.771811802111262
+          },
+          {
+            "name": "Frame emission and assembly",
+            "cpu_ms": 16953.683,
+            "percent": 7.711959346469959
+          },
+          {
+            "name": "Learning: property sorting",
+            "cpu_ms": 16099.053,
+            "percent": 7.323201823029558
+          },
+          {
+            "name": "Prefix modeling",
+            "cpu_ms": 16022.65,
+            "percent": 7.288447319837046
+          },
+          {
+            "name": "Learning: sample gathering and other",
+            "cpu_ms": 9430.591,
+            "percent": 4.28982507253353
+          },
+          {
+            "name": "Input and transform preparation",
+            "cpu_ms": 6515.989,
+            "percent": 2.9640192204871028
+          },
+          {
+            "name": "Learning: preparation and tree control",
+            "cpu_ms": 139.592,
+            "percent": 0.06349816904636205
+          },
+          {
+            "name": "Other complete-encoder work",
+            "cpu_ms": 20.455,
+            "percent": 0.009304652471798784
+          },
+          {
+            "name": "Learning: simple predictor candidates",
+            "cpu_ms": 10.593,
+            "percent": 0.004818586342398656
+          },
+          {
+            "name": "RCT ranking",
+            "cpu_ms": 1.041,
+            "percent": 0.00047353425681459467
+          }
+        ],
+        "flat": [
+          {
+            "name": "gjxl::modular_internal::TokenizeModular(gjxl::modular_internal::ModularEncoderFrame const&, gjxl::modular_internal::ModularStreamPlan const&, gjxl::modular_internal::ModularCodingPolicy const&, gjxl::modular_internal::PreparedModularTokens*, unsigned long)::$_0::operator()(unsigned long) const",
+            "cpu_ms": 61073.316,
+            "percent": 27.781275027149753
+          },
+          {
+            "name": "gjxl::OptimizeAnsEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCode const&, gjxl::codestream_internal::PreparedEntropyClusters const*, gjxl::(anonymous namespace)::AnsOptimizationPolicy, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedAnsEntropyCode*, gjxl::codestream_internal::EntropyWorkProfile*)",
+            "cpu_ms": 33675.225,
+            "percent": 15.318321463438288
+          },
+          {
+            "name": "gjxl::modular_internal::WeightedPredictor<(gjxl::resource_budget_internal::ResourceClass)1>::Predict(unsigned long, unsigned long, long long, long long, long long, long long, long long)",
+            "cpu_ms": 29554.941,
+            "percent": 13.44407014566205
+          },
+          {
+            "name": "gjxl::modular_internal::(anonymous namespace)::FindSplit(std::__1::span<gjxl::modular_internal::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::(anonymous namespace)::Leaf&, gjxl::modular_internal::DecisionTree&, gjxl::modular_internal::(anonymous namespace)::LearningWorkspace&)",
+            "cpu_ms": 19248.278,
+            "percent": 8.75573392669617
+          },
+          {
+            "name": "std::__1::__introsort<std::__1::_ClassicAlgPolicy, gjxl::modular_internal::(anonymous namespace)::Quantize(std::__1::span<gjxl::modular_internal::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::(anonymous namespace)::Workspace&)::$_0&, unsigned int*, false>(unsigned int*, unsigned int*, gjxl::modular_internal::(anonymous namespace)::Quantize(std::__1::span<gjxl::modular_internal::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::(anonymous namespace)::Workspace&)::$_0&, std::__1::iterator_traits<unsigned int*>::difference_type, bool)",
+            "cpu_ms": 16032.683,
+            "percent": 7.293011171132551
+          },
+          {
+            "name": "gjxl::codestream_internal::WriteAnsTokenStream(gjxl::EntropyTokenStreamView, gjxl::EntropyCode const&, gjxl::BitWriter*)",
+            "cpu_ms": 15950.931,
+            "percent": 7.255823493358193
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::CountAnsTokenStreamBitsInternal(gjxl::EntropyTokenStreamView, gjxl::EntropyCode const&, unsigned long long*)",
+            "cpu_ms": 12622.563,
+            "percent": 5.741802103074352
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::BuildEntropyCodeForPartition(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCodeOptions const&, std::__1::span<unsigned char const, (unsigned long)18446744073709551615>, std::__1::span<gjxl::(anonymous namespace)::Histogram const, (unsigned long)18446744073709551615>, unsigned long, bool, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedEntropyClusters*, gjxl::codestream_internal::EntropyWorkProfile*)",
+            "cpu_ms": 6329.286,
+            "percent": 2.8790910107368095
+          },
+          {
+            "name": "gjxl::codestream_internal::AggregateEntropyValues(std::__1::span<unsigned int, (unsigned long)18446744073709551615>, std::__1::vector<gjxl::codestream_internal::WeightedValue, gjxl::resource_budget_internal::ManagedAllocator<gjxl::codestream_internal::WeightedValue, (gjxl::resource_budget_internal::ResourceClass)6> >*)",
+            "cpu_ms": 5944.935,
+            "percent": 2.704255885721491
+          },
+          {
+            "name": "gjxl::OptimizeEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCodeOptions const&, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedEntropyClusters*, bool, gjxl::codestream_internal::EntropyWorkProfile*)",
+            "cpu_ms": 5911.921,
+            "percent": 2.6892383449390924
+          },
+          {
+            "name": "gjxl::modular_internal::ApplySqueeze(gjxl::modular_internal::ModularImage const&, gjxl::modular_internal::TransformDescriptor const&, bool, gjxl::modular_internal::ModularImage*)",
+            "cpu_ms": 4353.596,
+            "percent": 1.9803812164562844
+          },
+          {
+            "name": "gjxl::modular_internal::LearnModularPolicies(gjxl::modular_internal::ModularEncoderFrame const&, gjxl::modular_internal::ModularStreamPlan const&, gjxl::modular_internal::ModularCodingPolicy const&, gjxl::modular_internal::ModularCodingPolicy*, gjxl::modular_internal::ModularCodingPolicy*, gjxl::modular_internal::ModularCodingPolicy*, gjxl::modular_internal::TreeLearningOptions, gjxl::modular_internal::TrainingCoverage*, gjxl::modular_internal::TreeLearningCheckpoints*)",
+            "cpu_ms": 3509.78,
+            "percent": 1.5965428087250029
+          },
+          {
+            "name": "gjxl::modular_internal::ModularEncoderFrame::Prepare(gjxl::modular_internal::PackedModularImageView, unsigned char, gjxl::modular_internal::ModularEncoderFrame*)",
+            "cpu_ms": 1704.978,
+            "percent": 0.7755672335400903
+          },
+          {
+            "name": "__bzero",
+            "cpu_ms": 1222.954,
+            "percent": 0.5563022223904283
+          },
+          {
+            "name": "_platform_memmove",
+            "cpu_ms": 889.844,
+            "percent": 0.40477580904988103
+          },
+          {
+            "name": "_platform_memset",
+            "cpu_ms": 294.138,
+            "percent": 0.13379867361280617
+          },
+          {
+            "name": "gjxl::BitWriter::WriteBits(unsigned long, unsigned long long)",
+            "cpu_ms": 185.279,
+            "percent": 0.08428045491676396
+          },
+          {
+            "name": "gjxl::BitWriter::PrepareWrite(unsigned long)",
+            "cpu_ms": 164.523,
+            "percent": 0.0748388823572599
+          },
+          {
+            "name": "gjxl::modular_internal::LearnEntropyTree(std::__1::span<gjxl::modular_internal::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::DecisionTree*, gjxl::modular_internal::TreeLearningOptions, unsigned long, gjxl::modular_internal::TreeLearningCheckpoints*)",
+            "cpu_ms": 135.291,
+            "percent": 0.06154171290941722
+          },
+          {
+            "name": "std::__1::vector<unsigned char, gjxl::resource_budget_internal::ManagedAllocator<unsigned char, (gjxl::resource_budget_internal::ResourceClass)6> >::resize(unsigned long, unsigned char const&)",
+            "cpu_ms": 126.571,
+            "percent": 0.05757512432207498
+          },
+          {
+            "name": "gjxl::codestream_internal::CreateHuffmanTree(std::__1::span<unsigned long long const, (unsigned long)18446744073709551615>, unsigned char, std::__1::span<unsigned char, (unsigned long)18446744073709551615>)",
+            "cpu_ms": 109.546,
+            "percent": 0.04983072401249912
+          },
+          {
+            "name": "std::__1::__introsort<std::__1::_ClassicAlgPolicy, gjxl::codestream_internal::CreateHuffmanTree(std::__1::span<unsigned long long const, (unsigned long)18446744073709551615>, unsigned char, std::__1::span<unsigned char, (unsigned long)18446744073709551615>)::$_0&, gjxl::codestream_internal::(anonymous namespace)::HuffmanNode*, false>(gjxl::codestream_internal::(anonymous namespace)::HuffmanNode*, gjxl::codestream_internal::(anonymous namespace)::HuffmanNode*, gjxl::codestream_internal::CreateHuffmanTree(std::__1::span<unsigned long long const, (unsigned long)18446744073709551615>, unsigned char, std::__1::span<unsigned char, (unsigned long)18446744073709551615>)::$_0&, std::__1::iterator_traits<gjxl::codestream_internal::(anonymous namespace)::HuffmanNode*>::difference_type, bool)",
+            "cpu_ms": 78.01,
+            "percent": 0.03548550180029446
+          },
+          {
+            "name": "gjxl::codestream_internal::(anonymous namespace)::SetDepth(gjxl::codestream_internal::(anonymous namespace)::HuffmanNode const&, std::__1::span<gjxl::codestream_internal::(anonymous namespace)::HuffmanNode const, (unsigned long)18446744073709551615>, std::__1::span<unsigned char, (unsigned long)18446744073709551615>, unsigned char)",
+            "cpu_ms": 72.433,
+            "percent": 0.032948613663642205
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::BuildBestAnsHistogram(std::__1::array<unsigned long long, (unsigned long)256> const&, gjxl::(anonymous namespace)::AnsHistogramSearch, gjxl::AnsHistogram*, unsigned long*)",
+            "cpu_ms": 71.039,
+            "percent": 0.03231450535048222
+          },
+          {
+            "name": "0x5315bc",
+            "cpu_ms": 59.536,
+            "percent": 0.027081974556881563
+          },
+          {
+            "name": "std::__1::__insertion_sort_incomplete[abi:nqe220106]<std::__1::_ClassicAlgPolicy, gjxl::modular_internal::(anonymous namespace)::Quantize(std::__1::span<gjxl::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::Workspace&)::$_0&, unsigned int*>(unsigned int*, unsigned int*, gjxl::modular_internal::(anonymous namespace)::Quantize(std::__1::span<gjxl::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::Workspace&)::$_0&)",
+            "cpu_ms": 47.999,
+            "percent": 0.02183397770686237
+          },
+          {
+            "name": "gjxl::codestream_internal::AnsReverseBits::Append(unsigned int, gjxl::BitWriter*) const::{lambda()#1}::operator()() const",
+            "cpu_ms": 38.791,
+            "percent": 0.01764540572151291
+          },
+          {
+            "name": "mach_vm_reclaim_update_kernel_accounting_trap",
+            "cpu_ms": 37.066,
+            "percent": 0.01686073080027835
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::BuildAnsEncoderTables(std::__1::span<unsigned short const, (unsigned long)18446744073709551615>, unsigned long, std::__1::vector<unsigned short, gjxl::resource_budget_internal::ManagedAllocator<unsigned short, (gjxl::resource_budget_internal::ResourceClass)6> >*, std::__1::vector<unsigned short, gjxl::resource_budget_internal::ManagedAllocator<unsigned short, (gjxl::resource_budget_internal::ResourceClass)6> >*, std::__1::vector<unsigned long long, gjxl::resource_budget_internal::ManagedAllocator<unsigned long long, (gjxl::resource_budget_internal::ResourceClass)6> >*)",
+            "cpu_ms": 27.976,
+            "percent": 0.01272583512838146
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::EstimateAnsHistogramCost(std::__1::array<unsigned long long, (unsigned long)256> const&, gjxl::AnsHistogram const&, double*)",
+            "cpu_ms": 23.175,
+            "percent": 0.010541936985281683
+          },
+          {
+            "name": "std::__1::__sort4[abi:nqe220106]<std::__1::_ClassicAlgPolicy, gjxl::modular_internal::(anonymous namespace)::Quantize(std::__1::span<gjxl::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::Workspace&)::$_0&, unsigned int*, 0>(unsigned int*, unsigned int*, unsigned int*, unsigned int*, gjxl::modular_internal::(anonymous namespace)::Quantize(std::__1::span<gjxl::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::Workspace&)::$_0&)",
+            "cpu_ms": 18.371,
+            "percent": 0.008356674190144974
+          },
+          {
+            "name": "mach_absolute_time",
+            "cpu_ms": 16.338,
+            "percent": 0.0074318949931189695
+          },
+          {
+            "name": "mach_continuous_time",
+            "cpu_ms": 16.062,
+            "percent": 0.00730634700572144
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::WritePrefixCodesInternal(std::__1::span<gjxl::PrefixCode const, (unsigned long)18446744073709551615>, std::__1::span<gjxl::HybridUintConfig const, (unsigned long)18446744073709551615>, gjxl::BitWriter*)",
+            "cpu_ms": 14.307,
+            "percent": 0.006508025564117585
+          },
+          {
+            "name": "gjxl::codestream_internal::ValidateAnsEntropyCode(gjxl::EntropyCode const&)",
+            "cpu_ms": 14.117,
+            "percent": 0.006421597601778705
+          },
+          {
+            "name": "gjxl::resource_budget_internal::ManagedAllocator<unsigned long long, (gjxl::resource_budget_internal::ResourceClass)6>::allocate(unsigned long)",
+            "cpu_ms": 13.217,
+            "percent": 0.006012201990699805
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::ClusterHistogramsFromSeeds(std::__1::vector<gjxl::(anonymous namespace)::Histogram, gjxl::resource_budget_internal::ManagedAllocator<gjxl::(anonymous namespace)::Histogram, (gjxl::resource_budget_internal::ResourceClass)6> > const&, std::__1::span<unsigned long const, (unsigned long)18446744073709551615>, bool, unsigned long, std::__1::vector<gjxl::(anonymous namespace)::Histogram, gjxl::resource_budget_internal::ManagedAllocator<gjxl::(anonymous namespace)::Histogram, (gjxl::resource_budget_internal::ResourceClass)6> >*, std::__1::vector<unsigned char, gjxl::resource_budget_internal::ManagedAllocator<unsigned char, (gjxl::resource_budget_internal::ResourceClass)6> >*)",
+            "cpu_ms": 13.202,
+            "percent": 0.006005378730515157
+          },
+          {
+            "name": "gjxl::codestream_internal::ConvertBitDepthsToSymbols(std::__1::span<unsigned char const, (unsigned long)18446744073709551615>, std::__1::span<unsigned short, (unsigned long)18446744073709551615>)",
+            "cpu_ms": 10.882,
+            "percent": 0.004950047821956214
+          },
+          {
+            "name": "gjxl::resource_budget_internal::ResourceReservation::PrepareAllocation(gjxl::resource_budget_internal::ResourceClass, unsigned long, unsigned long, gjxl::resource_budget_internal::ResourceAllocation*)",
+            "cpu_ms": 10.666,
+            "percent": 0.004851792875297278
+          },
+          {
+            "name": "gjxl::modular_internal::LearnDecisionTrees(std::__1::span<gjxl::modular_internal::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::DecisionTree*, gjxl::modular_internal::DecisionTree*)",
+            "cpu_ms": 10.593,
+            "percent": 0.004818586342398656
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::BitCountWriter::WriteBits(unsigned long, unsigned long long)",
+            "cpu_ms": 10.49,
+            "percent": 0.004771733289130738
+          },
+          {
+            "name": "gjxl::resource_budget_internal::ManagedAllocator<unsigned int, (gjxl::resource_budget_internal::ResourceClass)6>::allocate(unsigned long)",
+            "cpu_ms": 10.329,
+            "percent": 0.004698496963148845
+          },
+          {
+            "name": "madvise",
+            "cpu_ms": 9.482,
+            "percent": 0.004313210204722369
+          },
+          {
+            "name": "pthread_mutex_lock",
+            "cpu_ms": 8.798,
+            "percent": 0.004002069540302405
+          },
+          {
+            "name": "0x14008",
+            "cpu_ms": 7.95,
+            "percent": 0.003616327897863619
+          },
+          {
+            "name": "gjxl::OptimizeAnsEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCode const&, gjxl::codestream_internal::PreparedEntropyClusters const*, gjxl::(anonymous namespace)::AnsOptimizationPolicy, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedAnsEntropyCode*, gjxl::codestream_internal::EntropyWorkProfile*)::$_3::operator()(unsigned long, gjxl::codestream_internal::EntropyWorkProfile*) const",
+            "cpu_ms": 6.757,
+            "percent": 0.0030736512711779214
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::HistogramDistance(gjxl::(anonymous namespace)::Histogram const&, gjxl::(anonymous namespace)::Histogram const&, double*)",
+            "cpu_ms": 6.545,
+            "percent": 0.002977215860568225
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::FastClusterHistograms(std::__1::vector<gjxl::(anonymous namespace)::Histogram, gjxl::resource_budget_internal::ManagedAllocator<gjxl::(anonymous namespace)::Histogram, (gjxl::resource_budget_internal::ResourceClass)6> > const&, unsigned long, bool, std::__1::vector<gjxl::(anonymous namespace)::Histogram, gjxl::resource_budget_internal::ManagedAllocator<gjxl::(anonymous namespace)::Histogram, (gjxl::resource_budget_internal::ResourceClass)6> >*, std::__1::vector<unsigned int, gjxl::resource_budget_internal::ManagedAllocator<unsigned int, (gjxl::resource_budget_internal::ResourceClass)6> >*, std::__1::vector<unsigned long, gjxl::resource_budget_internal::ManagedAllocator<unsigned long, (gjxl::resource_budget_internal::ResourceClass)6> >*)",
+            "cpu_ms": 6.436,
+            "percent": 0.002927633503226447
+          },
+          {
+            "name": "gjxl::resource_budget_internal::ManagedAllocator<unsigned int, (gjxl::resource_budget_internal::ResourceClass)6>::deallocate(unsigned int*, unsigned long)",
+            "cpu_ms": 5.321,
+            "percent": 0.0024204378295009203
+          },
+          {
+            "name": "gjxl::resource_budget_internal::ResourceAllocation::Reset()",
+            "cpu_ms": 4.274,
+            "percent": 0.0019441742686124664
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::WriteAnsHistogram(gjxl::AnsHistogram const&, gjxl::BitWriter*)",
+            "cpu_ms": 4.14,
+            "percent": 0.0018832198109629413
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::WriteAnsStream<gjxl::codestream_internal::WriteContextMapAns(std::__1::span<gjxl::HybridUintToken const, (unsigned long)18446744073709551615>, gjxl::HybridUintConfig, bool, gjxl::BitWriter*)::$_0 const&>(unsigned long, gjxl::codestream_internal::WriteContextMapAns(std::__1::span<gjxl::HybridUintToken const, (unsigned long)18446744073709551615>, gjxl::HybridUintConfig, bool, gjxl::BitWriter*)::$_0 const&, gjxl::BitWriter*)",
+            "cpu_ms": 4.023,
+            "percent": 0.001829998381522684
+          },
+          {
+            "name": "std::__1::vector<unsigned int, gjxl::resource_budget_internal::ManagedAllocator<unsigned int, (gjxl::resource_budget_internal::ResourceClass)6> >::emplace_back<unsigned int&>(unsigned int&)::{lambda()#2}::operator()() const",
+            "cpu_ms": 3.852,
+            "percent": 0.001752213215417693
+          },
+          {
+            "name": "0x3c878",
+            "cpu_ms": 3.69,
+            "percent": 0.001678522005423491
+          },
+          {
+            "name": "gjxl::codestream_internal::EncodeContextMap(std::__1::span<unsigned char const, (unsigned long)18446744073709551615>, gjxl::codestream_internal::ContextMapEncoding*)",
+            "cpu_ms": 3.533,
+            "percent": 0.0016071052154908384
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::WriteValue(unsigned int, gjxl::PrefixCode const&, gjxl::HybridUintConfig, gjxl::BitWriter*)",
+            "cpu_ms": 3.488,
+            "percent": 0.0015866354349368934
+          },
+          {
+            "name": "gjxl::AnsHistogram::operator=(gjxl::AnsHistogram&&)",
+            "cpu_ms": 3.429,
+            "percent": 0.00155979727821061
+          },
+          {
+            "name": "gjxl::resource_budget_internal::ResourceAllocation::Commit()",
+            "cpu_ms": 3.061,
+            "percent": 0.0013923999616805708
+          },
+          {
+            "name": "gjxl::codestream_internal::WriteValidatedTokenStream(gjxl::EntropyTokenStreamView, gjxl::EntropyCode const&, gjxl::BitWriter*)",
+            "cpu_ms": 3.044,
+            "percent": 0.0013846669334713028
+          },
+          {
+            "name": "gjxl::BuildPrefixCode(std::__1::span<unsigned long long const, (unsigned long)18446744073709551615>, gjxl::PrefixCode*)",
+            "cpu_ms": 2.949,
+            "percent": 0.0013414529523018632
+          }
+        ],
+        "inclusive": [
+          {
+            "name": "start",
+            "cpu_ms": 219836.26,
+            "percent": 100.0
+          },
+          {
+            "name": "main",
+            "cpu_ms": 219836.26,
+            "percent": 100.0
+          },
+          {
+            "name": "gjxl::modular_internal::EncodeModularImage(gjxl::modular_internal::PackedModularImageView, gjxl::modular_internal::ModularEncodingOptions const&, std::__1::vector<unsigned char, std::__1::allocator<unsigned char> >*)",
+            "cpu_ms": 219836.26,
+            "percent": 100.0
+          },
+          {
+            "name": "gjxl::modular_internal::(anonymous namespace)::Encode(gjxl::modular_internal::PackedModularImageView, gjxl::modular_internal::ModularEncodingOptions const&, gjxl::resource_budget_internal::PublicationOutput<unsigned char>)",
+            "cpu_ms": 219836.26,
+            "percent": 100.0
+          },
+          {
+            "name": "gjxl::modular_internal::EncodePreparedModularFrame(gjxl::modular_internal::ModularEncoderFrame, gjxl::modular_internal::ModularCodingPolicy const&, gjxl::EntropyCodingMode, gjxl::modular_internal::ModularWorkflowStoragePlan const&, gjxl::resource_budget_internal::PublicationVector<unsigned char>*)",
+            "cpu_ms": 168352.134,
+            "percent": 76.58069419485211
+          },
+          {
+            "name": "gjxl::modular_internal::(anonymous namespace)::EncodeSearch(gjxl::modular_internal::PackedModularImageView, gjxl::modular_internal::ModularEncodingOptions const&, gjxl::resource_budget_internal::PublicationOutput<unsigned char>)::$_0::operator()(gjxl::modular_internal::ModularCodingPolicy const&) const",
+            "cpu_ms": 166239.752,
+            "percent": 75.61980539516092
+          },
+          {
+            "name": "gjxl::modular_internal::(anonymous namespace)::EncodeSearch(gjxl::modular_internal::PackedModularImageView, gjxl::modular_internal::ModularEncodingOptions const&, gjxl::resource_budget_internal::PublicationOutput<unsigned char>)::$_0::operator()(gjxl::modular_internal::ModularCodingPolicy const&) const::{lambda(gjxl::modular_internal::DecisionTree const&, bool)#1}::operator()(gjxl::modular_internal::DecisionTree const&, bool) const",
+            "cpu_ms": 125436.03,
+            "percent": 57.05884461462363
+          },
+          {
+            "name": "gjxl::modular_internal::TokenizeModular(gjxl::modular_internal::ModularEncoderFrame const&, gjxl::modular_internal::ModularStreamPlan const&, gjxl::modular_internal::ModularCodingPolicy const&, gjxl::modular_internal::PreparedModularTokens*, unsigned long)",
+            "cpu_ms": 85029.232,
+            "percent": 38.678438215788425
+          },
+          {
+            "name": "gjxl::modular_internal::RunModularStreams<gjxl::modular_internal::TokenizeModular(gjxl::modular_internal::ModularEncoderFrame const&, gjxl::modular_internal::ModularStreamPlan const&, gjxl::modular_internal::ModularCodingPolicy const&, gjxl::modular_internal::PreparedModularTokens*, unsigned long)::$_0>(unsigned long, unsigned long, gjxl::thread_budget_internal::WorkerLaunchSite, gjxl::modular_internal::TokenizeModular(gjxl::modular_internal::ModularEncoderFrame const&, gjxl::modular_internal::ModularStreamPlan const&, gjxl::modular_internal::ModularCodingPolicy const&, gjxl::modular_internal::PreparedModularTokens*, unsigned long)::$_0&&)",
+            "cpu_ms": 84790.092,
+            "percent": 38.569657253084635
+          },
+          {
+            "name": "gjxl::modular_internal::TokenizeModular(gjxl::modular_internal::ModularEncoderFrame const&, gjxl::modular_internal::ModularStreamPlan const&, gjxl::modular_internal::ModularCodingPolicy const&, gjxl::modular_internal::PreparedModularTokens*, unsigned long)::$_0::operator()(unsigned long) const",
+            "cpu_ms": 84789.117,
+            "percent": 38.56921374117263
+          },
+          {
+            "name": "gjxl::modular_internal::EncodeModularFrame(gjxl::codec_internal::ImageMetadata const&, gjxl::modular_internal::ModularStreamPlan const&, gjxl::modular_internal::PreparedModularTokens&&, gjxl::EntropyCodingMode, gjxl::modular_internal::ModularWorkflowStoragePlan const&, gjxl::resource_budget_internal::PublicationVector<unsigned char>*)",
+            "cpu_ms": 83306.091,
+            "percent": 37.89460892393275
+          },
+          {
+            "name": "gjxl::OptimizeAnsEntropyCode(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCode const&, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::EntropyWorkProfile*)",
+            "cpu_ms": 50329.758,
+            "percent": 22.894202257625743
+          },
+          {
+            "name": "gjxl::OptimizeAnsEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCode const&, gjxl::codestream_internal::PreparedEntropyClusters const*, gjxl::(anonymous namespace)::AnsOptimizationPolicy, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedAnsEntropyCode*, gjxl::codestream_internal::EntropyWorkProfile*)",
+            "cpu_ms": 50329.758,
+            "percent": 22.894202257625743
+          },
+          {
+            "name": "gjxl::modular_internal::LearnModularPolicies(gjxl::modular_internal::ModularEncoderFrame const&, gjxl::modular_internal::ModularStreamPlan const&, gjxl::modular_internal::ModularCodingPolicy const&, gjxl::modular_internal::ModularCodingPolicy*, gjxl::modular_internal::ModularCodingPolicy*, gjxl::modular_internal::ModularCodingPolicy*, gjxl::modular_internal::TreeLearningOptions, gjxl::modular_internal::TrainingCoverage*, gjxl::modular_internal::TreeLearningCheckpoints*)",
+            "cpu_ms": 44963.452,
+            "percent": 20.45315545306311
+          },
+          {
+            "name": "gjxl::modular_internal::LearnEntropyTree(std::__1::span<gjxl::modular_internal::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::DecisionTree*, gjxl::modular_internal::TreeLearningOptions, unsigned long, gjxl::modular_internal::TreeLearningCheckpoints*)",
+            "cpu_ms": 35522.268,
+            "percent": 16.158511794187184
+          },
+          {
+            "name": "gjxl::modular_internal::(anonymous namespace)::FindSplit(std::__1::span<gjxl::modular_internal::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::(anonymous namespace)::Leaf&, gjxl::modular_internal::DecisionTree&, gjxl::modular_internal::(anonymous namespace)::LearningWorkspace&)",
+            "cpu_ms": 35382.676,
+            "percent": 16.095013625140822
+          },
+          {
+            "name": "gjxl::modular_internal::WeightedPredictor<(gjxl::resource_budget_internal::ResourceClass)1>::Predict(unsigned long, unsigned long, long long, long long, long long, long long, long long)",
+            "cpu_ms": 29554.941,
+            "percent": 13.44407014566205
+          },
+          {
+            "name": "gjxl::BitWriter::WithMaxBits(unsigned long, std::__1::function<gjxl::Status()> const&)",
+            "cpu_ms": 16920.511,
+            "percent": 7.696869934013615
+          },
+          {
+            "name": "gjxl::modular_internal::EncodeModularFrame(gjxl::codec_internal::ImageMetadata const&, gjxl::modular_internal::ModularStreamPlan const&, gjxl::modular_internal::PreparedModularTokens&&, gjxl::EntropyCodingMode, gjxl::modular_internal::ModularWorkflowStoragePlan const&, gjxl::resource_budget_internal::PublicationVector<unsigned char>*)::$_1::operator()(unsigned long) const",
+            "cpu_ms": 16857.381,
+            "percent": 7.668153106316492
+          },
+          {
+            "name": "std::__1::__function::__func<gjxl::modular_internal::EncodeModularFrame(gjxl::codec_internal::ImageMetadata const&, gjxl::modular_internal::ModularStreamPlan const&, gjxl::modular_internal::PreparedModularTokens&&, gjxl::EntropyCodingMode, gjxl::modular_internal::ModularWorkflowStoragePlan const&, gjxl::resource_budget_internal::PublicationVector<unsigned char>*)::$_1::operator()(unsigned long) const::{lambda()#1}, gjxl::Status()>::operator()()",
+            "cpu_ms": 16847.547,
+            "percent": 7.6636797769394365
+          },
+          {
+            "name": "gjxl::modular_internal::WriteStreamTokensWithValidatedModel(gjxl::EntropyTokenStreamView, gjxl::EntropyCode const&, gjxl::BitWriter*)",
+            "cpu_ms": 16845.32,
+            "percent": 7.662666750244022
+          },
+          {
+            "name": "gjxl::codestream_internal::WriteValidatedTokenStream(gjxl::EntropyTokenStreamView, gjxl::EntropyCode const&, gjxl::BitWriter*)",
+            "cpu_ms": 16845.32,
+            "percent": 7.662666750244022
+          },
+          {
+            "name": "gjxl::codestream_internal::WriteAnsTokenStream(gjxl::EntropyTokenStreamView, gjxl::EntropyCode const&, gjxl::BitWriter*)",
+            "cpu_ms": 16842.276,
+            "percent": 7.661282083310551
+          },
+          {
+            "name": "std::__1::__introsort<std::__1::_ClassicAlgPolicy, gjxl::modular_internal::(anonymous namespace)::Quantize(std::__1::span<gjxl::modular_internal::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::(anonymous namespace)::Workspace&)::$_0&, unsigned int*, false>(unsigned int*, unsigned int*, gjxl::modular_internal::(anonymous namespace)::Quantize(std::__1::span<gjxl::modular_internal::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::(anonymous namespace)::Workspace&)::$_0&, std::__1::iterator_traits<unsigned int*>::difference_type, bool)",
+            "cpu_ms": 16099.053,
+            "percent": 7.323201823029558
+          },
+          {
+            "name": "gjxl::OptimizeEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCodeOptions const&, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedEntropyClusters*, bool, gjxl::codestream_internal::EntropyWorkProfile*)",
+            "cpu_ms": 16022.65,
+            "percent": 7.288447319837046
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::MeasureAnsCode(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCode const&, unsigned long long, gjxl::EntropyCodeCost*)",
+            "cpu_ms": 12622.563,
+            "percent": 5.741802103074352
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::CountAnsTokenStreamBitsInternal(gjxl::EntropyTokenStreamView, gjxl::EntropyCode const&, unsigned long long*)",
+            "cpu_ms": 12622.563,
+            "percent": 5.741802103074352
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::BuildEntropyCodeForPartition(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCodeOptions const&, std::__1::span<unsigned char const, (unsigned long)18446744073709551615>, std::__1::span<gjxl::(anonymous namespace)::Histogram const, (unsigned long)18446744073709551615>, unsigned long, bool, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedEntropyClusters*, gjxl::codestream_internal::EntropyWorkProfile*)",
+            "cpu_ms": 9776.065,
+            "percent": 4.446975671802277
+          },
+          {
+            "name": "gjxl::modular_internal::ModularEncoderFrame::Prepare(gjxl::modular_internal::PackedModularImageView, gjxl::modular_internal::ModularCodingPolicy const&, gjxl::modular_internal::ModularEncoderFrame*)",
+            "cpu_ms": 6396.482,
+            "percent": 2.9096573968279844
+          },
+          {
+            "name": "gjxl::codestream_internal::AggregateEntropyValues(std::__1::span<unsigned int, (unsigned long)18446744073709551615>, std::__1::vector<gjxl::codestream_internal::WeightedValue, gjxl::resource_budget_internal::ManagedAllocator<gjxl::codestream_internal::WeightedValue, (gjxl::resource_budget_internal::ResourceClass)6> >*)",
+            "cpu_ms": 5957.754,
+            "percent": 2.7100870438752915
+          },
+          {
+            "name": "gjxl::modular_internal::(anonymous namespace)::Run(gjxl::modular_internal::ModularImage const&, gjxl::modular_internal::TransformSequence const&, std::__1::array<gjxl::modular_internal::ChannelShape, (unsigned long)9> const&, bool, gjxl::modular_internal::ModularImage*)",
+            "cpu_ms": 4548.752,
+            "percent": 2.069154560762633
+          },
+          {
+            "name": "gjxl::modular_internal::ForwardTransforms(gjxl::modular_internal::ModularImage const&, gjxl::modular_internal::TransformSequence const&, gjxl::modular_internal::ModularImage*)",
+            "cpu_ms": 4548.752,
+            "percent": 2.069154560762633
+          },
+          {
+            "name": "gjxl::modular_internal::ApplySqueeze(gjxl::modular_internal::ModularImage const&, gjxl::modular_internal::TransformDescriptor const&, bool, gjxl::modular_internal::ModularImage*)",
+            "cpu_ms": 4410.579,
+            "percent": 2.0063018721297388
+          },
+          {
+            "name": "gjxl::modular_internal::LearnModularPolicies(gjxl::modular_internal::ModularEncoderFrame const&, gjxl::modular_internal::ModularStreamPlan const&, unsigned char, gjxl::modular_internal::ModularCodingPolicy*, gjxl::modular_internal::ModularCodingPolicy*, gjxl::modular_internal::ModularCodingPolicy*, gjxl::modular_internal::TreeLearningOptions, gjxl::modular_internal::TrainingCoverage*, gjxl::modular_internal::TreeLearningCheckpoints*)",
+            "cpu_ms": 3284.111,
+            "percent": 1.4938895885510426
+          },
+          {
+            "name": "gjxl::OptimizeAnsEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCode const&, gjxl::codestream_internal::PreparedEntropyClusters const*, gjxl::(anonymous namespace)::AnsOptimizationPolicy, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedAnsEntropyCode*, gjxl::codestream_internal::EntropyWorkProfile*)::$_3::operator()(unsigned long, gjxl::codestream_internal::EntropyWorkProfile*) const",
+            "cpu_ms": 3187.304,
+            "percent": 1.449853631971359
+          },
+          {
+            "name": "gjxl::modular_internal::ModularEncoderFrame::Prepare(gjxl::modular_internal::PackedModularImageView, unsigned char, gjxl::modular_internal::ModularEncoderFrame*)",
+            "cpu_ms": 1966.251,
+            "percent": 0.8944161440883319
+          },
+          {
+            "name": "__bzero",
+            "cpu_ms": 1222.954,
+            "percent": 0.5563022223904283
+          },
+          {
+            "name": "_platform_memmove",
+            "cpu_ms": 889.844,
+            "percent": 0.40477580904988103
+          },
+          {
+            "name": "gjxl::codestream_internal::AnsReverseBits::Append(unsigned int, gjxl::BitWriter*) const",
+            "cpu_ms": 843.285,
+            "percent": 0.3835968643207449
+          },
+          {
+            "name": "gjxl::codestream_internal::AnsReverseBits::Append(unsigned int, gjxl::BitWriter*) const::{lambda()#1}::operator()() const",
+            "cpu_ms": 840.336,
+            "percent": 0.38225541136844304
+          },
+          {
+            "name": "gjxl::BitWriter::WriteBits(unsigned long, unsigned long long)",
+            "cpu_ms": 811.45,
+            "percent": 0.3691156317888596
+          },
+          {
+            "name": "std::__1::vector<unsigned int, gjxl::resource_budget_internal::ManagedAllocator<unsigned int, (gjxl::resource_budget_internal::ResourceClass)6> >::emplace_back<unsigned int&>(unsigned int&)::{lambda()#2}::operator()() const",
+            "cpu_ms": 786.851,
+            "percent": 0.3579259399700486
+          },
+          {
+            "name": "gjxl::BitWriter::PrepareWrite(unsigned long)",
+            "cpu_ms": 643.888,
+            "percent": 0.29289435691818994
+          },
+          {
+            "name": "std::__1::vector<unsigned char, gjxl::resource_budget_internal::ManagedAllocator<unsigned char, (gjxl::resource_budget_internal::ResourceClass)6> >::resize(unsigned long, unsigned char const&)",
+            "cpu_ms": 479.365,
+            "percent": 0.21805547456093002
+          },
+          {
+            "name": "std::__1::vector<int, gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)10> >::resize(unsigned long)",
+            "cpu_ms": 399.446,
+            "percent": 0.181701599181136
+          },
+          {
+            "name": "gjxl::modular_internal::ModularImage::Create(std::__1::span<gjxl::modular_internal::ChannelDescriptor const, (unsigned long)18446744073709551615>, unsigned long, gjxl::modular_internal::ModularImage*)",
+            "cpu_ms": 399.446,
+            "percent": 0.181701599181136
+          },
+          {
+            "name": "_platform_memset",
+            "cpu_ms": 294.138,
+            "percent": 0.13379867361280617
+          },
+          {
+            "name": "gjxl::codestream_internal::CreateHuffmanTree(std::__1::span<unsigned long long const, (unsigned long)18446744073709551615>, unsigned char, std::__1::span<unsigned char, (unsigned long)18446744073709551615>)",
+            "cpu_ms": 265.895,
+            "percent": 0.12095138445313798
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::HistogramCountsBitCost(std::__1::span<unsigned long long const, (unsigned long)18446744073709551615>, unsigned long long, double*)",
+            "cpu_ms": 244.919,
+            "percent": 0.11140973741092575
+          },
+          {
+            "name": "std::__1::vector<gjxl::EntropyToken, gjxl::resource_budget_internal::ManagedAllocator<gjxl::EntropyToken, (gjxl::resource_budget_internal::ResourceClass)6> >::resize(unsigned long)",
+            "cpu_ms": 235.362,
+            "percent": 0.10706241090528014
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::HistogramDistance(gjxl::(anonymous namespace)::Histogram const&, gjxl::(anonymous namespace)::Histogram const&, double*)",
+            "cpu_ms": 226.222,
+            "percent": 0.10290477103276775
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::ClusterHistogramsFromSeeds(std::__1::vector<gjxl::(anonymous namespace)::Histogram, gjxl::resource_budget_internal::ManagedAllocator<gjxl::(anonymous namespace)::Histogram, (gjxl::resource_budget_internal::ResourceClass)6> > const&, std::__1::span<unsigned long const, (unsigned long)18446744073709551615>, bool, unsigned long, std::__1::vector<gjxl::(anonymous namespace)::Histogram, gjxl::resource_budget_internal::ManagedAllocator<gjxl::(anonymous namespace)::Histogram, (gjxl::resource_budget_internal::ResourceClass)6> >*, std::__1::vector<unsigned char, gjxl::resource_budget_internal::ManagedAllocator<unsigned char, (gjxl::resource_budget_internal::ResourceClass)6> >*)",
+            "cpu_ms": 166.664,
+            "percent": 0.07581278902761537
+          },
+          {
+            "name": "gjxl::OptimizeEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCodeOptions const&, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedEntropyClusters*, bool, gjxl::codestream_internal::EntropyWorkProfile*)::$_0::operator()<gjxl::OptimizeEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCodeOptions const&, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedEntropyClusters*, bool, gjxl::codestream_internal::EntropyWorkProfile*)::$_10>(unsigned long long gjxl::codestream_internal::EntropyWorkProfile::*, gjxl::OptimizeEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCodeOptions const&, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedEntropyClusters*, bool, gjxl::codestream_internal::EntropyWorkProfile*)::$_10&&) const",
+            "cpu_ms": 156.282,
+            "percent": 0.0710901832118141
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::FastClusterHistograms(std::__1::vector<gjxl::(anonymous namespace)::Histogram, gjxl::resource_budget_internal::ManagedAllocator<gjxl::(anonymous namespace)::Histogram, (gjxl::resource_budget_internal::ResourceClass)6> > const&, unsigned long, bool, std::__1::vector<gjxl::(anonymous namespace)::Histogram, gjxl::resource_budget_internal::ManagedAllocator<gjxl::(anonymous namespace)::Histogram, (gjxl::resource_budget_internal::ResourceClass)6> >*, std::__1::vector<unsigned int, gjxl::resource_budget_internal::ManagedAllocator<unsigned int, (gjxl::resource_budget_internal::ResourceClass)6> >*, std::__1::vector<unsigned long, gjxl::resource_budget_internal::ManagedAllocator<unsigned long, (gjxl::resource_budget_internal::ResourceClass)6> >*)",
+            "cpu_ms": 107.107,
+            "percent": 0.0487212619064753
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::ClusterHistograms(std::__1::vector<gjxl::(anonymous namespace)::Histogram, gjxl::resource_budget_internal::ManagedAllocator<gjxl::(anonymous namespace)::Histogram, (gjxl::resource_budget_internal::ResourceClass)6> > const&, unsigned long, bool, unsigned long, std::__1::vector<gjxl::(anonymous namespace)::Histogram, gjxl::resource_budget_internal::ManagedAllocator<gjxl::(anonymous namespace)::Histogram, (gjxl::resource_budget_internal::ResourceClass)6> >*, std::__1::vector<unsigned char, gjxl::resource_budget_internal::ManagedAllocator<unsigned char, (gjxl::resource_budget_internal::ResourceClass)6> >*)",
+            "cpu_ms": 105.769,
+            "percent": 0.04811262709800467
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::BuildBestAnsHistogram(std::__1::array<unsigned long long, (unsigned long)256> const&, gjxl::(anonymous namespace)::AnsHistogramSearch, gjxl::AnsHistogram*, unsigned long*)",
+            "cpu_ms": 104.399,
+            "percent": 0.04748943600114012
+          },
+          {
+            "name": "gjxl::resource_budget_internal::ManagedAllocator<unsigned int, (gjxl::resource_budget_internal::ResourceClass)6>::deallocate(unsigned int*, unsigned long)",
+            "cpu_ms": 80.011,
+            "percent": 0.03639572470892655
+          },
+          {
+            "name": "std::__1::__introsort<std::__1::_ClassicAlgPolicy, gjxl::codestream_internal::CreateHuffmanTree(std::__1::span<unsigned long long const, (unsigned long)18446744073709551615>, unsigned char, std::__1::span<unsigned char, (unsigned long)18446744073709551615>)::$_0&, gjxl::codestream_internal::(anonymous namespace)::HuffmanNode*, false>(gjxl::codestream_internal::(anonymous namespace)::HuffmanNode*, gjxl::codestream_internal::(anonymous namespace)::HuffmanNode*, gjxl::codestream_internal::CreateHuffmanTree(std::__1::span<unsigned long long const, (unsigned long)18446744073709551615>, unsigned char, std::__1::span<unsigned char, (unsigned long)18446744073709551615>)::$_0&, std::__1::iterator_traits<gjxl::codestream_internal::(anonymous namespace)::HuffmanNode*>::difference_type, bool)",
+            "cpu_ms": 79.911,
+            "percent": 0.03635023630769556
+          },
+          {
+            "name": "gjxl::codestream_internal::(anonymous namespace)::SetDepth(gjxl::codestream_internal::(anonymous namespace)::HuffmanNode const&, std::__1::span<gjxl::codestream_internal::(anonymous namespace)::HuffmanNode const, (unsigned long)18446744073709551615>, std::__1::span<unsigned char, (unsigned long)18446744073709551615>, unsigned char)",
+            "cpu_ms": 72.433,
+            "percent": 0.032948613663642205
+          },
+          {
+            "name": "gjxl::WriteTocAndSections(std::__1::span<gjxl::BitWriter const, (unsigned long)18446744073709551615>, gjxl::BitWriter*)",
+            "cpu_ms": 59.772,
+            "percent": 0.027189327183786697
+          },
+          {
+            "name": "0x5315bc",
+            "cpu_ms": 59.536,
+            "percent": 0.027081974556881563
+          },
+          {
+            "name": "gjxl::BitWriter::AppendByteAligned(std::__1::span<gjxl::BitWriter const, (unsigned long)18446744073709551615>)",
+            "cpu_ms": 58.781,
+            "percent": 0.026738537127587596
+          },
+          {
+            "name": "gjxl::OptimizeEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCodeOptions const&, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedEntropyClusters*, bool, gjxl::codestream_internal::EntropyWorkProfile*)::$_0::operator()<gjxl::OptimizeEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCodeOptions const&, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedEntropyClusters*, bool, gjxl::codestream_internal::EntropyWorkProfile*)::$_4>(unsigned long long gjxl::codestream_internal::EntropyWorkProfile::*, gjxl::OptimizeEntropyCodeImpl(std::__1::span<gjxl::EntropyTokenStreamView const, (unsigned long)18446744073709551615>, gjxl::EntropyCodeOptions const&, gjxl::EntropyCode*, gjxl::EntropyCodeCost*, gjxl::codestream_internal::PreparedEntropyClusters*, bool, gjxl::codestream_internal::EntropyWorkProfile*)::$_4&&) const",
+            "cpu_ms": 55.284,
+            "percent": 0.025147807736539914
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::BuildFixedEntropyCodeForPartition(gjxl::EntropyCodeOptions const&, std::__1::span<unsigned char const, (unsigned long)18446744073709551615>, std::__1::span<gjxl::(anonymous namespace)::Histogram const, (unsigned long)18446744073709551615>, unsigned long long, gjxl::EntropyCode*, gjxl::EntropyCodeCost*)",
+            "cpu_ms": 55.284,
+            "percent": 0.025147807736539914
+          },
+          {
+            "name": "gjxl::codestream_internal::EncodeContextMap(std::__1::span<unsigned char const, (unsigned long)18446744073709551615>, gjxl::codestream_internal::ContextMapEncoding*)",
+            "cpu_ms": 50.928,
+            "percent": 0.023166332978918038
+          },
+          {
+            "name": "0x16437",
+            "cpu_ms": 48.794,
+            "percent": 0.022195610496648734
+          },
+          {
+            "name": "std::__1::__insertion_sort_incomplete[abi:nqe220106]<std::__1::_ClassicAlgPolicy, gjxl::modular_internal::(anonymous namespace)::Quantize(std::__1::span<gjxl::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::Workspace&)::$_0&, unsigned int*>(unsigned int*, unsigned int*, gjxl::modular_internal::(anonymous namespace)::Quantize(std::__1::span<gjxl::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::Workspace&)::$_0&)",
+            "cpu_ms": 47.999,
+            "percent": 0.02183397770686237
+          },
+          {
+            "name": "0x1eb0f",
+            "cpu_ms": 47.811,
+            "percent": 0.021748459512548113
+          },
+          {
+            "name": "0x334ab",
+            "cpu_ms": 38.869,
+            "percent": 0.01768088667447308
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::BuildAnsEncoderTables(std::__1::span<unsigned short const, (unsigned long)18446744073709551615>, unsigned long, std::__1::vector<unsigned short, gjxl::resource_budget_internal::ManagedAllocator<unsigned short, (gjxl::resource_budget_internal::ResourceClass)6> >*, std::__1::vector<unsigned short, gjxl::resource_budget_internal::ManagedAllocator<unsigned short, (gjxl::resource_budget_internal::ResourceClass)6> >*, std::__1::vector<unsigned long long, gjxl::resource_budget_internal::ManagedAllocator<unsigned long long, (gjxl::resource_budget_internal::ResourceClass)6> >*)",
+            "cpu_ms": 38.415,
+            "percent": 0.017474369332884394
+          },
+          {
+            "name": "mach_vm_reclaim_update_kernel_accounting",
+            "cpu_ms": 37.066,
+            "percent": 0.01686073080027835
+          },
+          {
+            "name": "mach_vm_reclaim_update_kernel_accounting_trap",
+            "cpu_ms": 37.066,
+            "percent": 0.01686073080027835
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::EstimateAnsHistogramCost(std::__1::array<unsigned long long, (unsigned long)256> const&, gjxl::AnsHistogram const&, double*)",
+            "cpu_ms": 33.665,
+            "percent": 0.01531367027441242
+          },
+          {
+            "name": "gjxl::modular_internal::WeightedPredictor<(gjxl::resource_budget_internal::ResourceClass)1>::WeightedPredictor(unsigned long, gjxl::modular_internal::WeightedPredictorParameters)",
+            "cpu_ms": 32.141,
+            "percent": 0.014620427039652148
+          },
+          {
+            "name": "gjxl::resource_budget_internal::ManagedAllocator<unsigned int, (gjxl::resource_budget_internal::ResourceClass)6>::allocate(unsigned long)",
+            "cpu_ms": 32.075,
+            "percent": 0.014590404694839696
+          },
+          {
+            "name": "gjxl::resource_budget_internal::PublicationVector<unsigned char>::Construct<gjxl::resource_budget_internal::PublicationVector<unsigned char>::CopyFrom(std::__1::span<unsigned char const, (unsigned long)18446744073709551615>, gjxl::resource_budget_internal::PublicationVector<unsigned char>*, gjxl::resource_budget_internal::ResourceClass)::{lambda()#1}>(unsigned long, gjxl::resource_budget_internal::PublicationVector<unsigned char>*, gjxl::resource_budget_internal::ResourceClass, gjxl::resource_budget_internal::PublicationVector<unsigned char>::CopyFrom(std::__1::span<unsigned char const, (unsigned long)18446744073709551615>, gjxl::resource_budget_internal::PublicationVector<unsigned char>*, gjxl::resource_budget_internal::ResourceClass)::{lambda()#1}&&)",
+            "cpu_ms": 30.993,
+            "percent": 0.014098220193520396
+          },
+          {
+            "name": "gjxl::codestream_internal::WriteContextMapAns(std::__1::span<gjxl::HybridUintToken const, (unsigned long)18446744073709551615>, gjxl::HybridUintConfig, bool, gjxl::BitWriter*)",
+            "cpu_ms": 29.656,
+            "percent": 0.013490040269062073
+          },
+          {
+            "name": "gjxl::BuildPrefixCode(std::__1::span<unsigned long long const, (unsigned long)18446744073709551615>, gjxl::PrefixCode*)",
+            "cpu_ms": 29.008,
+            "percent": 0.013195275429085265
+          },
+          {
+            "name": "gjxl::(anonymous namespace)::WritePrefixCodesInternal(std::__1::span<gjxl::PrefixCode const, (unsigned long)18446744073709551615>, std::__1::span<gjxl::HybridUintConfig const, (unsigned long)18446744073709551615>, gjxl::BitWriter*)",
+            "cpu_ms": 26.156,
+            "percent": 0.011897946225977462
+          },
+          {
+            "name": "gjxl::resource_budget_internal::ManagedAllocator<unsigned long long, (gjxl::resource_budget_internal::ResourceClass)6>::allocate(unsigned long)",
+            "cpu_ms": 25.122,
+            "percent": 0.011427596157249037
+          },
+          {
+            "name": "gjxl::modular_internal::WeightedPredictor<(gjxl::resource_budget_internal::ResourceClass)1>::~WeightedPredictor()",
+            "cpu_ms": 23.621,
+            "percent": 0.010744815254771892
+          },
+          {
+            "name": "std::__1::vector<gjxl::modular_internal::TrainingSample, gjxl::resource_budget_internal::ManagedAllocator<gjxl::modular_internal::TrainingSample, (gjxl::resource_budget_internal::ResourceClass)10> >::resize(unsigned long)",
+            "cpu_ms": 23.618,
+            "percent": 0.010743450602734963
+          },
+          {
+            "name": "gjxl::WriteEntropyCode(gjxl::EntropyCode const&, gjxl::BitWriter*)",
+            "cpu_ms": 23.132,
+            "percent": 0.010522376972752356
+          },
+          {
+            "name": "0x146c7",
+            "cpu_ms": 20.944,
+            "percent": 0.009527090753818319
+          },
+          {
+            "name": "0x16717",
+            "cpu_ms": 19.856,
+            "percent": 0.009032176948425159
+          },
+          {
+            "name": "0x14ccb",
+            "cpu_ms": 19.856,
+            "percent": 0.009032176948425159
+          },
+          {
+            "name": "0x1334b",
+            "cpu_ms": 19.414,
+            "percent": 0.008831118214984189
+          },
+          {
+            "name": "gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)1>::allocate(unsigned long)",
+            "cpu_ms": 19.248,
+            "percent": 0.008755607468940748
+          },
+          {
+            "name": "std::__1::__sort4[abi:nqe220106]<std::__1::_ClassicAlgPolicy, gjxl::modular_internal::(anonymous namespace)::Quantize(std::__1::span<gjxl::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::Workspace&)::$_0&, unsigned int*, 0>(unsigned int*, unsigned int*, unsigned int*, unsigned int*, gjxl::modular_internal::(anonymous namespace)::Quantize(std::__1::span<gjxl::TrainingSample const, (unsigned long)18446744073709551615>, gjxl::modular_internal::Workspace&)::$_0&)",
+            "cpu_ms": 18.371,
+            "percent": 0.008356674190144974
+          },
+          {
+            "name": "0x55d3",
+            "cpu_ms": 17.882,
+            "percent": 0.008134235908125438
+          },
+          {
+            "name": "0x14bb3",
+            "cpu_ms": 17.87,
+            "percent": 0.00812877729997772
+          },
+          {
+            "name": "0x16657",
+            "cpu_ms": 17.87,
+            "percent": 0.00812877729997772
+          },
+          {
+            "name": "0xf0ff",
+            "cpu_ms": 16.897,
+            "percent": 0.007686175156000198
+          },
+          {
+            "name": "mach_absolute_time",
+            "cpu_ms": 16.338,
+            "percent": 0.0074318949931189695
+          },
+          {
+            "name": "mach_continuous_time",
+            "cpu_ms": 16.062,
+            "percent": 0.00730634700572144
+          },
+          {
+            "name": "0x131ab",
+            "cpu_ms": 15.791,
+            "percent": 0.00718307343838546
+          },
+          {
+            "name": "gjxl::codestream_internal::ValidateAnsEntropyCode(gjxl::EntropyCode const&)",
+            "cpu_ms": 14.117,
+            "percent": 0.006421597601778705
+          },
+          {
+            "name": "0x1392b",
+            "cpu_ms": 13.677,
+            "percent": 0.006221448636362354
+          },
+          {
+            "name": "gjxl::resource_budget_internal::ResourceReservation::PrepareAllocation(gjxl::resource_budget_internal::ResourceClass, unsigned long, unsigned long, gjxl::resource_budget_internal::ResourceAllocation*)",
+            "cpu_ms": 13.636,
+            "percent": 0.006202798391857649
+          },
+          {
+            "name": "gjxl::codestream_internal::WriteAnsEntropyCodeModel(gjxl::EntropyCode const&, gjxl::BitWriter*)",
+            "cpu_ms": 12.998,
+            "percent": 0.005912582392003939
+          }
+        ]
+      }
+    }
+  }
+}

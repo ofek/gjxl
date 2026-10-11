@@ -106,5 +106,15 @@ tree-learning branch's complete files byte for byte. These exercise photographic
 palette, and 16-bit alpha input. Captures are retained in
 `build/adaptive-profile-smoke/`; their timing is diagnostic.
 
-No full-resolution adaptive timing or new GPU speedup has been established by
-this effort yet. Full-resolution baseline capture is the next milestone.
+The full-resolution CPU control and default libjxl e7/e9 captures are complete:
+see [`gpu-adaptive-modular-profile.md`](gpu-adaptive-modular-profile.md). All
+outputs decode exactly. Summed GJXL bytes are 1.20% above e7 and 2.18% above e9;
+complete CPU searches take 199–225 seconds per image in these diagnostic runs.
+Token generation is the largest phase (38.8%), followed by modeling (30.7%) and
+training (20.1%). No GPU speedup has been established by this effort yet.
+
+The [adaptive token contract](gpu-adaptive-modular-token-contract.md), private
+operation interfaces, fixed-width records, tree eligibility, and storage planner
+are implemented and tested with Metal enabled and disabled. Exact CPU feature
+production, Metal tree evaluation, and bounded per-search feature reuse are next.
+The original prescribed GPU path remains available with its original eligibility.
