@@ -214,7 +214,69 @@ void Learning() {
   Ok(LearnEntropyTree(std::span(samples).first(1), &tree, {1, kMaximumTreeLeaves}));
   Check(tree.size == 1, "Tree budget forced useless leaves");
 }
-void Encodes() {
+void QuantizedLearning() {
+  std::vector<TrainingSample> samples(65537);
+  for (size_t i = 0; i < samples.size(); ++i) {
+    samples[i].properties[0] = i / 512;
+    samples[i].properties[4] = i & 1 ? INT64_MIN : INT64_MAX;
+    samples[i].residuals.fill(INT32_MIN);
+    const size_t preferred =
+        (i / 512) % 2 ? size_t(Predictor::kWeighted) : size_t(Predictor::kGradient);
+    samples[i].residuals[preferred] = static_cast<int32_t>((i / 512) * 2);
+  }
+  const TreeLearningOptions options{65537, 64, TreeLearningMode::kQuantized};
+  DecisionTree learned, again;
+  Ok(LearnEntropyTree(samples, &learned, options, samples.size() * 10));
+  Ok(LearnEntropyTree(samples, &again, options, samples.size() * 10));
+  Check(learned == again && learned.size == 127, "Quantized capacity or determinism differs");
+  for (size_t i = 0; i < learned.size; ++i)
+    if (learned.nodes[i].property < 0)
+      Check(learned.nodes[i].predictor == Predictor::kWeighted ||
+                learned.nodes[i].predictor == Predictor::kGradient,
+            "Unexpected quantized predictor");
+  const auto saved = learned;
+  ArmNextManagedHostAllocationFailureForTest();
+  auto invalid = options;
+  invalid.mode = static_cast<TreeLearningMode>(99);
+  HostStorageBound bound;
+  Check(!LearnEntropyTree(samples, &learned, options, samples.size() - 1).ok() &&
+            !LearnEntropyTree(samples, &learned, invalid).ok() &&
+            !ComputeTreeLearningStorageBound(&bound, invalid).ok() && learned == saved &&
+            ManagedHostAllocationFailurePendingForTest(),
+        "Invalid quantized learning allocated");
+  DisarmManagedHostAllocationFailureForTest();
+  Ok(ComputeTreeLearningStorageBound(&bound, options));
+  samples.resize(64);
+  size_t failures = 0;
+  for (; failures < 16; ++failures) {
+    ResourceBudget budget(bound.peak_bytes);
+    ResourceReservation reservation;
+    Ok(budget.Reserve(bound.peak_bytes, &reservation));
+    Status status;
+    bool pending;
+    DecisionTree tree = saved;
+    {
+      ResourceContextScope scope({&reservation, ResourceClass::kPreparation});
+      ArmManagedHostAllocationFailureAfterForTest(failures);
+      status = LearnEntropyTree(samples, &tree, options);
+      pending = ManagedHostAllocationFailurePendingForTest();
+      DisarmManagedHostAllocationFailureForTest();
+    }
+    Check(budget.snapshot().peak_backing_bytes <= bound.peak_bytes, "Quantized admission exceeded");
+    if (!status.ok())
+      Check(!pending && tree == saved && status.code() == StatusCode::kOutOfMemory,
+            "Quantized allocation failure was not atomic");
+    tree = {};
+    Check(budget.snapshot().total.backing_count == 0, "Quantized backing leaked");
+    if (status.ok()) {
+      Check(pending, "Failure sweep missed a backing");
+      break;
+    }
+  }
+  Check(failures == 7, "Quantized learner allocation count changed");
+  std::cout << "Quantized learner: 65537 samples, 64 leaves, seven allocation failures checked\n";
+}
+void Encodes(TreeLearningMode learner = TreeLearningMode::kLegacy) {
   const Extent2D extent{257, 65};
   std::vector<uint8_t> bytes(extent.width * extent.height * 2);
   for (size_t i = 0; i < bytes.size() / 2; ++i) {
@@ -226,14 +288,15 @@ void Encodes() {
   for (bool search : {false, true})
     for (auto mode : {EntropyCodingMode::kPrefix, EntropyCodingMode::kAns})
       for (size_t leaves : {size_t{64}, size_t{256}, size_t{1024}}) {
-        if (search && leaves == 1024)
+        if ((learner == TreeLearningMode::kQuantized && (!search || leaves != 64)) ||
+            (search && leaves == 1024))
           continue;
         std::cout << "encode search " << search << " mode " << static_cast<int>(mode) << " leaves "
                   << leaves << std::endl;
         ModularEncodingOptions options;
         options.entropy = mode;
         options.search = search;
-        options.learning = {65536, leaves};
+        options.learning = {65536, leaves, learner};
         if (!search)
           options.coding.tree = Balanced(leaves);
         ModularWorkflowStoragePlan plan;
@@ -287,7 +350,7 @@ void Encodes() {
         Empty(*too_small);
       }
 }
-void TrainingPolicies() {
+void TrainingPolicies(TreeLearningMode learner = TreeLearningMode::kLegacy) {
   const Extent2D extent{257, 65};
   std::vector<uint8_t> bytes(extent.width * extent.height * 4);
   for (size_t i = 0; i < bytes.size(); ++i)
@@ -311,7 +374,26 @@ void TrainingPolicies() {
     Ok(BuildModularStreamPlan(geometry, shape.channels(), shape.metadata, &layout));
     ModularCodingPolicy single, split, old, new_single, new_split, learned;
     Ok(LearnModularPolicies(frame, layout, base, &single, &split, &old));
-    Ok(LearnModularPolicies(frame, layout, base, &new_single, &new_split, &learned, {65537, 64}));
+    TrainingCoverage coverage, again;
+    Ok(LearnModularPolicies(frame, layout, base, &new_single, &new_split, &learned,
+                            {65537, 64, learner}, &coverage));
+    auto saved = learned;
+    Ok(LearnModularPolicies(frame, layout, base, &new_single, &new_split, &learned,
+                            {65537, 64, learner}, &again));
+    Check(coverage == again && saved == learned && coverage.samples <= 65537 &&
+              coverage.samples <= coverage.population &&
+              coverage.slices == coverage.sampled_slices &&
+              coverage.slice_floor == (learner == TreeLearningMode::kQuantized ? 1024 : 1),
+          "Sampling coverage was not deterministic and bounded");
+    for (size_t budget : {size_t{1}, size_t{17}, size_t{4096}}) {
+      ModularCodingPolicy a, b, tree;
+      TrainingCoverage small;
+      Ok(LearnModularPolicies(frame, layout, base, &a, &b, &tree, {budget, 16, learner}, &small));
+      Check(small.samples == std::min(budget, small.population) && a == single && b == split &&
+                small.sampled_slices <= small.slices &&
+                (budget < small.slices || small.sampled_slices == small.slices),
+            "Small sampling budget exceeded coverage or changed retained candidates");
+    }
     Check(single == new_single && split == new_split && learned.transforms == base.transforms,
           "New entropy budget changed retained candidates or transforms");
     std::vector<uint8_t> output;
@@ -325,15 +407,17 @@ void TrainingPolicies() {
 #endif
   }
 }
-void AllocationFailures() {
+void AllocationFailures(TreeLearningMode learner = TreeLearningMode::kLegacy) {
   const std::array<uint8_t, 12> bytes{0, 3, 1, 4, 5, 9, 2, 6, 7, 0, 8, 3};
   const PackedModularImageView view{bytes, {3, 4}, 3, PackedModularFormat::kGray8};
   for (bool search : {false, true})
     for (auto mode : {EntropyCodingMode::kPrefix, EntropyCodingMode::kAns}) {
+      if (learner == TreeLearningMode::kQuantized && !search)
+        continue;
       ModularEncodingOptions options;
       options.entropy = mode;
       options.search = search;
-      options.learning = {65537, 64};
+      options.learning = {65537, 64, learner};
       if (!search)
         options.coding.tree = Balanced(64);
       ModularWorkflowStoragePlan plan;
@@ -382,6 +466,16 @@ void AllocationFailures() {
 }
 } // namespace
 int main(int argc, char **argv) try {
+  if (argc == 2 && std::string_view(argv[1]) == "--coverage") {
+    QuantizedLearning();
+    TrainingPolicies(TreeLearningMode::kQuantized);
+    Encodes(TreeLearningMode::kQuantized);
+    return 0;
+  }
+  if (argc == 2 && std::string_view(argv[1]) == "--coverage-allocations") {
+    AllocationFailures(TreeLearningMode::kQuantized);
+    return 0;
+  }
   if (argc == 2 && std::string_view(argv[1]) == "--allocations") {
     AllocationFailures();
     return 0;

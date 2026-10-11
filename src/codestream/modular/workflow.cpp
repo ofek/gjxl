@@ -79,6 +79,9 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
   thread_budget_internal::EncodeScope threads(requested.cpu_thread_count);
   auto options = requested;
   options.search = false;
+  // Always retain the exact default learner and candidate order. Experimental
+  // budgets/modes append candidates after this complete baseline search.
+  options.learning = {};
   ModularCodingPolicy best_policy;
   codestream_internal::CodestreamBuffer best;
   if (auto s = Encode(input, options, &best); !s.ok())
@@ -231,6 +234,55 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
       if (active_modular_profile)
         best_policy = learned;
     }
+  }
+  if (requested.learning != TreeLearningOptions{}) {
+    auto try_learning = [&](const ModularCodingPolicy &base) -> Status {
+      ModularCodingPolicy single, split, learned;
+      {
+        ModularEncoderFrame frame;
+        if (auto s = ModularEncoderFrame::Prepare(input, base, &frame); !s.ok())
+          return s;
+        ChannelShape shape;
+        if (auto s = DescribeImage(frame.image(), &shape); !s.ok())
+          return s;
+        ModularStreamPlan layout;
+        if (auto s =
+                BuildModularStreamPlan(storage.geometry, shape.channels(), shape.metadata, &layout);
+            !s.ok())
+          return s;
+        if (auto s = LearnModularPolicies(frame, layout, base, &single, &split, &learned,
+                                          requested.learning);
+            !s.ok())
+          return s;
+      }
+      options.coding = learned;
+      codestream_internal::CodestreamBuffer candidate;
+      if (auto s = Encode(input, options, &candidate); !s.ok())
+        return s;
+      if (candidate.view().size() < best.view().size()) {
+        best = std::move(candidate);
+        if (active_modular_profile)
+          best_policy = learned;
+      }
+      return Status::Ok();
+    };
+    for (uint8_t rct : {uint8_t{0}, uint8_t{6}, uint8_t{9}}) {
+      if (rct && profile.channel_count < 3)
+        continue;
+      ModularCodingPolicy base;
+      base.rct = rct;
+      if (auto s = try_learning(base); !s.ok())
+        return s;
+    }
+    for (size_t i = 0; i < ranking.count; ++i) {
+      ModularCodingPolicy base;
+      base.rct = ranking.shortlist[i];
+      if (auto s = try_learning(base); !s.ok())
+        return s;
+    }
+    for (size_t i = 0; i < count; ++i)
+      if (auto s = try_learning(candidates[i]); !s.ok())
+        return s;
   }
   if (active_modular_profile)
     active_modular_profile->resolved = std::move(best_policy);

@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Yunho Cho
 #include "codec/modular/tree_learning.h"
 #include "codec/modular/entropy_estimate.h"
+#include "codec/modular/quantized_tree_learning.h"
 #include <algorithm>
 #include <bit>
 #include <new>
@@ -184,6 +185,8 @@ Status ComputeTreeLearningStorageBound(resource_budget_internal::HostStorageBoun
     return Status::InvalidArgument("Null Modular learning storage output");
   if (auto s = ValidateTreeLearningOptions(options); !s.ok())
     return s;
+  if (options.mode == TreeLearningMode::kQuantized)
+    return ComputeQuantizedTreeLearningStorageBound(out, options);
   HostStorageBound bound;
   const size_t nodes = 2 * options.maximum_leaves - 1;
   if (!bound.AddVector<LearningWorkspace>(1, VectorCapacityPolicy::kFreshExact) ||
@@ -199,11 +202,16 @@ Status ComputeTreeLearningStorageBound(resource_budget_internal::HostStorageBoun
   return Status::Ok();
 }
 Status LearnEntropyTree(std::span<const TrainingSample> samples, DecisionTree *out,
-                        TreeLearningOptions options) try {
+                        TreeLearningOptions options, size_t population) try {
   if (auto s = ValidateTreeLearningOptions(options); !s.ok())
     return s;
   if (!out || samples.empty() || samples.size() > options.maximum_samples)
     return Status::InvalidArgument("Invalid Modular entropy training samples");
+  if (population && population < samples.size())
+    return Status::InvalidArgument("Modular training population is smaller than sample count");
+  if (options.mode == TreeLearningMode::kQuantized)
+    return LearnQuantizedEntropyTree(samples, out, options,
+                                     population ? population : samples.size());
   resource_budget_internal::ManagedVector<LearningWorkspace> storage(1);
   auto &w = storage[0];
   w.count_log_count.resize(samples.size() + 1);

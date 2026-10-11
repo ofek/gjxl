@@ -26,6 +26,13 @@ ComputeRctRankingStorageBound(resource_budget_internal::HostStorageBound *out);
                                               uint16_t palette_colors,
                                               std::array<ModularCodingPolicy, 4> *out,
                                               size_t *count);
+struct TrainingCoverage {
+  size_t population = 0, samples = 0, slices = 0, sampled_slices = 0;
+  size_t minimum_slice_samples = 0, maximum_slice_samples = 0;
+  size_t slice_floor = 0;
+  uint64_t quota_hash = 14695981039346656037ULL;
+  bool operator==(const TrainingCoverage &) const = default;
+};
 // Deterministic uniform sampling in canonical stream/channel/raster order.
 // The retained candidates use the original uniform samples and bit-width cost.
 // Optional entropy learning uses a separate, bounded stratified sample set.
@@ -33,15 +40,15 @@ ComputeRctRankingStorageBound(resource_budget_internal::HostStorageBound *out);
                                           const ModularStreamPlan &plan, uint8_t rct,
                                           ModularCodingPolicy *single, ModularCodingPolicy *split,
                                           ModularCodingPolicy *entropy = nullptr,
-                                          TreeLearningOptions learning = {});
+                                          TreeLearningOptions learning = {},
+                                          TrainingCoverage *coverage = nullptr);
 // Frame and layout must describe the completed transforms in base. Learn on
 // those channels (including metadata), preserving transforms and WP parameters.
-[[nodiscard]] Status LearnModularPolicies(const ModularEncoderFrame &frame,
-                                          const ModularStreamPlan &plan,
-                                          const ModularCodingPolicy &base,
-                                          ModularCodingPolicy *single, ModularCodingPolicy *split,
-                                          ModularCodingPolicy *entropy = nullptr,
-                                          TreeLearningOptions learning = {});
+[[nodiscard]] Status
+LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStreamPlan &plan,
+                     const ModularCodingPolicy &base, ModularCodingPolicy *single,
+                     ModularCodingPolicy *split, ModularCodingPolicy *entropy = nullptr,
+                     TreeLearningOptions learning = {}, TrainingCoverage *coverage = nullptr);
 [[nodiscard]] Status ComputeModularSearchStoragePlan(Extent2D extent, PackedModularFormat format,
                                                      EntropyCodingMode mode,
                                                      ModularWorkflowStoragePlan *out,
