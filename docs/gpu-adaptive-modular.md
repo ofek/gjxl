@@ -144,9 +144,9 @@ and process-activity snapshots.
 
 These are one-pair diagnostic measurements on a busy desktop, not repeated
 throughput qualification or evidence of a speedup over default libjxl. Weighted
-features remain CPU-generated and increase retained backing. Exact ANS token-cost
-simulation is the largest remaining individual measured task, so the next slice
-will parallelize independent section/candidate states while retaining exact
+features remain CPU-generated and increase retained backing. That pilot identified exact ANS token-cost
+simulation as the largest remaining individual task. The subsequent operation
+parallelizes independent section/candidate states while retaining exact
 recurrence, pruning and selection ties. The original prescribed GPU path remains
 available with its original eligibility; public encoding defaults are unchanged.
 
@@ -161,13 +161,17 @@ All 19 selected ANS/entropy and Metal regressions pass. The operation is now
 connected to the exact-cost selector through the private `adaptive_ans_cost`
 switch (`--metal-ans` in the capture tool). Full-search tests preserve bytes,
 policies, admission and failure publication, including explicit capability
-fallback. Performance qualification of this optimization remains outstanding;
-the published hybrid pilot still uses CPU ANS costing.
+fallback. The published token-only hybrid pilot uses CPU ANS costing; the
+[repeated ANS qualification](gpu-adaptive-modular-ans.md) measures the added GPU operation.
 
 
 The SIMD ANS implementation and explicit small-section CPU crossover are frozen
-at `2009da7`. Its repeated complete-search capture is in progress; none of the
-single-run probes substitutes for that qualification. The original implementation
+at `2009da7`. Three fresh pairs per full-resolution image now verify identical
+files, complete policies and training work, with no GPU fallback. The ratio of
+summed per-image median CPU/hybrid times is 1.88× (592.527 / 315.390 seconds).
+The capture contains 21 validated encodes and 100 hashed artifacts. These are
+local M4 Pro results with one CPU participant and the original expanded learner;
+none of the earlier single-run probes enters the repeated statistics. The original implementation
 outline also requires bulk learner statistics. The
 [learner-statistics operation design](gpu-modular-learner-statistics.md) specifies
 the next boundary: preserve CPU property sorting and threshold enumeration, then

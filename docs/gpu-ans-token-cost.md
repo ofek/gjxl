@@ -108,8 +108,10 @@ values/contexts, directly initializes shared descriptor/model backing, dispatche
 one SIMD group per section/candidate and publishes a completed shared result arena
 after waiting and validating status. No token copy or token-sized scratch is
 introduced. The new kernel is included in external and embedded libraries.
-Encoder routing is now implemented as described below; complete-path performance
-measurements are still required. The earlier hybrid pilot predates this operation.
+Encoder routing is implemented as described below. The
+[repeated complete-path qualification](gpu-adaptive-modular-ans.md) preserves
+files/policies and observes a 1.88× ratio of summed per-image median CPU/hybrid
+times on this M4 Pro. The earlier token-only hybrid pilot predates this operation.
 
 `ans_token_cost_plan` passes in the Release/Metal and CPU-only builds. Tests cover
 normalized native model tables, malformed configuration/frequency/offset/map and
@@ -209,9 +211,10 @@ The full Release build and all 19 selected integrated ANS/entropy, Modular GPU,
 profile, embedded-library and submission-storage regressions pass. Final SIMD/crossover test logs use
 the `build/adaptive-integration/ans-cost-simd32-*` prefix; earlier integration
 logs retain the `ans-cost-integrated-*` prefix. The CPU-only ANS
-contract/provider, Modular profile and GPU-token handoff tests also pass. Paired performance
-captures must now establish whether the exact operation improves complete calls
-on the original full-resolution inputs.
+contract/provider, Modular profile and GPU-token handoff tests also pass.
+The repeated performance capture verifies three complete CPU/hybrid pairs on
+each original full-resolution input; the linked report records all phases,
+resource costs, preserved bytes and scope limitations.
 
 ## SIMD recurrence and measured crossover
 
@@ -249,5 +252,6 @@ All these completed diagnostic outputs match the prior complete CPU files and
 pass pinned sample-exact decoding. The final small-image run uses GPU tokens and
 140 explicitly counted CPU cost groups; 1029 uses GPU tokens and 140 GPU cost
 groups with no fallback. These separate single runs guided implementation only.
-They do not establish paired performance or an optimal crossover. Repeated fresh
-CPU/hybrid complete-search pairs are the remaining qualification step.
+They do not establish paired performance or an optimal crossover. The subsequent
+[repeated CPU/hybrid qualification](gpu-adaptive-modular-ans.md) uses a separate
+frozen capture and does not mix these diagnostic runs into its statistics.

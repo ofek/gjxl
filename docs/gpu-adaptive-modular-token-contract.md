@@ -4,7 +4,8 @@ Status: private operation interfaces, ABI records, canonical descriptors, checke
 storage planning, CPU feature production, Metal dispatch, and completed-token
 handoff are implemented and device-qualified. Complete-search integration and
 bounded reuse across candidates are also implemented and correctness-qualified;
-paired full-resolution performance qualification remains next. The existing
+the [repeated full-resolution qualification](gpu-adaptive-modular-ans.md) now
+measures this path with exact GPU ANS costing. The existing
 prescribed producer is unchanged; this contract is separate from its 31-node,
 four-equal-plane ABI.
 

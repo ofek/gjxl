@@ -203,3 +203,12 @@ existing `entropy_work.ans_token_cost_ns` includes model upload, GPU wait and
 conversion inside `stages.model`. Actual `gpu_submissions` is token-generation
 submissions plus cost-group submissions. `--metal-ans --no-profile` also works;
 backend counts remain enabled while optional attribution counters are zero.
+
+
+The repeated CPU/exact-ANS hybrid qualification and regeneration command are in
+[`gpu-adaptive-modular-ans.md`](../../docs/gpu-adaptive-modular-ans.md).
+`analyze_adaptive_ans.py` verifies all 100 retained artifacts, the 21-capture
+matrix and pair order, complete-file/policy/training parity, routes and resources
+before reporting per-image medians/ranges and actual paired ratios. It rejects
+incomplete captures and corrupted checksums. The small-section CPU crossover is
+reported by `ans_cpu_small_groups`, a subset of `ans_cpu_fallback_groups`.

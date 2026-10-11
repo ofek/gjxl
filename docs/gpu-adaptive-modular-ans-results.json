@@ -1,0 +1,2640 @@
+{
+  "schema": 1,
+  "revision": "2009da79029a45a03676d784780a405132af7b2a",
+  "binary": {
+    "path": "/Users/yunhocho/GitHub/gjxl-modular-adaptive-gpu/build/adaptive-ans-qualified-20261011/bin/gjxl_modular_search_profile",
+    "sha256": "33060e9e728bbd45e1b0df75340368889ddfd3c1209ced3e8ca205962cad4090"
+  },
+  "libjxl_revision": "e8ff09762481785938d8e4e01333ed3917571161",
+  "artifact_root": "/Users/yunhocho/GitHub/gjxl-modular-adaptive-gpu/build/adaptive-ans-qualified-20261011",
+  "artifacts_verified": 100,
+  "started_utc": "2026-10-11T06:59:12.728547+00:00",
+  "finished_utc": "2026-10-11T07:46:05.508701+00:00",
+  "qualification": "Three alternating CPU/hybrid pairs per image on this M4 Pro desktop; no general throughput or libjxl speedup claim",
+  "smoke": [
+    {
+      "image": "photo-macan",
+      "encoded_bytes": 260654,
+      "seconds": 29.0679775,
+      "exact_ans_seconds": 0.785173377,
+      "adaptive_gpu": {
+        "feature_seconds": 0.23231192,
+        "token_seconds": 0.22778749500000003,
+        "feature_preparations": 24,
+        "feature_reuses": 46,
+        "evictions": 23,
+        "encoded_candidates": 70,
+        "cpu_fallback_candidates": 0,
+        "ans_gpu_groups": 0,
+        "ans_gpu_states": 0,
+        "ans_cpu_fallback_groups": 140,
+        "ans_cpu_small_groups": 140
+      },
+      "prior_bytes_equal": true,
+      "decoded_exact": true
+    },
+    {
+      "image": "palette-pattern",
+      "encoded_bytes": 438,
+      "seconds": 23.10781225,
+      "exact_ans_seconds": 0.402204833,
+      "adaptive_gpu": {
+        "feature_seconds": 0.155487417,
+        "token_seconds": 0.19318691500000001,
+        "feature_preparations": 27,
+        "feature_reuses": 41,
+        "evictions": 26,
+        "encoded_candidates": 68,
+        "cpu_fallback_candidates": 0,
+        "ans_gpu_groups": 0,
+        "ans_gpu_states": 0,
+        "ans_cpu_fallback_groups": 136,
+        "ans_cpu_small_groups": 136
+      },
+      "prior_bytes_equal": true,
+      "decoded_exact": true
+    },
+    {
+      "image": "alpha16-ramp",
+      "encoded_bytes": 19866,
+      "seconds": 14.867120959,
+      "exact_ans_seconds": 0.440141582,
+      "adaptive_gpu": {
+        "feature_seconds": 0.149417249,
+        "token_seconds": 0.13447579099999998,
+        "feature_preparations": 24,
+        "feature_reuses": 32,
+        "evictions": 23,
+        "encoded_candidates": 56,
+        "cpu_fallback_candidates": 0,
+        "ans_gpu_groups": 0,
+        "ans_gpu_states": 0,
+        "ans_cpu_fallback_groups": 168,
+        "ans_cpu_small_groups": 168
+      },
+      "prior_bytes_equal": true,
+      "decoded_exact": true
+    }
+  ],
+  "images": [
+    {
+      "image": "1029",
+      "encoded_bytes": 10821744,
+      "output_sha256": "6fd61f43586a04b1b71dd956cca3bc1a6b27b7653cb34036302fac4bd7525147",
+      "libjxl_bytes": {
+        "e7": 10602863,
+        "e9": 10558213
+      },
+      "pairs": [
+        {
+          "repetition": 1,
+          "cpu_seconds": 205.550072125,
+          "hybrid_seconds": 108.169476584,
+          "ratio": 1.9002594689027474,
+          "cpu": {
+            "schema": 1,
+            "route": "cpu-complete-search",
+            "entropy": "ans",
+            "backend_setup_seconds": 0,
+            "gpu_submissions": 0,
+            "gpu_allocations": 0,
+            "width": 4000,
+            "height": 3000,
+            "channels": 3,
+            "bits": 8,
+            "maximum_samples": 262144,
+            "maximum_leaves": 256,
+            "checkpoints": true,
+            "threads": 1,
+            "profile_enabled": true,
+            "seconds": 205.550072125,
+            "encoded_bytes": 10821744,
+            "decoded_exact": true,
+            "planned_capacity": 5265015223,
+            "peak_backing": 722747759,
+            "peak_cpu_participants": 1,
+            "candidates": 70,
+            "stages": {
+              "input": 1.2393846319999997,
+              "transforms": 5.330170497000001,
+              "training": 38.499861210000006,
+              "tokens": 80.50365646200001,
+              "model": 63.70893674999999,
+              "emission": 16.152102463000002,
+              "assembly": 0.104625873,
+              "gpu_input_tokens": 0
+            },
+            "adaptive_gpu": {
+              "feature_seconds": 0,
+              "token_seconds": 0,
+              "feature_preparations": 0,
+              "feature_reuses": 0,
+              "evictions": 0,
+              "encoded_candidates": 0,
+              "cpu_fallback_candidates": 0,
+              "ans_gpu_groups": 0,
+              "ans_gpu_states": 0,
+              "ans_cpu_fallback_groups": 0,
+              "ans_cpu_small_groups": 0
+            },
+            "training": {
+              "stages": {
+                "rct_ranking": 0.001189458,
+                "palette_probe": 1.9125e-05,
+                "sample_gathering": 8.971849085,
+                "simple_learning": 0.010568042,
+                "entropy_preparation": 0.048992253,
+                "split_histograms": 0.7748249049999996,
+                "property_sorting": 14.894267539000031,
+                "split_scanning": 13.68661193299995,
+                "tree_control": 0.11140603700007772,
+                "quantized_learning": 0
+              },
+              "learning_calls": 18,
+              "population": 648000000,
+              "samples": 2396160,
+              "split_evaluations": 4872,
+              "sorted_properties": 77632,
+              "sorted_samples": 394018864
+            },
+            "entropy_work": {
+              "prefix_histogram_build_ns": 5769178710,
+              "prefix_histogram_cost_ns": 4839085,
+              "prefix_clustering_ns": 256598963,
+              "prefix_code_build_ns": 39121157,
+              "prefix_value_collection_ns": 6820846624,
+              "prefix_config_search_ns": 2694241458,
+              "prefix_value_aggregation_ns": 2669074728,
+              "prefix_exact_measurement_ns": 6170087,
+              "ans_prefix_validation_ns": 2111001,
+              "ans_value_collection_ns": 5333710081,
+              "ans_value_aggregation_ns": 2955413056,
+              "ans_prepared_value_validation_ns": 0,
+              "ans_uint_config_ns": 7367103,
+              "ans_histogram_build_ns": 97592265,
+              "ans_model_build_ns": 62416044,
+              "ans_token_cost_ns": 39653132253,
+              "ans_uint_config_candidates": 12344,
+              "ans_histogram_candidates": 160472,
+              "ans_alphabet_width_candidates": 280,
+              "selection_ns": 0
+            }
+          },
+          "hybrid": {
+            "schema": 1,
+            "route": "hybrid-ans-complete-search",
+            "entropy": "ans",
+            "backend_setup_seconds": 0.040543583,
+            "gpu_submissions": 210,
+            "gpu_allocations": 468,
+            "width": 4000,
+            "height": 3000,
+            "channels": 3,
+            "bits": 8,
+            "maximum_samples": 262144,
+            "maximum_leaves": 256,
+            "checkpoints": true,
+            "threads": 1,
+            "profile_enabled": true,
+            "seconds": 108.169476584,
+            "encoded_bytes": 10821744,
+            "decoded_exact": true,
+            "planned_capacity": 6711285423,
+            "peak_backing": 1370775407,
+            "peak_cpu_participants": 1,
+            "candidates": 70,
+            "stages": {
+              "input": 0.500591919,
+              "transforms": 2.8603566239999996,
+              "training": 38.502948376,
+              "tokens": 15.984187869000003,
+              "model": 33.977834337,
+              "emission": 16.253434208,
+              "assembly": 0.08481758299999999,
+              "gpu_input_tokens": 0
+            },
+            "adaptive_gpu": {
+              "feature_seconds": 11.596884334,
+              "token_seconds": 4.127330289,
+              "feature_preparations": 24,
+              "feature_reuses": 46,
+              "evictions": 23,
+              "encoded_candidates": 70,
+              "cpu_fallback_candidates": 0,
+              "ans_gpu_groups": 140,
+              "ans_gpu_states": 55160,
+              "ans_cpu_fallback_groups": 0,
+              "ans_cpu_small_groups": 0
+            },
+            "training": {
+              "stages": {
+                "rct_ranking": 0.001121459,
+                "palette_probe": 1.8583e-05,
+                "sample_gathering": 8.922415998000002,
+                "simple_learning": 0.01038896,
+                "entropy_preparation": 0.045208293,
+                "split_histograms": 0.7922726660000003,
+                "property_sorting": 14.947770655000124,
+                "split_scanning": 13.684308699000029,
+                "tree_control": 0.09931893800005323,
+                "quantized_learning": 0
+              },
+              "learning_calls": 18,
+              "population": 648000000,
+              "samples": 2396160,
+              "split_evaluations": 4872,
+              "sorted_properties": 77632,
+              "sorted_samples": 394018864
+            },
+            "entropy_work": {
+              "prefix_histogram_build_ns": 6446759332,
+              "prefix_histogram_cost_ns": 4804206,
+              "prefix_clustering_ns": 261037253,
+              "prefix_code_build_ns": 38625906,
+              "prefix_value_collection_ns": 6103887917,
+              "prefix_config_search_ns": 2690726244,
+              "prefix_value_aggregation_ns": 2665750569,
+              "prefix_exact_measurement_ns": 6144044,
+              "ans_prefix_validation_ns": 2126500,
+              "ans_value_collection_ns": 4947850918,
+              "ans_value_aggregation_ns": 2864660256,
+              "ans_prepared_value_validation_ns": 0,
+              "ans_uint_config_ns": 7252155,
+              "ans_histogram_build_ns": 97660443,
+              "ans_model_build_ns": 61244663,
+              "ans_token_cost_ns": 10439325673,
+              "ans_uint_config_candidates": 12344,
+              "ans_histogram_candidates": 160472,
+              "ans_alphabet_width_candidates": 280,
+              "selection_ns": 0
+            }
+          }
+        },
+        {
+          "repetition": 2,
+          "cpu_seconds": 207.468212916,
+          "hybrid_seconds": 108.96002575,
+          "ratio": 1.904076393961388,
+          "cpu": {
+            "schema": 1,
+            "route": "cpu-complete-search",
+            "entropy": "ans",
+            "backend_setup_seconds": 0,
+            "gpu_submissions": 0,
+            "gpu_allocations": 0,
+            "width": 4000,
+            "height": 3000,
+            "channels": 3,
+            "bits": 8,
+            "maximum_samples": 262144,
+            "maximum_leaves": 256,
+            "checkpoints": true,
+            "threads": 1,
+            "profile_enabled": true,
+            "seconds": 207.468212916,
+            "encoded_bytes": 10821744,
+            "decoded_exact": true,
+            "planned_capacity": 5265015223,
+            "peak_backing": 722747759,
+            "peak_cpu_participants": 1,
+            "candidates": 70,
+            "stages": {
+              "input": 1.2226382460000003,
+              "transforms": 5.320359495999999,
+              "training": 38.994236501,
+              "tokens": 81.26152004099998,
+              "model": 64.32768908499999,
+              "emission": 16.207899709999996,
+              "assembly": 0.11236799600000001,
+              "gpu_input_tokens": 0
+            },
+            "adaptive_gpu": {
+              "feature_seconds": 0,
+              "token_seconds": 0,
+              "feature_preparations": 0,
+              "feature_reuses": 0,
+              "evictions": 0,
+              "encoded_candidates": 0,
+              "cpu_fallback_candidates": 0,
+              "ans_gpu_groups": 0,
+              "ans_gpu_states": 0,
+              "ans_cpu_fallback_groups": 0,
+              "ans_cpu_small_groups": 0
+            },
+            "training": {
+              "stages": {
+                "rct_ranking": 0.001097916,
+                "palette_probe": 1.9291e-05,
+                "sample_gathering": 8.960848375,
+                "simple_learning": 0.010346167000000002,
+                "entropy_preparation": 0.047074207,
+                "split_histograms": 0.823751590999999,
+                "property_sorting": 15.069190743000165,
+                "split_scanning": 13.98054625000007,
+                "tree_control": 0.10122387599995465,
+                "quantized_learning": 0
+              },
+              "learning_calls": 18,
+              "population": 648000000,
+              "samples": 2396160,
+              "split_evaluations": 4872,
+              "sorted_properties": 77632,
+              "sorted_samples": 394018864
+            },
+            "entropy_work": {
+              "prefix_histogram_build_ns": 5880802123,
+              "prefix_histogram_cost_ns": 4813411,
+              "prefix_clustering_ns": 259419131,
+              "prefix_code_build_ns": 39573156,
+              "prefix_value_collection_ns": 6860590586,
+              "prefix_config_search_ns": 2736412869,
+              "prefix_value_aggregation_ns": 2710974895,
+              "prefix_exact_measurement_ns": 6021000,
+              "ans_prefix_validation_ns": 2117836,
+              "ans_value_collection_ns": 5437733750,
+              "ans_value_aggregation_ns": 2958105429,
+              "ans_prepared_value_validation_ns": 0,
+              "ans_uint_config_ns": 7243239,
+              "ans_histogram_build_ns": 97057639,
+              "ans_model_build_ns": 62301626,
+              "ans_token_cost_ns": 39969366703,
+              "ans_uint_config_candidates": 12344,
+              "ans_histogram_candidates": 160472,
+              "ans_alphabet_width_candidates": 280,
+              "selection_ns": 0
+            }
+          },
+          "hybrid": {
+            "schema": 1,
+            "route": "hybrid-ans-complete-search",
+            "entropy": "ans",
+            "backend_setup_seconds": 0.03749575,
+            "gpu_submissions": 210,
+            "gpu_allocations": 468,
+            "width": 4000,
+            "height": 3000,
+            "channels": 3,
+            "bits": 8,
+            "maximum_samples": 262144,
+            "maximum_leaves": 256,
+            "checkpoints": true,
+            "threads": 1,
+            "profile_enabled": true,
+            "seconds": 108.96002575,
+            "encoded_bytes": 10821744,
+            "decoded_exact": true,
+            "planned_capacity": 6711285423,
+            "peak_backing": 1370775407,
+            "peak_cpu_participants": 1,
+            "candidates": 70,
+            "stages": {
+              "input": 0.5970298730000001,
+              "transforms": 2.9473342479999998,
+              "training": 39.247339792000005,
+              "tokens": 15.775774002999992,
+              "model": 33.98868236999999,
+              "emission": 16.313980458,
+              "assembly": 0.08443854100000003,
+              "gpu_input_tokens": 0
+            },
+            "adaptive_gpu": {
+              "feature_seconds": 11.543837459999999,
+              "token_seconds": 3.9246734549999984,
+              "feature_preparations": 24,
+              "feature_reuses": 46,
+              "evictions": 23,
+              "encoded_candidates": 70,
+              "cpu_fallback_candidates": 0,
+              "ans_gpu_groups": 140,
+              "ans_gpu_states": 55160,
+              "ans_cpu_fallback_groups": 0,
+              "ans_cpu_small_groups": 0
+            },
+            "training": {
+              "stages": {
+                "rct_ranking": 0.00107375,
+                "palette_probe": 1.875e-05,
+                "sample_gathering": 8.952647834000004,
+                "simple_learning": 0.010344582,
+                "entropy_preparation": 0.04599479,
+                "split_histograms": 0.7982190000000019,
+                "property_sorting": 15.193394968999948,
+                "split_scanning": 14.144641378999829,
+                "tree_control": 0.10088586199991209,
+                "quantized_learning": 0
+              },
+              "learning_calls": 18,
+              "population": 648000000,
+              "samples": 2396160,
+              "split_evaluations": 4872,
+              "sorted_properties": 77632,
+              "sorted_samples": 394018864
+            },
+            "entropy_work": {
+              "prefix_histogram_build_ns": 6461157169,
+              "prefix_histogram_cost_ns": 4842415,
+              "prefix_clustering_ns": 260216445,
+              "prefix_code_build_ns": 38343426,
+              "prefix_value_collection_ns": 6052689336,
+              "prefix_config_search_ns": 2702853499,
+              "prefix_value_aggregation_ns": 2677734534,
+              "prefix_exact_measurement_ns": 5969081,
+              "ans_prefix_validation_ns": 2077076,
+              "ans_value_collection_ns": 4965856207,
+              "ans_value_aggregation_ns": 2876536422,
+              "ans_prepared_value_validation_ns": 0,
+              "ans_uint_config_ns": 7766153,
+              "ans_histogram_build_ns": 98753587,
+              "ans_model_build_ns": 62838748,
+              "ans_token_cost_ns": 10443052009,
+              "ans_uint_config_candidates": 12344,
+              "ans_histogram_candidates": 160472,
+              "ans_alphabet_width_candidates": 280,
+              "selection_ns": 0
+            }
+          }
+        },
+        {
+          "repetition": 3,
+          "cpu_seconds": 207.501235042,
+          "hybrid_seconds": 109.0386255,
+          "ratio": 1.9030067014371894,
+          "cpu": {
+            "schema": 1,
+            "route": "cpu-complete-search",
+            "entropy": "ans",
+            "backend_setup_seconds": 0,
+            "gpu_submissions": 0,
+            "gpu_allocations": 0,
+            "width": 4000,
+            "height": 3000,
+            "channels": 3,
+            "bits": 8,
+            "maximum_samples": 262144,
+            "maximum_leaves": 256,
+            "checkpoints": true,
+            "threads": 1,
+            "profile_enabled": true,
+            "seconds": 207.501235042,
+            "encoded_bytes": 10821744,
+            "decoded_exact": true,
+            "planned_capacity": 5265015223,
+            "peak_backing": 722747759,
+            "peak_cpu_participants": 1,
+            "candidates": 70,
+            "stages": {
+              "input": 1.2019750050000002,
+              "transforms": 5.3332953709999975,
+              "training": 38.852557043999994,
+              "tokens": 81.54237812200002,
+              "model": 64.26437783400002,
+              "emission": 16.17620266800001,
+              "assembly": 0.11537962999999997,
+              "gpu_input_tokens": 0
+            },
+            "adaptive_gpu": {
+              "feature_seconds": 0,
+              "token_seconds": 0,
+              "feature_preparations": 0,
+              "feature_reuses": 0,
+              "evictions": 0,
+              "encoded_candidates": 0,
+              "cpu_fallback_candidates": 0,
+              "ans_gpu_groups": 0,
+              "ans_gpu_states": 0,
+              "ans_cpu_fallback_groups": 0,
+              "ans_cpu_small_groups": 0
+            },
+            "training": {
+              "stages": {
+                "rct_ranking": 0.001051625,
+                "palette_probe": 2.0792e-05,
+                "sample_gathering": 8.986885289999998,
+                "simple_learning": 0.010198708000000003,
+                "entropy_preparation": 0.045751249,
+                "split_histograms": 0.7980349169999963,
+                "property_sorting": 15.060271958000108,
+                "split_scanning": 13.849183084999904,
+                "tree_control": 0.10102816600000511,
+                "quantized_learning": 0
+              },
+              "learning_calls": 18,
+              "population": 648000000,
+              "samples": 2396160,
+              "split_evaluations": 4872,
+              "sorted_properties": 77632,
+              "sorted_samples": 394018864
+            },
+            "entropy_work": {
+              "prefix_histogram_build_ns": 5748275708,
+              "prefix_histogram_cost_ns": 4784496,
+              "prefix_clustering_ns": 261924962,
+              "prefix_code_build_ns": 39258901,
+              "prefix_value_collection_ns": 6929226289,
+              "prefix_config_search_ns": 2729176832,
+              "prefix_value_aggregation_ns": 2702311085,
+              "prefix_exact_measurement_ns": 6158418,
+              "ans_prefix_validation_ns": 2124373,
+              "ans_value_collection_ns": 5456346208,
+              "ans_value_aggregation_ns": 2924464440,
+              "ans_prepared_value_validation_ns": 0,
+              "ans_uint_config_ns": 7347793,
+              "ans_histogram_build_ns": 97325710,
+              "ans_model_build_ns": 63305043,
+              "ans_token_cost_ns": 39987623502,
+              "ans_uint_config_candidates": 12344,
+              "ans_histogram_candidates": 160472,
+              "ans_alphabet_width_candidates": 280,
+              "selection_ns": 0
+            }
+          },
+          "hybrid": {
+            "schema": 1,
+            "route": "hybrid-ans-complete-search",
+            "entropy": "ans",
+            "backend_setup_seconds": 0.04571025,
+            "gpu_submissions": 210,
+            "gpu_allocations": 468,
+            "width": 4000,
+            "height": 3000,
+            "channels": 3,
+            "bits": 8,
+            "maximum_samples": 262144,
+            "maximum_leaves": 256,
+            "checkpoints": true,
+            "threads": 1,
+            "profile_enabled": true,
+            "seconds": 109.0386255,
+            "encoded_bytes": 10821744,
+            "decoded_exact": true,
+            "planned_capacity": 6711285423,
+            "peak_backing": 1370775407,
+            "peak_cpu_participants": 1,
+            "candidates": 70,
+            "stages": {
+              "input": 0.649013543,
+              "transforms": 2.94651154,
+              "training": 39.07953242,
+              "tokens": 15.727976491000007,
+              "model": 34.18678337400001,
+              "emission": 16.356857250999994,
+              "assembly": 0.08642374700000001,
+              "gpu_input_tokens": 0
+            },
+            "adaptive_gpu": {
+              "feature_seconds": 11.503517165999998,
+              "token_seconds": 3.932753539000001,
+              "feature_preparations": 24,
+              "feature_reuses": 46,
+              "evictions": 23,
+              "encoded_candidates": 70,
+              "cpu_fallback_candidates": 0,
+              "ans_gpu_groups": 140,
+              "ans_gpu_states": 55160,
+              "ans_cpu_fallback_groups": 0,
+              "ans_cpu_small_groups": 0
+            },
+            "training": {
+              "stages": {
+                "rct_ranking": 0.001481292,
+                "palette_probe": 1.8458e-05,
+                "sample_gathering": 8.977404708,
+                "simple_learning": 0.010249249,
+                "entropy_preparation": 0.0494195,
+                "split_histograms": 0.8071766179999991,
+                "property_sorting": 15.125514347000022,
+                "split_scanning": 14.006060179000377,
+                "tree_control": 0.1020698140001384,
+                "quantized_learning": 0
+              },
+              "learning_calls": 18,
+              "population": 648000000,
+              "samples": 2396160,
+              "split_evaluations": 4872,
+              "sorted_properties": 77632,
+              "sorted_samples": 394018864
+            },
+            "entropy_work": {
+              "prefix_histogram_build_ns": 6465764128,
+              "prefix_histogram_cost_ns": 4853037,
+              "prefix_clustering_ns": 260767877,
+              "prefix_code_build_ns": 41452546,
+              "prefix_value_collection_ns": 6147533247,
+              "prefix_config_search_ns": 2714474624,
+              "prefix_value_aggregation_ns": 2689540239,
+              "prefix_exact_measurement_ns": 6408544,
+              "ans_prefix_validation_ns": 2218794,
+              "ans_value_collection_ns": 5021445671,
+              "ans_value_aggregation_ns": 2891168144,
+              "ans_prepared_value_validation_ns": 0,
+              "ans_uint_config_ns": 7406863,
+              "ans_histogram_build_ns": 99717741,
+              "ans_model_build_ns": 62956923,
+              "ans_token_cost_ns": 10454824914,
+              "ans_uint_config_candidates": 12344,
+              "ans_histogram_candidates": 160472,
+              "ans_alphabet_width_candidates": 280,
+              "selection_ns": 0
+            }
+          }
+        }
+      ],
+      "cpu_seconds": {
+        "median": 207.468212916,
+        "minimum": 205.550072125,
+        "maximum": 207.501235042,
+        "values": [
+          205.550072125,
+          207.468212916,
+          207.501235042
+        ]
+      },
+      "hybrid_seconds": {
+        "median": 108.96002575,
+        "minimum": 108.169476584,
+        "maximum": 109.0386255,
+        "values": [
+          108.169476584,
+          108.96002575,
+          109.0386255
+        ]
+      },
+      "ratio": {
+        "median": 1.9030067014371894,
+        "minimum": 1.9002594689027474,
+        "maximum": 1.904076393961388,
+        "values": [
+          1.9002594689027474,
+          1.904076393961388,
+          1.9030067014371894
+        ]
+      },
+      "cpu_stages": {
+        "input": {
+          "median": 1.2226382460000003,
+          "minimum": 1.2019750050000002,
+          "maximum": 1.2393846319999997,
+          "values": [
+            1.2393846319999997,
+            1.2226382460000003,
+            1.2019750050000002
+          ]
+        },
+        "transforms": {
+          "median": 5.330170497000001,
+          "minimum": 5.320359495999999,
+          "maximum": 5.3332953709999975,
+          "values": [
+            5.330170497000001,
+            5.320359495999999,
+            5.3332953709999975
+          ]
+        },
+        "training": {
+          "median": 38.852557043999994,
+          "minimum": 38.499861210000006,
+          "maximum": 38.994236501,
+          "values": [
+            38.499861210000006,
+            38.994236501,
+            38.852557043999994
+          ]
+        },
+        "tokens": {
+          "median": 81.26152004099998,
+          "minimum": 80.50365646200001,
+          "maximum": 81.54237812200002,
+          "values": [
+            80.50365646200001,
+            81.26152004099998,
+            81.54237812200002
+          ]
+        },
+        "model": {
+          "median": 64.26437783400002,
+          "minimum": 63.70893674999999,
+          "maximum": 64.32768908499999,
+          "values": [
+            63.70893674999999,
+            64.32768908499999,
+            64.26437783400002
+          ]
+        },
+        "emission": {
+          "median": 16.17620266800001,
+          "minimum": 16.152102463000002,
+          "maximum": 16.207899709999996,
+          "values": [
+            16.152102463000002,
+            16.207899709999996,
+            16.17620266800001
+          ]
+        },
+        "assembly": {
+          "median": 0.11236799600000001,
+          "minimum": 0.104625873,
+          "maximum": 0.11537962999999997,
+          "values": [
+            0.104625873,
+            0.11236799600000001,
+            0.11537962999999997
+          ]
+        },
+        "gpu_input_tokens": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0,
+          "values": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "cpu_exact_ans_seconds": {
+        "median": 39.969366703,
+        "minimum": 39.653132253,
+        "maximum": 39.987623502,
+        "values": [
+          39.653132253,
+          39.969366703,
+          39.987623502
+        ]
+      },
+      "cpu_resources": {
+        "peak_backing": {
+          "median": 722747759,
+          "minimum": 722747759,
+          "maximum": 722747759,
+          "values": [
+            722747759,
+            722747759,
+            722747759
+          ]
+        },
+        "planned_capacity": {
+          "median": 5265015223,
+          "minimum": 5265015223,
+          "maximum": 5265015223,
+          "values": [
+            5265015223,
+            5265015223,
+            5265015223
+          ]
+        },
+        "backend_setup_seconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0,
+          "values": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "hybrid_stages": {
+        "input": {
+          "median": 0.5970298730000001,
+          "minimum": 0.500591919,
+          "maximum": 0.649013543,
+          "values": [
+            0.500591919,
+            0.5970298730000001,
+            0.649013543
+          ]
+        },
+        "transforms": {
+          "median": 2.94651154,
+          "minimum": 2.8603566239999996,
+          "maximum": 2.9473342479999998,
+          "values": [
+            2.8603566239999996,
+            2.9473342479999998,
+            2.94651154
+          ]
+        },
+        "training": {
+          "median": 39.07953242,
+          "minimum": 38.502948376,
+          "maximum": 39.247339792000005,
+          "values": [
+            38.502948376,
+            39.247339792000005,
+            39.07953242
+          ]
+        },
+        "tokens": {
+          "median": 15.775774002999992,
+          "minimum": 15.727976491000007,
+          "maximum": 15.984187869000003,
+          "values": [
+            15.984187869000003,
+            15.775774002999992,
+            15.727976491000007
+          ]
+        },
+        "model": {
+          "median": 33.98868236999999,
+          "minimum": 33.977834337,
+          "maximum": 34.18678337400001,
+          "values": [
+            33.977834337,
+            33.98868236999999,
+            34.18678337400001
+          ]
+        },
+        "emission": {
+          "median": 16.313980458,
+          "minimum": 16.253434208,
+          "maximum": 16.356857250999994,
+          "values": [
+            16.253434208,
+            16.313980458,
+            16.356857250999994
+          ]
+        },
+        "assembly": {
+          "median": 0.08481758299999999,
+          "minimum": 0.08443854100000003,
+          "maximum": 0.08642374700000001,
+          "values": [
+            0.08481758299999999,
+            0.08443854100000003,
+            0.08642374700000001
+          ]
+        },
+        "gpu_input_tokens": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0,
+          "values": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "hybrid_exact_ans_seconds": {
+        "median": 10.443052009,
+        "minimum": 10.439325673,
+        "maximum": 10.454824914,
+        "values": [
+          10.439325673,
+          10.443052009,
+          10.454824914
+        ]
+      },
+      "hybrid_resources": {
+        "peak_backing": {
+          "median": 1370775407,
+          "minimum": 1370775407,
+          "maximum": 1370775407,
+          "values": [
+            1370775407,
+            1370775407,
+            1370775407
+          ]
+        },
+        "planned_capacity": {
+          "median": 6711285423,
+          "minimum": 6711285423,
+          "maximum": 6711285423,
+          "values": [
+            6711285423,
+            6711285423,
+            6711285423
+          ]
+        },
+        "backend_setup_seconds": {
+          "median": 0.040543583,
+          "minimum": 0.03749575,
+          "maximum": 0.04571025,
+          "values": [
+            0.040543583,
+            0.03749575,
+            0.04571025
+          ]
+        }
+      }
+    },
+    {
+      "image": "1039",
+      "encoded_bytes": 7230909,
+      "output_sha256": "dc093d6151a216483b0b8364ca3a1bf5bad9d57bf5e41f5a5032b4701bdec8c0",
+      "libjxl_bytes": {
+        "e7": 7303959,
+        "e9": 7214879
+      },
+      "pairs": [
+        {
+          "repetition": 1,
+          "cpu_seconds": 192.838328875,
+          "hybrid_seconds": 103.482728875,
+          "ratio": 1.8634832205472218,
+          "cpu": {
+            "schema": 1,
+            "route": "cpu-complete-search",
+            "entropy": "ans",
+            "backend_setup_seconds": 0,
+            "gpu_submissions": 0,
+            "gpu_allocations": 0,
+            "width": 4000,
+            "height": 3000,
+            "channels": 3,
+            "bits": 8,
+            "maximum_samples": 262144,
+            "maximum_leaves": 256,
+            "checkpoints": true,
+            "threads": 1,
+            "profile_enabled": true,
+            "seconds": 192.838328875,
+            "encoded_bytes": 7230909,
+            "decoded_exact": true,
+            "planned_capacity": 5265015223,
+            "peak_backing": 708485361,
+            "peak_cpu_participants": 1,
+            "candidates": 69,
+            "stages": {
+              "input": 1.0549805030000001,
+              "transforms": 5.291675755000001,
+              "training": 36.412579251,
+              "tokens": 75.89500546000002,
+              "model": 60.52865429,
+              "emission": 13.569557538000002,
+              "assembly": 0.06633949000000003,
+              "gpu_input_tokens": 0
+            },
+            "adaptive_gpu": {
+              "feature_seconds": 0,
+              "token_seconds": 0,
+              "feature_preparations": 0,
+              "feature_reuses": 0,
+              "evictions": 0,
+              "encoded_candidates": 0,
+              "cpu_fallback_candidates": 0,
+              "ans_gpu_groups": 0,
+              "ans_gpu_states": 0,
+              "ans_cpu_fallback_groups": 0,
+              "ans_cpu_small_groups": 0
+            },
+            "training": {
+              "stages": {
+                "rct_ranking": 0.000899125,
+                "palette_probe": 3.2125e-05,
+                "sample_gathering": 8.775211417,
+                "simple_learning": 0.010320835,
+                "entropy_preparation": 0.039172579,
+                "split_histograms": 0.7125984030000003,
+                "property_sorting": 13.750632748999799,
+                "split_scanning": 13.023101024999924,
+                "tree_control": 0.10048503499995999,
+                "quantized_learning": 0
+              },
+              "learning_calls": 18,
+              "population": 648000000,
+              "samples": 2396160,
+              "split_evaluations": 4826,
+              "sorted_properties": 77024,
+              "sorted_samples": 397181920
+            },
+            "entropy_work": {
+              "prefix_histogram_build_ns": 4959338502,
+              "prefix_histogram_cost_ns": 4269037,
+              "prefix_clustering_ns": 280316955,
+              "prefix_code_build_ns": 38840700,
+              "prefix_value_collection_ns": 7119749584,
+              "prefix_config_search_ns": 3240117873,
+              "prefix_value_aggregation_ns": 3218014508,
+              "prefix_exact_measurement_ns": 5779918,
+              "ans_prefix_validation_ns": 1982661,
+              "ans_value_collection_ns": 5332555709,
+              "ans_value_aggregation_ns": 3390501293,
+              "ans_prepared_value_validation_ns": 0,
+              "ans_uint_config_ns": 4445583,
+              "ans_histogram_build_ns": 79474590,
+              "ans_model_build_ns": 60040706,
+              "ans_token_cost_ns": 36004947036,
+              "ans_uint_config_candidates": 12352,
+              "ans_histogram_candidates": 160576,
+              "ans_alphabet_width_candidates": 276,
+              "selection_ns": 0
+            }
+          },
+          "hybrid": {
+            "schema": 1,
+            "route": "hybrid-ans-complete-search",
+            "entropy": "ans",
+            "backend_setup_seconds": 0.03886375,
+            "gpu_submissions": 206,
+            "gpu_allocations": 460,
+            "width": 4000,
+            "height": 3000,
+            "channels": 3,
+            "bits": 8,
+            "maximum_samples": 262144,
+            "maximum_leaves": 256,
+            "checkpoints": true,
+            "threads": 1,
+            "profile_enabled": true,
+            "seconds": 103.482728875,
+            "encoded_bytes": 7230909,
+            "decoded_exact": true,
+            "planned_capacity": 6711285423,
+            "peak_backing": 1356513009,
+            "peak_cpu_participants": 1,
+            "candidates": 69,
+            "stages": {
+              "input": 0.5808120019999999,
+              "transforms": 2.869113332000001,
+              "training": 36.588122668000004,
+              "tokens": 15.060444499000008,
+              "model": 34.551500288999996,
+              "emission": 13.771773457999998,
+              "assembly": 0.05565742300000001,
+              "gpu_input_tokens": 0
+            },
+            "adaptive_gpu": {
+              "feature_seconds": 11.346659038999999,
+              "token_seconds": 3.48167983,
+              "feature_preparations": 24,
+              "feature_reuses": 45,
+              "evictions": 23,
+              "encoded_candidates": 69,
+              "cpu_fallback_candidates": 0,
+              "ans_gpu_groups": 137,
+              "ans_gpu_states": 54372,
+              "ans_cpu_fallback_groups": 0,
+              "ans_cpu_small_groups": 0
+            },
+            "training": {
+              "stages": {
+                "rct_ranking": 0.000872959,
+                "palette_probe": 2.8333e-05,
+                "sample_gathering": 8.791371205999999,
+                "simple_learning": 0.010354414999999999,
+                "entropy_preparation": 0.039480208999999995,
+                "split_histograms": 0.6936379199999996,
+                "property_sorting": 13.911492233000097,
+                "split_scanning": 13.041877535000086,
+                "tree_control": 0.09888202100001688,
+                "quantized_learning": 0
+              },
+              "learning_calls": 18,
+              "population": 648000000,
+              "samples": 2396160,
+              "split_evaluations": 4826,
+              "sorted_properties": 77024,
+              "sorted_samples": 397181920
+            },
+            "entropy_work": {
+              "prefix_histogram_build_ns": 5567586917,
+              "prefix_histogram_cost_ns": 4221290,
+              "prefix_clustering_ns": 291275781,
+              "prefix_code_build_ns": 39662295,
+              "prefix_value_collection_ns": 6643250582,
+              "prefix_config_search_ns": 3218485418,
+              "prefix_value_aggregation_ns": 3195895223,
+              "prefix_exact_measurement_ns": 5682248,
+              "ans_prefix_validation_ns": 1981956,
+              "ans_value_collection_ns": 5083190705,
+              "ans_value_aggregation_ns": 3370972450,
+              "ans_prepared_value_validation_ns": 0,
+              "ans_uint_config_ns": 4480739,
+              "ans_histogram_build_ns": 80704414,
+              "ans_model_build_ns": 60684749,
+              "ans_token_cost_ns": 10173785246,
+              "ans_uint_config_candidates": 12352,
+              "ans_histogram_candidates": 160576,
+              "ans_alphabet_width_candidates": 276,
+              "selection_ns": 0
+            }
+          }
+        },
+        {
+          "repetition": 2,
+          "cpu_seconds": 193.676171667,
+          "hybrid_seconds": 103.5309885,
+          "ratio": 1.8707072585035736,
+          "cpu": {
+            "schema": 1,
+            "route": "cpu-complete-search",
+            "entropy": "ans",
+            "backend_setup_seconds": 0,
+            "gpu_submissions": 0,
+            "gpu_allocations": 0,
+            "width": 4000,
+            "height": 3000,
+            "channels": 3,
+            "bits": 8,
+            "maximum_samples": 262144,
+            "maximum_leaves": 256,
+            "checkpoints": true,
+            "threads": 1,
+            "profile_enabled": true,
+            "seconds": 193.676171667,
+            "encoded_bytes": 7230909,
+            "decoded_exact": true,
+            "planned_capacity": 5265015223,
+            "peak_backing": 708485361,
+            "peak_cpu_participants": 1,
+            "candidates": 69,
+            "stages": {
+              "input": 1.1688649609999997,
+              "transforms": 5.283714125000001,
+              "training": 36.48439121,
+              "tokens": 75.785678293,
+              "model": 61.22045800000001,
+              "emission": 13.654840005000002,
+              "assembly": 0.06837941099999999,
+              "gpu_input_tokens": 0
+            },
+            "adaptive_gpu": {
+              "feature_seconds": 0,
+              "token_seconds": 0,
+              "feature_preparations": 0,
+              "feature_reuses": 0,
+              "evictions": 0,
+              "encoded_candidates": 0,
+              "cpu_fallback_candidates": 0,
+              "ans_gpu_groups": 0,
+              "ans_gpu_states": 0,
+              "ans_cpu_fallback_groups": 0,
+              "ans_cpu_small_groups": 0
+            },
+            "training": {
+              "stages": {
+                "rct_ranking": 0.000869416,
+                "palette_probe": 3.2209e-05,
+                "sample_gathering": 8.812127168,
+                "simple_learning": 0.010119458999999999,
+                "entropy_preparation": 0.041617293,
+                "split_histograms": 0.6916412980000012,
+                "property_sorting": 13.79642497399997,
+                "split_scanning": 13.02513709800002,
+                "tree_control": 0.10629142099986437,
+                "quantized_learning": 0
+              },
+              "learning_calls": 18,
+              "population": 648000000,
+              "samples": 2396160,
+              "split_evaluations": 4826,
+              "sorted_properties": 77024,
+              "sorted_samples": 397181920
+            },
+            "entropy_work": {
+              "prefix_histogram_build_ns": 5027132873,
+              "prefix_histogram_cost_ns": 4132165,
+              "prefix_clustering_ns": 280130457,
+              "prefix_code_build_ns": 38804582,
+              "prefix_value_collection_ns": 7447378701,
+              "prefix_config_search_ns": 3233251040,
+              "prefix_value_aggregation_ns": 3210593495,
+              "prefix_exact_measurement_ns": 5846000,
+              "ans_prefix_validation_ns": 2009916,
+              "ans_value_collection_ns": 5385686202,
+              "ans_value_aggregation_ns": 3457348488,
+              "ans_prepared_value_validation_ns": 0,
+              "ans_uint_config_ns": 4491761,
+              "ans_histogram_build_ns": 79403249,
+              "ans_model_build_ns": 60496458,
+              "ans_token_cost_ns": 36188358002,
+              "ans_uint_config_candidates": 12352,
+              "ans_histogram_candidates": 160576,
+              "ans_alphabet_width_candidates": 276,
+              "selection_ns": 0
+            }
+          },
+          "hybrid": {
+            "schema": 1,
+            "route": "hybrid-ans-complete-search",
+            "entropy": "ans",
+            "backend_setup_seconds": 0.037446458,
+            "gpu_submissions": 206,
+            "gpu_allocations": 460,
+            "width": 4000,
+            "height": 3000,
+            "channels": 3,
+            "bits": 8,
+            "maximum_samples": 262144,
+            "maximum_leaves": 256,
+            "checkpoints": true,
+            "threads": 1,
+            "profile_enabled": true,
+            "seconds": 103.5309885,
+            "encoded_bytes": 7230909,
+            "decoded_exact": true,
+            "planned_capacity": 6711285423,
+            "peak_backing": 1356513009,
+            "peak_cpu_participants": 1,
+            "candidates": 69,
+            "stages": {
+              "input": 0.5785684200000001,
+              "transforms": 2.923252703,
+              "training": 36.524346667,
+              "tokens": 15.213314672000006,
+              "model": 34.55317904,
+              "emission": 13.671427874000003,
+              "assembly": 0.061610960000000006,
+              "gpu_input_tokens": 0
+            },
+            "adaptive_gpu": {
+              "feature_seconds": 11.342569918,
+              "token_seconds": 3.640292748999999,
+              "feature_preparations": 24,
+              "feature_reuses": 45,
+              "evictions": 23,
+              "encoded_candidates": 69,
+              "cpu_fallback_candidates": 0,
+              "ans_gpu_groups": 137,
+              "ans_gpu_states": 54372,
+              "ans_cpu_fallback_groups": 0,
+              "ans_cpu_small_groups": 0
+            },
+            "training": {
+              "stages": {
+                "rct_ranking": 0.003014125,
+                "palette_probe": 2.7916e-05,
+                "sample_gathering": 8.826339875,
+                "simple_learning": 0.010246418,
+                "entropy_preparation": 0.045306581,
+                "split_histograms": 0.7129291489999977,
+                "property_sorting": 13.878227362999734,
+                "split_scanning": 12.950640823000056,
+                "tree_control": 0.09749949799998112,
+                "quantized_learning": 0
+              },
+              "learning_calls": 18,
+              "population": 648000000,
+              "samples": 2396160,
+              "split_evaluations": 4826,
+              "sorted_properties": 77024,
+              "sorted_samples": 397181920
+            },
+            "entropy_work": {
+              "prefix_histogram_build_ns": 5553154625,
+              "prefix_histogram_cost_ns": 4362834,
+              "prefix_clustering_ns": 285014240,
+              "prefix_code_build_ns": 39323410,
+              "prefix_value_collection_ns": 6662704507,
+              "prefix_config_search_ns": 3211643248,
+              "prefix_value_aggregation_ns": 3189427284,
+              "prefix_exact_measurement_ns": 5704959,
+              "ans_prefix_validation_ns": 1992003,
+              "ans_value_collection_ns": 5061481837,
+              "ans_value_aggregation_ns": 3358275223,
+              "ans_prepared_value_validation_ns": 0,
+              "ans_uint_config_ns": 4520997,
+              "ans_histogram_build_ns": 81065450,
+              "ans_model_build_ns": 59111754,
+              "ans_token_cost_ns": 10219109506,
+              "ans_uint_config_candidates": 12352,
+              "ans_histogram_candidates": 160576,
+              "ans_alphabet_width_candidates": 276,
+              "selection_ns": 0
+            }
+          }
+        },
+        {
+          "repetition": 3,
+          "cpu_seconds": 193.830294083,
+          "hybrid_seconds": 103.520067583,
+          "ratio": 1.872393426787433,
+          "cpu": {
+            "schema": 1,
+            "route": "cpu-complete-search",
+            "entropy": "ans",
+            "backend_setup_seconds": 0,
+            "gpu_submissions": 0,
+            "gpu_allocations": 0,
+            "width": 4000,
+            "height": 3000,
+            "channels": 3,
+            "bits": 8,
+            "maximum_samples": 262144,
+            "maximum_leaves": 256,
+            "checkpoints": true,
+            "threads": 1,
+            "profile_enabled": true,
+            "seconds": 193.830294083,
+            "encoded_bytes": 7230909,
+            "decoded_exact": true,
+            "planned_capacity": 5265015223,
+            "peak_backing": 708485361,
+            "peak_cpu_participants": 1,
+            "candidates": 69,
+            "stages": {
+              "input": 1.163406003,
+              "transforms": 5.354659788,
+              "training": 36.405144668000005,
+              "tokens": 76.05740466399998,
+              "model": 61.098903665999984,
+              "emission": 13.664039168,
+              "assembly": 0.067113912,
+              "gpu_input_tokens": 0
+            },
+            "adaptive_gpu": {
+              "feature_seconds": 0,
+              "token_seconds": 0,
+              "feature_preparations": 0,
+              "feature_reuses": 0,
+              "evictions": 0,
+              "encoded_candidates": 0,
+              "cpu_fallback_candidates": 0,
+              "ans_gpu_groups": 0,
+              "ans_gpu_states": 0,
+              "ans_cpu_fallback_groups": 0,
+              "ans_cpu_small_groups": 0
+            },
+            "training": {
+              "stages": {
+                "rct_ranking": 0.000884333,
+                "palette_probe": 2.7625e-05,
+                "sample_gathering": 8.845229247999999,
+                "simple_learning": 0.010394332999999999,
+                "entropy_preparation": 0.038595915999999994,
+                "split_histograms": 0.683321465000002,
+                "property_sorting": 13.837648743999987,
+                "split_scanning": 12.89389997900008,
+                "tree_control": 0.0950044759999963,
+                "quantized_learning": 0
+              },
+              "learning_calls": 18,
+              "population": 648000000,
+              "samples": 2396160,
+              "split_evaluations": 4826,
+              "sorted_properties": 77024,
+              "sorted_samples": 397181920
+            },
+            "entropy_work": {
+              "prefix_histogram_build_ns": 4942407923,
+              "prefix_histogram_cost_ns": 4122171,
+              "prefix_clustering_ns": 282894830,
+              "prefix_code_build_ns": 39948083,
+              "prefix_value_collection_ns": 7494687703,
+              "prefix_config_search_ns": 3251735126,
+              "prefix_value_aggregation_ns": 3229238122,
+              "prefix_exact_measurement_ns": 5829497,
+              "ans_prefix_validation_ns": 2010168,
+              "ans_value_collection_ns": 5250094667,
+              "ans_value_aggregation_ns": 3419629121,
+              "ans_prepared_value_validation_ns": 0,
+              "ans_uint_config_ns": 4598205,
+              "ans_histogram_build_ns": 81007132,
+              "ans_model_build_ns": 61761796,
+              "ans_token_cost_ns": 36252073907,
+              "ans_uint_config_candidates": 12352,
+              "ans_histogram_candidates": 160576,
+              "ans_alphabet_width_candidates": 276,
+              "selection_ns": 0
+            }
+          },
+          "hybrid": {
+            "schema": 1,
+            "route": "hybrid-ans-complete-search",
+            "entropy": "ans",
+            "backend_setup_seconds": 0.033127833,
+            "gpu_submissions": 206,
+            "gpu_allocations": 460,
+            "width": 4000,
+            "height": 3000,
+            "channels": 3,
+            "bits": 8,
+            "maximum_samples": 262144,
+            "maximum_leaves": 256,
+            "checkpoints": true,
+            "threads": 1,
+            "profile_enabled": true,
+            "seconds": 103.520067583,
+            "encoded_bytes": 7230909,
+            "decoded_exact": true,
+            "planned_capacity": 6711285423,
+            "peak_backing": 1356513009,
+            "peak_cpu_participants": 1,
+            "candidates": 69,
+            "stages": {
+              "input": 0.522948544,
+              "transforms": 2.9335502940000016,
+              "training": 36.395419707,
+              "tokens": 15.171033871999992,
+              "model": 34.61772233000001,
+              "emission": 13.815807878000008,
+              "assembly": 0.05835362699999999,
+              "gpu_input_tokens": 0
+            },
+            "adaptive_gpu": {
+              "feature_seconds": 11.338553796,
+              "token_seconds": 3.6035043360000003,
+              "feature_preparations": 24,
+              "feature_reuses": 45,
+              "evictions": 23,
+              "encoded_candidates": 69,
+              "cpu_fallback_candidates": 0,
+              "ans_gpu_groups": 137,
+              "ans_gpu_states": 54372,
+              "ans_cpu_fallback_groups": 0,
+              "ans_cpu_small_groups": 0
+            },
+            "training": {
+              "stages": {
+                "rct_ranking": 0.000968084,
+                "palette_probe": 3.1e-05,
+                "sample_gathering": 8.79639875,
+                "simple_learning": 0.010358833,
+                "entropy_preparation": 0.036280624,
+                "split_histograms": 0.6952162290000017,
+                "property_sorting": 13.834592931999804,
+                "split_scanning": 12.919421118000031,
+                "tree_control": 0.10202505600007174,
+                "quantized_learning": 0
+              },
+              "learning_calls": 18,
+              "population": 648000000,
+              "samples": 2396160,
+              "split_evaluations": 4826,
+              "sorted_properties": 77024,
+              "sorted_samples": 397181920
+            },
+            "entropy_work": {
+              "prefix_histogram_build_ns": 5577201294,
+              "prefix_histogram_cost_ns": 4184582,
+              "prefix_clustering_ns": 287767116,
+              "prefix_code_build_ns": 39840796,
+              "prefix_value_collection_ns": 6630395464,
+              "prefix_config_search_ns": 3252190961,
+              "prefix_value_aggregation_ns": 3229857303,
+              "prefix_exact_measurement_ns": 5939165,
+              "ans_prefix_validation_ns": 2023957,
+              "ans_value_collection_ns": 5082703165,
+              "ans_value_aggregation_ns": 3397451026,
+              "ans_prepared_value_validation_ns": 0,
+              "ans_uint_config_ns": 4594427,
+              "ans_histogram_build_ns": 81718364,
+              "ans_model_build_ns": 60536076,
+              "ans_token_cost_ns": 10185429586,
+              "ans_uint_config_candidates": 12352,
+              "ans_histogram_candidates": 160576,
+              "ans_alphabet_width_candidates": 276,
+              "selection_ns": 0
+            }
+          }
+        }
+      ],
+      "cpu_seconds": {
+        "median": 193.676171667,
+        "minimum": 192.838328875,
+        "maximum": 193.830294083,
+        "values": [
+          192.838328875,
+          193.676171667,
+          193.830294083
+        ]
+      },
+      "hybrid_seconds": {
+        "median": 103.520067583,
+        "minimum": 103.482728875,
+        "maximum": 103.5309885,
+        "values": [
+          103.482728875,
+          103.5309885,
+          103.520067583
+        ]
+      },
+      "ratio": {
+        "median": 1.8707072585035736,
+        "minimum": 1.8634832205472218,
+        "maximum": 1.872393426787433,
+        "values": [
+          1.8634832205472218,
+          1.8707072585035736,
+          1.872393426787433
+        ]
+      },
+      "cpu_stages": {
+        "input": {
+          "median": 1.163406003,
+          "minimum": 1.0549805030000001,
+          "maximum": 1.1688649609999997,
+          "values": [
+            1.0549805030000001,
+            1.1688649609999997,
+            1.163406003
+          ]
+        },
+        "transforms": {
+          "median": 5.291675755000001,
+          "minimum": 5.283714125000001,
+          "maximum": 5.354659788,
+          "values": [
+            5.291675755000001,
+            5.283714125000001,
+            5.354659788
+          ]
+        },
+        "training": {
+          "median": 36.412579251,
+          "minimum": 36.405144668000005,
+          "maximum": 36.48439121,
+          "values": [
+            36.412579251,
+            36.48439121,
+            36.405144668000005
+          ]
+        },
+        "tokens": {
+          "median": 75.89500546000002,
+          "minimum": 75.785678293,
+          "maximum": 76.05740466399998,
+          "values": [
+            75.89500546000002,
+            75.785678293,
+            76.05740466399998
+          ]
+        },
+        "model": {
+          "median": 61.098903665999984,
+          "minimum": 60.52865429,
+          "maximum": 61.22045800000001,
+          "values": [
+            60.52865429,
+            61.22045800000001,
+            61.098903665999984
+          ]
+        },
+        "emission": {
+          "median": 13.654840005000002,
+          "minimum": 13.569557538000002,
+          "maximum": 13.664039168,
+          "values": [
+            13.569557538000002,
+            13.654840005000002,
+            13.664039168
+          ]
+        },
+        "assembly": {
+          "median": 0.067113912,
+          "minimum": 0.06633949000000003,
+          "maximum": 0.06837941099999999,
+          "values": [
+            0.06633949000000003,
+            0.06837941099999999,
+            0.067113912
+          ]
+        },
+        "gpu_input_tokens": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0,
+          "values": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "cpu_exact_ans_seconds": {
+        "median": 36.188358002,
+        "minimum": 36.004947036,
+        "maximum": 36.252073907,
+        "values": [
+          36.004947036,
+          36.188358002,
+          36.252073907
+        ]
+      },
+      "cpu_resources": {
+        "peak_backing": {
+          "median": 708485361,
+          "minimum": 708485361,
+          "maximum": 708485361,
+          "values": [
+            708485361,
+            708485361,
+            708485361
+          ]
+        },
+        "planned_capacity": {
+          "median": 5265015223,
+          "minimum": 5265015223,
+          "maximum": 5265015223,
+          "values": [
+            5265015223,
+            5265015223,
+            5265015223
+          ]
+        },
+        "backend_setup_seconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0,
+          "values": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "hybrid_stages": {
+        "input": {
+          "median": 0.5785684200000001,
+          "minimum": 0.522948544,
+          "maximum": 0.5808120019999999,
+          "values": [
+            0.5808120019999999,
+            0.5785684200000001,
+            0.522948544
+          ]
+        },
+        "transforms": {
+          "median": 2.923252703,
+          "minimum": 2.869113332000001,
+          "maximum": 2.9335502940000016,
+          "values": [
+            2.869113332000001,
+            2.923252703,
+            2.9335502940000016
+          ]
+        },
+        "training": {
+          "median": 36.524346667,
+          "minimum": 36.395419707,
+          "maximum": 36.588122668000004,
+          "values": [
+            36.588122668000004,
+            36.524346667,
+            36.395419707
+          ]
+        },
+        "tokens": {
+          "median": 15.171033871999992,
+          "minimum": 15.060444499000008,
+          "maximum": 15.213314672000006,
+          "values": [
+            15.060444499000008,
+            15.213314672000006,
+            15.171033871999992
+          ]
+        },
+        "model": {
+          "median": 34.55317904,
+          "minimum": 34.551500288999996,
+          "maximum": 34.61772233000001,
+          "values": [
+            34.551500288999996,
+            34.55317904,
+            34.61772233000001
+          ]
+        },
+        "emission": {
+          "median": 13.771773457999998,
+          "minimum": 13.671427874000003,
+          "maximum": 13.815807878000008,
+          "values": [
+            13.771773457999998,
+            13.671427874000003,
+            13.815807878000008
+          ]
+        },
+        "assembly": {
+          "median": 0.05835362699999999,
+          "minimum": 0.05565742300000001,
+          "maximum": 0.061610960000000006,
+          "values": [
+            0.05565742300000001,
+            0.061610960000000006,
+            0.05835362699999999
+          ]
+        },
+        "gpu_input_tokens": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0,
+          "values": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "hybrid_exact_ans_seconds": {
+        "median": 10.185429586,
+        "minimum": 10.173785246,
+        "maximum": 10.219109506,
+        "values": [
+          10.173785246,
+          10.219109506,
+          10.185429586
+        ]
+      },
+      "hybrid_resources": {
+        "peak_backing": {
+          "median": 1356513009,
+          "minimum": 1356513009,
+          "maximum": 1356513009,
+          "values": [
+            1356513009,
+            1356513009,
+            1356513009
+          ]
+        },
+        "planned_capacity": {
+          "median": 6711285423,
+          "minimum": 6711285423,
+          "maximum": 6711285423,
+          "values": [
+            6711285423,
+            6711285423,
+            6711285423
+          ]
+        },
+        "backend_setup_seconds": {
+          "median": 0.037446458,
+          "minimum": 0.033127833,
+          "maximum": 0.03886375,
+          "values": [
+            0.03886375,
+            0.037446458,
+            0.033127833
+          ]
+        }
+      }
+    },
+    {
+      "image": "1049",
+      "encoded_bytes": 7336102,
+      "output_sha256": "7402890450b4a92995c945ee0e6f96e852f38f3a3f0011fb4c73ded918aeb0a1",
+      "libjxl_bytes": {
+        "e7": 7181942,
+        "e9": 7072878
+      },
+      "pairs": [
+        {
+          "repetition": 1,
+          "cpu_seconds": 191.285682875,
+          "hybrid_seconds": 102.910363083,
+          "ratio": 1.8587601592730065,
+          "cpu": {
+            "schema": 1,
+            "route": "cpu-complete-search",
+            "entropy": "ans",
+            "backend_setup_seconds": 0,
+            "gpu_submissions": 0,
+            "gpu_allocations": 0,
+            "width": 4000,
+            "height": 3000,
+            "channels": 3,
+            "bits": 8,
+            "maximum_samples": 262144,
+            "maximum_leaves": 256,
+            "checkpoints": true,
+            "threads": 1,
+            "profile_enabled": true,
+            "seconds": 191.285682875,
+            "encoded_bytes": 7336102,
+            "decoded_exact": true,
+            "planned_capacity": 5265015223,
+            "peak_backing": 707681075,
+            "peak_cpu_participants": 1,
+            "candidates": 68,
+            "stages": {
+              "input": 1.121396964,
+              "transforms": 5.3285426250000025,
+              "training": 36.746693414999996,
+              "tokens": 74.978021293,
+              "model": 59.59443295600002,
+              "emission": 13.419662545000001,
+              "assembly": 0.07109641599999995,
+              "gpu_input_tokens": 0
+            },
+            "adaptive_gpu": {
+              "feature_seconds": 0,
+              "token_seconds": 0,
+              "feature_preparations": 0,
+              "feature_reuses": 0,
+              "evictions": 0,
+              "encoded_candidates": 0,
+              "cpu_fallback_candidates": 0,
+              "ans_gpu_groups": 0,
+              "ans_gpu_states": 0,
+              "ans_cpu_fallback_groups": 0,
+              "ans_cpu_small_groups": 0
+            },
+            "training": {
+              "stages": {
+                "rct_ranking": 0.000876292,
+                "palette_probe": 1.2292e-05,
+                "sample_gathering": 8.839405498,
+                "simple_learning": 0.010385044,
+                "entropy_preparation": 0.04184712299999999,
+                "split_histograms": 0.7034694900000006,
+                "property_sorting": 14.104649165000035,
+                "split_scanning": 12.938977795000028,
+                "tree_control": 0.10693384199993544,
+                "quantized_learning": 0
+              },
+              "learning_calls": 18,
+              "population": 648000000,
+              "samples": 2396160,
+              "split_evaluations": 4804,
+              "sorted_properties": 76496,
+              "sorted_samples": 394476864
+            },
+            "entropy_work": {
+              "prefix_histogram_build_ns": 4710704374,
+              "prefix_histogram_cost_ns": 3734379,
+              "prefix_clustering_ns": 280004081,
+              "prefix_code_build_ns": 39359500,
+              "prefix_value_collection_ns": 7120596419,
+              "prefix_config_search_ns": 3138880664,
+              "prefix_value_aggregation_ns": 3116942936,
+              "prefix_exact_measurement_ns": 5521417,
+              "ans_prefix_validation_ns": 1984332,
+              "ans_value_collection_ns": 5245522542,
+              "ans_value_aggregation_ns": 3335239717,
+              "ans_prepared_value_validation_ns": 0,
+              "ans_uint_config_ns": 4225388,
+              "ans_histogram_build_ns": 79398720,
+              "ans_model_build_ns": 60328034,
+              "ans_token_cost_ns": 35559338122,
+              "ans_uint_config_candidates": 12352,
+              "ans_histogram_candidates": 160576,
+              "ans_alphabet_width_candidates": 272,
+              "selection_ns": 0
+            }
+          },
+          "hybrid": {
+            "schema": 1,
+            "route": "hybrid-ans-complete-search",
+            "entropy": "ans",
+            "backend_setup_seconds": 0.030966209,
+            "gpu_submissions": 204,
+            "gpu_allocations": 456,
+            "width": 4000,
+            "height": 3000,
+            "channels": 3,
+            "bits": 8,
+            "maximum_samples": 262144,
+            "maximum_leaves": 256,
+            "checkpoints": true,
+            "threads": 1,
+            "profile_enabled": true,
+            "seconds": 102.910363083,
+            "encoded_bytes": 7336102,
+            "decoded_exact": true,
+            "planned_capacity": 6711285423,
+            "peak_backing": 1355708723,
+            "peak_cpu_participants": 1,
+            "candidates": 68,
+            "stages": {
+              "input": 0.554242662,
+              "transforms": 2.8860605389999994,
+              "training": 36.808694541,
+              "tokens": 15.402535126999995,
+              "model": 33.632366628999996,
+              "emission": 13.559945875,
+              "assembly": 0.061412119999999994,
+              "gpu_input_tokens": 0
+            },
+            "adaptive_gpu": {
+              "feature_seconds": 11.388912374,
+              "token_seconds": 3.7650457940000006,
+              "feature_preparations": 24,
+              "feature_reuses": 44,
+              "evictions": 23,
+              "encoded_candidates": 68,
+              "cpu_fallback_candidates": 0,
+              "ans_gpu_groups": 136,
+              "ans_gpu_states": 53584,
+              "ans_cpu_fallback_groups": 0,
+              "ans_cpu_small_groups": 0
+            },
+            "training": {
+              "stages": {
+                "rct_ranking": 0.000890458,
+                "palette_probe": 1.1541e-05,
+                "sample_gathering": 8.857994792999998,
+                "simple_learning": 0.010345624,
+                "entropy_preparation": 0.038381042,
+                "split_histograms": 0.7135268869999993,
+                "property_sorting": 14.186973767000122,
+                "split_scanning": 12.897515369000123,
+                "tree_control": 0.10292693600000563,
+                "quantized_learning": 0
+              },
+              "learning_calls": 18,
+              "population": 648000000,
+              "samples": 2396160,
+              "split_evaluations": 4804,
+              "sorted_properties": 76496,
+              "sorted_samples": 394476864
+            },
+            "entropy_work": {
+              "prefix_histogram_build_ns": 5400394916,
+              "prefix_histogram_cost_ns": 3842625,
+              "prefix_clustering_ns": 280149730,
+              "prefix_code_build_ns": 40187632,
+              "prefix_value_collection_ns": 6419747412,
+              "prefix_config_search_ns": 3151523667,
+              "prefix_value_aggregation_ns": 3129665143,
+              "prefix_exact_measurement_ns": 5771248,
+              "ans_prefix_validation_ns": 2037541,
+              "ans_value_collection_ns": 4871307037,
+              "ans_value_aggregation_ns": 3262670325,
+              "ans_prepared_value_validation_ns": 0,
+              "ans_uint_config_ns": 4220566,
+              "ans_histogram_build_ns": 80347521,
+              "ans_model_build_ns": 60037998,
+              "ans_token_cost_ns": 10044499498,
+              "ans_uint_config_candidates": 12352,
+              "ans_histogram_candidates": 160576,
+              "ans_alphabet_width_candidates": 272,
+              "selection_ns": 0
+            }
+          }
+        },
+        {
+          "repetition": 2,
+          "cpu_seconds": 191.382396208,
+          "hybrid_seconds": 102.776214041,
+          "ratio": 1.8621273219078955,
+          "cpu": {
+            "schema": 1,
+            "route": "cpu-complete-search",
+            "entropy": "ans",
+            "backend_setup_seconds": 0,
+            "gpu_submissions": 0,
+            "gpu_allocations": 0,
+            "width": 4000,
+            "height": 3000,
+            "channels": 3,
+            "bits": 8,
+            "maximum_samples": 262144,
+            "maximum_leaves": 256,
+            "checkpoints": true,
+            "threads": 1,
+            "profile_enabled": true,
+            "seconds": 191.382396208,
+            "encoded_bytes": 7336102,
+            "decoded_exact": true,
+            "planned_capacity": 5265015223,
+            "peak_backing": 707681075,
+            "peak_cpu_participants": 1,
+            "candidates": 68,
+            "stages": {
+              "input": 1.2230570379999997,
+              "transforms": 5.352661922999999,
+              "training": 36.85569400200001,
+              "tokens": 74.966537754,
+              "model": 59.48807587800002,
+              "emission": 13.407030868999998,
+              "assembly": 0.06838187700000001,
+              "gpu_input_tokens": 0
+            },
+            "adaptive_gpu": {
+              "feature_seconds": 0,
+              "token_seconds": 0,
+              "feature_preparations": 0,
+              "feature_reuses": 0,
+              "evictions": 0,
+              "encoded_candidates": 0,
+              "cpu_fallback_candidates": 0,
+              "ans_gpu_groups": 0,
+              "ans_gpu_states": 0,
+              "ans_cpu_fallback_groups": 0,
+              "ans_cpu_small_groups": 0
+            },
+            "training": {
+              "stages": {
+                "rct_ranking": 0.000898834,
+                "palette_probe": 1.1417e-05,
+                "sample_gathering": 8.852318876,
+                "simple_learning": 0.010347081999999997,
+                "entropy_preparation": 0.040561002,
+                "split_histograms": 0.6971171360000026,
+                "property_sorting": 14.158115515000134,
+                "split_scanning": 12.996265947999857,
+                "tree_control": 0.09992798300005609,
+                "quantized_learning": 0
+              },
+              "learning_calls": 18,
+              "population": 648000000,
+              "samples": 2396160,
+              "split_evaluations": 4804,
+              "sorted_properties": 76496,
+              "sorted_samples": 394476864
+            },
+            "entropy_work": {
+              "prefix_histogram_build_ns": 4727424287,
+              "prefix_histogram_cost_ns": 3886798,
+              "prefix_clustering_ns": 278084371,
+              "prefix_code_build_ns": 39868539,
+              "prefix_value_collection_ns": 7113001170,
+              "prefix_config_search_ns": 3133227248,
+              "prefix_value_aggregation_ns": 3111107474,
+              "prefix_exact_measurement_ns": 5746667,
+              "ans_prefix_validation_ns": 2045750,
+              "ans_value_collection_ns": 5171641581,
+              "ans_value_aggregation_ns": 3329262693,
+              "ans_prepared_value_validation_ns": 0,
+              "ans_uint_config_ns": 4248610,
+              "ans_histogram_build_ns": 79646278,
+              "ans_model_build_ns": 59926746,
+              "ans_token_cost_ns": 35533923581,
+              "ans_uint_config_candidates": 12352,
+              "ans_histogram_candidates": 160576,
+              "ans_alphabet_width_candidates": 272,
+              "selection_ns": 0
+            }
+          },
+          "hybrid": {
+            "schema": 1,
+            "route": "hybrid-ans-complete-search",
+            "entropy": "ans",
+            "backend_setup_seconds": 0.030059042,
+            "gpu_submissions": 204,
+            "gpu_allocations": 456,
+            "width": 4000,
+            "height": 3000,
+            "channels": 3,
+            "bits": 8,
+            "maximum_samples": 262144,
+            "maximum_leaves": 256,
+            "checkpoints": true,
+            "threads": 1,
+            "profile_enabled": true,
+            "seconds": 102.776214041,
+            "encoded_bytes": 7336102,
+            "decoded_exact": true,
+            "planned_capacity": 6711285423,
+            "peak_backing": 1355708723,
+            "peak_cpu_participants": 1,
+            "candidates": 68,
+            "stages": {
+              "input": 0.557441998,
+              "transforms": 2.897364246,
+              "training": 36.76298996,
+              "tokens": 15.132789666000008,
+              "model": 33.79893478899999,
+              "emission": 13.567729088,
+              "assembly": 0.053940871,
+              "gpu_input_tokens": 0
+            },
+            "adaptive_gpu": {
+              "feature_seconds": 11.361765497999997,
+              "token_seconds": 3.5537567560000003,
+              "feature_preparations": 24,
+              "feature_reuses": 44,
+              "evictions": 23,
+              "encoded_candidates": 68,
+              "cpu_fallback_candidates": 0,
+              "ans_gpu_groups": 136,
+              "ans_gpu_states": 53584,
+              "ans_cpu_fallback_groups": 0,
+              "ans_cpu_small_groups": 0
+            },
+            "training": {
+              "stages": {
+                "rct_ranking": 0.000890667,
+                "palette_probe": 1.1292e-05,
+                "sample_gathering": 8.823231087000002,
+                "simple_learning": 0.010308791999999999,
+                "entropy_preparation": 0.039038831999999996,
+                "split_histograms": 0.7144995459999987,
+                "property_sorting": 14.152611625999725,
+                "split_scanning": 12.917833517000139,
+                "tree_control": 0.1044224800000301,
+                "quantized_learning": 0
+              },
+              "learning_calls": 18,
+              "population": 648000000,
+              "samples": 2396160,
+              "split_evaluations": 4804,
+              "sorted_properties": 76496,
+              "sorted_samples": 394476864
+            },
+            "entropy_work": {
+              "prefix_histogram_build_ns": 5289600503,
+              "prefix_histogram_cost_ns": 3770458,
+              "prefix_clustering_ns": 277968237,
+              "prefix_code_build_ns": 38965245,
+              "prefix_value_collection_ns": 6522282874,
+              "prefix_config_search_ns": 3132313584,
+              "prefix_value_aggregation_ns": 3110681010,
+              "prefix_exact_measurement_ns": 5792337,
+              "ans_prefix_validation_ns": 2023543,
+              "ans_value_collection_ns": 4963505748,
+              "ans_value_aggregation_ns": 3304606382,
+              "ans_prepared_value_validation_ns": 0,
+              "ans_uint_config_ns": 4257388,
+              "ans_histogram_build_ns": 80664340,
+              "ans_model_build_ns": 60141665,
+              "ans_token_cost_ns": 10107181546,
+              "ans_uint_config_candidates": 12352,
+              "ans_histogram_candidates": 160576,
+              "ans_alphabet_width_candidates": 272,
+              "selection_ns": 0
+            }
+          }
+        },
+        {
+          "repetition": 3,
+          "cpu_seconds": 192.20030825,
+          "hybrid_seconds": 103.739521958,
+          "ratio": 1.852720203663694,
+          "cpu": {
+            "schema": 1,
+            "route": "cpu-complete-search",
+            "entropy": "ans",
+            "backend_setup_seconds": 0,
+            "gpu_submissions": 0,
+            "gpu_allocations": 0,
+            "width": 4000,
+            "height": 3000,
+            "channels": 3,
+            "bits": 8,
+            "maximum_samples": 262144,
+            "maximum_leaves": 256,
+            "checkpoints": true,
+            "threads": 1,
+            "profile_enabled": true,
+            "seconds": 192.20030825,
+            "encoded_bytes": 7336102,
+            "decoded_exact": true,
+            "planned_capacity": 5265015223,
+            "peak_backing": 707681075,
+            "peak_cpu_participants": 1,
+            "candidates": 68,
+            "stages": {
+              "input": 1.2633700020000005,
+              "transforms": 5.379289920999996,
+              "training": 36.990210713,
+              "tokens": 75.133499668,
+              "model": 59.900145874,
+              "emission": 13.453206914,
+              "assembly": 0.06401149400000002,
+              "gpu_input_tokens": 0
+            },
+            "adaptive_gpu": {
+              "feature_seconds": 0,
+              "token_seconds": 0,
+              "feature_preparations": 0,
+              "feature_reuses": 0,
+              "evictions": 0,
+              "encoded_candidates": 0,
+              "cpu_fallback_candidates": 0,
+              "ans_gpu_groups": 0,
+              "ans_gpu_states": 0,
+              "ans_cpu_fallback_groups": 0,
+              "ans_cpu_small_groups": 0
+            },
+            "training": {
+              "stages": {
+                "rct_ranking": 0.000973667,
+                "palette_probe": 1.0959e-05,
+                "sample_gathering": 8.884769623999999,
+                "simple_learning": 0.010588750000000001,
+                "entropy_preparation": 0.04231941299999999,
+                "split_histograms": 0.7007445680000002,
+                "property_sorting": 14.173124490000106,
+                "split_scanning": 13.077331176000019,
+                "tree_control": 0.10020872799993877,
+                "quantized_learning": 0
+              },
+              "learning_calls": 18,
+              "population": 648000000,
+              "samples": 2396160,
+              "split_evaluations": 4804,
+              "sorted_properties": 76496,
+              "sorted_samples": 394476864
+            },
+            "entropy_work": {
+              "prefix_histogram_build_ns": 4756041375,
+              "prefix_histogram_cost_ns": 3829044,
+              "prefix_clustering_ns": 278828556,
+              "prefix_code_build_ns": 39385737,
+              "prefix_value_collection_ns": 7156899498,
+              "prefix_config_search_ns": 3138940081,
+              "prefix_value_aggregation_ns": 3116597022,
+              "prefix_exact_measurement_ns": 6034043,
+              "ans_prefix_validation_ns": 2011629,
+              "ans_value_collection_ns": 5264280919,
+              "ans_value_aggregation_ns": 3375714435,
+              "ans_prepared_value_validation_ns": 0,
+              "ans_uint_config_ns": 4281125,
+              "ans_histogram_build_ns": 81272786,
+              "ans_model_build_ns": 61802454,
+              "ans_token_cost_ns": 35724578242,
+              "ans_uint_config_candidates": 12352,
+              "ans_histogram_candidates": 160576,
+              "ans_alphabet_width_candidates": 272,
+              "selection_ns": 0
+            }
+          },
+          "hybrid": {
+            "schema": 1,
+            "route": "hybrid-ans-complete-search",
+            "entropy": "ans",
+            "backend_setup_seconds": 0.030737458,
+            "gpu_submissions": 204,
+            "gpu_allocations": 456,
+            "width": 4000,
+            "height": 3000,
+            "channels": 3,
+            "bits": 8,
+            "maximum_samples": 262144,
+            "maximum_leaves": 256,
+            "checkpoints": true,
+            "threads": 1,
+            "profile_enabled": true,
+            "seconds": 103.739521958,
+            "encoded_bytes": 7336102,
+            "decoded_exact": true,
+            "planned_capacity": 6711285423,
+            "peak_backing": 1355708723,
+            "peak_cpu_participants": 1,
+            "candidates": 68,
+            "stages": {
+              "input": 0.5089725049999999,
+              "transforms": 2.919711164,
+              "training": 37.552714539,
+              "tokens": 15.545341673,
+              "model": 33.59700791299999,
+              "emission": 13.545331459999998,
+              "assembly": 0.06505078800000001,
+              "gpu_input_tokens": 0
+            },
+            "adaptive_gpu": {
+              "feature_seconds": 11.341359504000001,
+              "token_seconds": 3.9324034190000017,
+              "feature_preparations": 24,
+              "feature_reuses": 44,
+              "evictions": 23,
+              "encoded_candidates": 68,
+              "cpu_fallback_candidates": 0,
+              "ans_gpu_groups": 136,
+              "ans_gpu_states": 53584,
+              "ans_cpu_fallback_groups": 0,
+              "ans_cpu_small_groups": 0
+            },
+            "training": {
+              "stages": {
+                "rct_ranking": 0.004877583,
+                "palette_probe": 1.25e-05,
+                "sample_gathering": 8.879120333,
+                "simple_learning": 0.010264414999999999,
+                "entropy_preparation": 0.039065375,
+                "split_histograms": 0.7124820789999982,
+                "property_sorting": 14.40561291399992,
+                "split_scanning": 13.398429465000078,
+                "tree_control": 0.10271333100000046,
+                "quantized_learning": 0
+              },
+              "learning_calls": 18,
+              "population": 648000000,
+              "samples": 2396160,
+              "split_evaluations": 4804,
+              "sorted_properties": 76496,
+              "sorted_samples": 394476864
+            },
+            "entropy_work": {
+              "prefix_histogram_build_ns": 5303567628,
+              "prefix_histogram_cost_ns": 3746161,
+              "prefix_clustering_ns": 280471386,
+              "prefix_code_build_ns": 38920294,
+              "prefix_value_collection_ns": 6450938335,
+              "prefix_config_search_ns": 3131038214,
+              "prefix_value_aggregation_ns": 3108730905,
+              "prefix_exact_measurement_ns": 5771874,
+              "ans_prefix_validation_ns": 2091332,
+              "ans_value_collection_ns": 4923998377,
+              "ans_value_aggregation_ns": 3267216858,
+              "ans_prepared_value_validation_ns": 0,
+              "ans_uint_config_ns": 4215926,
+              "ans_histogram_build_ns": 79766134,
+              "ans_model_build_ns": 59609120,
+              "ans_token_cost_ns": 10039786458,
+              "ans_uint_config_candidates": 12352,
+              "ans_histogram_candidates": 160576,
+              "ans_alphabet_width_candidates": 272,
+              "selection_ns": 0
+            }
+          }
+        }
+      ],
+      "cpu_seconds": {
+        "median": 191.382396208,
+        "minimum": 191.285682875,
+        "maximum": 192.20030825,
+        "values": [
+          191.285682875,
+          191.382396208,
+          192.20030825
+        ]
+      },
+      "hybrid_seconds": {
+        "median": 102.910363083,
+        "minimum": 102.776214041,
+        "maximum": 103.739521958,
+        "values": [
+          102.910363083,
+          102.776214041,
+          103.739521958
+        ]
+      },
+      "ratio": {
+        "median": 1.8587601592730065,
+        "minimum": 1.852720203663694,
+        "maximum": 1.8621273219078955,
+        "values": [
+          1.8587601592730065,
+          1.8621273219078955,
+          1.852720203663694
+        ]
+      },
+      "cpu_stages": {
+        "input": {
+          "median": 1.2230570379999997,
+          "minimum": 1.121396964,
+          "maximum": 1.2633700020000005,
+          "values": [
+            1.121396964,
+            1.2230570379999997,
+            1.2633700020000005
+          ]
+        },
+        "transforms": {
+          "median": 5.352661922999999,
+          "minimum": 5.3285426250000025,
+          "maximum": 5.379289920999996,
+          "values": [
+            5.3285426250000025,
+            5.352661922999999,
+            5.379289920999996
+          ]
+        },
+        "training": {
+          "median": 36.85569400200001,
+          "minimum": 36.746693414999996,
+          "maximum": 36.990210713,
+          "values": [
+            36.746693414999996,
+            36.85569400200001,
+            36.990210713
+          ]
+        },
+        "tokens": {
+          "median": 74.978021293,
+          "minimum": 74.966537754,
+          "maximum": 75.133499668,
+          "values": [
+            74.978021293,
+            74.966537754,
+            75.133499668
+          ]
+        },
+        "model": {
+          "median": 59.59443295600002,
+          "minimum": 59.48807587800002,
+          "maximum": 59.900145874,
+          "values": [
+            59.59443295600002,
+            59.48807587800002,
+            59.900145874
+          ]
+        },
+        "emission": {
+          "median": 13.419662545000001,
+          "minimum": 13.407030868999998,
+          "maximum": 13.453206914,
+          "values": [
+            13.419662545000001,
+            13.407030868999998,
+            13.453206914
+          ]
+        },
+        "assembly": {
+          "median": 0.06838187700000001,
+          "minimum": 0.06401149400000002,
+          "maximum": 0.07109641599999995,
+          "values": [
+            0.07109641599999995,
+            0.06838187700000001,
+            0.06401149400000002
+          ]
+        },
+        "gpu_input_tokens": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0,
+          "values": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "cpu_exact_ans_seconds": {
+        "median": 35.559338122,
+        "minimum": 35.533923581,
+        "maximum": 35.724578242,
+        "values": [
+          35.559338122,
+          35.533923581,
+          35.724578242
+        ]
+      },
+      "cpu_resources": {
+        "peak_backing": {
+          "median": 707681075,
+          "minimum": 707681075,
+          "maximum": 707681075,
+          "values": [
+            707681075,
+            707681075,
+            707681075
+          ]
+        },
+        "planned_capacity": {
+          "median": 5265015223,
+          "minimum": 5265015223,
+          "maximum": 5265015223,
+          "values": [
+            5265015223,
+            5265015223,
+            5265015223
+          ]
+        },
+        "backend_setup_seconds": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0,
+          "values": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "hybrid_stages": {
+        "input": {
+          "median": 0.554242662,
+          "minimum": 0.5089725049999999,
+          "maximum": 0.557441998,
+          "values": [
+            0.554242662,
+            0.557441998,
+            0.5089725049999999
+          ]
+        },
+        "transforms": {
+          "median": 2.897364246,
+          "minimum": 2.8860605389999994,
+          "maximum": 2.919711164,
+          "values": [
+            2.8860605389999994,
+            2.897364246,
+            2.919711164
+          ]
+        },
+        "training": {
+          "median": 36.808694541,
+          "minimum": 36.76298996,
+          "maximum": 37.552714539,
+          "values": [
+            36.808694541,
+            36.76298996,
+            37.552714539
+          ]
+        },
+        "tokens": {
+          "median": 15.402535126999995,
+          "minimum": 15.132789666000008,
+          "maximum": 15.545341673,
+          "values": [
+            15.402535126999995,
+            15.132789666000008,
+            15.545341673
+          ]
+        },
+        "model": {
+          "median": 33.632366628999996,
+          "minimum": 33.59700791299999,
+          "maximum": 33.79893478899999,
+          "values": [
+            33.632366628999996,
+            33.79893478899999,
+            33.59700791299999
+          ]
+        },
+        "emission": {
+          "median": 13.559945875,
+          "minimum": 13.545331459999998,
+          "maximum": 13.567729088,
+          "values": [
+            13.559945875,
+            13.567729088,
+            13.545331459999998
+          ]
+        },
+        "assembly": {
+          "median": 0.061412119999999994,
+          "minimum": 0.053940871,
+          "maximum": 0.06505078800000001,
+          "values": [
+            0.061412119999999994,
+            0.053940871,
+            0.06505078800000001
+          ]
+        },
+        "gpu_input_tokens": {
+          "median": 0,
+          "minimum": 0,
+          "maximum": 0,
+          "values": [
+            0,
+            0,
+            0
+          ]
+        }
+      },
+      "hybrid_exact_ans_seconds": {
+        "median": 10.044499498,
+        "minimum": 10.039786458,
+        "maximum": 10.107181546,
+        "values": [
+          10.044499498,
+          10.107181546,
+          10.039786458
+        ]
+      },
+      "hybrid_resources": {
+        "peak_backing": {
+          "median": 1355708723,
+          "minimum": 1355708723,
+          "maximum": 1355708723,
+          "values": [
+            1355708723,
+            1355708723,
+            1355708723
+          ]
+        },
+        "planned_capacity": {
+          "median": 6711285423,
+          "minimum": 6711285423,
+          "maximum": 6711285423,
+          "values": [
+            6711285423,
+            6711285423,
+            6711285423
+          ]
+        },
+        "backend_setup_seconds": {
+          "median": 0.030737458,
+          "minimum": 0.030059042,
+          "maximum": 0.030966209,
+          "values": [
+            0.030966209,
+            0.030059042,
+            0.030737458
+          ]
+        }
+      }
+    }
+  ],
+  "totals": {
+    "encoded_bytes": 25388755,
+    "cpu_sum_median_seconds": 592.526780791,
+    "cpu_stages_sum_medians": {
+      "input": 3.6091012869999997,
+      "transforms": 15.974508175,
+      "training": 112.120830297,
+      "tokens": 232.13454679400002,
+      "model": 184.95771445600002,
+      "emission": 43.250705218000014,
+      "assembly": 0.247863785,
+      "gpu_input_tokens": 0
+    },
+    "cpu_exact_ans_sum_median_seconds": 111.717062827,
+    "hybrid_sum_median_seconds": 315.390456416,
+    "hybrid_stages_sum_medians": {
+      "input": 1.7298409550000002,
+      "transforms": 8.767128489000001,
+      "training": 112.412573628,
+      "tokens": 46.349343001999976,
+      "model": 102.17422803899998,
+      "emission": 43.645699791,
+      "assembly": 0.20458332999999998,
+      "gpu_input_tokens": 0
+    },
+    "hybrid_exact_ans_sum_median_seconds": 30.672981093,
+    "ratio_of_sum_medians": 1.8787086569590334,
+    "libjxl_bytes": {
+      "e7": 25088764,
+      "e9": 24845970
+    },
+    "size_increase_percent": {
+      "e7": 1.1957185296174844,
+      "e9": 2.1845997560167696
+    }
+  }
+}
