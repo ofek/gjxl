@@ -44,6 +44,11 @@ The complete adaptive storage plan adds independent GPU scratch/output maxima
 and CPU merge storage to its existing reservation. This accounts for resident
 tokens, cached features, model work and exact ANS scratch that can coexist. The
 plan is deliberately conservative; actual peak backing is measured separately.
+Search must retain this reservation even when its largest palette layout exceeds
+the producer's token limit: another candidate may remain eligible. The merge
+bound uses the largest eligible count, at most `UINT32_MAX`. A shape-only
+65537-by-65535 grayscale search test covers that boundary without allocating an
+image or device buffer.
 
 ## Attribution
 
@@ -77,6 +82,9 @@ and six CPU-only suites pass, including shared entropy/VarDCT regressions, both
 candidate evaluation suites and the older adaptive hybrid failure tests.
 
 Logs: `build/entropy-step4-{build,tests,cpu-build,cpu-tests,final-build,final-tests}.log`.
+The later search-boundary correction passes the CPU population suite in both
+Release configurations and the native population/adaptive workflow suites (three
+Release suites, one CPU-only suite). Logs: `build/entropy-final-bound-*.log`.
 The frozen milestone binary is saved under `build/entropy-milestones/step4/`.
 Complete-workflow performance, coverage and combined rate/time results are still
 pending; operation correctness alone does not establish an end-to-end gain.

@@ -151,14 +151,19 @@ Status ComputeAdaptiveModularWorkflowStoragePlan(Extent2D extent, PackedModularF
       result.additional_peak_bytes += peak;
     }
   }
-  if (options.adaptive_populations && maximum_samples >= 262144 && maximum_samples <= UINT32_MAX) {
+  if (options.adaptive_populations && maximum_samples >= 262144 &&
+      (options.search || maximum_samples <= UINT32_MAX)) {
     // Reserve the independent scratch/output maxima, because shard count changes
     // with context shape. Retained counts can coexist with CPU model/merge work
     // and exact ANS scratch. Never rely on slack in the older CPU reservation.
     const size_t contexts = std::min(kMaximumPopulationContexts, (nodes + 1) / 2);
     HostStorageBound populations, merge;
     const size_t device = kMaximumPopulationScratchBytes + 8 + contexts * kPopulationValueLimit * 8;
-    if (auto s = codestream_internal::ComputeEntropyPopulationMergeStorageBound(maximum_samples,
+    // A palette can move the largest search layout above the operation limit
+    // while another layout remains eligible. Bound all potentially eligible
+    // layouts; a maximum above the limit does not prove that all exceed it.
+    if (auto s = codestream_internal::ComputeEntropyPopulationMergeStorageBound(
+          std::min(maximum_samples, size_t{UINT32_MAX}),
           contexts, kPopulationValueLimit, std::min(contexts, kMaximumPrefixClusters), &merge); !s.ok()) return s;
     if (!populations.Add({device, device}) || !populations.Add(merge) ||
         populations.peak_bytes > SIZE_MAX - result.additional_peak_bytes)

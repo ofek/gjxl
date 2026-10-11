@@ -4,6 +4,7 @@
 #include "codestream/profile_internal.h"
 #include "codestream/ans_internal.h"
 #include "gpu/ops/modular_populations.h"
+#include "codestream/modular/adaptive_gpu_workflow.h"
 #include <iostream>
 #include <stdexcept>
 namespace {
@@ -85,6 +86,25 @@ void Models() {
   }
 }
 void CountsAndPlans() {
+  {
+    // Shape-only: baseline has UINT32_MAX tokens, but the palette metadata
+    // pushes the largest layout over that limit. The eligible baseline still
+    // needs the population reservation. No giant input/backing is allocated.
+    gjxl::modular_internal::ModularEncodingOptions options;
+    options.search = true;
+    options.learning = {262144, 256};
+    gjxl::modular_internal::AdaptiveModularWorkflowStoragePlan ordinary, population;
+    constexpr Extent2D extent{65537, 65535};
+    constexpr auto format = gjxl::modular_internal::PackedModularFormat::kGray8;
+    ArmNextManagedHostAllocationFailureForTest();
+    Ok(ComputeAdaptiveModularWorkflowStoragePlan(extent, format, options, &ordinary));
+    options.adaptive_populations = true;
+    Ok(ComputeAdaptiveModularWorkflowStoragePlan(extent, format, options, &population));
+    Check(ManagedHostAllocationFailurePendingForTest(), "Large search population planner allocated");
+    DisarmManagedHostAllocationFailureForTest();
+    Check(population.peak_bytes > ordinary.peak_bytes + kMaximumPopulationScratchBytes,
+          "Largest unsupported layout hid eligible population storage");
+  }
   std::array<uint64_t, 6> counts{uint64_t{1} << 40, 0, 1, 7, 8, 9};
   const std::array<uint8_t, 2> map{0, 0};
   Storage<Storage<WeightedValue>> merged;
