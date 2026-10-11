@@ -103,7 +103,8 @@ def render(results):
         'See [machine-readable results](modular-entropy-pipeline-results.json), '
         '[candidate evaluation](modular-candidate-evaluation.md), '
         '[GPU population contract](modular-gpu-populations.md), and '
-        '[the five-step plan](modular-entropy-efficiency.md). The fixed-token native/libjxl rate study '
+        '[the five-step plan](modular-entropy-efficiency.md). The '
+        '[fixed-token native/libjxl rate study](modular-entropy-rate.md) '
         'is separate from full encoder latency. These results do not establish an end-to-end speedup '
         'over libjxl.', '',
         'The measured binaries are frozen independently of later source and audit-tool changes. '

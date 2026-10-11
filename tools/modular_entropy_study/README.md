@@ -68,4 +68,10 @@ inputs. Run it with:
 python3 tools/modular_entropy_study/test_replay.py build/entropy-replay/entropy_replay
 ```
 
-Full corpus qualification is pending.
+The full 19-image corpus is qualified: 266 complete files independently decode,
+all baseline files match their exhaustive-search winners, and the artifact audit
+checks policies, frozen archives, model assignments, capacities and cost
+decompositions. See [the rate report](../../docs/modular-entropy-rate.md) and
+[all measured cells](../../docs/modular-entropy-rate-results.json). Reference
+partition reuse is a controlled study input; no runtime reference dependency or
+automatic encoder policy was introduced.

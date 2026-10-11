@@ -91,7 +91,7 @@ Admission is a conservative capacity reservation, not resident memory use. Peaks
 
 The independent artifact audit validates **136 complete calls**. The mixed corpus has one call per current mode; only the three original 12 MP inputs have repeated timing comparisons. This is an active-desktop Apple M4 Pro pilot, not broad device qualification. Public defaults remain unchanged.
 
-See [machine-readable results](modular-entropy-pipeline-results.json), [candidate evaluation](modular-candidate-evaluation.md), [GPU population contract](modular-gpu-populations.md), and [the five-step plan](modular-entropy-efficiency.md). The fixed-token native/libjxl rate study is separate from full encoder latency. These results do not establish an end-to-end speedup over libjxl.
+See [machine-readable results](modular-entropy-pipeline-results.json), [candidate evaluation](modular-candidate-evaluation.md), [GPU population contract](modular-gpu-populations.md), and [the five-step plan](modular-entropy-efficiency.md). The [fixed-token native/libjxl rate study](modular-entropy-rate.md) is separate from full encoder latency. These results do not establish an end-to-end speedup over libjxl.
 
 The measured binaries are frozen independently of later source and audit-tool changes. A subsequent storage-planner correction covers a search whose largest palette layout exceeds `UINT32_MAX` tokens while another layout remains eligible. Every measured layout is below that limit, so the correction does not change these calls or their reservations.
 

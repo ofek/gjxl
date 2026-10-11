@@ -124,11 +124,18 @@ def audit(root):
             'Incomplete rate-study matrix')
     require(sha(root / 'entropy_replay') == m['binary']['sha256'], 'Replay binary differs')
     require(sha(m['pipeline']['path']) == m['pipeline']['sha256'], 'Pipeline provenance changed')
+    pipeline = json.loads(Path(m['pipeline']['path']).read_text())
+    controls = {r['image']: r for r in pipeline['commands'] if r['variant'] == 'emit' and r['repetition'] == 1}
+    require(m['inputs'] == pipeline['inputs'] and set(controls) == set(m['inputs']), 'Replay corpus provenance differs')
     for path, info in m['reference_artifacts'].items():
         require(Path(path).stat().st_size == info['bytes'] and sha(path) == info['sha256'], 'Reference artifact changed')
     require({r['image'] for r in m['images']} == set(m['inputs']), 'Duplicate/missing replay image')
     for row in m['images']:
         directory = root / row['image']
+        control = controls[row['image']]
+        require((directory / 'policy.txt').read_text() == policy_text(control['result']['policy']) and
+                row['winning_file_sha256'] == control['files'][control['tag'] + '.jxl']['sha256'],
+                'Replay policy/winner differs from the full-search control')
         require(row['input_sha256'] == m['inputs'][row['image']]['sha256'] == sha(m['inputs'][row['image']]['path']),
                 'Replay input differs')
         require(len(row['commands']) == 2 and all(r['returncode'] == 0 for r in row['commands']), 'Replay command failed')
@@ -150,6 +157,8 @@ def audit(root):
         for r in results:
             require(r['decoded_exact'] and r['tokens'] == baseline['tokens'] and r['contexts'] == baseline['contexts'] and
                     r['tree_bits'] == baseline['tree_bits'] and len(r['context_map']) == r['contexts'], 'Fixed replay conditions differ')
+            require(0 < r['clusters'] <= r['capacity'] and all(0 <= c < r['clusters'] for c in r['context_map']),
+                    'Replay exceeds model capacity or has an invalid assignment')
             require(r['model_bits'] == r['context_map_bits'] + r['histogram_config_bits'] + r['lz77_flag_bits'] and
                     r['bytes'] == (directory / 'outputs' / (r['cell'] + '.jxl')).stat().st_size,
                     'Replay exact cost decomposition differs')
@@ -175,6 +184,11 @@ def analyze(args):
     result = dict(schema=1, manifest=str(args.root.resolve() / 'manifest.json'), manifest_sha256=sha(args.root / 'manifest.json'),
         images=19, frozen_token_models=19 * len(CELLS), aggregate=aggregate,
         per_image={row['image']: row['results'] for row in m['images']}, scope=m['scope'])
+    result['native_reference_partition_matches'] = {
+        str(capacity): [row['image'] for row in m['images']
+            if next(r for r in row['results'] if r['cell'] == f'native-direct-balanced-{capacity}')['context_map'] ==
+               next(r for r in row['results'] if r['cell'] == f'libjxl-e7-streaming-{capacity}')['context_map']]
+        for capacity in (32, 64)}
     write(args.json, result)
     print(json.dumps(aggregate, indent=2))
 

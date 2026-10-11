@@ -174,10 +174,16 @@ tree/transform/LZ77 differences. Promote an entropy-policy change only with
 material measured benefit and complete-file decoding/rate/time validation.
 A negative rate result is a valid study outcome; omitted measurements are not.
 
-Status: the frozen-token replay executable and corpus harness are implemented;
-[method and cells](../tools/modular_entropy_study/README.md). All 14 cells decode
-in the small pilot; malformed archives and overwrite attempts are rejected.
-The 19-image study remains pending until the complete-search controls finish.
+Status: complete. All 266 files from 19 images and 14 model cells decode exactly;
+each native baseline reproduces the exhaustive-search winner. The partition-only
+control saves 1.9352% at 32 clusters and 2.6858% at 64 clusters. The native balanced
+builder produces the same partitions as the reference on all 19 cases at both
+capacities. Direct balanced/density policies have material 16-bit regressions,
+so no automatic policy switch is promoted. A native partition plus existing
+prepared-population consumer is the next policy slice to qualify in complete
+searches. See [rate conclusions and per-image results](modular-entropy-rate.md),
+[machine-readable cells](modular-entropy-rate-results.json), and
+[method and reproduction](../tools/modular_entropy_study/README.md).
 
 ## Engineering and measurement rules
 
