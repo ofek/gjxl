@@ -203,24 +203,36 @@ struct EntropyCodeCost {
   EntropyCodeCost* cost = nullptr,
   codestream_internal::EntropyWorkProfile* profile = nullptr);
 
+// Private encoder selection policy. Estimated selection still emits a normal,
+// lossless ANS stream; it does not promise the same model or bytes as exact.
+enum class AnsSelectionMode { kExact, kEstimated };
+[[nodiscard]] inline Status ValidateAnsSelectionMode(AnsSelectionMode mode) {
+  if (mode != AnsSelectionMode::kExact && mode != AnsSelectionMode::kEstimated)
+    return Status::InvalidArgument("Invalid ANS selection mode");
+  return Status::Ok();
+}
+
 /// Builds an ANS model using an optimized prefix code's context partition.
 /// HybridUint configurations and normalized populations are screened using an
 /// ANS-specific cost estimate, then alphabet widths compete on exact serialized
-/// model-plus-token cost. Inputs and outputs remain unchanged on failure.
-[[nodiscard]] Status OptimizeAnsEntropyCode(
-  std::span<const std::vector<EntropyToken>> section_tokens,
-  const EntropyCode& prefix_partition,
-  EntropyCode* code,
-  EntropyCodeCost* cost = nullptr,
-  codestream_internal::EntropyWorkProfile* profile = nullptr);
+/// model-plus-token cost by default. Estimated selection uses the same candidate
+/// configurations and histogram precision search, selecting width by estimated
+/// cost. If cost is requested, it remains exact for the selected model (only that
+/// model is simulated in estimated mode). Outputs remain unchanged on failure.
+[[nodiscard]] Status
+OptimizeAnsEntropyCode(std::span<const std::vector<EntropyToken>> section_tokens,
+                       const EntropyCode &prefix_partition, EntropyCode *code,
+                       EntropyCodeCost *cost = nullptr,
+                       codestream_internal::EntropyWorkProfile *profile = nullptr,
+                       AnsSelectionMode selection = AnsSelectionMode::kExact);
 
 /// Optimizes ANS from interleaved or shared-value token streams.
-[[nodiscard]] Status OptimizeAnsEntropyCode(
-  std::span<const EntropyTokenStreamView> section_tokens,
-  const EntropyCode& prefix_partition,
-  EntropyCode* code,
-  EntropyCodeCost* cost = nullptr,
-  codestream_internal::EntropyWorkProfile* profile = nullptr);
+[[nodiscard]] Status
+OptimizeAnsEntropyCode(std::span<const EntropyTokenStreamView> section_tokens,
+                       const EntropyCode &prefix_partition, EntropyCode *code,
+                       EntropyCodeCost *cost = nullptr,
+                       codestream_internal::EntropyWorkProfile *profile = nullptr,
+                       AnsSelectionMode selection = AnsSelectionMode::kExact);
 
 /// Builds a canonical maximum-15-bit prefix code for a histogram.
 [[nodiscard]] Status BuildPrefixCode(

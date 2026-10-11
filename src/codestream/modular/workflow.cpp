@@ -20,6 +20,8 @@ Status Encode(PackedModularImageView input, const ModularEncodingOptions &option
     return s;
   if (auto s = ValidateTreeLearningOptions(options.learning); !s.ok())
     return s;
+  if (auto s = ValidateAnsSelectionMode(options.ans_selection); !s.ok())
+    return s;
   if (options.search)
     return EncodeSearch(input, options, output);
   ModularWorkflowStoragePlan storage;
@@ -42,7 +44,7 @@ Status Encode(PackedModularImageView input, const ModularEncodingOptions &option
     return s;
   codestream_internal::CodestreamBuffer candidate;
   if (auto s = EncodePreparedModularFrame(std::move(frame), options.coding, options.entropy,
-                                         storage, &candidate);
+                                          storage, &candidate, options.ans_selection);
       !s.ok())
     return s;
   if (active_modular_profile) {

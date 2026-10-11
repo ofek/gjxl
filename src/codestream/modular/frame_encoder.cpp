@@ -13,7 +13,9 @@ using namespace codestream_internal;
 Status EncodeModularFrame(const codec_internal::ImageMetadata &metadata,
                           const ModularStreamPlan &layout, PreparedModularTokens &&input,
                           EntropyCodingMode mode, const ModularWorkflowStoragePlan &storage,
-                          CodestreamBuffer *out) try {
+                          CodestreamBuffer *out, AnsSelectionMode selection) try {
+  if (auto s = ValidateAnsSelectionMode(selection); !s.ok())
+    return s;
   if (!out || input.streams.size() != layout.streams.size())
     return Status::InvalidArgument("Invalid Modular frame handoff");
   Storage<BitWriter> sections;
@@ -30,7 +32,9 @@ Status EncodeModularFrame(const codec_internal::ImageMetadata &metadata,
         return s;
       if (mode == EntropyCodingMode::kAns) {
         EntropyCode ans;
-        if (auto s = OptimizeAnsEntropyCode(tokens.streams, model, &ans); !s.ok())
+        if (auto s =
+                OptimizeAnsEntropyCode(tokens.streams, model, &ans, nullptr, nullptr, selection);
+            !s.ok())
           return s;
         model = std::move(ans);
       }

@@ -12,5 +12,6 @@ namespace gjxl::modular_internal {
                                         const ModularStreamPlan &layout,
                                         PreparedModularTokens &&tokens, EntropyCodingMode mode,
                                         const ModularWorkflowStoragePlan &storage,
-                                        codestream_internal::CodestreamBuffer *out);
+                                        codestream_internal::CodestreamBuffer *out,
+                                        AnsSelectionMode selection = AnsSelectionMode::kExact);
 } // namespace gjxl::modular_internal

@@ -190,12 +190,9 @@ DirectAnsHistogramPrecisionShifts(DirectAnsEntropyMode mode) noexcept;
 /// Builds ANS from the prefix optimizer's retained value populations instead
 /// of collecting and aggregating the same ordered token streams again.
 [[nodiscard]] Status OptimizeAnsEntropyCodeWithPreparedClusters(
-  std::span<const EntropyTokenStreamView> section_tokens,
-  const EntropyCode& prefix_partition,
-  const PreparedEntropyClusters& prepared,
-  EntropyCode* code,
-  EntropyCodeCost* cost = nullptr,
-  EntropyWorkProfile* profile = nullptr);
+    std::span<const EntropyTokenStreamView> section_tokens, const EntropyCode &prefix_partition,
+    const PreparedEntropyClusters &prepared, EntropyCode *code, EntropyCodeCost *cost = nullptr,
+    EntropyWorkProfile *profile = nullptr, AnsSelectionMode selection = AnsSelectionMode::kExact);
 
 [[nodiscard]] Status WriteAnsEntropyCodeModel(
   const EntropyCode& code,

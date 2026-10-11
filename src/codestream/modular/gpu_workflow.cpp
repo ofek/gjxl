@@ -17,6 +17,8 @@ Status ComputeGpuModularWorkflowStoragePlan(Extent2D extent, size_t row_stride_b
                                             GpuModularWorkflowStoragePlan *out) {
   if (!out)
     return Status::InvalidArgument("Null GPU Modular workflow plan");
+  if (auto s = ValidateAnsSelectionMode(options.ans_selection); !s.ok())
+    return s;
   if (options.search || options.coding.transforms.size)
     return Status::Unsupported(
         "GPU Modular input supports prescribed RCT without other transforms");
@@ -80,7 +82,7 @@ Status Encode(GpuBackend &backend, PackedModularImageView input,
   }
   codestream_internal::CodestreamBuffer candidate;
   if (auto s = EncodePreparedModularFrame(std::move(frame), options.coding, options.entropy,
-                                          storage.cpu, &candidate);
+                                          storage.cpu, &candidate, options.ans_selection);
       !s.ok())
     return s;
   if (active_modular_profile) {

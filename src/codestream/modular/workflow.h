@@ -17,6 +17,8 @@ struct ModularEncodingOptions {
   TreeLearningOptions learning;
   // Compare 16/32/... leaf checkpoints from each experimental learning pass.
   bool tree_checkpoints = false;
+  // CPU experiment: select the ANS model without ordered candidate simulation.
+  AnsSelectionMode ans_selection = AnsSelectionMode::kExact;
 };
 [[nodiscard]] Status EncodeRgb8ModularOwned(Rgb8View input, const ModularEncodingOptions &options,
                                             codestream_internal::CodestreamBuffer *out);
