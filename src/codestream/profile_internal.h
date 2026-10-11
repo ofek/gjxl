@@ -22,6 +22,9 @@ struct EntropyWorkProfile {
   uint64_t prefix_code_build_nanoseconds = 0;
   uint64_t prefix_value_collection_nanoseconds = 0;
   uint64_t prefix_config_search_nanoseconds = 0;
+  /// Nested within prefix_config_search_nanoseconds: raw-value aggregation.
+  /// Subtract this from the parent before forming a disjoint breakdown.
+  uint64_t prefix_value_aggregation_nanoseconds = 0;
   /// Final prefix-model serialization and checked cost assembly.
   uint64_t prefix_exact_measurement_nanoseconds = 0;
   uint64_t ans_prefix_validation_nanoseconds = 0;
@@ -57,6 +60,8 @@ inline void AccumulateEntropyWorkProfile(
     source.prefix_value_collection_nanoseconds;
   destination->prefix_config_search_nanoseconds +=
     source.prefix_config_search_nanoseconds;
+  destination->prefix_value_aggregation_nanoseconds +=
+    source.prefix_value_aggregation_nanoseconds;
   destination->prefix_exact_measurement_nanoseconds +=
     source.prefix_exact_measurement_nanoseconds;
   destination->ans_prefix_validation_nanoseconds +=

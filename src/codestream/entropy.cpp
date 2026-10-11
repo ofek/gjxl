@@ -1567,11 +1567,14 @@ Status BuildEntropyCodeForPartition(
     Storage<codestream_internal::WeightedValue> weighted_values;
     const size_t begin = cluster_offsets[cluster];
     const size_t size = cluster_offsets[cluster + 1] - begin;
+    const auto aggregation_begin = ProfileBegin(profile);
     if (Status status = codestream_internal::AggregateEntropyValues(
           std::span<uint32_t>(values).subspan(begin, size), &weighted_values);
         !status.ok()) {
       return status;
     }
+    ProfileEnd(profile, aggregation_begin,
+               &EntropyWorkProfile::prefix_value_aggregation_nanoseconds);
     if (Status status = BuildClusterCode(
           weighted_values, options.uint_config, optimize_configs,
           &candidate.uint_configs[cluster], &candidate.prefix_codes[cluster],

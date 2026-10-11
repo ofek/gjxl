@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Yunho Cho
 #pragma once
 #include "codec/modular/coding.h"
+#include "codestream/profile_internal.h"
 #include <array>
 #include <chrono>
 #include <cstddef>
@@ -22,6 +23,10 @@ enum class ProfileStage {
 };
 struct ModularProfile {
   std::array<double, static_cast<size_t>(ProfileStage::kCount)> seconds{};
+  // Nested diagnostics within kModel, not additional caller-wall stages.
+  // Accumulates across candidates. Modular currently models serially; the
+  // shared counter type retains its work-time semantics if that changes.
+  codestream_internal::EntropyWorkProfile entropy_work;
   ModularCodingPolicy resolved;
   size_t encoded_candidates = 0;
 };

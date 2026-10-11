@@ -23,14 +23,17 @@ Status EncodeModularFrame(const codec_internal::ImageMetadata &metadata,
     {
       ProfileScope profile_scope(ProfileStage::kModel);
       thread_budget_internal::EncodeScope serial(1);
+      auto *entropy_profile = active_modular_profile ? &active_modular_profile->entropy_work
+                                                    : nullptr;
       if (auto s = OptimizeEntropyCode(
               tokens.streams, {.context_count = static_cast<uint32_t>(tokens.context_count)},
-              &model);
+              &model, nullptr, entropy_profile);
           !s.ok())
         return s;
       if (mode == EntropyCodingMode::kAns) {
         EntropyCode ans;
-        if (auto s = OptimizeAnsEntropyCode(tokens.streams, model, &ans); !s.ok())
+        if (auto s = OptimizeAnsEntropyCode(tokens.streams, model, &ans, nullptr, entropy_profile);
+            !s.ok())
           return s;
         model = std::move(ans);
       }

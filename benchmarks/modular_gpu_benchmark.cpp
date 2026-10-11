@@ -5,8 +5,10 @@
 #include "codec/modular/profile.h"
 #include "codestream/modular/gpu_token_workflow.h"
 #include "codestream/modular/gpu_workflow.h"
+#include "core/thread_budget.h"
 #include "gpu/metal/metal_backend.h"
 #include "io/pnm.h"
+#include "modular_entropy_profile_csv.h"
 #if GJXL_MODULAR_BENCHMARK_REFERENCE
 #include "modular_reference.h"
 #endif
@@ -26,6 +28,7 @@ namespace {
 using namespace gjxl;
 using namespace gjxl::modular_internal;
 using namespace gjxl::modular_gpu_internal;
+using namespace gjxl::modular_benchmark_internal;
 namespace fs = std::filesystem;
 using Clock = std::chrono::steady_clock;
 void Check(bool v, const char *m) {
@@ -267,10 +270,93 @@ struct Workload {
       for (double s : sample.profile.seconds)
         sum += s;
       Check(sum * 1e9 <= static_cast<double>(sample.ns), "Profile scopes exceed full-call time");
+      Check(sample.profile.entropy_work.prefix_histogram_build_nanoseconds > 0,
+            "Missing entropy substage profile");
     }
     return sample;
   }
 };
+// Isolated, warmed model replay, deliberately separate from complete-call
+// timing. All three backings remain live. Preparation, copies, equality checks,
+// model comparison and destruction are outside the measured interval. This
+// controls token content/layout but does not simulate first-touch/cache state
+// at the production handoff or qualify an end-to-end representation change.
+void Replay(std::ostream &csv, const Workload &work, size_t rounds, size_t warmups, size_t seed) {
+  Check(work.config.jobs == 1, "Replay requires one call");
+  GpuModularTokenPlan plan;
+  Ok(BuildGpuModularTokenPlan({work.fixture.source.extent, work.fixture.stride,
+                              work.fixture.order,
+                              {work.fixture.format, work.options.coding, false}}, &plan));
+  PreparedModularTokens cpu, metal;
+  {
+    ModularEncoderFrame frame;
+    Ok(ModularEncoderFrame::Prepare(work.fixture.view(), work.options.coding, &frame));
+    Ok(TokenizeModular(frame, plan.layout, work.options.coding, &cpu, work.options.cpu_thread_count));
+  }
+  auto *op = QueryGpuModularTokenGeneration(work.backend);
+  Check(op, "Missing token producer");
+  std::unique_ptr<PreparedGpuModularTokens> owner;
+  Ok(op->PrepareModularTokens(work.fixture.view(), plan.options.tokenization, plan.slices, &owner));
+  Ok(AdoptGpuModularTokens(plan, std::move(owner), &metal));
+  std::vector<uint32_t> values(cpu.tokens.size());
+  std::vector<uint16_t> contexts(cpu.tokens.size());
+  std::vector<EntropyTokenStreamView> split(cpu.streams.size());
+  Check(cpu.context_count == metal.context_count && cpu.streams.size() == metal.streams.size(),
+        "Replay token metadata differs");
+  size_t offset = 0;
+  for (size_t s = 0; s < cpu.streams.size(); ++s) {
+    Check(cpu.streams[s].size() == metal.streams[s].size(), "Replay stream sizes differ");
+    for (size_t i = 0; i < cpu.streams[s].size(); ++i) {
+      const auto token = cpu.streams[s][i];
+      Check(token == metal.streams[s][i] && token.context <= UINT16_MAX,
+            "Replay token contents differ");
+      values[offset + i] = token.value;
+      contexts[offset + i] = static_cast<uint16_t>(token.context);
+    }
+    const size_t count = cpu.streams[s].size();
+    split[s] = EntropyTokenStreamView::Split(std::span(values).subspan(offset, count),
+                                            std::span(contexts).subspan(offset, count));
+    offset += count;
+  }
+  Check(offset == cpu.tokens.size(), "Replay token coverage differs");
+  const std::array<std::span<const EntropyTokenStreamView>, 3> streams{cpu.streams, split,
+                                                                                   metal.streams};
+  const std::array names{"cpu_interleaved", "host_split", "metal_split"};
+  constexpr std::array<std::array<size_t, 3>, 6> orders{
+      {{0, 1, 2}, {0, 2, 1}, {1, 0, 2}, {1, 2, 0}, {2, 0, 1}, {2, 1, 0}}};
+  EntropyCode expected;
+  Ok(OptimizeEntropyCode(streams[0], {.context_count = static_cast<uint32_t>(cpu.context_count)},
+                         &expected));
+  if (work.options.entropy == EntropyCodingMode::kAns) {
+    EntropyCode ans;
+    Ok(OptimizeAnsEntropyCode(streams[0], expected, &ans));
+    expected = std::move(ans);
+  }
+  thread_budget_internal::EncodeScope serial(1);
+  for (size_t round = 0; round < warmups + rounds; ++round) {
+    const size_t order = (round + seed) % orders.size();
+    for (size_t backing : orders[order]) {
+      EntropyCode model;
+      EntropyWorkProfile profile;
+      const auto begin = Clock::now();
+      auto status = OptimizeEntropyCode(streams[backing],
+          {.context_count = static_cast<uint32_t>(cpu.context_count)}, &model, nullptr, &profile);
+      if (status.ok() && work.options.entropy == EntropyCodingMode::kAns) {
+        EntropyCode ans;
+        status = OptimizeAnsEntropyCode(streams[backing], model, &ans, nullptr, &profile);
+        model = std::move(ans);
+      }
+      const auto ns = Nanoseconds(begin);
+      Ok(status);
+      Check(model == expected, "Replay changed the exact entropy model");
+      csv << work.config.name << ',' << (round < warmups ? "warmup" : "replay") << ','
+          << (round < warmups ? round : round - warmups) << ',' << names[backing] << ',' << order
+          << ',' << ns << ',' << cpu.tokens.size() << ',' << cpu.context_count;
+      EntropyRow(csv, profile);
+      csv << '\n';
+    }
+  }
+}
 void Row(std::ostream &out, const Config &c, const Fixture &f, std::string_view kind, size_t round,
          bool cpu_first, std::string_view backend, size_t order, const Sample &s) {
   out << c.name << ',' << kind << ',' << round << ',' << cpu_first << ',' << backend << ','
@@ -281,15 +367,18 @@ void Row(std::ostream &out, const Config &c, const Fixture &f, std::string_view 
       << s.fingerprint << ',' << c.split_tree << ',' << order;
   for (double seconds : s.profile.seconds)
     out << ',' << static_cast<uint64_t>(seconds * 1e9);
+  EntropyRow(out, s.profile.entropy_work);
   out << '\n';
 }
 } // namespace
 int main(int argc, char **argv) try {
   Check(argc == 7 || (argc == 8 && std::string_view(argv[7]) == "tokens"),
-        "Usage: benchmark qualify|measure|profile MANIFEST OUTDIR ROUNDS WARMUPS SEED [tokens]");
+        "Usage: benchmark qualify|measure|profile|replay MANIFEST OUTDIR ROUNDS WARMUPS SEED [tokens]");
   const bool include_tokens = argc == 8;
   const std::string mode = argv[1];
-  Check(mode == "qualify" || mode == "measure" || mode == "profile", "Invalid mode");
+  Check(mode == "qualify" || mode == "measure" || mode == "profile" || mode == "replay",
+        "Invalid mode");
+  Check(mode != "replay" || include_tokens, "Replay requires token routes");
   const size_t rounds = Number(argv[4]), warmups = Number(argv[5]), seed = Number(argv[6]);
   Check(rounds > 0 && rounds <= 100 && warmups <= 10, "Invalid measurement counts");
   auto configs = Configs(argv[2]);
@@ -297,10 +386,15 @@ int main(int argc, char **argv) try {
   fs::create_directories(outdir / "expected");
   std::ofstream csv(outdir / (mode + "-" + std::to_string(seed) + ".csv"));
   csv.exceptions(std::ios::failbit | std::ios::badbit);
-  csv << "case,kind,round,cpu_first,backend,width,height,format,rct,entropy,threads,jobs,stride,"
+  if (mode == "replay")
+    csv << "case,kind,round,backing,route_order,model_ns,token_count,context_count";
+  else
+    csv << "case,kind,round,cpu_first,backend,width,height,format,rct,entropy,threads,jobs,stride,"
          "byte_order,ns,bytes,domain_capacity,peak_backing,cpu_peak,submissions,allocations,"
          "fingerprint,split_tree,route_order,input_ns,transforms_ns,training_ns,tokens_ns,model_ns,"
-         "emission_ns,assembly_ns,gpu_input_tokens_ns\n";
+         "emission_ns,assembly_ns,gpu_input_tokens_ns";
+  EntropyHeader(csv);
+  csv << '\n';
   std::unique_ptr<GpuBackend> gpu;
   const auto start = Clock::now();
   Ok(CreateEmbeddedMetalBackend({}, &gpu));
@@ -313,10 +407,16 @@ int main(int argc, char **argv) try {
     std::shuffle(configs.begin(), configs.end(), std::mt19937(seed));
   for (size_t index = 0; index < configs.size(); ++index) {
     const auto &config = configs[index];
-    if (mode == "profile" && config.jobs != 1)
+    if ((mode == "profile" || mode == "replay") && config.jobs != 1)
       continue;
     const Fixture fixture(config);
     const Workload work(config, fixture, *gpu, include_tokens);
+    if (mode == "replay") {
+      Replay(csv, work, rounds, warmups, seed + index);
+      csv.flush();
+      std::cout << mode << ' ' << config.name << " passed\n" << std::flush;
+      continue;
+    }
     const auto expected_path = outdir / "expected" / (config.name + ".jxl");
     const auto expected = mode == "qualify" ? std::vector<uint8_t>{} : Read(expected_path);
     for (size_t round = 0; round < (mode == "qualify" ? 1 : warmups + rounds); ++round) {

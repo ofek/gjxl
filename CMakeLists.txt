@@ -2384,6 +2384,11 @@ if(GJXL_BUILD_TESTS)
   # allocation boundary. Keep full coverage beyond the CI default of 600 s.
   set_tests_properties(modular_workflow PROPERTIES TIMEOUT 7200)
 
+  add_executable(gjxl_modular_profile_test tests/modular_profile_test.cpp)
+  target_link_libraries(gjxl_modular_profile_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_profile COMMAND gjxl_modular_profile_test)
+  set_tests_properties(modular_profile PROPERTIES TIMEOUT 60)
+
   add_executable(gjxl_modular_capture tools/modular_oracle/capture.cpp src/io/pnm.cpp)
   target_link_libraries(gjxl_modular_capture PRIVATE gjxl_codestream)
   find_package(Python3 COMPONENTS Interpreter QUIET)
