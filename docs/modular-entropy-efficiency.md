@@ -169,7 +169,10 @@ tree/transform/LZ77 differences. Promote an entropy-policy change only with
 material measured benefit and complete-file decoding/rate/time validation.
 A negative rate result is a valid study outcome; omitted measurements are not.
 
-Status: pending.
+Status: the frozen-token replay executable and corpus harness are implemented;
+[method and cells](../tools/modular_entropy_study/README.md). All 14 cells decode
+in the small pilot; malformed archives and overwrite attempts are rejected.
+The 19-image study remains pending until the complete-search controls finish.
 
 ## Engineering and measurement rules
 
@@ -185,3 +188,32 @@ Status: pending.
   diagnostics and sampled CPU attribution are not interchangeable with latency.
 - Measure the combined implementation at the end; do not multiply isolated
   speedups or claim savings from arithmetic ceilings.
+
+## Serial final qualification
+
+`tools/modular_training_study/qualify_entropy_pipeline.py` freezes and checks the
+original and step2/step4 binaries. It runs 128 complete calls: 16 retained mixed
+images once through each of five current modes, followed by two rotated repetitions
+of eight modes on each original 12 MP image. The old exact and estimated selectors
+and the population-reuse milestone are measured directly; current emission,
+exhaustive sizing, shortlist, GPU population sizing and combined shortlist/population
+modes carry exact candidate ledgers. Corpus timing includes all learning, tokens,
+modeling, waits, final emission and ledger serialization. Setup, independent decode
+and file I/O are reported outside the encoder-call timer. No compile or independent
+model replay is run concurrently with timed calls. A temporary idle-sleep guard is
+released on exit; process heartbeat and sleep evidence remain in the capture.
+
+```sh
+python3 tools/modular_training_study/qualify_entropy_pipeline.py capture \
+  --root build/entropy-pipeline-qualified-20261011
+python3 tools/modular_training_study/qualify_entropy_pipeline.py analyze \
+  --root build/entropy-pipeline-qualified-20261011 \
+  --json docs/modular-entropy-pipeline-results.json
+```
+
+The independent audit checks the full matrix, commands, hashes, training work,
+actual GPU submissions, admission, disjoint costs, each exact candidate against
+real emission, exhaustive winner bytes, shortlist finalists/regret and population
+byte neutrality. A heartbeat interruption requires an explicit repeated whole
+comparison; no sleep subtraction or fastest-run selection. The rate study runs
+serially afterward, using the newly qualified exhaustive winning policies.
