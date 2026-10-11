@@ -19,6 +19,7 @@
 
 #include "codestream/ans_internal.h"
 #include "codestream/entropy_internal.h"
+#include "codestream/entropy_population.h"
 #include "codestream/entropy_storage_plan.h"
 #include "codestream/huffman.h"
 #include "codestream/profile_internal.h"
@@ -68,14 +69,14 @@ struct Histogram {
   double bit_cost = 0.0;
   bool bit_cost_valid = false;
 
-  bool Add(size_t symbol) {
+  bool Add(size_t symbol, uint64_t amount = 1) {
     if (symbol >= counts.size() ||
-        counts[symbol] == std::numeric_limits<uint64_t>::max() ||
-        total_count == std::numeric_limits<uint64_t>::max()) {
+        amount > std::numeric_limits<uint64_t>::max() - counts[symbol] ||
+        amount > std::numeric_limits<uint64_t>::max() - total_count) {
       return false;
     }
-    ++counts[symbol];
-    ++total_count;
+    counts[symbol] += amount;
+    total_count += amount;
     symbol_limit = std::max(symbol_limit, symbol + 1);
     bit_cost_valid = false;
     return true;
@@ -1476,7 +1477,8 @@ Status BuildEntropyCodeForPartition(
   EntropyCode* code,
   EntropyCodeCost* cost,
   codestream_internal::PreparedEntropyClusters* prepared,
-  EntropyWorkProfile* profile) {
+  EntropyWorkProfile* profile,
+  const codestream_internal::EntropyContextPopulations* populations) {
 
   if (code == nullptr || cost == nullptr || cluster_count == 0 ||
       cluster_count > kMaximumPrefixClusters ||
@@ -1496,65 +1498,76 @@ Status BuildEntropyCodeForPartition(
     candidate.context_map[context] = clustered_map[initial];
   }
 
-  const ProfileClock::time_point value_collection_begin =
-    ProfileBegin(profile);
-  // The selected partition maps each already-counted source histogram to one
-  // final cluster. Use those exact populations to allocate a single raw-value
-  // buffer, avoiding per-cluster growth and capacity slack.
-  Storage<size_t> cluster_offsets(cluster_count + 1);
-  for (size_t histogram = 0; histogram < source_histograms.size();
-       ++histogram) {
-    const size_t cluster = clustered_map[histogram];
-    const uint64_t count = source_histograms[histogram].total_count;
-    if (cluster >= cluster_count) {
-      return Status::Internal("Entropy cluster index is invalid");
-    }
-    if (count > std::numeric_limits<size_t>::max() ||
-        cluster_offsets[cluster + 1] >
-          std::numeric_limits<size_t>::max() - static_cast<size_t>(count)) {
-      return Status::OutOfMemory("Entropy cluster values are too large");
-    }
-    cluster_offsets[cluster + 1] += static_cast<size_t>(count);
-  }
-  for (size_t cluster = 0; cluster < cluster_count; ++cluster) {
-    if (cluster_offsets[cluster] >
-        std::numeric_limits<size_t>::max() - cluster_offsets[cluster + 1]) {
-      return Status::OutOfMemory("Entropy cluster values are too large");
-    }
-    cluster_offsets[cluster + 1] += cluster_offsets[cluster];
-  }
-  Storage<uint32_t> values(cluster_offsets.back());
-  Storage<size_t> write_offsets(
-    cluster_offsets.begin(), cluster_offsets.end() - 1);
-  for (const EntropyTokenStreamView section : section_tokens) {
-    if (!section.valid()) {
-      return Status::InvalidArgument("Entropy token-stream view is invalid");
-    }
-    for (size_t index = 0; index < section.size(); ++index) {
-      const EntropyToken token = section[index];
-      if (token.context >= candidate.context_count) {
-        return Status::InvalidArgument("Entropy token context is out of range");
-      }
-      const size_t cluster = candidate.context_map[token.context];
+  Storage<size_t> cluster_offsets;
+  Storage<uint32_t> values;
+  Storage<Storage<codestream_internal::WeightedValue>> merged;
+  if (populations) {
+    const auto begin = ProfileBegin(profile);
+    if (auto s = codestream_internal::MergeEntropyContextPopulations(
+          *populations, candidate.context_map, cluster_count, &merged); !s.ok()) return s;
+    ProfileEnd(profile, begin, &EntropyWorkProfile::prefix_population_merge_nanoseconds);
+  } else {
+    const ProfileClock::time_point value_collection_begin =
+      ProfileBegin(profile);
+    // The selected partition maps each already-counted source histogram to one
+    // final cluster. Use those exact populations to allocate a single raw-value
+    // buffer, avoiding per-cluster growth and capacity slack.
+    cluster_offsets.resize(cluster_count + 1);
+    for (size_t histogram = 0; histogram < source_histograms.size();
+         ++histogram) {
+      const size_t cluster = clustered_map[histogram];
+      const uint64_t count = source_histograms[histogram].total_count;
       if (cluster >= cluster_count) {
         return Status::Internal("Entropy cluster index is invalid");
       }
-      if (write_offsets[cluster] >= cluster_offsets[cluster + 1]) {
+      if (count > std::numeric_limits<size_t>::max() ||
+          cluster_offsets[cluster + 1] >
+            std::numeric_limits<size_t>::max() - static_cast<size_t>(count)) {
+        return Status::OutOfMemory("Entropy cluster values are too large");
+      }
+      cluster_offsets[cluster + 1] += static_cast<size_t>(count);
+    }
+    for (size_t cluster = 0; cluster < cluster_count; ++cluster) {
+      if (cluster_offsets[cluster] >
+          std::numeric_limits<size_t>::max() - cluster_offsets[cluster + 1]) {
+        return Status::OutOfMemory("Entropy cluster values are too large");
+      }
+      cluster_offsets[cluster + 1] += cluster_offsets[cluster];
+    }
+    values.resize(cluster_offsets.back());
+    Storage<size_t> write_offsets(
+      cluster_offsets.begin(), cluster_offsets.end() - 1);
+    for (const EntropyTokenStreamView section : section_tokens) {
+      if (!section.valid()) {
+        return Status::InvalidArgument("Entropy token-stream view is invalid");
+      }
+      for (size_t index = 0; index < section.size(); ++index) {
+        const EntropyToken token = section[index];
+        if (token.context >= candidate.context_count) {
+          return Status::InvalidArgument("Entropy token context is out of range");
+        }
+        const size_t cluster = candidate.context_map[token.context];
+        if (cluster >= cluster_count) {
+          return Status::Internal("Entropy cluster index is invalid");
+        }
+        if (write_offsets[cluster] >= cluster_offsets[cluster + 1]) {
+          return Status::Internal(
+            "Entropy cluster population differs from its histogram");
+        }
+        values[write_offsets[cluster]++] = token.value;
+      }
+    }
+    for (size_t cluster = 0; cluster < cluster_count; ++cluster) {
+      if (write_offsets[cluster] != cluster_offsets[cluster + 1]) {
         return Status::Internal(
           "Entropy cluster population differs from its histogram");
       }
-      values[write_offsets[cluster]++] = token.value;
     }
+    ProfileEnd(
+      profile, value_collection_begin,
+      &EntropyWorkProfile::prefix_value_collection_nanoseconds);
+
   }
-  for (size_t cluster = 0; cluster < cluster_count; ++cluster) {
-    if (write_offsets[cluster] != cluster_offsets[cluster + 1]) {
-      return Status::Internal(
-        "Entropy cluster population differs from its histogram");
-    }
-  }
-  ProfileEnd(
-    profile, value_collection_begin,
-    &EntropyWorkProfile::prefix_value_collection_nanoseconds);
 
   const ProfileClock::time_point config_search_begin =
     ProfileBegin(profile);
@@ -1565,16 +1578,20 @@ Status BuildEntropyCodeForPartition(
     prepared_values(prepared == nullptr ? 0 : cluster_count);
   for (size_t cluster = 0; cluster < cluster_count; ++cluster) {
     Storage<codestream_internal::WeightedValue> weighted_values;
-    const size_t begin = cluster_offsets[cluster];
-    const size_t size = cluster_offsets[cluster + 1] - begin;
-    const auto aggregation_begin = ProfileBegin(profile);
-    if (Status status = codestream_internal::AggregateEntropyValues(
-          std::span<uint32_t>(values).subspan(begin, size), &weighted_values);
-        !status.ok()) {
-      return status;
+    if (populations) {
+      weighted_values = std::move(merged[cluster]);
+    } else {
+      const size_t begin = cluster_offsets[cluster];
+      const size_t size = cluster_offsets[cluster + 1] - begin;
+      const auto aggregation_begin = ProfileBegin(profile);
+      if (Status status = codestream_internal::AggregateEntropyValues(
+            std::span<uint32_t>(values).subspan(begin, size), &weighted_values);
+          !status.ok()) {
+        return status;
+      }
+      ProfileEnd(profile, aggregation_begin,
+                 &EntropyWorkProfile::prefix_value_aggregation_nanoseconds);
     }
-    ProfileEnd(profile, aggregation_begin,
-               &EntropyWorkProfile::prefix_value_aggregation_nanoseconds);
     if (Status status = BuildClusterCode(
           weighted_values, options.uint_config, optimize_configs,
           &candidate.uint_configs[cluster], &candidate.prefix_codes[cluster],
@@ -1752,7 +1769,8 @@ Status OptimizeEntropyCodeImpl(
   EntropyCodeCost* cost,
   codestream_internal::PreparedEntropyClusters* prepared,
   bool fast_fixed_partition,
-  codestream_internal::EntropyWorkProfile* profile) {
+  codestream_internal::EntropyWorkProfile* profile,
+  const codestream_internal::EntropyContextPopulations* populations = nullptr) {
 
   if (code == nullptr || options.context_count == 0) {
     return Status::InvalidArgument("Invalid entropy-code output or context count");
@@ -1793,33 +1811,52 @@ Status OptimizeEntropyCodeImpl(
       ProfileBegin(profile);
     Storage<Histogram> histograms(histogram_count);
     uint64_t fixed_extra_bits = 0;
-    for (const EntropyTokenStreamView section : section_tokens) {
-      if (!section.valid()) {
-        return Status::InvalidArgument("Entropy token-stream view is invalid");
+    if (populations) {
+      if (profile) ++profile->prefix_population_model_count;
+      for (size_t context = 0; context < populations->contexts; ++context) {
+        const size_t histogram = options.initial_context_map.empty() ? context : options.initial_context_map[context];
+        for (size_t value = 0; value < populations->value_limit; ++value) {
+          const uint64_t count = populations->counts[context * populations->value_limit + value];
+          if (!count) continue;
+          HybridUintToken encoded;
+          if (auto status = EncodeHybridUint(uint32_t(value), options.uint_config, &encoded); !status.ok()) return status;
+          if (encoded.symbol >= kPrefixAlphabetSize ||
+              (encoded.extra_bit_count && count > UINT64_MAX / encoded.extra_bit_count) ||
+              !AddBits(count * encoded.extra_bit_count, &fixed_extra_bits) ||
+              !histograms[histogram].Add(encoded.symbol, count))
+            return Status::InvalidArgument("Entropy population histogram/bit count overflow");
+        }
       }
-      for (size_t index = 0; index < section.size(); ++index) {
-        const EntropyToken token = section[index];
-        if (token.context >= options.context_count) {
-          return Status::InvalidArgument("Entropy token context is out of range");
+    } else {
+      for (const EntropyTokenStreamView section : section_tokens) {
+        if (!section.valid()) {
+          return Status::InvalidArgument("Entropy token-stream view is invalid");
         }
-        HybridUintToken encoded;
-        if (Status status = EncodeHybridUint(
-              token.value, options.uint_config, &encoded);
-            !status.ok()) {
-          return status;
-        }
-        if (encoded.symbol >= kPrefixAlphabetSize) {
-          return Status::InvalidArgument(
-            "HybridUint symbol is outside the prefix alphabet");
-        }
-        if (!AddBits(encoded.extra_bit_count, &fixed_extra_bits)) {
-          return Status::InvalidArgument("Entropy token bit count overflow");
-        }
-        const size_t histogram = options.initial_context_map.empty()
-          ? token.context
-          : options.initial_context_map[token.context];
-        if (!histograms[histogram].Add(encoded.symbol)) {
-          return Status::InvalidArgument("Entropy histogram count overflow");
+        if (profile) profile->prefix_histogram_token_count += section.size();
+        for (size_t index = 0; index < section.size(); ++index) {
+          const EntropyToken token = section[index];
+          if (token.context >= options.context_count) {
+            return Status::InvalidArgument("Entropy token context is out of range");
+          }
+          HybridUintToken encoded;
+          if (Status status = EncodeHybridUint(
+                token.value, options.uint_config, &encoded);
+              !status.ok()) {
+            return status;
+          }
+          if (encoded.symbol >= kPrefixAlphabetSize) {
+            return Status::InvalidArgument(
+              "HybridUint symbol is outside the prefix alphabet");
+          }
+          if (!AddBits(encoded.extra_bit_count, &fixed_extra_bits)) {
+            return Status::InvalidArgument("Entropy token bit count overflow");
+          }
+          const size_t histogram = options.initial_context_map.empty()
+            ? token.context
+            : options.initial_context_map[token.context];
+          if (!histograms[histogram].Add(encoded.symbol)) {
+            return Status::InvalidArgument("Entropy histogram count overflow");
+          }
         }
       }
     }
@@ -2075,7 +2112,7 @@ Status OptimizeEntropyCodeImpl(
           section_tokens, options, best_partition_map, histograms,
           best_partition_count, true, &configured_code,
           &configured_cost, prepared == nullptr ? nullptr : &configured_values,
-          profile);
+          profile, populations);
         !status.ok()) {
       return status;
     }
@@ -2146,6 +2183,22 @@ Status codestream_internal::OptimizeEntropyCodeAndPrepareClusters(
   }
   return OptimizeEntropyCodeImpl(
     section_tokens, options, code, cost, prepared, false, profile);
+}
+
+Status codestream_internal::OptimizeEntropyCodeFromContextPopulations(
+    std::span<const EntropyTokenStreamView> section_tokens, const EntropyCodeOptions &options,
+    const EntropyContextPopulations &populations, EntropyCode *code, EntropyCodeCost *cost,
+    PreparedEntropyClusters *prepared, EntropyWorkProfile *profile) {
+  if (populations.contexts != options.context_count)
+    return Status::InvalidArgument("Entropy population context count differs");
+  uint64_t total = 0;
+  for (const auto stream : section_tokens) {
+    if (!stream.valid() || stream.size() > UINT64_MAX - total)
+      return Status::InvalidArgument("Invalid entropy population token dimensions");
+    total += stream.size();
+  }
+  if (auto s = ValidateEntropyContextPopulations(populations, total); !s.ok()) return s;
+  return OptimizeEntropyCodeImpl(section_tokens, options, code, cost, prepared, false, profile, &populations);
 }
 
 Status codestream_internal::OptimizeFastPrefixEntropyCode(

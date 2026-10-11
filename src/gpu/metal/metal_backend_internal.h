@@ -33,6 +33,7 @@
 #include "gpu/ops/ac_strategy.h"
 #include "gpu/ops/ans_token_cost.h"
 #include "gpu/ops/modular_tree_statistics.h"
+#include "gpu/ops/modular_populations.h"
 #include "gpu/ops/ac_strategy_selection.h"
 #include "gpu/ops/aq_evaluation.h"
 #include "gpu/ops/aq_evaluation_internal.h"
@@ -377,6 +378,7 @@ class MetalBackend final
     public modular_gpu_internal::GpuAdaptiveModularTokenGeneration,
     public ans_gpu_internal::GpuAnsTokenCost,
     public tree_gpu_internal::GpuModularTreeStatistics,
+    public modular_gpu_internal::GpuModularPopulations,
     public DeviceButteraugliOperation {
 public:
   MetalBackend(
@@ -391,6 +393,7 @@ public:
     std::array<NS::SharedPtr<MTL::ComputePipelineState>, 5> modular_token_pipelines,
     NS::SharedPtr<MTL::ComputePipelineState> ans_token_cost_pipeline,
     std::array<NS::SharedPtr<MTL::ComputePipelineState>, 2> tree_statistics_pipelines,
+    std::array<NS::SharedPtr<MTL::ComputePipelineState>, 2> modular_population_pipelines,
     AqPipelines aq_pipelines,
     ButteraugliPipelines butteraugli_pipelines,
     bool test_fail_submission,
@@ -543,6 +546,9 @@ public:
   Status MeasureAnsTokenCosts(
     const ans_gpu_internal::AnsTokenCostInput& input,
     std::unique_ptr<ans_gpu_internal::PreparedGpuAnsTokenCosts>* out) override;
+  modular_gpu_internal::ModularPopulationDeviceLimits modular_population_limits() const noexcept override;
+  Status ProduceModularPopulations(const modular_gpu_internal::ModularPopulationInput &input,
+      std::unique_ptr<modular_gpu_internal::PreparedGpuModularPopulations> *out) override;
   tree_gpu_internal::TreeStatisticsDeviceLimits tree_statistics_limits() const noexcept override;
   Status PrepareTreeStatistics(
     const tree_gpu_internal::TreeStatisticsPreparationInput& input,
@@ -892,6 +898,7 @@ private:
   PrimitivePipelines primitive_pipelines_;
   NS::SharedPtr<MTL::ComputePipelineState> modular_input_pipeline_;
   std::array<NS::SharedPtr<MTL::ComputePipelineState>, 5> modular_token_pipelines_;
+  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 2> modular_population_pipelines_;
   NS::SharedPtr<MTL::ComputePipelineState> ans_token_cost_pipeline_;
   std::array<NS::SharedPtr<MTL::ComputePipelineState>, 2> tree_statistics_pipelines_;
   AqPipelines aq_pipelines_;

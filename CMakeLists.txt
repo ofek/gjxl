@@ -341,6 +341,7 @@ add_library(
   src/codestream/vardct/dc_group.cpp
   src/codestream/vardct/weighted_dc.cpp
   src/codestream/vardct/dc_context_tree.cpp
+  src/codestream/entropy_population.cpp
   src/codestream/entropy.cpp
   src/codestream/context_map.cpp
   src/codestream/vardct/encoder.cpp
@@ -362,6 +363,7 @@ add_library(
   src/codestream/modular/prepared_encoder.cpp
   src/codestream/modular/adaptive_gpu_workflow.cpp
   src/codestream/modular/gpu_ans_cost.cpp
+  src/codestream/modular/gpu_populations.cpp
   src/codestream/modular/gpu_tree_statistics.cpp
   src/codestream/modular/gpu_workflow.cpp
   src/codestream/modular/gpu_token_workflow.cpp
@@ -594,6 +596,7 @@ add_library(
 
   src/gpu/ops/ac_strategy_search.cpp
   src/gpu/ops/ac_strategy_storage_plan.cpp
+  src/gpu/ops/modular_populations.cpp
   src/gpu/ops/ans_token_cost.cpp
   src/gpu/ops/modular_tree_statistics.cpp
   src/gpu/ops/modular_input_storage_plan.cpp
@@ -829,6 +832,8 @@ set(GJXL_ANS_COST_METAL_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/metal/kernel
 set(GJXL_ANS_COST_METAL_IR "${GJXL_METAL_DIR}/ans_token_cost.ir")
 set(GJXL_TREE_STATISTICS_METAL_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/metal/kernels/modular_tree_statistics.metal")
 set(GJXL_TREE_STATISTICS_METAL_IR "${GJXL_METAL_DIR}/modular_tree_statistics.ir")
+set(GJXL_MODULAR_POPULATIONS_METAL_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/metal/kernels/modular_populations.metal")
+set(GJXL_MODULAR_POPULATIONS_METAL_IR "${GJXL_METAL_DIR}/modular_populations.ir")
 
 set(
   GJXL_PRIMITIVES_METAL_IR
@@ -1130,6 +1135,14 @@ add_custom_command(OUTPUT "${GJXL_TREE_STATISTICS_METAL_IR}"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/metal/kernels/modular_tree_statistics_params.h"
   COMMENT "Compiling exact Metal Modular learner statistics" VERBATIM)
 
+add_custom_command(OUTPUT "${GJXL_MODULAR_POPULATIONS_METAL_IR}"
+  COMMAND "${CMAKE_COMMAND}" -E make_directory "${GJXL_METAL_DIR}"
+  COMMAND "${XCRUN_EXECUTABLE}" -sdk macosx metal -std=metal3.1
+    ${GJXL_METAL_PROFILING_FLAGS} -c "${GJXL_MODULAR_POPULATIONS_METAL_SOURCE}" -o "${GJXL_MODULAR_POPULATIONS_METAL_IR}"
+  DEPENDS "${GJXL_MODULAR_POPULATIONS_METAL_SOURCE}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/metal/kernels/modular_population_params.h"
+  COMMENT "Compiling exact Metal Modular populations" VERBATIM)
+
 add_custom_command(OUTPUT "${GJXL_AQ_METADATA_METAL_IR}"
   COMMAND "${CMAKE_COMMAND}" -E make_directory "${GJXL_METAL_DIR}"
   COMMAND "${XCRUN_EXECUTABLE}" -sdk macosx metal -std=metal3.1
@@ -1165,6 +1178,7 @@ add_custom_command(
     "${GJXL_MODULAR_ADAPTIVE_METAL_IR}"
     "${GJXL_ANS_COST_METAL_IR}"
     "${GJXL_TREE_STATISTICS_METAL_IR}"
+    "${GJXL_MODULAR_POPULATIONS_METAL_IR}"
     "${GJXL_PRIMITIVES_METAL_IR}"
     "${GJXL_AQ_REDUCTION_METAL_IR}"
     "${GJXL_AQ_RECONSTRUCTION_METAL_IR}"
@@ -1181,6 +1195,7 @@ add_custom_command(
     "${GJXL_MODULAR_ADAPTIVE_METAL_IR}"
     "${GJXL_ANS_COST_METAL_IR}"
     "${GJXL_TREE_STATISTICS_METAL_IR}"
+    "${GJXL_MODULAR_POPULATIONS_METAL_IR}"
     "${GJXL_PRIMITIVES_METAL_IR}"
     "${GJXL_AQ_REDUCTION_METAL_IR}"
     "${GJXL_AQ_RECONSTRUCTION_METAL_IR}"
@@ -1292,6 +1307,7 @@ add_library(
   src/gpu/metal/metal_modular_adaptive_tokens.cpp
   src/gpu/metal/metal_ans_token_cost.cpp
   src/gpu/metal/metal_modular_tree_statistics.cpp
+  src/gpu/metal/metal_modular_populations.cpp
   src/gpu/metal/metal_submission.cpp
   src/gpu/metal/metal_submission_storage_plan.cpp
   src/gpu/metal/metal_storage_plan.cpp
@@ -2409,6 +2425,10 @@ if(GJXL_BUILD_TESTS)
   set_tests_properties(ans_selection ans_selection_faults PROPERTIES TIMEOUT 300)
 
   add_executable(gjxl_modular_candidate_cost_test tests/modular_candidate_cost_test.cpp)
+  add_executable(gjxl_entropy_population_test tests/entropy_population_test.cpp)
+  target_link_libraries(gjxl_entropy_population_test PRIVATE gjxl_codestream gjxl_gpu_ops)
+  add_test(NAME entropy_population COMMAND gjxl_entropy_population_test)
+  set_tests_properties(entropy_population PROPERTIES TIMEOUT 180)
   target_link_libraries(gjxl_modular_candidate_cost_test PRIVATE gjxl_codestream)
   add_test(NAME modular_candidate_cost COMMAND gjxl_modular_candidate_cost_test)
   set_tests_properties(modular_candidate_cost PROPERTIES TIMEOUT 180)
@@ -3680,6 +3700,14 @@ if(GJXL_BUILD_TESTS)
   set_tests_properties(metal_modular_tokens_composed PROPERTIES TIMEOUT 180)
 
   add_executable(gjxl_metal_ans_token_cost_test tests/metal_ans_token_cost_test.cpp)
+  add_executable(gjxl_metal_modular_population_test tests/metal_modular_population_test.cpp)
+  target_link_libraries(gjxl_metal_modular_population_test PRIVATE gjxl_codestream gjxl_metal)
+  if(TARGET gjxl_modular_reference)
+    target_link_libraries(gjxl_metal_modular_population_test PRIVATE gjxl_modular_reference)
+    target_compile_definitions(gjxl_metal_modular_population_test PRIVATE GJXL_POPULATION_REFERENCE=1)
+  endif()
+  add_test(NAME metal_modular_population COMMAND gjxl_metal_modular_population_test)
+  set_tests_properties(metal_modular_population PROPERTIES TIMEOUT 300)
   target_link_libraries(gjxl_metal_ans_token_cost_test PRIVATE gjxl_codestream gjxl_metal)
   target_compile_definitions(gjxl_metal_ans_token_cost_test PRIVATE GJXL_METALLIB_PATH="${GJXL_METALLIB}")
   add_test(NAME metal_ans_token_cost COMMAND gjxl_metal_ans_token_cost_test)

@@ -23,8 +23,8 @@ void Ok(const Status &s) { if (!s.ok()) throw std::runtime_error(std::string(s.m
 void TocBoundaries() {
   ModularInputProfile input;
   Ok(ResolveModularInput({513, 17}, PackedModularFormat::kRgb8, &input));
-  for (uint64_t bytes : {0ull, 1ull, 1023ull, 1024ull, 17407ull, 17408ull,
-                        4211711ull, 4211712ull, uint64_t(kMaximumTocSectionSize)}) {
+  for (uint64_t bytes : std::array<uint64_t, 9>{0, 1, 1023, 1024, 17407, 17408,
+                        4211711, 4211712, uint64_t(kMaximumTocSectionSize)}) {
     for (uint64_t tail : {0ull, 1ull, 7ull}) {
       if (!bytes && tail) continue;
       const std::array<uint64_t, 3> bits{bytes * 8 - tail, 0, 7};

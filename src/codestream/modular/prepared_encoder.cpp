@@ -7,7 +7,8 @@ Status EncodePreparedModularFrame(ModularEncoderFrame frame, const ModularCoding
                                   EntropyCodingMode entropy,
                                   const ModularWorkflowStoragePlan &storage,
                                   codestream_internal::CodestreamBuffer *out,
-                                  AnsSelectionMode selection, ModularCandidateEvaluation *evaluation) {
+                                  AnsSelectionMode selection, ModularCandidateEvaluation *evaluation,
+                                  GpuBackend *population_gpu) {
   if (auto s = ValidateAnsSelectionMode(selection); !s.ok())
     return s;
   if (!out && (!evaluation || evaluation->operation == ModularCandidateOperation::kEmit))
@@ -27,6 +28,6 @@ Status EncodePreparedModularFrame(ModularEncoderFrame frame, const ModularCoding
     return s;
   frame = {}; // The CPU workflow plan excludes samples from subsequent phases.
   return EncodeModularFrame(metadata, layout, std::move(tokens), entropy, storage, out, selection,
-                             nullptr, evaluation);
+                             nullptr, evaluation, population_gpu);
 }
 } // namespace gjxl::modular_internal

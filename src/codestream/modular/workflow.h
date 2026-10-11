@@ -28,6 +28,9 @@ struct ModularEncodingOptions {
   bool adaptive_ans_cost = false;
   // Private original-learner statistics route; requires adaptive_gpu and search.
   bool adaptive_tree_statistics = false;
+  // Private exact population producer. Wide/small/unsupported inputs retain the
+  // complete CPU producer; device errors propagate without a hidden retry.
+  bool adaptive_populations = false;
   // Private selector: estimated mode omits ordered candidate simulation unless
   // an exact cost is requested. Applies equally to CPU and hybrid token paths.
   AnsSelectionMode ans_selection = AnsSelectionMode::kExact;

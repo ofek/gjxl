@@ -22,5 +22,6 @@ struct ModularCandidateEvaluation {
                                         codestream_internal::CodestreamBuffer *out,
                                         AnsSelectionMode selection = AnsSelectionMode::kExact,
                                         GpuBackend *ans_gpu = nullptr,
-                                        ModularCandidateEvaluation *evaluation = nullptr);
+                                        ModularCandidateEvaluation *evaluation = nullptr,
+                                        GpuBackend *population_gpu = nullptr);
 } // namespace gjxl::modular_internal

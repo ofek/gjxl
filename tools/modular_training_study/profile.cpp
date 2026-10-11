@@ -90,11 +90,11 @@ void Stages(const std::array<const char *, N> &names, const std::array<double, N
 } // namespace
 
 int main(int argc, char **argv) try {
-  if (argc < 6 || argc > 12)
+  if (argc < 6 || argc > 13)
     throw std::runtime_error(
-        "gjxl_modular_search_profile INPUT OUTPUT SAMPLES LEAVES THREADS [--metal|--metal-ans|--metal-learn] [--estimated-ans] [--measure-all|--shortlist] [--candidate-ledger] [--no-profile]");
+        "gjxl_modular_search_profile INPUT OUTPUT SAMPLES LEAVES THREADS [--metal|--metal-ans|--metal-learn] [--estimated-ans] [--measure-all|--shortlist] [--candidate-ledger] [--metal-populations] [--no-profile]");
   bool profiling = true, metal = false, metal_ans = false, metal_learn = false, estimated = false;
-  bool measure = false, shortlist = false, ledger = false;
+  bool measure = false, shortlist = false, ledger = false, populations = false;
   CandidateLedger candidates;
   for (int i = 6; i < argc; ++i) {
     const std::string_view argument(argv[i]);
@@ -105,9 +105,11 @@ int main(int argc, char **argv) try {
     else if (argument == "--estimated-ans" && !estimated) estimated = true;
     else if (argument == "--measure-all" && !measure && !shortlist) measure = true;
     else if (argument == "--shortlist" && !measure && !shortlist) shortlist = true;
+    else if (argument == "--metal-populations" && !populations) populations = true;
     else if (argument == "--candidate-ledger" && !ledger) ledger = true;
     else throw std::runtime_error("Unknown or duplicate profiling option");
   }
+  if (populations && !metal) throw std::runtime_error("--metal-populations requires a Metal route");
   std::unique_ptr<GpuBackend> gpu;
   double backend_setup_seconds = 0;
   if (metal) {
@@ -128,6 +130,7 @@ int main(int argc, char **argv) try {
   options.adaptive_gpu = gpu.get();
   options.adaptive_ans_cost = metal_ans;
   options.adaptive_tree_statistics = metal_learn;
+  options.adaptive_populations = populations;
   options.ans_selection = estimated ? AnsSelectionMode::kEstimated : AnsSelectionMode::kExact;
   options.search_evaluation = shortlist ? ModularSearchEvaluation::kShortlist : measure ? ModularSearchEvaluation::kMeasureAll : ModularSearchEvaluation::kEncodeAll;
   options.candidate_observer = ledger ? &candidates : nullptr;
@@ -192,6 +195,7 @@ int main(int argc, char **argv) try {
             << "\",\"entropy\":\"ans\""
             << ",\"ans_selection\":\"" << (estimated ? "estimated" : "exact") << '"'
             << ",\"search_evaluation\":\"" << (shortlist ? "shortlist" : measure ? "measure-all" : "encode-all") << '"'
+            << ",\"adaptive_populations\":" << (populations ? "true" : "false")
             << ",\"candidate_ledger_enabled\":" << (ledger ? "true" : "false")
             << ",\"candidate_emissions\":" << profile.candidate_emissions
             << ",\"screened_candidates\":" << profile.screened_candidates
@@ -231,7 +235,14 @@ int main(int argc, char **argv) try {
             << ",\"tree_gpu_samples\":" << g.tree_gpu_samples
             << ",\"tree_cpu_fallback_properties\":" << g.tree_cpu_fallback_properties
             << ",\"tree_cpu_small_properties\":" << g.tree_cpu_small_properties
-            << ",\"tree_cpu_unsupported_learning_calls\":" << g.tree_cpu_unsupported_learning_calls << '}';
+            << ",\"tree_cpu_unsupported_learning_calls\":" << g.tree_cpu_unsupported_learning_calls
+            << ",\"population_seconds\":" << g.population_seconds
+            << ",\"population_gpu_calls\":" << g.population_gpu_calls
+            << ",\"population_tokens\":" << g.population_tokens
+            << ",\"population_cpu_small\":" << g.population_cpu_small
+            << ",\"population_cpu_unsupported\":" << g.population_cpu_unsupported
+            << ",\"population_cpu_wide\":" << g.population_cpu_wide
+            << ",\"population_screen_skips\":" << g.population_screen_skips << '}';
   std::cout << ",\"training\":{\"stages\":";
   const auto &t = profile.training_work;
   Stages(std::array{"rct_ranking", "palette_probe", "sample_gathering", "simple_learning",
@@ -253,6 +264,9 @@ int main(int argc, char **argv) try {
       {"prefix_value_aggregation_ns", e.prefix_value_aggregation_nanoseconds},
       {"prefix_exact_measurement_ns", e.prefix_exact_measurement_nanoseconds},
       {"prefix_section_measurements", e.prefix_section_measurement_count},
+      {"prefix_population_merge_ns", e.prefix_population_merge_nanoseconds},
+      {"prefix_population_models", e.prefix_population_model_count},
+      {"prefix_histogram_tokens", e.prefix_histogram_token_count},
       {"ans_prefix_validation_ns", e.ans_prefix_validation_nanoseconds},
       {"ans_value_collection_ns", e.ans_value_collection_nanoseconds},
       {"ans_value_aggregation_ns", e.ans_value_aggregation_nanoseconds},

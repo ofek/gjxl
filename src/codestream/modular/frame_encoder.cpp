@@ -2,6 +2,8 @@
 // Copyright (c) 2026 Yunho Cho
 #include "codestream/modular/frame_encoder.h"
 #include "codestream/modular/gpu_ans_cost.h"
+#include "codestream/modular/gpu_populations.h"
+#include "codestream/entropy_population.h"
 #include "codec/modular/profile.h"
 #include "codestream/headers_internal.h"
 #include "codestream/modular/stream_encoder.h"
@@ -15,7 +17,7 @@ Status EncodeModularFrame(const codec_internal::ImageMetadata &metadata,
                           const ModularStreamPlan &layout, PreparedModularTokens &&input,
                           EntropyCodingMode mode, const ModularWorkflowStoragePlan &storage,
                           CodestreamBuffer *out, AnsSelectionMode selection,
-                          GpuBackend *ans_gpu, ModularCandidateEvaluation *evaluation) try {
+                          GpuBackend *ans_gpu, ModularCandidateEvaluation *evaluation, GpuBackend *population_gpu) try {
   if (auto s = ValidateAnsSelectionMode(selection); !s.ok())
     return s;
   const auto operation = evaluation ? evaluation->operation : ModularCandidateOperation::kEmit;
@@ -30,6 +32,8 @@ Status EncodeModularFrame(const codec_internal::ImageMetadata &metadata,
   {
     PreparedModularTokens tokens = std::move(input);
     if (operation == ModularCandidateOperation::kScreen) {
+      if (population_gpu && active_modular_profile)
+        ++active_modular_profile->adaptive_gpu.population_screen_skips;
       ProfileScope profile_scope(ProfileStage::kModel);
       if (auto s = ScreenModularCandidate(metadata, layout, tokens, mode, &result.estimate); !s.ok())
         return s;
@@ -46,13 +50,27 @@ Status EncodeModularFrame(const codec_internal::ImageMetadata &metadata,
       auto *entropy_profile = active_modular_profile ? &active_modular_profile->entropy_work
                                                     : nullptr;
       const EntropyCodeOptions options{.context_count = static_cast<uint32_t>(tokens.context_count)};
+      std::unique_ptr<modular_gpu_internal::PreparedGpuModularPopulations> population_owner;
+      if (population_gpu)
+        if (auto s = PrepareModularPopulations(*population_gpu, tokens, &population_owner); !s.ok()) return s;
+      EntropyContextPopulations dense;
+      if (population_owner) dense = {tokens.context_count, modular_gpu_internal::kPopulationValueLimit,
+                                      population_owner->counts()};
+      const auto prefix_model = [&](PreparedEntropyClusters *prepared, EntropyCodeCost *cost) {
+        if (population_owner)
+          return OptimizeEntropyCodeFromContextPopulations(tokens.streams, options, dense, &model,
+                                                             cost, prepared, entropy_profile);
+        if (prepared)
+          return OptimizeEntropyCodeAndPrepareClusters(tokens.streams, options, &model, cost,
+                                                         prepared, entropy_profile);
+        return OptimizeEntropyCode(tokens.streams, options, &model, cost, entropy_profile);
+      };
       if (mode == EntropyCodingMode::kAns) {
         // The selected prefix partition already computed these exact raw-value
         // populations. Keep them through ANS model construction, then release
         // them before payload emission. No prefix section costs are requested.
         PreparedEntropyClusters populations;
-        if (auto s = OptimizeEntropyCodeAndPrepareClusters(tokens.streams, options, &model,
-                                                            nullptr, &populations, entropy_profile);
+        if (auto s = prefix_model(&populations, nullptr);
             !s.ok())
           return s;
         EntropyCode ans;
@@ -68,8 +86,7 @@ Status EncodeModularFrame(const codec_internal::ImageMetadata &metadata,
             return s;
         }
         model = std::move(ans);
-      } else if (auto s = OptimizeEntropyCode(tokens.streams, options, &model, requested_cost,
-                                               entropy_profile); !s.ok()) {
+      } else if (auto s = prefix_model(nullptr, requested_cost); !s.ok()) {
         return s;
       }
     }

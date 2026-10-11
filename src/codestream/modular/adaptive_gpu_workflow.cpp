@@ -8,6 +8,8 @@
 #include "gpu/ops/modular_adaptive_layout.h"
 #include "gpu/ops/ans_token_cost.h"
 #include "gpu/ops/modular_tree_statistics.h"
+#include "gpu/ops/modular_populations.h"
+#include "codestream/entropy_population.h"
 
 namespace gjxl::modular_internal {
 using namespace modular_gpu_internal;
@@ -149,6 +151,20 @@ Status ComputeAdaptiveModularWorkflowStoragePlan(Extent2D extent, PackedModularF
       result.additional_peak_bytes += peak;
     }
   }
+  if (options.adaptive_populations && maximum_samples >= 262144 && maximum_samples <= UINT32_MAX) {
+    // Reserve the independent scratch/output maxima, because shard count changes
+    // with context shape. Retained counts can coexist with CPU model/merge work
+    // and exact ANS scratch. Never rely on slack in the older CPU reservation.
+    const size_t contexts = std::min(kMaximumPopulationContexts, (nodes + 1) / 2);
+    HostStorageBound populations, merge;
+    const size_t device = kMaximumPopulationScratchBytes + 8 + contexts * kPopulationValueLimit * 8;
+    if (auto s = codestream_internal::ComputeEntropyPopulationMergeStorageBound(maximum_samples,
+          contexts, kPopulationValueLimit, std::min(contexts, kMaximumPrefixClusters), &merge); !s.ok()) return s;
+    if (!populations.Add({device, device}) || !populations.Add(merge) ||
+        populations.peak_bytes > SIZE_MAX - result.additional_peak_bytes)
+      return Status::InvalidArgument("Adaptive Modular population storage overflow");
+    result.additional_peak_bytes += populations.peak_bytes;
+  }
   if (result.additional_peak_bytes > SIZE_MAX - result.cpu.working.peak_bytes)
     return Status::InvalidArgument("Adaptive Modular complete workflow storage overflow");
   result.peak_bytes = result.cpu.working.peak_bytes + result.additional_peak_bytes;
@@ -245,7 +261,7 @@ Status AdaptiveModularTokenCache::Encode(const ModularCodingPolicy &policy, Entr
     return s;
   if (fallback.image().channel_count()) {
     const auto status = EncodePreparedModularFrame(std::move(fallback), policy, mode, storage, out,
-                                                   selection, evaluation);
+                                                   selection, evaluation, population_backend_);
     if (status.ok() && active_modular_profile)
       ++active_modular_profile->adaptive_gpu.cpu_fallback_candidates;
     return status;
@@ -265,7 +281,7 @@ Status AdaptiveModularTokenCache::Encode(const ModularCodingPolicy &policy, Entr
   if (policy != ModularCodingPolicy{})
     metadata.modular_16_bit_buffer_sufficient = false;
   const auto status = EncodeModularFrame(metadata, layout_, std::move(tokens), mode, storage, out,
-                                         selection, ans_backend_, evaluation);
+                                         selection, ans_backend_, evaluation, population_backend_);
   if (status.ok() && active_modular_profile)
     ++active_modular_profile->adaptive_gpu.encoded_candidates;
   return status;

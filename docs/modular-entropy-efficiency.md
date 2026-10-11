@@ -148,7 +148,10 @@ and wide values; model/file equality; checked storage and ownership, explicit
 crossover/fallback counters, failure-atomic publication; complete-workflow
 performance including reductions, transfers, waits and remaining CPU work.
 
-Status: pending.
+Status: implemented and locally correctness-qualified; see
+[the population contract](modular-gpu-populations.md). The operation and complete
+workflow remain private/opt-in. Full-call performance and the crossover's corpus
+coverage are pending the serial frozen-binary study.
 
 ## 5. Controlled entropy rate study
 

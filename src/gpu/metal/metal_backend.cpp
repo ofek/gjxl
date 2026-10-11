@@ -702,6 +702,7 @@ MetalBackend::MetalBackend(
   std::array<NS::SharedPtr<MTL::ComputePipelineState>, 5> modular_token_pipelines,
   NS::SharedPtr<MTL::ComputePipelineState> ans_token_cost_pipeline,
   std::array<NS::SharedPtr<MTL::ComputePipelineState>, 2> tree_statistics_pipelines,
+  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 2> modular_population_pipelines,
   AqPipelines aq_pipelines,
   ButteraugliPipelines butteraugli_pipelines,
   bool test_fail_submission,
@@ -720,6 +721,7 @@ MetalBackend::MetalBackend(
     modular_token_pipelines_(std::move(modular_token_pipelines)),
     ans_token_cost_pipeline_(std::move(ans_token_cost_pipeline)),
     tree_statistics_pipelines_(std::move(tree_statistics_pipelines)),
+    modular_population_pipelines_(std::move(modular_population_pipelines)),
     aq_pipelines_(std::move(aq_pipelines)),
     butteraugli_pipelines_(std::move(butteraugli_pipelines)),
     test_fail_submission_(test_fail_submission),
@@ -1818,6 +1820,15 @@ Status CreateMetalBackendImpl(
       return Status::Unavailable("Metal cannot launch Modular tree statistics threadgroups");
   }
 
+  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 2> modular_population_pipelines;
+  const char* population_kernels[] = {"gjxl_modular_population_count", "gjxl_modular_population_reduce"};
+  for (size_t i = 0; i < modular_population_pipelines.size(); ++i) {
+    status = CreatePipeline(device.get(), library.get(), population_kernels[i], &modular_population_pipelines[i]);
+    if (!status.ok()) return status;
+    if (modular_population_pipelines[i]->maxTotalThreadsPerThreadgroup() < 128 || maximum_threads.width < 128)
+      return Status::Unavailable("Metal cannot launch Modular population threadgroups");
+  }
+
   AqPipelines aq_pipelines;
   status = CreateAqPipelines(device.get(), library.get(), &aq_pipelines);
   if (!status.ok()) {
@@ -1844,6 +1855,7 @@ Status CreateMetalBackendImpl(
       std::move(modular_token_pipelines),
       std::move(ans_token_cost_pipeline),
       std::move(tree_statistics_pipelines),
+      std::move(modular_population_pipelines),
       std::move(aq_pipelines),
       std::move(butteraugli_pipelines),
       options.test_fail_submission,

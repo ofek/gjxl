@@ -56,6 +56,10 @@ struct AdaptiveGpuWorkProfile {
   size_t tree_gpu_preparations = 0, tree_gpu_groups = 0, tree_gpu_samples = 0;
   size_t tree_cpu_fallback_properties = 0, tree_cpu_small_properties = 0;
   size_t tree_cpu_unsupported_learning_calls = 0;
+  double population_seconds = 0;
+  size_t population_gpu_calls = 0, population_tokens = 0;
+  size_t population_cpu_small = 0, population_cpu_unsupported = 0, population_cpu_wide = 0;
+  size_t population_screen_skips = 0;
   bool operator==(const AdaptiveGpuWorkProfile &) const = default;
 };
 struct ModularProfile {
