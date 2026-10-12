@@ -200,44 +200,127 @@ saved e9, not the older approximately 9% PNG gap.
 
 ## Recommended implementation order
 
-1. **Replace the sort-and-sweep engine while preserving its decisions.** Keep
-   the current sampler, all 14 predictors, integer costs, candidate boundaries,
-   tie order and checkpoint semantics as the oracle. Presort property indices
-   once, then maintain ordered child ranges by stable partition instead of
-   sorting them again at every node. Form the exact existing candidate
-   boundaries, accumulate token counts between those boundaries, and update
-   entropy costs at scoring points rather than twice per predictor per sample.
-   Use a small-node path where bin/prefix overhead would exceed a direct sweep.
-   Compact/tile property and residual storage around these accesses. This is a
-   proposed design, not a measured speedup from this study.
+The revised recommendation is a **reference-first replacement of the learner**.
+Keep the legacy implementation as a measured regression control, but do not
+make its selected trees a permanent compatibility requirement. The earlier
+recommendation to preserve its decisions while rebuilding the sort engine
+would leave the objective, predictor policy and growth differences unresolved.
+Exact decoded pixels and format/resource contracts remain requirements;
+identical legacy compressed bytes do not.
 
-   Require identical selected splits, leaf predictors, checkpoints and complete
-   bytes against the legacy implementation, including ties, repeated values,
-   signed properties and leaf/depth limits. Integrate all scratch into managed
-   storage bounds and allocation-failure checks. The current key-sort prototype
-   can be an incremental improvement, but it should not become the endpoint.
+1. **Build a research adapter to the pinned libjxl learner before another
+   native prototype.** Establish two complementary controls:
 
-2. **Reduce the number of large fits.** Keep the cheap retained search; use it
-   to rank transform contexts, then refine a small shortlist rather than all
-   nine photographic contexts. Record ranking recall against the full-search
-   oracle, per-image byte losses, and actual full-search time. Small-tree rank
-   is not guaranteed to predict large-tree rank. Retaining the old small-tree
-   fallback alone does not preserve the current 256K/256 rate, so this change
-   needs separate corpus qualification before becoming a default.
+   - Capture the reference learner's quantized samples, weights, predictor
+     order, property maps, static ranges, multiplier information and all
+     scoring/growth parameters. Replay them through the pinned learner and
+     reproduce its canonical tree. This provides identical inputs for later
+     comparisons of fitting time and decisions; equal sample caps alone do
+     not provide that control.
+   - Run the reference sampling, property preparation and learner on
+     GJXL-prepared transformed planes. Import the resulting supported tree
+     into GJXL and encode it through the unchanged native entropy path. Freeze
+     transform choice, weighted-predictor parameters and entropy settings while
+     comparing learners. Measure complete bytes and exact reconstruction,
+     preparation time, fit time and peak scratch separately.
 
-3. **Study decision quality independently of execution.** Capture replayable
-   transformed samples and property/residual representations, then ablate
-   libjxl's quantizer, predictor choices, proxy/penalties and growth policy one
-   axis at a time. Keep the reference pipeline as the control. In particular,
-   test per-image/per-channel predictor shortlists or later predictor refinement
-   instead of dropping twelve predictors globally. The current bundled
-   quantized mode is a useful comparison, not evidence of decision parity.
+   Validate property numbering, branch direction, signed thresholds, residual
+   tokens, predictor state, offsets and multipliers at the boundary. Start with
+   the common representable profile and report exclusions explicitly. Native
+   limits include 16 properties, a 1M training-sample admission ceiling and
+   image-dependent tree limits; do not silently truncate a reference sample
+   set or tree to claim parity. The old 256-leaf study budget is not a format
+   limit: the native representation supports up to 8,192 leaves, subject to
+   the image-dependent node limit and depth/storage validation.
 
-4. **Map the efficient representation to the GPU.** Histogram accumulation,
-   prefix scans and candidate scoring are better offload targets than repeated
-   comparison sorts over large sample records. Preserve the CPU oracle and
-   qualify integer costs/ties before GPU routing. GPU parallelism can then
-   accelerate useful work rather than preserve the current inefficiency.
+   The deliverable is a paired rate/time ledger and replay fixtures, first on
+   the three pilots and then the 16-input corpus. If reference learning does
+   not transfer its rate benefit into the native pipeline, isolate the sample,
+   property or downstream coding difference before proceeding with the port.
+   Keep the reference dependency confined to research tools.
+
+2. **Implement the proven reference behavior natively, with differential
+   tests.** Port the actual quantizer and sampling policy, residual-token
+   proxy, probability clipping, split penalties, predictor preferences,
+   sampling-scaled thresholds and tree growth. Use compact property columns,
+   tokens per predictor, weighted samples, property-bin histograms and prefix
+   scoring over active bins/symbols. Reuse bounded scratch instead of sorting
+   each property at every node or clearing/scanning full fixed alphabets.
+
+   First match the captured reference inputs and canonical trees on the pinned
+   CPU/arithmetic path, then match preparation from the same transformed
+   planes. Isolate floating-point/SIMD tie differences explicitly; do not
+   silently replace reference scoring with our current integer objective.
+   Require identical complete native bytes when feeding the same imported
+   tree and coding settings. Include ties, repeated values, signed/high-depth
+   properties, allocation failure and resource-boundary cases.
+
+   Use the reference two-predictor policy as part of this coherent learner,
+   retaining an all-predictor research control. The failed legacy two-predictor
+   ablation does not test that combination. Likewise, the existing quantized
+   mode is a comparison point, not a sufficiently faithful starting oracle.
+   Do not reproduce the old bounded-reference study's repeated threshold
+   search to force a leaf count: those repeated fits were a research control,
+   not a production growth policy.
+
+3. **Qualify one efficient CPU fit before changing search policy.** Optimize
+   the matched implementation's layout, histogram accumulation, scratch reuse
+   and vectorized entropy evaluation. Compare pure fitting on identical replay
+   fixtures, including the same weights, predictor set and growth parameters.
+   Report sample preparation independently, and track samples, leaves, work
+   counters and peak memory alongside time. Preserve the qualified reference
+   decisions during these execution-only changes.
+
+   Use warmed, serial, interleaved Release runs with both CPU and wall time;
+   collect detailed attribution in separate builds. Do not infer a kernel
+   speedup from unmatched native/reference sample caps or multiply the earlier
+   ablation ratios. The proposed target below is a gate to measure, not a
+   speedup established by the present study.
+
+4. **Reduce repeated large fits with a separately qualified search policy.**
+   Study the reference transform-selection policy first. Aim for one large
+   fit per selected global context, with a bounded additional fit only where
+   ambiguity justifies it; count metadata/local learning events separately.
+   A cheap native shortlist is an alternative only after its ranking has been
+   tested against exhaustive search using the *new* learner. The current small
+   learner's ranking cannot be assumed to transfer.
+
+   Record shortlist recall, actual fit counts, per-image byte losses and full
+   learning/encode time. Report the candidate without a hidden slow legacy
+   fallback. Qualify total learning cost separately from single-fit cost so a
+   fast learner cannot conceal another nine-fit portfolio.
+
+5. **Promote after rate, correctness and resource qualification; then choose
+   the GPU slice from the new profile.** Expand beyond the 16 inputs with
+   held-out photos at several resolutions, structured images, grayscale,
+   RGB/RGBA and true 16-bit cases. Verify all decoded samples, including hidden
+   RGB where preserved, deterministic output, memory bounds and failure paths.
+   Commit the adapter, faithful native learner, execution optimizations and
+   search policy as separate milestones with their qualification ledgers.
+   Only then select GPU histogram/prefix/scoring work from the remaining cost.
+
+### Proposed acceptance criteria
+
+These are initial engineering targets, not measured outcomes or a claim that
+learning alone explains the remaining whole-encoder rate gap.
+
+| Scope | Proposed gate |
+|---|---|
+| Correctness | Exact lossless reconstruction and existing format/resource contracts on every supported test. |
+| Reference fidelity | Matching prepared samples and canonical trees on the pinned CPU/arithmetic path; identical native files for identical trees/settings. Any portability-related tie difference is separately characterized. |
+| One fit | At most 1.5× pinned libjxl fitting CPU time on identical replay inputs, reporting every case and outliers rather than only an aggregate. |
+| Search approximation | At most +0.2% aggregate and +1% per-image bytes versus exhaustive search with the same new learner; review absolute byte deltas separately for tiny files. |
+| Complete learning stage | Aim for at most 2× stock e9 preparation-plus-all-fits time on paired input runs; include every learning event and report both CPU and wall time. This is a workflow target, not a matched-kernel comparison. |
+| Final native rate | No aggregate regression from the current qualified native encoder, with explicit review of every per-image regression. Aim eventually for within +1% aggregate bytes of stock e9 on the qualification corpus. |
+
+The last target includes transform and entropy decisions beyond learning. Use
+the reference-tree/native-entropy control to locate any residual gap; do not
+respond to it by increasing predictor/sample/search budgets without a measured
+rate-versus-time benefit. Exact compressed-byte parity with libjxl is not
+required for a native encoder using different downstream coding decisions.
+
+The immediate next milestone is **the reference adapter and paired ledger**,
+not a default change, a larger legacy search, or a GPU implementation.
 
 ## Measurement limits and validation
 
