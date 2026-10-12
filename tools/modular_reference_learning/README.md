@@ -85,9 +85,33 @@ manifest needs a new output directory; a partial case requires inspection.
 Replay alone uses `reference_learning replay FIXTURE REPEATS`; it copies the
 immutable captured samples outside each fitting timer and verifies every tree.
 
-The initial pilot demonstrated exact stock bytes and replay, matching bridge
-tokens, and exact reconstruction on all three inputs. Best-predictor bridge
-trees were larger than the current native winners; all-predictor bridge trees
-were smaller on all three. This does not select a production predictor policy
-or establish full-corpus compression parity. Keep both controls for the wider
-comparison.
+The [qualified results](../../docs/modular-reference-learning.md) cover 48
+corpus encodes, 233 fitting captures/replays and 45 repeated pilot encodes.
+The all-predictor bridge reaches +0.9487% aggregate bytes versus e9 on frozen
+native transforms, but neither predictor policy is ready for promotion.
+
+For boundary validation, configure a second build with the same path arguments
+and `-DCMAKE_BUILD_TYPE=RelWithDebInfo` plus
+`-DCMAKE_CXX_FLAGS='-fsanitize=address,undefined -fno-sanitize=vptr -fno-omit-frame-pointer'`.
+Use `UBSAN_OPTIONS=halt_on_error=1` to run `test_capture.py`, a photographic
+fixture replay, and an `alpha16-ramp` bridge encode with all predictors. The
+vptr exclusion is required by the pinned no-RTTI archive; the linked archives
+are uninstrumented. Preserve the sanitizer executable, CMakeCache.txt, logs
+(`capture-tests.log`, `photo-replay.log`, `alpha16.log`) and output (`alpha16.jxl`)
+in a separate validation directory so later builds cannot overwrite evidence.
+
+The analyzer verifies hashes and completeness before producing the report:
+
+```sh
+python3 tools/modular_reference_learning/analyze.py \
+  --corpus build/reference-learning/corpus \
+  --timings build/reference-learning/pilot-qualified \
+  --sanitizer-validation build/reference-learning/sanitizer-validation \
+  --output docs/modular-reference-learning-results.json
+```
+
+Captured sample payloads are ignored research artifacts. The study copies its
+executable into the output directory so rebuilding the harness does not replace
+the binary bound to completed captures. The preliminary `pilot` was made before
+final compiler/error-path qualification; use `corpus` and `pilot-qualified` for
+the committed measurements.

@@ -319,8 +319,12 @@ respond to it by increasing predictor/sample/search budgets without a measured
 rate-versus-time benefit. Exact compressed-byte parity with libjxl is not
 required for a native encoder using different downstream coding decisions.
 
-The immediate next milestone is **the reference adapter and paired ledger**,
-not a default change, a larger legacy search, or a GPU implementation.
+**Milestone update:** the adapter and 16-input controls are implemented at
+`fe7cd44`; see [the reference-learning results](modular-reference-learning.md).
+The all-predictor bridge reaches +0.9487% aggregate bytes versus e9, with
+per-image regressions and expensive fits still unresolved. The next milestone
+is the faithful native fitter against the captured sample contract. Production
+policy promotion remains gated on the criteria above.
 
 ## Measurement limits and validation
 
