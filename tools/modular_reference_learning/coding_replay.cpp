@@ -184,7 +184,7 @@ void CheckTokens(const Stream &stream, const native::DecisionTree &tree,
 namespace {
 void ReplayInput(const std::filesystem::path &source, const std::filesystem::path &description,
                  const std::filesystem::path &output, const std::string &variants,
-                 std::ostream &out) {
+                 std::ostream &out, bool measure = false) {
   static_assert(std::endian::native == std::endian::little);
   gjxl::io::IntegerImage original;
   Ok(gjxl::io::ReadPnm(source, &original));
@@ -339,7 +339,7 @@ void ReplayInput(const std::filesystem::path &source, const std::filesystem::pat
                   tokens.streams[i], profile.metadata.bits);
     }
     if (!variants.empty()) {
-      ReplayEntropyAblations(input, plan, tokens, parameters, expected, output, variants, out);
+      ReplayEntropyAblations(input, plan, tokens, parameters, expected, output, variants, out, measure);
       return;
     }
   }
@@ -392,8 +392,8 @@ void ReplayCodingInput(const std::filesystem::path &source,
 void ReplayEntropyInput(const std::filesystem::path &source,
                         const std::filesystem::path &description,
                         const std::filesystem::path &output, const std::string &variants,
-                        std::ostream &out) {
+                        std::ostream &out, bool measure) {
   Require(!variants.empty(), "Empty entropy variants");
-  ReplayInput(source, description, output, variants, out);
+  ReplayInput(source, description, output, variants, out, measure);
 }
 } // namespace reference_learning

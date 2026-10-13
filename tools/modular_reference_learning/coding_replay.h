@@ -17,5 +17,5 @@ void ReplayCodingInput(const std::filesystem::path &source,
 void ReplayEntropyInput(const std::filesystem::path &source,
                         const std::filesystem::path &description,
                         const std::filesystem::path &output, const std::string &variants,
-                        std::ostream &out);
+                        std::ostream &out, bool measure = false);
 } // namespace reference_learning

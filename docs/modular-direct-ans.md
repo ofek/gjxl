@@ -15,6 +15,12 @@ No timing, production storage bound or default promotion is qualified here.
 The [complete ledger](modular-direct-ans-results.json) includes every size,
 bit attribution and evidence binding.
 
+The [estimated-width follow-up](modular-direct-ans-estimated.md) now qualifies
+an explicit native option that removes ordered-token cost simulation when no
+cost is requested. It keeps the ramp's rate/64 size and reduces paired
+sample-model CPU by 64.1% for a 27-byte automatic-cohort increase. Stream-level
+integration and whole-encoder timing remain separate work.
+
 ## Existing modes under test
 
 The adapter calls `OptimizeDirectAnsEntropyCode` directly, with the same
@@ -122,11 +128,10 @@ this macOS runtime. Correctness runs overlap; their durations are not timing
 evidence. The original input/capture profile and unsupported features remain
 unchanged.
 
-The next work is to qualify estimated width selection in the existing native
-direct-ANS path, including this ramp and the small model/header cases. Measure
-model construction separately from token emission, record candidate/pass
-counters, and use serial paired Release runs for time comparisons. Then add
-an explicit private prepared-stream entropy policy with managed-storage and
+Estimated width selection is now [qualified separately](modular-direct-ans-estimated.md),
+including independent candidate-cost checks, managed storage, the captured
+ramp and paired model-construction time. Next add an explicit private
+prepared-stream entropy policy with stream-level managed-storage and
 failure-publication tests. Keep the exact and Prefix-derived controls; default
 routing requires the full rate/time/resource gates. Native palette/RCT/WP
 selection and one fit per selected scope still need integration afterward.

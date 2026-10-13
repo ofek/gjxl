@@ -17,5 +17,5 @@ void ReplayEntropyAblations(const gjxl::modular_internal::PreparedModularStreams
                             std::span<const jxl::HistogramParams> parameters,
                             const gjxl::test::modular_reference::IntegerImage &expected,
                             const std::filesystem::path &output, const std::string &variants,
-                            std::ostream &out);
+                            std::ostream &out, bool measure = false);
 } // namespace reference_learning

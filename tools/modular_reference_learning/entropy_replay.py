@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Evidence contract for same-token downstream entropy ablations."""
 import json
+import math
 
 from analyze_policy_study import numbered
 
@@ -9,12 +10,16 @@ BASE_VARIANTS = ('reference', 'native_tree', 'native_data', 'native', 'no_lz77',
                  'hybrid420', 'ans_approx', 'nonstreaming')
 PARTITION_VARIANTS = ('reference_map32', 'reference_map32_native_tree')
 DIRECT_VARIANTS = ('native_direct_balanced', 'native_direct_high_density',
-                   'native_direct_rate', 'native_direct_rate64')
+                   'native_direct_rate', 'native_direct_rate64',
+                   'native_direct_estimated', 'native_direct_estimated64')
 VARIANTS = BASE_VARIANTS + PARTITION_VARIANTS + DIRECT_VARIANTS
 
 
 def validate_result(directory, result):
     variant = result['variant']
+    timed = result.get('model_timing_recorded', False)
+    if type(timed) is not bool:
+        raise ValueError('Invalid model timing evidence flag')
     if (result['schema'] != 1 or variant not in VARIANTS or result['timing_qualified'] is not False or
             any(result[k] is not True for k in ('tokens_exact', 'trees_exact', 'decoded_exact')) or
             result['native_control_exact'] is not (True if variant == 'native' else None)):
@@ -75,11 +80,30 @@ def validate_result(directory, result):
         if variant == 'hybrid420' and not tree and any(c != [4, 2, 0] for c in s['uint_configs']):
             raise ValueError('Fixed HybridUint ablation changed configuration')
         if variant in DIRECT_VARIANTS and not tree:
-            cap = 64 if variant == 'native_direct_rate64' else 32
+            cap = 64 if variant.endswith('64') else 32
             if s['prefix'] or s['clusters'] > cap or 'context_map' not in s:
                 raise ValueError('Direct-ANS control changed coder or exceeded cap')
             if variant == 'native_direct_balanced' and any(c != [4, 2, 0] for c in s['uint_configs']):
                 raise ValueError('Balanced direct ANS changed its fixed configuration')
+            work = s.get('ans_work')
+            if not timed and (work is not None or variant.startswith('native_direct_estimated')):
+                if (not isinstance(work, dict) or set(work) != {'width_candidates', 'token_cost_candidates',
+                                                                'uint_config_candidates', 'histogram_candidates'} or
+                        any(type(v) is not int or v < 0 for v in work.values()) or
+                        not 1 <= work['width_candidates'] <= 4):
+                    raise ValueError('Missing or invalid direct-ANS work counters')
+                if variant.startswith('native_direct_rate'):
+                    if not 1 <= work['token_cost_candidates'] <= work['width_candidates']:
+                        raise ValueError('Exact direct ANS skipped cost measurement')
+                elif work['token_cost_candidates'] or work['width_candidates'] != 1:
+                    raise ValueError('Fast direct ANS simulated candidates or built extra widths')
+        if timed:
+            if (not native or s.get('ans_work') is not None or
+                    any(type(s.get(k)) not in (int, float) or not math.isfinite(s[k]) or s[k] < 0
+                        for k in ('model_cpu_seconds', 'model_wall_seconds'))):
+                raise ValueError('Model timing included profiling or omitted measured durations')
+        elif any(s.get(k, 0) != 0 for k in ('model_cpu_seconds', 'model_wall_seconds')):
+            raise ValueError('Unexpected model timing outside timing run')
         if tree: tree_bits += s['model_bits'] + s['token_bits']
         else:
             model_bits += s['model_bits']; token_bits += s['token_bits']
@@ -102,7 +126,27 @@ def validate_controls(results):
         reference_trees = [s for s in by_variant['native']['scopes'] if s['kind'] == 'tree']
         for row in direct:
             if [s for s in row['scopes'] if s['kind'] == 'tree'] != reference_trees:
-                raise ValueError('Direct ANS changed tree coding')
+                # Timings naturally differ; the coding decisions must not.
+                def coding(scopes):
+                    return [{k: v for k, v in s.items() if k not in ('model_cpu_seconds', 'model_wall_seconds')}
+                            for s in scopes]
+                if coding([s for s in row['scopes'] if s['kind'] == 'tree']) != coding(reference_trees):
+                    raise ValueError('Direct ANS changed tree coding')
+        for row in direct:
+            if not row['variant'].startswith('native_direct_estimated'):
+                continue
+            exact_name = row['variant'].replace('estimated', 'rate')
+            if exact_name not in by_variant:
+                raise ValueError('Estimated direct ANS requires its exact control')
+            a = [s for s in row['scopes'] if s['kind'] == 'data']
+            b = [s for s in by_variant[exact_name]['scopes'] if s['kind'] == 'data']
+            if [(s['id'], s['context_map']) for s in a] != [(s['id'], s['context_map']) for s in b]:
+                raise ValueError('Estimated direct ANS changed its partition')
+            if not row.get('model_timing_recorded', False):
+                for x, y in zip(a, b):
+                    if any(x['ans_work'][k] != y['ans_work'][k]
+                           for k in ('uint_config_candidates', 'histogram_candidates')):
+                        raise ValueError('Estimated direct ANS changed upstream search')
     transplants = [r for r in results if r['variant'].startswith('reference_map32')]
     if not transplants:
         return 0

@@ -27,9 +27,9 @@ class EntropyTest(test_coding_replay.CodingReplayTest):
         self.learning['images'][0]['options']['histogram_params'] = params
         self.coding['options']['histogram_params'] = copy.deepcopy(params)
 
-    def run_entropy(self, text, variants=VARIANTS):
+    def run_entropy(self, text, variants=VARIANTS, timing=False):
         path = self.root / 'entropy.txt'; path.write_text(text)
-        return subprocess.run([str(BINARY), 'stream-entropy-check', str(self.source), str(path),
+        return subprocess.run([str(BINARY), 'stream-entropy-time' if timing else 'stream-entropy-check', str(self.source), str(path),
                                str(self.root / 'encoded'), ','.join(variants)], capture_output=True, text=True)
 
     def test_all_entropy_controls(self):
@@ -51,6 +51,10 @@ class EntropyTest(test_coding_replay.CodingReplayTest):
         direct = next(r for r in results if r['variant'] == 'native_direct_balanced')
         bad = copy.deepcopy(direct)
         next(s for s in bad['scopes'] if s['kind'] == 'data')['prefix'] = True
+        with self.assertRaises(ValueError): validate_result(self.root, bad)
+        estimated = next(r for r in results if r['variant'] == 'native_direct_estimated')
+        bad = copy.deepcopy(estimated)
+        next(s for s in bad['scopes'] if s['kind'] == 'data')['ans_work']['token_cost_candidates'] = 1
         with self.assertRaises(ValueError): validate_result(self.root, bad)
         good = results[0]
         for key, value in [('tokens_exact', 1), ('decoded_exact', False), ('timing_qualified', True),
@@ -79,6 +83,20 @@ class EntropyTest(test_coding_replay.CodingReplayTest):
         self.coding['options'] = copy.deepcopy(self.learning['images'][0]['options'])
         self.save()
         with self.assertRaises(ValueError): project(self.root, entropy=True)
+
+    def test_unprofiled_model_timing(self):
+        self.save()
+        variants = ['native', 'native_direct_rate', 'native_direct_estimated']
+        run = self.run_entropy(project(self.root, entropy=True), variants, timing=True)
+        self.assertEqual(run.returncode, 0, run.stderr)
+        results = [json.loads(line) for line in run.stdout.splitlines()]
+        for row in results:
+            self.assertIs(row['model_timing_recorded'], True)
+            validate_result(self.root, row)
+            bad = copy.deepcopy(row)
+            bad['scopes'][0]['model_wall_seconds'] = -1
+            with self.assertRaises(ValueError): validate_result(self.root, bad)
+        validate_controls(results)
 
 
 if __name__ == '__main__':

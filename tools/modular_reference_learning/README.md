@@ -336,7 +336,7 @@ python3 tools/modular_reference_learning/analyze_entropy_replay.py \
   --output build/reference-learning/new-entropy-analysis.json
 ```
 
-The default runs all 19 controls; `--variants` permits a declared subset and
+The default runs all 21 controls; `--variants` permits a declared subset and
 `--cases` selects `input:policy` pairs. Either `reference_map32` transplant
 requires `no_lz77_clusters32` in the same run. Configure the research binary
 against the native prepared-stream archives and the pinned reference build.
@@ -348,3 +348,15 @@ adds balanced, high-density, rate and rate/64 data modes, preserving native
 tree coding. These variants require `native` in the same run. Use
 `analyze_direct_entropy.py` to qualify that follow-up without changing the
 original 15-control report.
+
+`native_direct_estimated` and `native_direct_estimated64` use the new estimated
+width option and require their matching `native_direct_rate`/`rate64` controls.
+Correctness runs record width/cost/config/histogram candidate counts. The
+separate `--model-timings` mode disables detailed profiling and records native
+model CPU/wall intervals; these individual records are not by themselves a
+qualified benchmark. `entropy_model_timing.py run --study RATE_STUDY --output
+NEW_DIRECTORY` performs one warmup and five serial interleaved rounds, and its
+`analyze` command verifies output identity and timing boundaries.
+`analyze_estimated_entropy.py` combines the rate, sanitizer, native storage and
+timing qualification. See the [estimated-width report](../../docs/modular-direct-ans-estimated.md)
+for the measured scope and remaining integration work.

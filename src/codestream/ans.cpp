@@ -2878,6 +2878,9 @@ Status OptimizeAnsEntropyCodeImpl(
       std::array<EntropyCodeCost, kAnsAlphabetWidthCount> candidate_costs{};
       const ProfileClock::time_point token_cost_begin =
         ProfileBegin(profile);
+      if (profile != nullptr) {
+        profile->ans_token_cost_candidate_count += group_size;
+      }
       if (Status status = MeasureAnsCodes(
             section_tokens,
             std::span(candidate_codes).first(group_size),
@@ -3158,7 +3161,13 @@ Status codestream_internal::OptimizeDirectAnsEntropyCode(
   DirectAnsEntropyMode mode,
   EntropyCode* code,
   EntropyCodeCost* cost,
-  EntropyWorkProfile* profile) {
+  EntropyWorkProfile* profile,
+  AnsSelectionMode selection) {
+
+  if (Status status = ValidateAnsSelectionMode(selection); !status.ok())
+    return status;
+  if (selection == AnsSelectionMode::kEstimated && mode != DirectAnsEntropyMode::kRateOptimized)
+    return Status::InvalidArgument("Estimated direct ANS requires rate mode");
 
   if (mode == DirectAnsEntropyMode::kBalanced) {
     return OptimizeDirectAnsEntropyCodeWithFixedPopulations(
@@ -3196,6 +3205,7 @@ Status codestream_internal::OptimizeDirectAnsEntropyCode(
         .histogram_search = AnsHistogramSearch::kPrecise,
         .smallest_alphabet_width = mode != DirectAnsEntropyMode::kRateOptimized,
         .optimize_config_histograms = mode == DirectAnsEntropyMode::kRateOptimized,
+        .estimate_alphabet_width = selection == AnsSelectionMode::kEstimated,
       };
   return OptimizeAnsEntropyCodeImpl(
     section_tokens, partition, &prepared, policy,

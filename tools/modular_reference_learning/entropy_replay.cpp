@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Yunho Cho
 #include "entropy_replay.h"
 #include "codestream/ans_internal.h"
+#include "codestream/profile_internal.h"
 #include "codestream/headers_internal.h"
 #include "codestream/modular/stream_encoder.h"
 #include "codestream/modular/tree_codec.h"
@@ -13,6 +14,8 @@
 #include "lib/jxl/memory_manager_internal.h"
 #include <algorithm>
 #include <array>
+#include <chrono>
+#include <ctime>
 #include <fstream>
 #include <memory>
 #include <set>
@@ -42,6 +45,7 @@ struct Variant {
   bool hybrid420 = false, approximate = false, nonstreaming = false;
   bool reference_partition = false;
   int direct_ans_mode = -1;
+  bool estimated = false;
 };
 std::vector<Variant> Variants(const std::string &names) {
   const std::vector<Variant> supported = {
@@ -67,7 +71,11 @@ std::vector<Variant> Variants(const std::string &names) {
       {.name = "native_direct_rate", .native_tree = true, .native_data = true,
        .clusters = 32, .direct_ans_mode = 2},
       {.name = "native_direct_rate64", .native_tree = true, .native_data = true,
-       .clusters = 64, .direct_ans_mode = 2}};
+       .clusters = 64, .direct_ans_mode = 2},
+      {.name = "native_direct_estimated", .native_tree = true, .native_data = true,
+       .clusters = 32, .direct_ans_mode = 2, .estimated = true},
+      {.name = "native_direct_estimated64", .native_tree = true, .native_data = true,
+       .clusters = 64, .direct_ans_mode = 2, .estimated = true}};
   std::vector<Variant> result;
   std::set<std::string> seen;
   std::istringstream in(names);
@@ -128,6 +136,9 @@ struct ScopeStats {
   std::vector<std::array<size_t, 3>> configs;
   bool reference_partition_exact = false;
   std::vector<uint8_t> context_map;
+  bool profiled = false;
+  gjxl::codestream_internal::EntropyWorkProfile work;
+  double model_cpu_seconds = 0, model_wall_seconds = 0;
   void Write(std::ostream &out) const {
     out << "{\"kind\":\"" << (tree ? "tree" : "data") << "\",\"id\":" << id
         << ",\"implementation\":\"" << (native ? "native" : "reference")
@@ -145,7 +156,15 @@ struct ScopeStats {
         << ",\"context_map\":[";
     for (size_t i = 0; i < context_map.size(); ++i)
       out << (i ? "," : "") << unsigned(context_map[i]);
-    out << "]}";
+    out << "],\"model_cpu_seconds\":" << model_cpu_seconds
+        << ",\"model_wall_seconds\":" << model_wall_seconds << ",\"ans_work\":";
+    if (profiled) {
+      out << "{\"width_candidates\":" << work.ans_alphabet_width_candidate_count
+          << ",\"token_cost_candidates\":" << work.ans_token_cost_candidate_count
+          << ",\"uint_config_candidates\":" << work.ans_uint_config_candidate_count
+          << ",\"histogram_candidates\":" << work.ans_histogram_candidate_count << '}';
+    } else out << "null";
+    out << '}';
   }
 };
 // Research transplant: cluster precisely the same default-420 populations as
@@ -194,7 +213,7 @@ class Scope {
 public:
   Scope(JxlMemoryManager *memory, std::vector<gjxl::EntropyTokenStreamView> streams,
         std::vector<size_t> ids, size_t contexts, HP params, const Variant &variant, bool tree,
-        int64_t scope_id, gjxl::BitWriter *writer)
+        int64_t scope_id, gjxl::BitWriter *writer, bool measure)
       : memory_(memory), streams_(std::move(streams)), ids_(std::move(ids)) {
     stats.tree = tree;
     stats.id = scope_id;
@@ -204,13 +223,17 @@ public:
       stats.original_tokens += stream.size();
     const auto begin = writer->bits_written();
     if (stats.native) {
+      const auto wall = measure ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point{};
+      const auto cpu = measure ? std::clock() : 0;
       std::vector<uint8_t> reference_map;
       if (!tree && variant.direct_ans_mode >= 0) {
+        stats.profiled = !measure;
         Ok(gjxl::codestream_internal::OptimizeDirectAnsEntropyCode(
             streams_, {.context_count = static_cast<uint32_t>(contexts),
                        .maximum_ans_clusters = variant.clusters},
             static_cast<gjxl::codestream_internal::DirectAnsEntropyMode>(variant.direct_ans_mode),
-            &native_));
+            &native_, nullptr, stats.profiled ? &stats.work : nullptr,
+            variant.estimated ? gjxl::AnsSelectionMode::kEstimated : gjxl::AnsSelectionMode::kExact));
       } else if (!tree && variant.reference_partition) {
         native_ = ReferencePartition(streams_, contexts, params);
         reference_map.assign(native_.context_map.begin(), native_.context_map.end());
@@ -222,6 +245,10 @@ public:
         gjxl::EntropyCode ans;
         Ok(gjxl::OptimizeAnsEntropyCode(streams_, native_, &ans));
         native_ = std::move(ans);
+      }
+      if (measure) {
+        stats.model_cpu_seconds = double(std::clock() - cpu) / CLOCKS_PER_SEC;
+        stats.model_wall_seconds = std::chrono::duration<double>(std::chrono::steady_clock::now() - wall).count();
       }
       if (!reference_map.empty()) {
         Require(std::ranges::equal(reference_map, native_.context_map),
@@ -301,8 +328,12 @@ void ReplayEntropyAblations(const native::PreparedModularStreamsView &input,
                             const native::PreparedModularStreamTokens &tokens,
                             std::span<const HP> parameters, const ref::IntegerImage &expected,
                             const std::filesystem::path &output, const std::string &names,
-                            std::ostream &out) {
+                            std::ostream &out, bool measure) {
   const auto variants = Variants(names);
+  Require(!measure || std::ranges::all_of(variants, [](const auto &v) {
+            return v.name == "native" || v.direct_ans_mode >= 0;
+          }),
+          "Model timing requires native-only controls");
   Require(parameters.size() == input.streams.size(), "Missing captured entropy parameters");
   Require(std::filesystem::create_directory(output), "Entropy output already exists");
   JxlMemoryManager memory;
@@ -330,7 +361,7 @@ void ReplayEntropyAblations(const native::PreparedModularStreamsView &input,
     std::unique_ptr<Scope> shared;
     if (input.global_tree) {
       Scope tree(&memory, {gjxl::EntropyTokenStreamView::Interleaved(tokens.global_tree_tokens)},
-                 {0}, native::kTreeContextCount, parameters[0], variant, true, -1, &global);
+                 {0}, native::kTreeContextCount, parameters[0], variant, true, -1, &global, measure);
       tree.Write(0, &global);
       records.push_back(std::move(tree.stats));
       std::vector<gjxl::EntropyTokenStreamView> views(input.streams.size());
@@ -341,7 +372,7 @@ void ReplayEntropyAblations(const native::PreparedModularStreamsView &input,
       params.image_widths = widths;
       shared =
           std::make_unique<Scope>(&memory, std::move(views), ids, (input.global_tree->size + 1) / 2,
-                                  std::move(params), variant, false, -1, &global);
+                                  std::move(params), variant, false, -1, &global, measure);
     }
     for (size_t i = 0; i < input.streams.size(); ++i) {
       const auto &stream = input.streams[i];
@@ -357,13 +388,13 @@ void ReplayEntropyAblations(const native::PreparedModularStreamsView &input,
       if (stream.local_tree) {
         Scope tree(&memory,
                    {gjxl::EntropyTokenStreamView::Interleaved(tokens.local_tree_tokens[i])}, {0},
-                   native::kTreeContextCount, parameters[i], variant, true, ids[i], &writer);
+                   native::kTreeContextCount, parameters[i], variant, true, ids[i], &writer, measure);
         tree.Write(0, &writer);
         records.push_back(std::move(tree.stats));
         auto params = parameters[i];
         params.image_widths.push_back(widths[ids[i]]);
         Scope data(&memory, {tokens.streams[i]}, {0}, (stream.local_tree->size + 1) / 2,
-                   std::move(params), variant, false, ids[i], &writer);
+                   std::move(params), variant, false, ids[i], &writer, measure);
         data.Write(0, &writer);
         records.push_back(std::move(data.stats));
       } else {
@@ -413,6 +444,7 @@ void ReplayEntropyAblations(const native::PreparedModularStreamsView &input,
         << ",\"original_tokens\":" << tokens.tokens.size()
         << ",\"decoded_exact\":true"
            ",\"tokens_exact\":true,\"trees_exact\":true,\"timing_qualified\":false"
+        << ",\"model_timing_recorded\":" << (measure ? "true" : "false")
         << ",\"native_control_exact\":" << (variant.name == "native" ? "true" : "null")
         << ",\"header_bits\":" << header_bits << ",\"toc_bits\":" << toc_bits
         << ",\"stream_header_bits\":" << stream_header_bits

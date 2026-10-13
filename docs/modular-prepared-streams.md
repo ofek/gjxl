@@ -158,9 +158,9 @@ Builds and correctness checks overlap; elapsed times are not benchmark data.
 
 ## Next integration gates
 
-1. Integrate the [qualified existing direct-ANS machinery](modular-direct-ans.md)
-   through an explicit policy after checking estimated width selection and
-   managed bounds; retain the high-depth/LZ77 exceptions and exact controls.
+1. Integrate [direct ANS with qualified estimated width selection](modular-direct-ans-estimated.md)
+   through an explicit private policy with stream-level managed bounds;
+   retain the high-depth/LZ77 exceptions and exact controls.
 2. Port reference palette construction and the cheap transform/WP estimators,
    matching values, tie order, selected transforms and prepared pixels.
 3. Connect native preparation/fitting once per selected coding scope, preserving

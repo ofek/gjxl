@@ -48,7 +48,8 @@ def analyze(root):
         for path, digest in row['artifacts'].items():
             if sha(path) != digest:
                 raise ValueError(f'Changed entropy result artifact: {path}')
-        command = [str(root / 'reference_learning'), 'stream-entropy-check', case['source']['path'],
+        command = [str(root / 'reference_learning'),
+                   'stream-entropy-time' if manifest.get('model_timings', False) else 'stream-entropy-check', case['source']['path'],
                    str(directory / 'input.txt'), str(directory / 'encoded'), ','.join(variants)]
         if row['command'] != command or (directory / 'input.txt').read_text() != project(capture, entropy=True):
             raise ValueError('Entropy command/projection differs from capture')
@@ -61,6 +62,8 @@ def analyze(root):
         compact = []
         for r in results:
             validate_result(capture, r)
+            if r.get('model_timing_recorded', False) is not manifest.get('model_timings', False):
+                raise ValueError('Model timing result differs from command')
             output = directory / 'encoded' / (r['variant'] + '.jxl')
             if output.stat().st_size != r['bytes']:
                 raise ValueError('Entropy result bytes differ from file')

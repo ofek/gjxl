@@ -20,6 +20,7 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--cases', nargs='+')
     parser.add_argument('--variants', nargs='+', default=list(VARIANTS), choices=VARIANTS)
+    parser.add_argument('--model-timings', action='store_true', help='Unprofiled native model CPU/wall intervals only')
     args = parser.parse_args()
     args.binary, args.coding_study, args.output = (p.resolve() for p in
                                                    (args.binary, args.coding_study, args.output))
@@ -29,6 +30,11 @@ def main():
         parser.error('Partition transplants require no_lz77_clusters32')
     if set(args.variants) & set(DIRECT_VARIANTS) and 'native' not in args.variants:
         parser.error('Direct ANS requires native')
+    if any(v.startswith('native_direct_estimated') and v.replace('estimated', 'rate') not in args.variants
+           for v in args.variants):
+        parser.error('Estimated direct ANS requires the matching exact control')
+    if args.model_timings and set(args.variants) - {'native', *DIRECT_VARIANTS}:
+        parser.error('Model timing requires native-only controls')
     checked = analyze_coding(args.coding_study)
     source_manifest = json.loads((args.coding_study / 'manifest.json').read_text())
     cases = source_manifest['cases']
@@ -41,6 +47,7 @@ def main():
     build['artifacts'].update(checked['artifacts'])
     manifest = {'schema': 1, **build, 'coding_study': str(args.coding_study), 'cases': cases,
                 'variants': args.variants,
+                'model_timings': args.model_timings,
                 'sanitizer_environment': {k: os.environ[k] for k in ('ASAN_OPTIONS', 'UBSAN_OPTIONS') if k in os.environ},
                 'scope': 'Identical captured logical trees, sample tokens and native frame/stream syntax. '
                          'Reference entropy settings imported exactly; each named variant changes only its declared controls. '
@@ -61,7 +68,8 @@ def main():
                 bindings[str(p)] = sha(p)
             description = directory / 'input.txt'
             description.write_text(project(source, entropy=True))
-            command = [str(binary), 'stream-entropy-check', case['source']['path'], str(description),
+            command = [str(binary), 'stream-entropy-time' if args.model_timings else 'stream-entropy-check',
+                       case['source']['path'], str(description),
                        str(directory / 'encoded'), ','.join(args.variants)]
             with (directory / 'stdout.jsonl').open('x') as out, (directory / 'stderr.log').open('x') as err:
                 subprocess.run(command, stdout=out, stderr=err, check=True)

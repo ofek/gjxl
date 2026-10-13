@@ -28,6 +28,8 @@ def freeze_build(binary, output):
     for directory in ("src", "include", "cmake"):
         paths += [p for p in (repo / directory).rglob("*") if p.is_file()]
     paths += list((repo / "tests").glob("modular*"))
+    paths += list((repo / "tests").glob("ans*"))
+    paths += list((repo / "tests").glob("entropy*"))
     for path in sorted(set(paths)):
         if not path.is_file():
             continue
