@@ -15,7 +15,7 @@ add_library(native_histogram_fit OBJECT
   ${GJXL_SOURCE}/src/codec/modular/histogram_sample_preparation.cpp)
 target_include_directories(native_histogram_fit PRIVATE
   ${GJXL_SOURCE}/include ${GJXL_SOURCE}/src)
-add_executable(reference_learning runner.cpp reference_capture.cpp native_fit.cpp native_fit_tests.cpp native_preparation.cpp paired_learning.cpp
+add_executable(reference_learning runner.cpp reference_capture.cpp native_fit.cpp native_fit_tests.cpp native_preparation.cpp paired_learning.cpp policy_trace.cpp
   $<TARGET_OBJECTS:native_histogram_fit>
   ${GJXL_SOURCE}/src/io/pnm.cpp
   ${GENERATED_SOURCE}/reference_codec.cpp

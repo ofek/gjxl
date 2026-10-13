@@ -3,6 +3,7 @@
 #include "native_fit.h"
 #include "native_preparation.h"
 #include "paired_learning.h"
+#include "policy_trace.h"
 #include "reference_capture.h"
 
 #include <algorithm>
@@ -517,17 +518,28 @@ int main(int argc, char **argv) try {
     }
     return 0;
   }
-  Require((mode == "reference" && argc == 5) || (mode == "bridge" && argc == 7),
-          "reference INPUT OUT capture|timing; bridge INPUT POLICY OUT "
+  const bool reference = mode == "reference" || mode == "reference-policy";
+  Require((mode == "reference" && argc == 5) || (mode == "reference-policy" && argc == 6) || (mode == "bridge" && argc == 7),
+          "reference INPUT OUT capture|timing; reference-policy INPUT OUT trace|timing auto|buffered; bridge INPUT POLICY OUT "
           "capture|timing best|all");
-  const std::filesystem::path directory = argv[mode == "reference" ? 3 : 4];
-  const std::string recording = argv[mode == "reference" ? 4 : 5];
-  Require(recording == "capture" || recording == "timing",
+  const std::filesystem::path directory = argv[reference ? 3 : 4];
+  const std::string recording = argv[reference ? 4 : 5];
+  Require(recording == "capture" || recording == "timing" || (recording == "trace" && mode == "reference-policy"),
           "Invalid recording mode");
+  if (mode == "reference-policy") {
+    Require(recording != "capture", "Use stream trace for policy captures");
+    const std::string buffering = argv[5];
+    Require(buffering == "auto" || buffering == "buffered", "Invalid buffering control");
+    capture::reference_buffering = buffering == "auto" ? -1 : 0;
+  }
   std::filesystem::create_directories(directory);
   Require(!std::filesystem::exists(directory / "output.jxl"),
           "Output already exists");
   capture::Session session;
+  if (recording == "trace") {
+    session.stream_directory = directory / "streams";
+    std::filesystem::create_directories(session.stream_directory);
+  }
   if (recording == "capture") {
     session.directory = directory / "fixtures";
     std::filesystem::create_directories(session.directory);
@@ -544,7 +556,7 @@ int main(int argc, char **argv) try {
   std::vector<uint8_t> encoded;
   bool token_exact = false;
   capture::Timing elapsed, preparation;
-  if (mode == "reference") {
+  if (reference) {
     const capture::ScopedSession scoped(&session);
     const capture::Timer timer;
     encoded = codec::EncodeLossless(original);
@@ -604,6 +616,9 @@ int main(int argc, char **argv) try {
 #endif
       ;
   std::cout << "{\"mode\":\"" << mode << "\",\"bytes\":" << encoded.size()
+            << ",\"buffering\":" << capture::reference_buffering
+            << ",\"traced_learning_calls\":" << session.traced_learning_calls
+            << ",\"traced_coding_streams\":" << session.traced_coding_streams
             << ",\"decoded_exact\":true,\"tokens_exact\":"
             << (token_exact ? "true" : "null")
             << ",\"process_peak_rss_bytes\":" << peak_rss

@@ -6,10 +6,16 @@ The [matched pilot](modular-native-learning-timing.md) finds no remaining large
 cost gap in one controlled learning call. It does not establish that one global
 Best tree on our frozen transforms reproduces stock e9's compression policy.
 
-This is a source audit and a plan for the next controls, not a rate ablation.
+This began as a source audit and a plan for the next controls.
 The pristine reference checkout was verified at
 `e8ff09762481785938d8e4e01333ed3917571161`. The saved 16-input capture ledger
-corroborates its fit counts; no new e9 encodes were run for this audit.
+corroborates its fit counts. The subsequent
+[50-encode buffering ablation](modular-reference-policy-ablation.md) now captures
+actual stream pixels/options and quantifies the global/local workflow tradeoff.
+It confirms that per-stream WP/RCT settings matter even with a global tree, and
+that larger palettes are required on the structured cases. The immediate native
+target is per-stream WP preparation followed by actual-stream replay and coding
+contracts; a blanket global-tree replacement is not justified.
 
 ## Selection happens before expensive tree fitting
 

@@ -34,6 +34,11 @@ struct Session {
   std::vector<Timing> learning;
   // Test-only in-memory capture. Null in ordinary capture/timing runs.
   std::vector<Fixture> *captured = nullptr;
+  // Optional successful LearnTree input/output trace. Trace encodes are never
+  // timing controls: writing and readback verification are inside the call.
+  std::filesystem::path stream_directory;
+  size_t traced_learning_calls = 0;
+  size_t traced_coding_streams = 0;
 };
 extern thread_local Session *active;
 class ScopedSession {

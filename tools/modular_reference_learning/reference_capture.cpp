@@ -454,7 +454,9 @@ void PrintSession(std::ostream &out, const Session &session) {
     out << (i ? "," : "") << "{\"cpu\":" << t.cpu << ",\"wall\":" << t.wall
         << '}';
   }
-  out << "],\"learning_includes_capture_overhead\":"
-      << (capturing ? "true" : "false") << '}';
+  out << "],\"stream_trace\":"
+      << (!session.stream_directory.empty() ? "true" : "false")
+      << ",\"learning_includes_capture_overhead\":"
+      << (capturing || !session.stream_directory.empty() ? "true" : "false") << '}';
 }
 } // namespace reference_learning

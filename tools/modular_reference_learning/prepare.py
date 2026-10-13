@@ -56,12 +56,26 @@ def main():
     write(root / "enc_ma.cc", fitting)
     encoding = read(args.reference / root / "enc_encoding.cc")
     encoding = '#include "reference_capture.h"\n' + encoding
+    encoding = '#include "policy_trace.h"\n' + encoding
     encoding = replace_once(encoding, "  TreeSamples tree_samples;\n",
+                            '  reference_learning::LearningInputTrace trace(images, options, start, stop, multiplier_info);\n'
                             '  reference_learning::LearningTimer timer;\n  TreeSamples tree_samples;\n')
+    encoding = replace_once(encoding, "                                 options[start], multiplier_info, range));\n  return tree;",
+                            "                                 options[start], multiplier_info, range));\n  trace.Finish(tree);\n  return tree;")
+    encoding = replace_once(encoding, "  ModularOptions options = opts;  // Make a copy to modify it.",
+                            "  reference_learning::ScopedLocalLearning local_scope(group_id);\n"
+                            "  ModularOptions options = opts;  // Make a copy to modify it.")
+    encoding = replace_once(encoding, "  header.use_global_tree = true;\n",
+                            "  header.use_global_tree = true;\n"
+                            "  reference_learning::TraceCodingStream(image, options, group_id);\n")
     write(root / "enc_encoding.cc", encoding)
     adapter = read(source / "tests/modular_reference.cpp")
     adapter = replace_once(adapter, "                                               1) == JXL_ENC_SUCCESS,\n",
                             "                                               9) == JXL_ENC_SUCCESS,\n")
+    adapter = '#include "policy_trace.h"\n' + adapter
+    adapter = replace_once(adapter, '          "Reference lossless settings failed");\n',
+                            '          "Reference lossless settings failed");\n'
+                            '  reference_learning::ConfigureReferencePolicy(settings);\n')
     write("reference_codec.cpp", adapter)
     write("provenance.json", json.dumps({"reference_revision": PIN, "inputs": hashes}, indent=2) + "\n")
 

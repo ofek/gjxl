@@ -360,6 +360,14 @@ The next policy milestone must qualify training scope as well as transform and
 predictor selection: the reference uses local trees on the large corpus inputs,
 while this bridge uses one global tree.
 
+**Reference policy update:** a five-input, 50-encode buffering ablation now
+captures the actual e9 learning inputs and coding-stream policies. Global
+buffering saves 1.96–2.64% bytes on the large photos for about 49–56% more learning
+CPU; on splines it costs 2.96× learning CPU and increases bytes. See
+[the workflow qualification](modular-reference-policy-ablation.md). The next
+native work must carry per-stream WP/RCT/palette choices and support local scope,
+not simply combine every group into one global fit.
+
 ## Measurement limits and validation
 
 All measurements use Apple M4 Pro, Release AppleClang builds and the same

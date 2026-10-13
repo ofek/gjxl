@@ -7,6 +7,45 @@ implementation under differential qualification. The reference is libjxl
 `e8ff09762481785938d8e4e01333ed3917571161`; qualified native archives come from
 `f27a797` (`perf/modular-ans-estimates`).
 
+## Reference policy and scope controls
+
+`reference-policy INPUT OUT trace|timing auto|buffered` changes only the input
+buffering setting when `buffered` is requested; automatic mode preserves the
+stock e9 API sequence. Generate/build in fresh `policy-generated` / `policy-bin`
+directories using the build recipe below with those paths substituted. Keep
+older generated sources intact: existing ledgers bind their hashes.
+
+```sh
+python3 tools/modular_reference_learning/run_policy_study.py \
+  --binary build/reference-learning/policy-bin/reference_learning \
+  --corpus build/reference-learning/corpus \
+  --output build/reference-learning/reference-policy \
+  --inputs photo-macan photo-flower alpha-flower chessboard splines --repeats 3
+python3 tools/modular_reference_learning/test_policy_trace.py \
+  --case build/reference-learning/reference-policy/photo-macan-auto--1
+python3 tools/modular_reference_learning/analyze_policy_study.py \
+  --study build/reference-learning/reference-policy \
+  --validation build/reference-learning/reference-policy-validation \
+  --output docs/modular-reference-policy-results.json
+```
+
+Use a new output directory; the runner does not overwrite or silently resume a
+partial study. It freezes the binary, exact sources, generated hooks and build
+configuration, and binds inputs and archives by hash. Omit `--validation` if the
+archived sanitizer controls are unavailable. The negative tests above use the
+nonempty photographic global-tree trace.
+
+Trace mode writes `streams/learning-N.json` and `.i32le` payloads for every
+successful learning call. Included channels have tight signed 32-bit rows;
+excluded channels retain descriptors but no pixel bytes. Metadata preserves
+stream-ID holes, every learning option, float bits, WP coefficients, transforms,
+multipliers and the raw tree. Payloads are read back and checked sample-for-sample.
+`coding-N.json` records global/local coding scope and header settings separately.
+Trace overhead is explicitly flagged and excluded from timing analysis. Local
+scope is captured at the call site, not inferred from the number of images.
+See the [ablation report](../../docs/modular-reference-policy-ablation.md) for
+results and the distinctions between workflow, learning and fitting comparisons.
+
 ## Native sample preparation
 
 `prepare-check INPUT POLICY FIXTURE best|all [OUTPUT]` borrows native transformed
