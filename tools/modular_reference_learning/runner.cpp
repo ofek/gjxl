@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 Yunho Cho
+#include "native_fit.h"
 #include "reference_capture.h"
 
 #include <algorithm>
@@ -270,6 +271,55 @@ int main(int argc, char **argv) try {
   std::cout << std::setprecision(17);
   Require(argc >= 2, "Usage: reference_learning reference|bridge|replay ...");
   const std::string mode = argv[1];
+  if (mode == "native-self-test") {
+    Require(argc == 2, "native-self-test takes no arguments");
+    const auto count = capture::RunNativeDifferentialTests();
+    std::cout << "{\"native_differential_cases\":" << count
+              << ",\"tree_exact\":true}\n";
+    return 0;
+  }
+  if (mode == "native-replay" || mode == "native-verify" ||
+      mode == "paired-replay") {
+    const bool verify = mode == "native-verify";
+    const bool paired = mode == "paired-replay";
+    Require(argc == (verify ? 3 : 4),
+            "native-verify FIXTURE; native-replay|paired-replay FIXTURE REPEATS");
+    const size_t repeats = verify ? 1 : std::stoul(argv[3]);
+    Require(repeats && repeats <= 100, "Invalid replay repetitions");
+    const auto fixture = capture::ReadFixture(argv[2]);
+    size_t measured_peak = 0;
+    if (!verify) {
+      if (paired)
+        (void)capture::Replay(fixture);
+      measured_peak = capture::FitNative(fixture, true).scratch_peak_bytes;
+    }
+    for (size_t i = 0; i < repeats; ++i) {
+      capture::Timing reference;
+      if (paired && i % 2 == 0)
+        reference = capture::Replay(fixture);
+      const auto result = capture::FitNative(fixture, verify);
+      if (paired && i % 2 != 0)
+        reference = capture::Replay(fixture);
+      std::cout << "{\"iteration\":" << i
+                << ",\"tree_exact\":true,\"nodes\":" << result.tree.size
+                << ",\"samples\":" << fixture.samples.NumSamples()
+                << ",\"distinct\":" << fixture.samples.NumDistinctSamples()
+                << ",\"predictors\":" << fixture.samples.NumPredictors()
+                << ",\"properties\":" << fixture.samples.NumProperties()
+                << ",\"cpu\":" << result.time.cpu
+                << ",\"wall\":" << result.time.wall
+                << ",\"scratch_bound_bytes\":" << result.scratch_bound_bytes
+                << ",\"sample_backing_bytes\":" << result.sample_backing_bytes;
+      std::cout << ",\"scratch_peak_bytes\":"
+                << (verify ? result.scratch_peak_bytes : measured_peak);
+      if (paired)
+        std::cout << ",\"reference_cpu\":" << reference.cpu
+                  << ",\"reference_wall\":" << reference.wall
+                  << ",\"reference_first\":" << (i % 2 == 0 ? "true" : "false");
+      std::cout << "}\n";
+    }
+    return 0;
+  }
   if (mode == "rewrite") {
     Require(argc == 4, "rewrite INPUT_FIXTURE OUTPUT_FIXTURE");
     capture::WriteFixture(argv[3], capture::ReadFixture(argv[2]));

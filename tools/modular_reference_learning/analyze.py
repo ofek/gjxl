@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import statistics
+import subprocess
 from pathlib import Path
 
 
@@ -15,12 +16,34 @@ def sha(path):
     return digest.hexdigest()
 
 
+def verify_manifest_artifact(path, digest, revision):
+    """Bind tracked tool sources to their capture commit after later edits.
+
+    Binaries, libraries and data must still match the live artifact. Only tool
+    sources recorded inside this checkout may resolve through Git history.
+    """
+    if Path(path).is_file() and sha(path) == digest:
+        return
+    source = Path(__file__).resolve().parent
+    try:
+        relative = Path(path).relative_to(source)
+    except ValueError:
+        raise ValueError(f"Manifest artifact changed: {path}") from None
+    if relative.name != "CMakeLists.txt" and relative.suffix not in {".cpp", ".h", ".py"}:
+        raise ValueError(f"Manifest artifact changed: {path}")
+    repo = source.parents[1]
+    repo_relative = Path(path).relative_to(repo)
+    blob = subprocess.run(["git", "-C", str(repo), "show", f"{revision}:{repo_relative}"],
+                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+    if blob.returncode or hashlib.sha256(blob.stdout).hexdigest() != digest:
+        raise ValueError(f"Manifest source differs from capture revision: {path}")
+
+
 def load_study(root):
     manifest_path, ledger = root / "manifest.json", root / "results.jsonl"
     manifest = json.loads(manifest_path.read_text())
     for path, digest in manifest["artifacts"].items():
-        if sha(path) != digest:
-            raise ValueError(f"Manifest artifact changed: {path}")
+        verify_manifest_artifact(path, digest, manifest["source_revision"])
     for item in manifest["inputs"]:
         if sha(item["path"]) != item["sha256"]:
             raise ValueError("Input changed")

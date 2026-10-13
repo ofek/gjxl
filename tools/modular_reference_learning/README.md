@@ -2,9 +2,59 @@
 
 Research-only first milestone of the
 [learner replacement plan](../../docs/modular-tree-learning-cost.md#recommended-implementation-order).
-Production sources and defaults remain unchanged. The reference is libjxl
+Encoder defaults remain unchanged. The native histogram fitter is a private
+implementation under differential qualification. The reference is libjxl
 `e8ff09762481785938d8e4e01333ed3917571161`; qualified native archives come from
 `f27a797` (`perf/modular-ans-estimates`).
+
+## Native fitting replay
+
+The harness also builds the dependency-free native fitter under ordinary
+production compiler settings, separately from reference-only compiler flags.
+`native_fit_test` checks the private native contract; `native-self-test` generates
+129 independent differential fixtures. Both are registered with CTest.
+
+```sh
+ctest --test-dir build/reference-learning/bin --output-on-failure
+python3 tools/modular_reference_learning/run_native_replay.py \
+  --binary build/reference-learning/bin/reference_learning \
+  --corpus build/reference-learning/corpus \
+  --output build/reference-learning/native-paired \
+  --mode paired --repeats 3
+python3 tools/modular_reference_learning/analyze_native_replay.py \
+  --study build/reference-learning/native-paired \
+  --validation build/reference-learning/native-validation \
+  --output docs/modular-native-histogram-learning-results.json
+```
+
+Use a new output directory; the runner refuses to overwrite any study. The
+runner freezes the executable and exact source snapshots, including uncommitted
+files, and binds inputs, archives and compiler settings by SHA-256. Optional
+`--inputs` and `--variants` restrict a diagnostic study. `--mode verify` runs a
+single native fit per fixture without warmup, for correctness rather than timing.
+`--validation` additionally checks the archived final-build validation used by
+the checked-in report; omit it when that local archive is unavailable. The
+archive includes contract-test logs, scalar/sanitizer replay results and the
+timed/final native-object equivalence check. Analyzer rejection tests are also
+registered with CTest.
+
+Direct modes are `native-verify FIXTURE`, `native-replay FIXTURE REPEATS`, and
+`paired-replay FIXTURE REPEATS`. Copies/conversion are outside both timers;
+native validation/allocations are inside. Every fit compares all raw tree fields.
+The paired mode alternates execution order after one warmup each and measures
+native storage separately during its warmup. See the
+[native fitting contract](../../docs/modular-native-histogram-learning.md).
+
+For scalar arithmetic qualification, configure a separate build with
+`-DCMAKE_CXX_FLAGS=-DGJXL_HISTOGRAM_SCALAR=1`. This validates the scalar fallback
+against the pinned four-lane reference; it does not qualify another reference
+architecture or compiler. Existing ASan/UBSan builds also instrument the native
+fitter and its contract/differential tests.
+
+The original bridge analyzer resolves changed tracked tool sources through
+their recorded capture commit. Frozen binaries, fixtures, archives and other
+data must still match their live artifact hashes; they cannot resolve through
+Git history. This preserves verification of older studies after tool evolution.
 
 `prepare.py` checks the reference revision and pristine hooked files, records
 their hashes, and generates these changes outside the reference checkout:

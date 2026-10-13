@@ -8,7 +8,14 @@ foreach(var GJXL_BUILD REFERENCE_SOURCE REFERENCE_BUILD GENERATED_SOURCE)
     message(FATAL_ERROR "Set ${var} to an absolute path")
   endif()
 endforeach()
-add_executable(reference_learning runner.cpp reference_capture.cpp
+# Native fitting uses ordinary production compiler settings. Reference-specific
+# vectorization/RTTI flags below apply only to the adapter/reference target.
+add_library(native_histogram_fit OBJECT
+  ${GJXL_SOURCE}/src/codec/modular/histogram_tree_learning.cpp)
+target_include_directories(native_histogram_fit PRIVATE
+  ${GJXL_SOURCE}/include ${GJXL_SOURCE}/src)
+add_executable(reference_learning runner.cpp reference_capture.cpp native_fit.cpp native_fit_tests.cpp
+  $<TARGET_OBJECTS:native_histogram_fit>
   ${GJXL_SOURCE}/src/io/pnm.cpp
   ${GENERATED_SOURCE}/reference_codec.cpp
   ${GENERATED_SOURCE}/lib/jxl/modular/encoding/enc_ma.cc
@@ -39,3 +46,18 @@ target_link_libraries(reference_learning PRIVATE
   ${REFERENCE_BUILD}/third_party/brotli/libbrotlienc.dylib
   ${REFERENCE_BUILD}/third_party/brotli/libbrotlidec.dylib
   ${REFERENCE_BUILD}/third_party/brotli/libbrotlicommon.dylib)
+
+# A native-only target also runs in this small research build. It intentionally
+# has no reference headers/libraries and uses the normal compiler math settings.
+add_executable(native_fit_test
+  ${GJXL_SOURCE}/tests/modular_histogram_learning_test.cpp
+  $<TARGET_OBJECTS:native_histogram_fit>)
+target_include_directories(native_fit_test PRIVATE
+  ${GJXL_SOURCE}/include ${GJXL_SOURCE}/src)
+target_link_libraries(native_fit_test PRIVATE ${GJXL_BUILD}/libgjxl_codec.a)
+enable_testing()
+add_test(NAME native_fit_contract COMMAND native_fit_test)
+add_test(NAME native_fit_differential COMMAND reference_learning native-self-test)
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+add_test(NAME native_replay_ledger
+  COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_native_replay.py)

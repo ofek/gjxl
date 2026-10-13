@@ -323,8 +323,16 @@ required for a native encoder using different downstream coding decisions.
 `fe7cd44`; see [the reference-learning results](modular-reference-learning.md).
 The all-predictor bridge reaches +0.9487% aggregate bytes versus e9, with
 per-image regressions and expensive fits still unresolved. The next milestone
-is the faithful native fitter against the captured sample contract. Production
+is the faithful native fitter against the captured sample contract. Its private
+implementation and qualification are documented in
+[native histogram fitting](modular-native-histogram-learning.md). Production
 policy promotion remains gated on the criteria above.
+
+**Native fitter update:** all 233 captured trees now match exactly. Paired
+fitting uses 0.9477× the reference's summed median CPU time; 214 fits pass the
+proposed per-fit target. Nineteen sub-millisecond single-leaf cases exceed it
+(6.454 ms combined excess), so that gate remains partially unmet. Native sample
+preparation, search-policy qualification and default promotion are still ahead.
 
 ## Measurement limits and validation
 

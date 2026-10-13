@@ -288,6 +288,7 @@ add_library(
   src/codec/modular/geometry.cpp
   src/codec/modular/tree_learning.cpp
   src/codec/modular/quantized_tree_learning.cpp
+  src/codec/modular/histogram_tree_learning.cpp
   src/codec/modular/transform/transform.cpp
   src/codec/modular/transform/palette.cpp
   src/codec/modular/transform/squeeze.cpp
@@ -2338,6 +2339,11 @@ if(GJXL_BUILD_TESTS)
   add_executable(gjxl_modular_foundation_test tests/modular_foundation_test.cpp)
   target_link_libraries(gjxl_modular_foundation_test PRIVATE gjxl_codestream)
   add_test(NAME modular_foundation COMMAND gjxl_modular_foundation_test)
+
+  add_executable(gjxl_modular_histogram_learning_test tests/modular_histogram_learning_test.cpp)
+  target_link_libraries(gjxl_modular_histogram_learning_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_histogram_learning COMMAND gjxl_modular_histogram_learning_test)
+  set_tests_properties(modular_histogram_learning PROPERTIES TIMEOUT 60)
 
   add_executable(gjxl_ans_selection_test tests/ans_selection_test.cpp)
   target_link_libraries(gjxl_ans_selection_test PRIVATE gjxl_codestream)
