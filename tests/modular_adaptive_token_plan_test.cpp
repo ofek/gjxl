@@ -53,10 +53,16 @@ void Layouts() {
         "Plane alignment, dynamic nodes, or compact output ABI changed");
   Check(plain.weighted_bytes == 0 &&
             plain.features.retained_bytes + 720 == weighted.features.retained_bytes &&
-            weighted.bridge_peak_bytes > plain.bridge_peak_bytes + 1440 &&
+            weighted.bridge_peak_bytes == plain.bridge_peak_bytes + 1440 + 5 * 2 * 5 * 4 &&
             weighted.retained_bytes == weighted.features.retained_bytes + weighted.output_bytes &&
             weighted.generation_peak_bytes == weighted.retained_bytes + 2 * weighted.dispatch_bytes,
         "Bridge, retained features, or dispatch overlap omitted");
+  AdaptiveModularTokenStoragePlan parallel;
+  Ok(ComputeAdaptiveModularTokenStoragePlan(channels, 0, 3, 511, true, 4, &parallel));
+  Check(parallel.bridge_peak_bytes == weighted.bridge_peak_bytes + 3 * 5 * 2 * 5 * 4 &&
+            parallel.features == weighted.features &&
+            parallel.generation_peak_bytes == weighted.generation_peak_bytes,
+        "Shared scratch planning changed storage beyond the additional CPU participants");
   auto limit = ModularTokenDeviceLimits{45, 3, weighted.dispatch_bytes};
   AdaptiveModularTokenStoragePlan admitted;
   Ok(ComputeAdaptiveModularTokenStoragePlan(channels, 0, 3, 511, true, 1, &admitted, &limit));

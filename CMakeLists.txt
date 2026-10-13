@@ -286,6 +286,7 @@ add_library(
   src/codec/frame_metadata.cpp
   src/codec/modular/image.cpp
   src/codec/modular/geometry.cpp
+  src/codec/modular/weighted_features.cpp
   src/codec/modular/tree_learning.cpp
   src/codec/modular/quantized_tree_learning.cpp
   src/codec/modular/transform/transform.cpp
@@ -2506,6 +2507,11 @@ if(GJXL_BUILD_TESTS)
   target_link_libraries(gjxl_modular_profile_test PRIVATE gjxl_codestream)
   add_test(NAME modular_profile COMMAND gjxl_modular_profile_test)
   set_tests_properties(modular_profile PROPERTIES TIMEOUT 60)
+
+  add_executable(gjxl_modular_weighted_features_test tests/modular_weighted_features_test.cpp)
+  target_link_libraries(gjxl_modular_weighted_features_test PRIVATE gjxl_codec)
+  add_test(NAME modular_weighted_features COMMAND gjxl_modular_weighted_features_test)
+  set_tests_properties(modular_weighted_features PROPERTIES TIMEOUT 30)
 
   add_executable(gjxl_modular_capture tools/modular_oracle/capture.cpp src/io/pnm.cpp)
   target_link_libraries(gjxl_modular_capture PRIVATE gjxl_codestream)

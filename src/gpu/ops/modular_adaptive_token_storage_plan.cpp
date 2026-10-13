@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 Yunho Cho
 #include "gpu/ops/modular_adaptive_tokens.h"
+#include "codec/modular/weighted_features.h"
 #include <algorithm>
 #include <type_traits>
 
@@ -101,11 +102,13 @@ Status ComputeAdaptiveModularTokenStoragePlan(std::span<const ChannelDescriptor>
   if (!bridge.Add(image))
     return Overflow();
   if (weighted) {
-    if (maximum_width > (SIZE_MAX / 2) - 2 ||
-        !bridge.AddVector<AdaptiveModularWeightedFeature>(p.token_count,
+    HostStorageBound scratch;
+    if (auto s = ComputeWeightedPredictorScratchBound(maximum_width, cpu_participants, &scratch);
+        !s.ok())
+      return s;
+    if (!bridge.AddVector<AdaptiveModularWeightedFeature>(p.token_count,
                                                           VectorCapacityPolicy::kFreshExact) ||
-        !bridge.AddVector<uint32_t>((maximum_width + 2) * 2, VectorCapacityPolicy::kFreshExact,
-                                    5 * cpu_participants))
+        !bridge.Add(scratch))
       return Overflow();
   }
   p.bridge_peak_bytes = bridge.peak_bytes;

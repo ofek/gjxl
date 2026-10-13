@@ -229,6 +229,12 @@ int main(int argc, char **argv) try {
   const auto &g = profile.adaptive_gpu;
   std::cout << ",\"adaptive_gpu\":{\"feature_seconds\":" << g.feature_seconds
             << ",\"learning_feature_seconds\":" << g.learning_feature_seconds
+            << ",\"feature_preparation\":{\"allocation_seconds\":"
+            << g.feature_preparation.allocation_seconds
+            << ",\"copy_seconds\":" << g.feature_preparation.copy_seconds
+            << ",\"scratch_seconds\":" << g.feature_preparation.scratch_seconds
+            << ",\"prediction_seconds\":" << g.feature_preparation.prediction_seconds
+            << ",\"publication_seconds\":" << g.feature_preparation.publication_seconds << '}'
             << ",\"token_seconds\":" << g.token_seconds
             << ",\"feature_preparations\":" << g.feature_preparations
             << ",\"feature_reuses\":" << g.feature_reuses << ",\"evictions\":" << g.evictions

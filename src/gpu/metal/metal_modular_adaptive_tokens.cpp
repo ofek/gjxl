@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Yunho Cho
 #include "gpu/metal/metal_backend_internal.h"
 #include "gpu/ops/modular_adaptive_layout.h"
+#include "codec/modular/profile.h"
 #include <cstring>
 
 namespace gjxl::metal_internal {
@@ -142,12 +143,16 @@ Status MetalBackend::PrepareAdaptiveModularFeatures(
       !s.ok())
     return s;
   const ManagedHostScope resources(ResourceClass::kPreparation);
-  auto candidate = std::make_unique<CompletedFeatures>();
-  candidate->backend = id();
-  candidate->source = frame.metadata();
-  candidate->layout = layout;
-  candidate->descriptors.assign(slices.begin(), slices.end());
+  auto *profile = active_modular_profile ? &active_modular_profile->adaptive_gpu.feature_preparation
+                                       : nullptr;
+  std::unique_ptr<CompletedFeatures> candidate;
   {
+    const FeaturePreparationScope allocation(profile, &FeaturePreparationProfile::allocation_seconds);
+    candidate = std::make_unique<CompletedFeatures>();
+    candidate->backend = id();
+    candidate->source = frame.metadata();
+    candidate->layout = layout;
+    candidate->descriptors.assign(slices.begin(), slices.end());
     const ResourceClassScope retained(ResourceClass::kCompletedFrame);
     if (auto s = Allocate(storage.plane_bytes, &candidate->planes); !s.ok())
       return s;
@@ -155,13 +160,16 @@ Status MetalBackend::PrepareAdaptiveModularFeatures(
       if (auto s = Allocate(storage.weighted_bytes, &candidate->weighted); !s.ok())
         return s;
   }
-  auto *planes = static_cast<std::byte *>(AsMetalBuffer(*candidate->planes)->contents());
-  std::memset(planes, 0, storage.plane_bytes);
-  for (size_t c = 0; c < layout.shape.count; ++c) {
-    const auto source = frame.image().view(c);
-    const size_t bytes =
-        source.descriptor.extent.width * source.descriptor.extent.height * sizeof(int32_t);
-    std::memcpy(planes + layout.plane_offsets[c], source.backing.data(), bytes);
+  {
+    const FeaturePreparationScope copy(profile, &FeaturePreparationProfile::copy_seconds);
+    auto *planes = static_cast<std::byte *>(AsMetalBuffer(*candidate->planes)->contents());
+    std::memset(planes, 0, storage.plane_bytes);
+    for (size_t c = 0; c < layout.shape.count; ++c) {
+      const auto source = frame.image().view(c);
+      const size_t bytes =
+          source.descriptor.extent.width * source.descriptor.extent.height * sizeof(int32_t);
+      std::memcpy(planes + layout.plane_offsets[c], source.backing.data(), bytes);
+    }
   }
   if (weighted) {
     // Shared storage is initialized directly: no full-image feature staging or
@@ -174,30 +182,28 @@ Status MetalBackend::PrepareAdaptiveModularFeatures(
               auto view = frame.image().view(c);
               view.backing = view.backing.subspan(rect.y * view.stride + rect.x);
               view.descriptor.extent = rect.extent;
-              WeightedPredictor<ResourceClass::kPreparation> wp(slice.width, parameters);
-              for (size_t y = 0; y < slice.height; ++y)
-                for (size_t x = 0; x < slice.width; ++x) {
-                  const auto n = Neighbors(view, x, y);
-                  const auto p =
-                      wp.Predict(x, y, n.top, n.left, n.top_right, n.top_left, n.top_top);
-                  features[slice.token_offset + y * slice.width + x] = {p.first, p.second};
-                  if (!wp.Update(view.Row(y)[x], x, y))
-                    return Status::Unsupported("Adaptive Modular weighted "
-                                               "state exceeds supported range");
-                }
-              return Status::Ok();
+              return PrepareWeightedPredictorFeatures(
+                  view, parameters,
+                  std::span(features, storage.token_count)
+                      .subspan(slice.token_offset, size_t{slice.width} * slice.height),
+                  profile);
             });
         !s.ok())
       return s;
-    std::span<const std::byte> bytes;
-    if (auto s = BorrowCompletedReadOnly(*candidate->weighted, storage.weighted_bytes, 0, &bytes);
-        !s.ok())
-      return s;
-    candidate->host_weighted = {
-        reinterpret_cast<const AdaptiveModularWeightedFeature *>(bytes.data()),
-        storage.token_count};
   }
-  *out = std::move(candidate);
+  {
+    const FeaturePreparationScope publication(profile, &FeaturePreparationProfile::publication_seconds);
+    if (weighted) {
+      std::span<const std::byte> bytes;
+      if (auto s = BorrowCompletedReadOnly(*candidate->weighted, storage.weighted_bytes, 0, &bytes);
+          !s.ok())
+        return s;
+      candidate->host_weighted = {
+          reinterpret_cast<const AdaptiveModularWeightedFeature *>(bytes.data()),
+          storage.token_count};
+    }
+    *out = std::move(candidate);
+  }
   return Status::Ok();
 } catch (const ManagedAllocationFailure &e) {
   return e.status();

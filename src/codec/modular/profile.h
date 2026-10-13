@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Yunho Cho
 #pragma once
 #include "codec/modular/coding.h"
+#include "codec/modular/weighted_features.h"
 #include "codestream/profile_internal.h"
 #include <array>
 #include <chrono>
@@ -52,6 +53,9 @@ struct AdaptiveGpuWorkProfile {
   // token_seconds are nested in kTokens. None are extra top-level intervals.
   double feature_seconds = 0, token_seconds = 0;
   double learning_feature_seconds = 0;
+  // Disjoint subsets of feature_seconds across both learning and token requests.
+  // Their sum excludes validation/traversal/scratch cleanup; do not add it to the parent.
+  FeaturePreparationProfile feature_preparation;
   size_t feature_preparations = 0, feature_reuses = 0, evictions = 0;
   size_t feature_samples = 0, learning_feature_uses = 0, learning_feature_fallbacks = 0;
   size_t encoded_candidates = 0, cpu_fallback_candidates = 0;

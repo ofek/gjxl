@@ -188,6 +188,13 @@ void Case(GpuBackend &gpu, const Fixture &f, ModularEncodingOptions options, boo
             g.learning_feature_seconds <= actual.seconds[static_cast<size_t>(ProfileStage::kTraining)] + 1e-6 &&
             baseline.adaptive_gpu == AdaptiveGpuWorkProfile{},
         "Adaptive profile has missing work or overlapping intervals");
+  const auto &detail = g.feature_preparation;
+  const double preparation = detail.allocation_seconds + detail.copy_seconds + detail.scratch_seconds +
+                             detail.prediction_seconds + detail.publication_seconds;
+  Check(detail.allocation_seconds > 0 && detail.copy_seconds > 0 && detail.publication_seconds > 0 &&
+            detail.scratch_seconds > 0 && detail.prediction_seconds > 0 &&
+            preparation <= g.feature_seconds + 1e-6,
+        "Feature preparation details are missing or overlap their parent");
   if (options.search) {
     const auto &a = actual.training_work, &b = baseline.training_work;
     Check(g.feature_reuses > 0 && a.learning_calls == b.learning_calls &&
