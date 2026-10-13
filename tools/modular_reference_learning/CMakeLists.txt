@@ -11,10 +11,11 @@ endforeach()
 # Native fitting uses ordinary production compiler settings. Reference-specific
 # vectorization/RTTI flags below apply only to the adapter/reference target.
 add_library(native_histogram_fit OBJECT
-  ${GJXL_SOURCE}/src/codec/modular/histogram_tree_learning.cpp)
+  ${GJXL_SOURCE}/src/codec/modular/histogram_tree_learning.cpp
+  ${GJXL_SOURCE}/src/codec/modular/histogram_sample_preparation.cpp)
 target_include_directories(native_histogram_fit PRIVATE
   ${GJXL_SOURCE}/include ${GJXL_SOURCE}/src)
-add_executable(reference_learning runner.cpp reference_capture.cpp native_fit.cpp native_fit_tests.cpp
+add_executable(reference_learning runner.cpp reference_capture.cpp native_fit.cpp native_fit_tests.cpp native_preparation.cpp
   $<TARGET_OBJECTS:native_histogram_fit>
   ${GJXL_SOURCE}/src/io/pnm.cpp
   ${GENERATED_SOURCE}/reference_codec.cpp
@@ -57,7 +58,15 @@ target_include_directories(native_fit_test PRIVATE
 target_link_libraries(native_fit_test PRIVATE ${GJXL_BUILD}/libgjxl_codec.a)
 enable_testing()
 add_test(NAME native_fit_contract COMMAND native_fit_test)
+add_executable(native_preparation_test ${GJXL_SOURCE}/tests/modular_histogram_preparation_test.cpp
+  $<TARGET_OBJECTS:native_histogram_fit>)
+target_include_directories(native_preparation_test PRIVATE ${GJXL_SOURCE}/include ${GJXL_SOURCE}/src)
+target_link_libraries(native_preparation_test PRIVATE ${GJXL_BUILD}/libgjxl_codec.a)
+add_test(NAME native_preparation_contract COMMAND native_preparation_test)
 add_test(NAME native_fit_differential COMMAND reference_learning native-self-test)
+add_test(NAME native_preparation_differential COMMAND reference_learning preparation-self-test)
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 add_test(NAME native_replay_ledger
   COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_native_replay.py)
+add_test(NAME native_preparation_ledger
+  COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_native_preparation.py)

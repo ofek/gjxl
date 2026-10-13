@@ -7,6 +7,35 @@ implementation under differential qualification. The reference is libjxl
 `e8ff09762481785938d8e4e01333ed3917571161`; qualified native archives come from
 `f27a797` (`perf/modular-ans-estimates`).
 
+## Native sample preparation
+
+`prepare-check INPUT POLICY FIXTURE best|all [OUTPUT]` borrows native transformed
+stream slices, prepares compact samples, checks every captured sample field,
+fits the native tree and checks every raw node field. An optional output path
+also encodes through native estimated ANS and verifies an independent exact
+decode. The corpus runner checks complete byte identity with the frozen bridge:
+
+```sh
+python3 tools/modular_reference_learning/run_native_preparation.py \
+  --binary build/reference-learning/bin/reference_learning \
+  --corpus build/reference-learning/corpus \
+  --output build/reference-learning/native-preparation
+python3 tools/modular_reference_learning/analyze_native_preparation.py \
+  --study build/reference-learning/native-preparation \
+  --corpus build/reference-learning/corpus \
+  --validation build/reference-learning/native-preparation-validation \
+  --output docs/modular-native-sample-preparation-results.json
+```
+
+Use a new output directory. `--inputs` restricts a diagnostic run; omit
+`--validation` when the archived final build validation is unavailable.
+`preparation-self-test` runs 101 generated reference/native comparisons plus
+the explicit pinned-reference weight-overflow rejection regression.
+`native_preparation_test` checks the native admission, atomic publication and
+managed allocation/storage contract. Both and the ledger tests run under CTest.
+See the [preparation report](../../docs/modular-native-sample-preparation.md) for
+profile limits and timing caveats. Defaults and candidate selection are unchanged.
+
 ## Native fitting replay
 
 The harness also builds the dependency-free native fitter under ordinary

@@ -313,7 +313,7 @@ Status ComputeBestTree(TreeSamples &samples, float threshold,
                  fast_decode_multiplier,
                  {},
                  false};
-  const bool capture = !active->directory.empty();
+  const bool capture = !active->directory.empty() || active->captured;
   Fixture fixture;
   if (capture)
     fixture = {samples,     threshold, fast_decode_multiplier,
@@ -327,6 +327,8 @@ Status ComputeBestTree(TreeSamples &samples, float threshold,
   event.nodes = tree->size();
   if (capture) {
     fixture.expected = *tree;
+  }
+  if (!active->directory.empty()) {
     const auto path = active->directory /
                       ("fit-" + std::to_string(active->fits.size()) + ".bin");
     WriteFixture(path, fixture);
@@ -335,6 +337,8 @@ Status ComputeBestTree(TreeSamples &samples, float threshold,
     (void)Replay(loaded);
     event.replayed = true;
   }
+  if (active->captured)
+    active->captured->push_back(std::move(fixture));
   active->fits.push_back(event);
   return true;
 }
@@ -429,7 +433,8 @@ Timing Replay(const Fixture &fixture) {
 }
 
 void PrintSession(std::ostream &out, const Session &session) {
-  out << "{\"capture\":" << (session.directory.empty() ? "false" : "true")
+  const bool capturing = !session.directory.empty() || session.captured;
+  out << "{\"capture\":" << (capturing ? "true" : "false")
       << ",\"fits\":[";
   for (size_t i = 0; i < session.fits.size(); ++i) {
     const auto &f = session.fits[i];
@@ -450,6 +455,6 @@ void PrintSession(std::ostream &out, const Session &session) {
         << '}';
   }
   out << "],\"learning_includes_capture_overhead\":"
-      << (session.directory.empty() ? "false" : "true") << '}';
+      << (capturing ? "true" : "false") << '}';
 }
 } // namespace reference_learning

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 Yunho Cho
 #include "native_fit.h"
+#include "native_preparation.h"
 #include "reference_capture.h"
 
 #include <algorithm>
@@ -271,6 +272,109 @@ int main(int argc, char **argv) try {
   std::cout << std::setprecision(17);
   Require(argc >= 2, "Usage: reference_learning reference|bridge|replay ...");
   const std::string mode = argv[1];
+  if (mode == "preparation-self-test") {
+    Require(argc == 2, "preparation-self-test takes no arguments");
+    const auto count = capture::RunPreparationDifferentialTests();
+    std::cout << "{\"preparation_differential_cases\":" << count
+              << ",\"samples_exact\":true,\"tree_exact\":true,\"reference_"
+                 "weight_overflow_rejected\":true}\n";
+    return 0;
+  }
+  if (mode == "prepare-check") {
+    Require(argc == 6 || argc == 7,
+            "prepare-check INPUT POLICY FIXTURE best|all [OUTPUT]");
+    Require(std::string(argv[5]) == "best" || std::string(argv[5]) == "all",
+            "Invalid predictor control");
+    gjxl::io::IntegerImage input;
+    Ok(gjxl::io::ReadPnm(argv[2], &input));
+    native::PackedModularImageView view{
+        input.bytes, input.extent, input.row_stride,
+        static_cast<native::PackedModularFormat>(input.format),
+        native::SampleByteOrder::kBigEndian};
+    auto policy = ReadPolicy(argv[3]);
+    native::ModularEncoderFrame frame;
+    Ok(native::ModularEncoderFrame::Prepare(view, policy, &frame));
+    native::ChannelShape shape;
+    Ok(native::DescribeImage(frame.image(), &shape));
+    native::ModularFrameGeometry geometry;
+    Ok(native::ModularFrameGeometry::Create(input.extent, &geometry));
+    native::ModularStreamPlan plan;
+    Ok(native::BuildModularStreamPlan(geometry, shape.channels(),
+                                      shape.metadata, &plan));
+    size_t count = 0;
+    for (const auto &stream : plan.streams)
+      count = std::max(count, stream.id + 1);
+    capture::BorrowedTrainingImages borrowed;
+    borrowed.channels.resize(count);
+    borrowed.images.resize(count);
+    for (const auto &stream : plan.streams) {
+      auto &channels = borrowed.channels[stream.id];
+      size_t metadata = 0;
+      for (const auto &slice :
+           std::span(plan.slices)
+               .subspan(stream.slice_begin, stream.slice_count)) {
+        native::ModularChannelView channel;
+        Ok(native::BorrowChannelSlice(frame.image().view(slice.channel),
+                                      slice.rect, &channel));
+        channels.push_back(channel);
+        metadata += channel.descriptor.role == native::ChannelRole::kMetadata;
+      }
+      if (!channels.empty())
+        borrowed.images[stream.id] = {input.extent, channels, metadata};
+    }
+    const auto options = capture::NativeSamplingOptions(
+        ReferenceOptions(policy, std::string(argv[5]) == "all"));
+    const auto fixture = capture::ReadFixture(argv[4]);
+    using namespace gjxl::resource_budget_internal;
+    HostStorageBound bound;
+    Ok(native::ComputeHistogramSamplePreparationStorageBound(borrowed.images,
+                                                             options, &bound));
+    ResourceBudget budget(bound.peak_bytes);
+    ResourceReservation reservation;
+    Ok(budget.Reserve(bound.peak_bytes, &reservation));
+    native::PreparedHistogramSamples prepared;
+    capture::Timing preparation;
+    {
+      const ResourceContextScope scope(
+          {&reservation, ResourceClass::kPreparation});
+      const capture::Timer timer;
+      Ok(native::PrepareHistogramSamples(borrowed.images, &prepared, options));
+      preparation = timer.Elapsed();
+    }
+    const auto peak = budget.snapshot().peak_backing_bytes;
+    capture::CheckPreparedSamples(prepared, fixture);
+    policy.tree = capture::CheckPreparedTree(prepared, fixture.expected);
+    std::vector<uint8_t> encoded;
+    if (argc == 7) {
+      native::ModularEncodingOptions encoding;
+      encoding.coding = policy;
+      encoding.entropy = gjxl::EntropyCodingMode::kAns;
+      encoding.ans_selection = gjxl::AnsSelectionMode::kEstimated;
+      encoding.cpu_thread_count = 4;
+      Ok(native::EncodeModularImage(view, encoding, &encoded));
+      native::ModularInputProfile profile;
+      Ok(native::ResolveModularInput(input.extent, view.format, &profile));
+      Require(codec::DecodeLossless(encoded) == Unpack(input, profile),
+              "Native prepared reconstruction failed");
+      WriteBytes(argv[6], encoded);
+    }
+    const auto &stats = prepared.stats();
+    std::cout << "{\"samples_exact\":true,\"tree_exact\":true,\"samples\":"
+              << stats.selected_samples
+              << ",\"distinct\":" << prepared.samples().weights.size()
+              << ",\"quantization_samples\":" << stats.quantization_samples
+              << ",\"scanned_pixels\":" << stats.scanned_pixels
+              << ",\"population\":" << stats.population
+              << ",\"channels\":" << stats.channels
+              << ",\"preparation_cpu\":" << preparation.cpu
+              << ",\"preparation_wall\":" << preparation.wall
+              << ",\"storage_bound_bytes\":" << bound.peak_bytes
+              << ",\"storage_peak_bytes\":" << peak
+              << ",\"bytes\":" << encoded.size()
+              << ",\"decoded_exact\":" << (argc == 7 ? "true" : "null")
+              << "}\n";
+    return 0;
+  }
   if (mode == "native-self-test") {
     Require(argc == 2, "native-self-test takes no arguments");
     const auto count = capture::RunNativeDifferentialTests();
@@ -282,8 +386,9 @@ int main(int argc, char **argv) try {
       mode == "paired-replay") {
     const bool verify = mode == "native-verify";
     const bool paired = mode == "paired-replay";
-    Require(argc == (verify ? 3 : 4),
-            "native-verify FIXTURE; native-replay|paired-replay FIXTURE REPEATS");
+    Require(
+        argc == (verify ? 3 : 4),
+        "native-verify FIXTURE; native-replay|paired-replay FIXTURE REPEATS");
     const size_t repeats = verify ? 1 : std::stoul(argv[3]);
     Require(repeats && repeats <= 100, "Invalid replay repetitions");
     const auto fixture = capture::ReadFixture(argv[2]);

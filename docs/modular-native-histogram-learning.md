@@ -3,8 +3,10 @@
 The native replacement now fits compact, quantized samples without a libjxl or
 Highway dependency. This implements the **fitting** part of the
 [reference-first learner plan](modular-tree-learning-cost.md#recommended-implementation-order).
-Sampling/property preparation and automatic candidate selection remain separate
-milestones. The default encoder still uses its existing learner.
+Sampling/property preparation is now implemented in the separate
+[native preparation milestone](modular-native-sample-preparation.md).
+Automatic candidate selection remains separate. The default encoder still
+uses its existing learner.
 
 All **233** captured reference trees match exactly. On identical inputs, the
 native fitter uses **0.9477×** the reference's summed median CPU time in the
@@ -133,11 +135,12 @@ old output, reference fixture copy and allocator bookkeeping.
 
 ## Remaining boundary
 
-This API starts with finalized quantized samples. It does not yet replace the
-reference quantizer, sampling RNG, sample deduplication or property/predictor
-collection used by the bridge. It also does not reduce the number of transform
-or predictor candidates. The next implementation must match those prepared
-samples before evaluating a new search policy or promoting the learner.
+This API starts with finalized quantized samples. The separate native
+preparation API now reproduces the reference quantizer, sampling RNG,
+deduplication and property/predictor collection on all 32 bridge controls,
+including complete native byte parity. Neither component reduces the number
+of transform or predictor candidates. Search-policy qualification and default
+promotion remain separate.
 
 Preparation parity includes reference details that should not be approximated:
 property ordering and clipped quantization maps; the small clipped histograms
@@ -150,5 +153,6 @@ The existing capture contract is the arbiter for these decisions.
 
 Exact raw-tree parity establishes fitting fidelity. The earlier
 [reference-tree/native-entropy rate results](modular-reference-learning.md)
-remain the rate control; this milestone does not claim a new end-to-end native
-rate or learning-stage speedup.
+remain the rate control, now reproduced with fully native preparation and
+fitting. The paired fitting measurements above do not establish a complete
+learning-stage speedup.

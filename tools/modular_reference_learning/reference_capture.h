@@ -26,11 +26,14 @@ struct FitEvent {
   Timing fit;
   bool replayed = false;
 };
+struct Fixture;
 struct Session {
   // Empty directory disables copying/serialization/replay for timing runs.
   std::filesystem::path directory;
   std::vector<FitEvent> fits;
   std::vector<Timing> learning;
+  // Test-only in-memory capture. Null in ordinary capture/timing runs.
+  std::vector<Fixture> *captured = nullptr;
 };
 extern thread_local Session *active;
 class ScopedSession {

@@ -331,8 +331,15 @@ policy promotion remains gated on the criteria above.
 **Native fitter update:** all 233 captured trees now match exactly. Paired
 fitting uses 0.9477× the reference's summed median CPU time; 214 fits pass the
 proposed per-fit target. Nineteen sub-millisecond single-leaf cases exceed it
-(6.454 ms combined excess), so that gate remains partially unmet. Native sample
-preparation, search-policy qualification and default promotion are still ahead.
+(6.454 ms combined excess), so that gate remains partially unmet.
+
+**Native preparation update:** native quantization, sampling and deduplication
+now match all 32 Best/all-predictor bridge controls, including every prepared
+sample field, raw tree, complete encoded file and independent decoded image.
+See [native sample preparation](modular-native-sample-preparation.md) for the
+managed-storage qualification and explicit rejection of a reproduced pinned
+reference weight-overflow case. Paired complete-learning timing, the small-fit
+outliers, search-policy qualification and default promotion remain ahead.
 
 ## Measurement limits and validation
 
