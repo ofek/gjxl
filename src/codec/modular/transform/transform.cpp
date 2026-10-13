@@ -59,6 +59,8 @@ Status ShapeStep(const ChannelShape &in, const TransformDescriptor &t, ChannelSh
 }
 void Copy(const ModularImage &in, size_t src, ModularImage *out, size_t dst) {
   auto v = in.view(src);
+  if (v.descriptor.extent.empty())
+    return;
   auto samples = out->samples(dst);
   for (size_t y = 0; y < v.descriptor.extent.height; ++y)
     std::copy_n(v.Row(y), v.descriptor.extent.width,
@@ -131,7 +133,11 @@ Status ValidateTransforms(const TransformSequence &s) {
     if (!t.count || t.begin >= kMaximumTransformedChannels)
       return Invalid();
     if (t.kind == TransformKind::kPalette) {
-      if (t.count > 4 || !t.colors || t.colors > kMaximumPaletteColors)
+      if (t.count > 4 || t.palette_bit_depth > 24 ||
+          (!t.palette_bit_depth && (!t.colors || t.colors > kMaximumPaletteColors)) ||
+          (t.palette_bit_depth &&
+           (t.colors > kMaximumReferencePaletteColors ||
+            (t.count == 1 && (!t.colors || t.colors > kMaximumPaletteColors)))))
         return Invalid();
     } else if (t.kind == TransformKind::kSqueeze) {
       if (t.count > 19)
@@ -141,6 +147,18 @@ Status ValidateTransforms(const TransformSequence &s) {
         return Invalid();
     } else
       return Invalid();
+    if (t.kind != TransformKind::kPalette && t.palette_bit_depth)
+      return Invalid();
+  }
+  return Status::Ok();
+}
+Status ValidateTransformBitDepth(const TransformSequence &sequence, uint32_t bit_depth) {
+  if (auto s = ValidateTransforms(sequence); !s.ok())
+    return s;
+  for (size_t i = 0; i < sequence.size; ++i) {
+    const auto &t = sequence.entries[i];
+    if (t.palette_bit_depth && t.palette_bit_depth != bit_depth)
+      return Status::InvalidArgument("Palette bit depth differs from frame");
   }
   return Status::Ok();
 }

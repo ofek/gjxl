@@ -83,6 +83,15 @@ add_test(NAME modular_transform COMMAND gjxl_modular_transform_test
 add_test(NAME modular_ordered_transform COMMAND gjxl_modular_transform_test
   "${CMAKE_CURRENT_BINARY_DIR}/modular-ordered-transform" ordered)
 
+add_executable(gjxl_modular_reference_palette_oracle_test tests/modular_reference_palette_test.cpp)
+target_link_libraries(gjxl_modular_reference_palette_oracle_test PRIVATE gjxl_codestream gjxl_modular_reference)
+target_compile_definitions(gjxl_modular_reference_palette_oracle_test PRIVATE GJXL_PALETTE_REFERENCE=1)
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+  target_compile_options(gjxl_modular_reference_palette_oracle_test PRIVATE -fno-sanitize=vptr)
+endif()
+add_test(NAME modular_reference_palette_oracle COMMAND gjxl_modular_reference_palette_oracle_test
+  "${CMAKE_CURRENT_BINARY_DIR}/modular-reference-palette")
+
 add_executable(gjxl_modular_prepared_stream_reference_test tests/modular_prepared_stream_reference_test.cpp)
 target_link_libraries(gjxl_modular_prepared_stream_reference_test PRIVATE gjxl_codestream gjxl_modular_reference)
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
@@ -113,7 +122,7 @@ if(APPLE AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$")
   endforeach()
 endif()
 if(WIN32)
-  set_tests_properties(modular_transform modular_ordered_transform modular_prepared_stream_reference PROPERTIES
+  set_tests_properties(modular_transform modular_ordered_transform modular_prepared_stream_reference modular_reference_palette_oracle PROPERTIES
     ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:${GJXL_MODULAR_ORACLE_BUILD}/tools")
 endif()
 

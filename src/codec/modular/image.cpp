@@ -14,7 +14,10 @@ Status ValidateChannelDescriptors(std::span<const ChannelDescriptor> channels,
   for (size_t c = 0; c < channels.size(); ++c) {
     const auto &ch = channels[c];
     size_t area;
-    if (ch.extent.empty() || !ch.extent.try_area(&area) || ch.hshift > 30 ||
+    const bool empty_palette = ch.role == ChannelRole::kMetadata && ch.extent.width == 0 &&
+                               ch.extent.height >= 1 && ch.extent.height <= 4 &&
+                               ch.hshift == 0 && ch.vshift == 0;
+    if ((ch.extent.empty() && !empty_palette) || !ch.extent.try_area(&area) || ch.hshift > 30 ||
         ch.vshift > 30 ||
         (ch.role != ChannelRole::kColor && ch.role != ChannelRole::kAlpha &&
          ch.role != ChannelRole::kMetadata) ||
@@ -29,6 +32,9 @@ Status ModularChannelView::Validate() const {
   if (auto s = ValidateChannelDescriptors({&descriptor, 1}, meta); !s.ok())
     return s;
   const auto [w, h] = descriptor.extent;
+  if (w == 0)
+    return backing.empty() && stride == 0 ? Status::Ok()
+                                         : Status::InvalidArgument("Invalid empty palette backing");
   if (stride < w || backing.data() == nullptr ||
       h - 1 > (std::numeric_limits<size_t>::max() - w) / stride)
     return Status::InvalidArgument("Invalid Modular channel stride");

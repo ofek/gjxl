@@ -293,6 +293,7 @@ add_library(
   src/codec/modular/selection_cost.cpp
   src/codec/modular/transform/transform.cpp
   src/codec/modular/transform/palette.cpp
+  src/codec/modular/transform/reference_palette.cpp
   src/codec/modular/transform/squeeze.cpp
   src/codec/modular/frame.cpp
   src/codec/color_transform.cpp
@@ -2346,6 +2347,9 @@ if(GJXL_BUILD_TESTS)
   add_executable(gjxl_modular_transform_contract_test tests/modular_transform_contract_test.cpp)
   target_link_libraries(gjxl_modular_transform_contract_test PRIVATE gjxl_codestream)
   add_test(NAME modular_transform_contract COMMAND gjxl_modular_transform_contract_test)
+  add_executable(gjxl_modular_reference_palette_test tests/modular_reference_palette_test.cpp)
+  target_link_libraries(gjxl_modular_reference_palette_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_reference_palette COMMAND gjxl_modular_reference_palette_test)
 
   add_executable(gjxl_modular_prepared_stream_test tests/modular_prepared_stream_test.cpp)
   target_link_libraries(gjxl_modular_prepared_stream_test PRIVATE gjxl_codestream)

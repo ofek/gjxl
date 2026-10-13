@@ -8,9 +8,10 @@ before fitting a tree.
 
 The [qualification ledger](modular-weighted-cost-results.json) records exact
 costs, rankings, overflow cases, storage bounds and coding regressions.
-Palette construction and complete native transform/scope selection still need
-implementation and integration. This milestone changes no encoder default and
-adds no rate or timing claim.
+The subsequent [reference palette port](modular-reference-palette.md) qualifies
+the remaining construction primitive. Complete native transform/scope selection
+still needs integration. This milestone changes no encoder default and adds no
+rate or timing claim.
 
 ## Behavior and resource contract
 
@@ -116,9 +117,10 @@ durations are not performance evidence.
 
 ## Next integration boundary and reproduction
 
-Next port reference palette construction, including implicit colors, ordering
-and actual palette-size behavior. Then connect palette/RCT/WP and shared/local
-scope selection to native preparation and one fit per selected scope. The
+The subsequent [palette construction milestone](modular-reference-palette.md)
+qualifies implicit colors, ordering and actual palette-size behavior. Next
+connect palette/RCT/WP and shared/local scope selection to native preparation
+and one fit per selected scope. The
 exhaustive new-learner, held-out rate, whole-stage timing and resource gates in
 the [search plan](modular-reference-search-policy.md) remain unchanged.
 

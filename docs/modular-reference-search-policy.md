@@ -27,9 +27,12 @@ preserving the standalone controls and closing that conditional aggregate gap.
 The [fixed-gradient selection estimator](modular-selection-cost.md) now
 matches pinned SIMD costs and RCT candidate ordering on generated and captured
 planes. The [five-preset WP estimator](modular-weighted-cost.md) now also matches
-reference costs, history/residual overflow behavior and rankings. The high-depth
-LZ77 exception, reference palette construction and complete native selection
-remain to be implemented or qualified.
+reference costs, history/residual overflow behavior and rankings.
+[Reference palette construction](modular-reference-palette.md) now also matches
+the pinned builder, including implicit colors, ordering, empty dictionaries
+and widths up to 1,213, with exact global/local file decoding. The high-depth
+LZ77 exception and complete native selection remain to be implemented or
+qualified.
 A blanket global-tree replacement is not justified.
 
 ## Selection happens before expensive tree fitting

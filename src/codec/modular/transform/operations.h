@@ -7,6 +7,9 @@ namespace gjxl::modular_internal {
 // destination of the planned shape. Never call on aliased images.
 [[nodiscard]] Status ApplyPalette(const ModularImage &input, const TransformDescriptor &descriptor,
                                   bool inverse, ModularImage *output);
+[[nodiscard]] Status ApplyReferencePalette(const ModularImage &input,
+                                           const TransformDescriptor &descriptor,
+                                           bool inverse, ModularImage *output);
 [[nodiscard]] Status ApplySqueeze(const ModularImage &input, const TransformDescriptor &descriptor,
                                   bool inverse, ModularImage *output);
 } // namespace gjxl::modular_internal

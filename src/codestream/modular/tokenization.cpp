@@ -45,6 +45,8 @@ Status TokenizeValidatedModularChannel(const ModularChannelView &view, size_t ch
   const auto [w, h] = view.descriptor.extent;
   if (tokens.size() != w * h)
     return Status::InvalidArgument("Invalid Modular channel token extent");
+  if (!w || !h)
+    return Status::Ok();
   std::optional<WeightedPredictor<resource_budget_internal::ResourceClass::kPreparation>> wp;
   if (layout.weighted)
     wp.emplace(w, parameters);
@@ -95,6 +97,8 @@ Status TokenizeModular(const ModularEncoderFrame &frame, const ModularStreamPlan
     total += area;
   }
   if (auto s = ValidateCodingPolicy(policy); !s.ok())
+    return s;
+  if (auto s = ValidateTransformBitDepth(policy.transforms, frame.metadata().bits); !s.ok())
     return s;
   TreeLayout tree_layout;
   if (auto s = ValidateTree(policy.tree, &tree_layout); !s.ok())

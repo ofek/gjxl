@@ -52,6 +52,8 @@ Status ComputeModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat fo
   ModularInputProfile profile;
   if (auto s = ResolveModularInput(extent, format, &profile); !s.ok())
     return s;
+  if (auto s = ValidateTransformBitDepth(policy.transforms, profile.metadata.bits); !s.ok())
+    return s;
   if (policy.rct && profile.channel_count < 3)
     return Status::InvalidArgument("RCT requires color channels");
   size_t area;

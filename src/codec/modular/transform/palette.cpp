@@ -7,6 +7,8 @@ namespace {
 Status Invalid() { return Status::InvalidArgument("Invalid or unsupported Modular transform"); }
 void Copy(const ModularImage &in, size_t src, ModularImage *out, size_t dst) {
   auto v = in.view(src);
+  if (v.descriptor.extent.empty())
+    return;
   auto samples = out->samples(dst);
   for (size_t y = 0; y < v.descriptor.extent.height; ++y)
     std::copy_n(v.Row(y), v.descriptor.extent.width,
@@ -15,6 +17,8 @@ void Copy(const ModularImage &in, size_t src, ModularImage *out, size_t dst) {
 } // namespace
 Status ApplyPalette(const ModularImage &in, const TransformDescriptor &t, bool inverse,
                     ModularImage *out) {
+  if (t.palette_bit_depth)
+    return ApplyReferencePalette(in, t, inverse, out);
   const size_t end = t.begin + t.count;
   if (!inverse) {
     using Color = std::array<int32_t, 4>;

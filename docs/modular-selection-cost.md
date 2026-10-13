@@ -8,7 +8,7 @@ fit, token vector, ANS model or heap allocation.
 This completes the fixed-gradient estimator prerequisite in the
 [reference search plan](modular-reference-search-policy.md). The subsequent
 [weighted-cost milestone](modular-weighted-cost.md) also qualifies that separate
-estimator. Palette construction, autonomous transform/scope selection and their
+estimator. Autonomous transform/scope selection and its
 integration with learning remain. Encoder defaults are unchanged.
 The [results ledger](modular-selection-cost-results.json) binds the tests,
 captured-plane comparisons and source/build snapshots. This milestone adds
@@ -104,13 +104,13 @@ lexicographically ordered explicit dictionary: implicit colors, image-order
 discovery, frequency-dependent luma ordering, and the actual retained palette
 size. An implicit-only palette can have no explicit entries, and frequently
 used implicit colors can increase the explicit count beyond the requested
-capacity. The current nonempty-plane/1,024-entry representation must be
-reviewed when porting these cases. Merely reordering the old dictionary would
-not reproduce reference palette construction.
+capacity. The subsequent [reference palette port](modular-reference-palette.md)
+now supports these cases, including empty metadata and widths up to 1,213, and
+qualifies them against the actual pinned builder and independent full decodes.
 
 The subsequent [WP cost port](modular-weighted-cost.md) qualifies five predictor
 presets, 34 property contexts, overflow handling, float accumulation and
-winners directly. After palette construction is also qualified, compose
+winners directly. With palette construction also qualified, next compose
 palette/RCT/WP and shared/local scope selection with preparation and one fit
 per selected coding scope. Keep exhaustive new-learner controls and the
 whole-stage time, rate, resource and held-out gates before default promotion.

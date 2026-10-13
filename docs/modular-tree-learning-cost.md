@@ -383,6 +383,16 @@ partition transplant closes that aggregate loss with unchanged native coding;
 this is conditional rate evidence, not native search or timing qualification.
 The separate 16-bit ramp still needs LZ77 and further entropy controls.
 
+**Native selection primitives update:** the
+[gradient estimator](modular-selection-cost.md),
+[five-preset WP estimator](modular-weighted-cost.md) and
+[reference palette builder](modular-reference-palette.md) are now qualified
+against pinned libjxl. Palette tests include implicit colors, empty metadata,
+expanded dictionaries and exact global/local file decoding. The next step is
+to reproduce proposal ordering, acceptance and stream scope before one fit per
+selected scope. These component checks do not close the whole-policy rate or
+whole-stage timing gates.
+
 ## Measurement limits and validation
 
 All measurements use Apple M4 Pro, Release AppleClang builds and the same

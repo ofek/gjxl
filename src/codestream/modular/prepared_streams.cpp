@@ -61,6 +61,10 @@ Status DescribeFrame(const PreparedModularStreamsView &input, FrameInfo *out) {
   FrameInfo p;
   if (auto s = ResolveModularInput(input.source, input.format, &p.profile); !s.ok())
     return s;
+  if (input.streams.empty())
+    return Invalid();
+  if (auto s = ValidateTransformBitDepth(input.streams[0].transforms, p.profile.metadata.bits); !s.ok())
+    return s;
   if (auto s = ModularFrameGeometry::Create(input.source, &p.geometry); !s.ok())
     return s;
   if (input.streams.size() != 1 + p.geometry.dc_group_count() + p.geometry.group_count())
@@ -101,7 +105,7 @@ Status DescribeStream(const PreparedModularStreamsView &input, const FrameInfo &
   const auto &stream = input.streams[index];
   if (!stream.weighted.valid() || stream.rct >= 42)
     return Invalid();
-  if (auto s = ValidateTransforms(stream.transforms); !s.ok())
+  if (auto s = ValidateTransformBitDepth(stream.transforms, frame.profile.metadata.bits); !s.ok())
     return s;
   StreamInfo p;
   ChannelShape expected;
@@ -440,6 +444,8 @@ Status Tokenize(const PreparedModularStreamsView &input, const FrameInfo &frame,
     for (size_t c = 0; c < stream.channels.size(); ++c) {
       const auto &channel = stream.channels[c];
       const size_t count = channel.descriptor.extent.width * channel.descriptor.extent.height;
+      if (!count)
+        continue; // Preserve channel IDs without dereferencing an absent tree.
       if (auto s =
               TokenizeValidatedModularChannel(channel, c, info.id, *tree, layout, stream.weighted,
                                               std::span(result.tokens).subspan(next, count));
