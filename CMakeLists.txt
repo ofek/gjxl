@@ -291,6 +291,7 @@ add_library(
   src/codec/modular/histogram_tree_learning.cpp
   src/codec/modular/histogram_sample_preparation.cpp
   src/codec/modular/selection_cost.cpp
+  src/codec/modular/reference_selection.cpp
   src/codec/modular/transform/transform.cpp
   src/codec/modular/transform/palette.cpp
   src/codec/modular/transform/reference_palette.cpp
@@ -2368,6 +2369,10 @@ if(GJXL_BUILD_TESTS)
   add_executable(gjxl_modular_selection_cost_test tests/modular_selection_cost_test.cpp)
   target_link_libraries(gjxl_modular_selection_cost_test PRIVATE gjxl_codec)
   add_test(NAME modular_selection_cost COMMAND gjxl_modular_selection_cost_test)
+  add_executable(gjxl_modular_reference_selection_test tests/modular_reference_selection_test.cpp)
+  target_link_libraries(gjxl_modular_reference_selection_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_reference_selection COMMAND gjxl_modular_reference_selection_test
+    "${CMAKE_CURRENT_BINARY_DIR}/modular-reference-selection-native")
   set_tests_properties(modular_histogram_preparation PROPERTIES TIMEOUT 60)
 
   add_executable(gjxl_ans_selection_test tests/ans_selection_test.cpp)

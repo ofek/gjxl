@@ -4,7 +4,9 @@ The [palette construction port](modular-reference-palette.md) now also supports
 large single-channel dictionaries, through the wire maximum of **70,911
 entries**. This closes a prerequisite found while connecting reference
 selection: libjxl's 1,024-color setting limits multichannel proposals, but does
-not limit channel compaction. Automatic selection remains to be implemented.
+not limit channel compaction. The subsequent
+[stage selector](modular-reference-selection.md) implements palette/RCT/WP
+decisions; automatic frame/group integration remains pending.
 
 In pinned `enc_modular.cc::try_palettes`, the single-channel requested limit is
 the smaller of `int(nb_pixels / 16)` and
@@ -109,9 +111,10 @@ python3 tools/modular_reference_learning/analyze_channel_palette.py \
 `build/channel-palette-validation/freeze.py` records the capture procedure.
 The source snapshot is authoritative for the pre-commit build.
 
-Next reproduce palette proposal ordering and cost acceptance, the 19-RCT and
-five-WP choices, and global/local stream scope on matched original inputs.
-Then connect native preparation and one fit per selected scope. The exhaustive
+Palette proposal ordering and cost acceptance, and the 19-RCT/five-WP choices,
+are now qualified by the subsequent selector milestone. Next connect
+global/local stream scope, native preparation and one fit per selected scope
+on matched original inputs. The exhaustive
 new-learner comparison, whole-stage timing, held-out rate, resource gates and
 the separate high-depth LZ77 issue remain open under the
 [selection plan](modular-reference-search-policy.md).

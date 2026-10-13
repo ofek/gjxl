@@ -4,9 +4,10 @@ The private CPU path now reproduces pinned libjxl's lossless palette
 construction on the qualified controls, including implicit colors, entry
 ordering and actual dictionary size. This completes the construction primitive
 needed alongside the [gradient](modular-selection-cost.md) and
-[weighted-predictor](modular-weighted-cost.md) selection estimators. Choosing
-palette proposals, RCT/WP settings and training scope remains the next
-integration step; no public default changes here.
+[weighted-predictor](modular-weighted-cost.md) selection estimators. The later
+[stage selector](modular-reference-selection.md) qualifies palette proposals
+and RCT/WP choices. Automatic training scope and workflow integration remain
+pending; this construction milestone changes no public default.
 
 The subsequent [channel-compaction extension](modular-channel-palette.md)
 adds single-channel dictionaries through the 70,911-entry wire maximum. The

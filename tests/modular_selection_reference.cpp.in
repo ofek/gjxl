@@ -1,0 +1,66 @@
+// Copyright (c) the JPEG XL Project Authors.
+// SPDX-License-Identifier: BSD-3-Clause
+// Selection bodies extracted verbatim from pristine pinned enc_modular.cc.
+// Cost wrappers only observe returned values; no native decision code is used.
+#include "modular_selection_reference.h"
+#include "lib/jxl/base/bits.h"
+#include "lib/jxl/base/printf_macros.h"
+#include "lib/jxl/enc_modular_simd.h"
+#include "lib/jxl/enc_params.h"
+#include "lib/jxl/modular/encoding/context_predict.h"
+#include "lib/jxl/modular/options.h"
+#include "lib/jxl/modular/transform/enc_rct.h"
+#include "lib/jxl/modular/transform/enc_transform.h"
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <limits>
+
+namespace jxl::gjxl_cost_reference {
+float EstimateWPCost(const Image &, size_t);
+}
+namespace jxl::gjxl_selection_reference {
+namespace {
+thread_local Trace *observer;
+StatusOr<float> ObservedEstimateCost(const Image &image) {
+  JXL_ASSIGN_OR_RETURN(float cost, jxl::EstimateCost(image));
+  observer->gradient.push_back(cost);
+  return cost;
+}
+float EstimateWPCost(const Image &image, size_t mode) {
+  const float cost = gjxl_cost_reference::EstimateWPCost(image, mode);
+  observer->weighted.push_back(cost);
+  return cost;
+}
+#define EstimateCost ObservedEstimateCost
+@GJXL_REFERENCE_PALETTE_SELECTION_BODY@
+Status Stream(Image &gi, const CompressParams &cparams, bool do_color,
+              std::array<ModularOptions, 1> &stream_options_, size_t stream_id) {
+@GJXL_REFERENCE_STREAM_SELECTION_BODY@
+#undef EstimateCost
+} // namespace
+
+Status Select(Image &image, bool palettes, float channel_percent, int palette_colors,
+              bool do_color, bool weighted, Trace *trace) {
+  struct Observe {
+    Trace *previous;
+    ~Observe() { observer = previous; }
+  } observe{observer};
+  observer = trace;
+  CompressParams cparams;
+  cparams.SetLossless();
+  cparams.speed_tier = SpeedTier::kTortoise;
+  cparams.responsive = JXL_FALSE;
+  cparams.colorspace = -1;
+  cparams.palette_colors = palette_colors;
+  if (palettes) {
+    int max_bitdepth = image.bitdepth, maxval = 65535;
+    JXL_RETURN_IF_ERROR(try_palettes(image, max_bitdepth, maxval, cparams, channel_percent));
+  }
+  std::array<ModularOptions, 1> options;
+  options[0].predictor = weighted ? Predictor::Best : Predictor::Gradient;
+  JXL_RETURN_IF_ERROR(Stream(image, cparams, do_color, options, 0));
+  trace->wp_mode = options[0].wp_mode;
+  return true;
+}
+} // namespace jxl::gjxl_selection_reference

@@ -108,6 +108,19 @@ if(APPLE AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$")
   include("${CMAKE_CURRENT_LIST_DIR}/ModularSelectionOracle.cmake")
   gjxl_generate_wp_cost_oracle("${modular_oracle_source}"
     "${CMAKE_CURRENT_BINARY_DIR}/modular_wp_cost_reference.cpp")
+  gjxl_generate_selection_oracle("${modular_oracle_source}"
+    "${CMAKE_CURRENT_BINARY_DIR}/modular_selection_reference.cpp")
+  add_executable(gjxl_modular_reference_selection_oracle_test
+    tests/modular_reference_selection_test.cpp
+    "${CMAKE_CURRENT_BINARY_DIR}/modular_selection_reference.cpp"
+    "${CMAKE_CURRENT_BINARY_DIR}/modular_wp_cost_reference.cpp")
+  target_include_directories(gjxl_modular_reference_selection_oracle_test PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests")
+  target_link_libraries(gjxl_modular_reference_selection_oracle_test PRIVATE gjxl_codestream gjxl_modular_reference)
+  target_compile_definitions(gjxl_modular_reference_selection_oracle_test PRIVATE GJXL_SELECTION_REFERENCE=1)
+  target_compile_options(gjxl_modular_reference_selection_oracle_test PRIVATE -fno-sanitize=vptr)
+  add_test(NAME modular_reference_selection_oracle COMMAND gjxl_modular_reference_selection_oracle_test
+    "${CMAKE_CURRENT_BINARY_DIR}/modular-reference-selection")
   foreach(selection_variant reference scalar_reference)
     add_executable(gjxl_modular_selection_cost_${selection_variant}_test
       tests/modular_selection_cost_reference_test.cpp

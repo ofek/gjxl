@@ -33,9 +33,12 @@ the pinned builder, including implicit colors, ordering, empty dictionaries
 and widths up to 1,213, with exact global/local file decoding. Construction of
 [larger single-channel dictionaries](modular-channel-palette.md) is also
 qualified: its reference
-limit is independent of the 1,024-color multichannel cap. The high-depth
-LZ77 exception and complete native selection remain to be implemented or
-qualified.
+limit is independent of the 1,024-color multichannel cap.
+The [native palette/RCT/WP selector](modular-reference-selection.md) now matches
+the reference decision sequence and transformed planes on generated inputs,
+with complete-file controls. Connecting that selector to automatic stream
+scope and one native fit per scope, and the high-depth LZ77 exception, remain
+to be implemented or qualified.
 A blanket global-tree replacement is not justified.
 
 ## Selection happens before expensive tree fitting
@@ -58,8 +61,9 @@ plus extra-bit cost. `EstimateWPCost` uses WP residuals and 34 contexts derived
 from its predictor property. These use the default 4/2/0 HybridUint proxy,
 separately from the 4/1/2 training proxy. The native fixed-gradient estimator is
 now qualified directly against pinned SIMD values, including rounding and
-ties. The separate WP estimator is also qualified; complete native selection
-is still pending.
+ties. The separate WP estimator and the composed stage selector are also
+qualified. Their integration into the automatic frame/group workflow remains
+pending.
 
 GJXL's current `RankModularRcts` uses bounded samples and Gradient/Left/Top
 profiles; it is not the reference estimator. Its existing ranking should not
