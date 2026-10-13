@@ -187,3 +187,9 @@ promotion. Patch-frame and high-depth entropy differences remain explicit
 limitations. The
 [search plan](modular-reference-search-policy.md) governs those separate
 decisions and subsequent GPU prioritization.
+
+The subsequent [conditional WP ablation](modular-reference-wp-sweep.md) finds
+a 0.3773% aggregate selected-policy loss against its limited candidate set,
+mostly on the 16-bit alpha ramp. It establishes a search-gate failure and a
+specific held-out validation target; it does not enable repeated fitting or
+change the qualified workflow above.

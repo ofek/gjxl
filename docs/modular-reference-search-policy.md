@@ -1,10 +1,11 @@
 # Reference Modular search and training scope
 
-The next performance milestone should reproduce the reference's **choice of
-what to learn**, after qualifying the cost of native preparation and fitting.
-The [matched pilot](modular-native-learning-timing.md) finds no remaining large
-cost gap in one controlled learning call. It does not establish that one global
-Best tree on our frozen transforms reproduces stock e9's compression policy.
+The native workflow now reproduces the reference's **choice of what to learn**
+on the supported profile, after qualifying preparation and fitting. The
+[integrated study](modular-reference-workflow-timing.md) measures complete
+learning at 0.8983× e9 CPU on 15 matched original-input problems. Search-loss,
+held-out and per-image qualification remain separate from that performance
+result.
 
 This began as a source audit and a plan for the next controls.
 The pristine reference checkout was verified at
@@ -36,9 +37,9 @@ qualified: its reference
 limit is independent of the 1,024-color multichannel cap.
 The [native palette/RCT/WP selector](modular-reference-selection.md) now matches
 the reference decision sequence and transformed planes on generated inputs,
-with complete-file controls. Connecting that selector to automatic stream
-scope and one native fit per scope, and the high-depth LZ77 exception, remain
-to be implemented or qualified.
+with complete-file controls. The [private workflow](modular-reference-workflow.md)
+now connects that selector to automatic stream scope and one native fit per
+scope. The high-depth LZ77 and auxiliary patch-frame exceptions remain open.
 A blanket global-tree replacement is not justified.
 
 ## Selection happens before expensive tree fitting
@@ -62,8 +63,7 @@ from its predictor property. These use the default 4/2/0 HybridUint proxy,
 separately from the 4/1/2 training proxy. The native fixed-gradient estimator is
 now qualified directly against pinned SIMD values, including rounding and
 ties. The separate WP estimator and the composed stage selector are also
-qualified. Their integration into the automatic frame/group workflow remains
-pending.
+qualified and integrated into the automatic frame/group workflow.
 
 GJXL's current `RankModularRcts` uses bounded samples and Gradient/Left/Top
 profiles; it is not the reference estimator. Its existing ranking should not
@@ -92,7 +92,7 @@ The existing stock-reference captures agree with this scope difference:
 | chessboard | 1024×1024 | 16 | 16 |
 | splines | 2048×2048 | 64 | 64 |
 
-By comparison, the current bridge combines the native canonical stream images
+By comparison, the earlier bridge combined the native canonical stream images
 into one global learning call. The reference large-image controls therefore
 do not fit the same learning problem as those bridge cases. More fit events
 can still mean less expensive learning when each problem is much smaller.
@@ -124,9 +124,10 @@ tree/entropy coding.
 3. Port the supported selection/scope behavior that those controls qualify.
    Match reference estimator values, ranking/ties, selected transforms and
    custom-WP samples before evaluating any native approximation. Retain Best
-   and all-predictor controls. The current all-predictor bridge is within 1%
-   aggregate e9 bytes, while Best alone is not; a blanket two-predictor switch
-   is not yet qualified.
+   and all-predictor controls. The original all-predictor bridge was within 1%
+   aggregate e9 bytes while its Best control was not. The subsequent integrated
+   automatic Best path is now within 1%, with per-image regressions still
+   requiring review.
 4. Compare the resulting candidate policy against exhaustive search with the
    **new** learner. Count one fit per selected coding scope, including local
    groups and auxiliary events; separately count repeated candidate fits.
@@ -149,3 +150,12 @@ problems. The 16-input complete-file rate is +0.3905% versus e9 and improves
 the qualified native aggregate, but individual regressions remain. This meets
 the current-corpus whole-learning aim; exhaustive new-learner, held-out and
 per-image/default-promotion gates remain open.
+
+The subsequent [conditional WP sweep](modular-reference-wp-sweep.md) now
+disproves the strict search-loss bounds for a domain containing the selected
+WP vector and all five uniform-preset vectors: selected Best is 0.3773% larger
+in aggregate, with four per-image failures. This is not exhaustive search;
+its limited candidate set already suffices to establish failure. The 16-bit
+alpha ramp accounts for 93.86% of the measured savings. Validate that
+opportunity on held-out high-depth content before designing a bounded extra
+candidate or promoting any changed policy.

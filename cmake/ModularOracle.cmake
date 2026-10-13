@@ -44,10 +44,20 @@ add_executable(gjxl_modular_reference_workflow_check
   tools/modular_reference_learning/reference_workflow_check.cpp src/io/pnm.cpp)
 target_include_directories(gjxl_modular_reference_workflow_check PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/tests")
 target_link_libraries(gjxl_modular_reference_workflow_check PRIVATE gjxl_codestream gjxl_modular_reference)
+add_executable(gjxl_modular_reference_wp_sweep
+  tools/modular_reference_learning/reference_wp_sweep.cpp src/io/pnm.cpp)
+target_include_directories(gjxl_modular_reference_wp_sweep PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/tests")
+target_link_libraries(gjxl_modular_reference_wp_sweep PRIVATE gjxl_codestream gjxl_modular_reference)
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+add_test(NAME modular_reference_wp_sweep
+  COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/tools/modular_reference_learning/test_reference_wp_sweep.py"
+    --binary $<TARGET_FILE:gjxl_modular_reference_wp_sweep>
+    --out "${CMAKE_CURRENT_BINARY_DIR}/reference-wp-sweep-test")
+set_tests_properties(modular_reference_wp_sweep PROPERTIES TIMEOUT 600)
 target_link_libraries(gjxl_modular_reference_workflow_test PRIVATE gjxl_modular_reference)
 target_compile_definitions(gjxl_modular_reference_workflow_test PRIVATE GJXL_REFERENCE_WORKFLOW_ORACLE=1)
 if(WIN32)
-  set_tests_properties(modular_reference_workflow PROPERTIES
+  set_tests_properties(modular_reference_workflow modular_reference_wp_sweep PROPERTIES
     ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:${GJXL_MODULAR_ORACLE_BUILD}/tools")
 endif()
 target_link_libraries(gjxl_ans_selection_test PRIVATE gjxl_modular_reference)

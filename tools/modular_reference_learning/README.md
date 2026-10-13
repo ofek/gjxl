@@ -7,6 +7,39 @@ implementation under differential qualification. The reference is libjxl
 `e8ff09762481785938d8e4e01333ed3917571161`; qualified native archives come from
 `f27a797` (`perf/modular-ans-estimates`).
 
+## Conditional native WP search
+
+The optional root-CMake target `gjxl_modular_reference_wp_sweep` accepts
+`INPUT OUT auto|buffered best|all`. It uses original packed pixels and the
+native reference-style workflow, with libjxl only for independent decoding.
+It checks a fresh replay of the selected WP vector, then refits/codes each of
+five uniform WP assignments with transforms and tree scope fixed. These are
+conditional controls, not exhaustive per-stream transform search or a runtime
+selector. Existing output directories are rejected.
+
+```sh
+cmake --build build/reference-wp-sweep --target gjxl_modular_reference_wp_sweep
+ctest --test-dir build/reference-wp-sweep -R '^modular_reference_wp_sweep$' --output-on-failure
+python3 tools/modular_reference_learning/run_reference_wp_sweep.py \
+  --binary build/reference-wp-sweep/gjxl_modular_reference_wp_sweep \
+  --validation build/reference-workflow-validation \
+  --out build/reference-wp-sweep-study
+python3 tools/modular_reference_learning/analyze_reference_wp_sweep.py \
+  build/reference-wp-sweep-study \
+  --validation build/reference-wp-sweep-validation-v2 \
+  --out /tmp/gjxl-reference-wp-sweep.json
+```
+
+Configure a fresh native build with tests enabled and
+`GJXL_MODULAR_ORACLE_BUILD` pointing at the pinned libjxl build, as for the
+other native oracle targets. Use fresh study/output paths. The runner freezes
+its executable, source, build inputs, original pixels, qualified files and
+results. The analyzer's optional validation argument binds the archived
+sanitizer/file-comparison/rejection-test supplement. Without that local
+supplement, omit the argument; it does not run new encodes. See
+[the WP study](../../docs/modular-reference-wp-sweep.md) for the measured
+opportunity, domain limitations and remaining gates.
+
 ## Reference policy and scope controls
 
 `reference-policy INPUT OUT trace|timing auto|buffered` changes only the input
