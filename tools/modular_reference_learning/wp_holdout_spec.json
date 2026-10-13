@@ -1,0 +1,58 @@
+{
+  "schema": 1,
+  "purpose": "WP selection validation outside the original 16-input Modular rate corpus",
+  "buffering": "auto",
+  "predictors": "best",
+  "uniform_wp_candidates": [0, 1, 2, 3, 4],
+  "prospective_control": {
+    "name": "shared-tree-wp1",
+    "eligible": "16-bit input and at most eight 256-pixel groups",
+    "choices": ["selected", "uniform-wp-1"],
+    "selection": "minimum complete-file bytes, selected wins ties",
+    "maximum_additional_fits_per_eligible_image": 1,
+    "status": "rate-only control; no runtime implementation or timing qualification"
+  },
+  "natural_sources": [
+    {"name": "dji16", "path": "external/raw.pixls/DJI-FC6310-16bit_709_v4_krita.png"},
+    {"name": "pixel16", "path": "external/raw.pixls/Google-Pixel2XL-16bit_acescg_g1_v4_krita.png"},
+    {"name": "huawei16", "path": "external/raw.pixls/HUAWEI-EVA-L09-16bit_709_g1_dt.png"},
+    {"name": "nikon-d300-16", "path": "external/raw.pixls/Nikon-D300-12bit_2020_g1_dt.png"},
+    {"name": "sony16", "path": "external/raw.pixls/Sony-DSC-RX1RM2-14bit_709_v4_krita.png"},
+    {"name": "nikon-d3-16", "path": "external/wesaturate/64px/Nikon-D3-14bit_2020_g1.png"},
+    {"name": "kitzmiller-a16", "path": "external/wesaturate/64px/a2d1un_nkitzmiller_2020_g1.png"},
+    {"name": "kitzmiller-l16", "path": "external/wesaturate/64px/l1qnb5_nkitzmiller_2020_g1.png"},
+    {"name": "hdr-room16", "path": "jxl/hdr_room.png"}
+  ],
+  "derived_natural_cases": [
+    {"name": "hdr-room16-center", "source": "hdr-room16", "operation": "center-256-rgb"},
+    {"name": "hdr-room16-red", "source": "hdr-room16", "operation": "red-plane-gray"},
+    {"name": "hdr-room16-alpha", "source": "hdr-room16", "operation": "append-generated-alpha"}
+  ],
+  "synthetic_families": [
+    {"name": "affine-gray16", "formula": "affine", "channels": 1},
+    {"name": "affine-rgb16", "formula": "affine", "channels": 3},
+    {"name": "affine-rgba16", "formula": "affine", "channels": 4},
+    {"name": "wrapped-gray16", "formula": "wrapped", "channels": 1},
+    {"name": "wrapped-rgb16", "formula": "wrapped", "channels": 3},
+    {"name": "wrapped-rgba16", "formula": "wrapped", "channels": 4},
+    {"name": "quadratic-rgba16", "formula": "quadratic", "channels": 4},
+    {"name": "edges-rgb16", "formula": "edges", "channels": 3},
+    {"name": "palette-rgba16", "formula": "palette", "channels": 4},
+    {"name": "noise-rgb16", "formula": "noise", "channels": 3}
+  ],
+  "synthetic_extents": [
+    {"name": "eight-groups", "width": 1024, "height": 512},
+    {"name": "nine-groups", "width": 768, "height": 768}
+  ],
+  "noise_seed": 23830,
+  "expected_inputs": 32,
+  "limitations": [
+    "All cases are 16-bit; this does not complete general 8-bit held-out qualification.",
+    "Eight natural sources are 64x64; hdr-room is 676x449. No claim of large natural-image coverage.",
+    "HDR crops, channel projection and generated alpha share one photographic source.",
+    "Each synthetic family is related across extents; 32 files are not 32 independent natural scenes.",
+    "Eight/nine-group cases differ in shape and samples; their difference is not a pure tree-scope ablation.",
+    "PNG ancillary color/metadata is omitted and raw integers are coded under the same sRGB declaration by all encoders.",
+    "Minima over five uniform WP assignments do not qualify exhaustive independent per-stream or transform search."
+  ]
+}
