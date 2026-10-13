@@ -336,11 +336,15 @@ python3 tools/modular_reference_learning/analyze_entropy_replay.py \
   --output build/reference-learning/new-entropy-analysis.json
 ```
 
-The default runs all 15 controls; `--variants` permits a declared subset and
+The default runs all 19 controls; `--variants` permits a declared subset and
 `--cases` selects `input:policy` pairs. Either `reference_map32` transplant
 requires `no_lz77_clusters32` in the same run. Configure the research binary
 against the native prepared-stream archives and the pinned reference build.
 The combined report additionally takes `--partition-study`,
 `--sanitizer-study` and `--validation`; its cohort and byte-identity gates are
 specific to the qualified 13-control plus three-control study described in
-the report.
+the report. The [native direct-ANS follow-up](../../docs/modular-direct-ans.md)
+adds balanced, high-density, rate and rate/64 data modes, preserving native
+tree coding. These variants require `native` in the same run. Use
+`analyze_direct_entropy.py` to qualify that follow-up without changing the
+original 15-control report.

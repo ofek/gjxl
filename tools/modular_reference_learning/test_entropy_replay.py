@@ -46,6 +46,12 @@ class EntropyTest(test_coding_replay.CodingReplayTest):
         transplant = next(r for r in bad if r['variant'] == 'reference_map32')
         next(s for s in transplant['scopes'] if s['kind'] == 'data')['context_map'][0] += 1
         with self.assertRaises(ValueError): validate_controls(bad)
+        with self.assertRaises(ValueError):
+            validate_controls([r for r in results if r['variant'] != 'native'])
+        direct = next(r for r in results if r['variant'] == 'native_direct_balanced')
+        bad = copy.deepcopy(direct)
+        next(s for s in bad['scopes'] if s['kind'] == 'data')['prefix'] = True
+        with self.assertRaises(ValueError): validate_result(self.root, bad)
         good = results[0]
         for key, value in [('tokens_exact', 1), ('decoded_exact', False), ('timing_qualified', True),
                            ('native_control_exact', True), ('original_tokens', 10), ('bytes', 0),

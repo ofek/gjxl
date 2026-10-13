@@ -4,9 +4,13 @@ import json
 
 from analyze_policy_study import numbered
 
-VARIANTS = ('reference', 'native_tree', 'native_data', 'native', 'no_lz77', 'rle',
-            'data_no_lz77', 'clusters32', 'clusters64', 'no_lz77_clusters32',
-            'hybrid420', 'ans_approx', 'nonstreaming', 'reference_map32', 'reference_map32_native_tree')
+BASE_VARIANTS = ('reference', 'native_tree', 'native_data', 'native', 'no_lz77', 'rle',
+                 'data_no_lz77', 'clusters32', 'clusters64', 'no_lz77_clusters32',
+                 'hybrid420', 'ans_approx', 'nonstreaming')
+PARTITION_VARIANTS = ('reference_map32', 'reference_map32_native_tree')
+DIRECT_VARIANTS = ('native_direct_balanced', 'native_direct_high_density',
+                   'native_direct_rate', 'native_direct_rate64')
+VARIANTS = BASE_VARIANTS + PARTITION_VARIANTS + DIRECT_VARIANTS
 
 
 def validate_result(directory, result):
@@ -41,7 +45,8 @@ def validate_result(directory, result):
         if (s['original_tokens'], s['contexts']) != expected[key]:
             raise ValueError('Changed entropy scope tree/population')
         tree = s['kind'] == 'tree'
-        native = (variant == 'native' or variant == ('native_tree' if tree else 'native_data') or
+        native = (variant == 'native' or variant in DIRECT_VARIANTS or
+                  variant == ('native_tree' if tree else 'native_data') or
                   variant == 'reference_map32_native_tree' or (variant == 'reference_map32' and not tree))
         if (s['implementation'] != ('native' if native else 'reference') or
                 type(s['prefix']) is not bool or type(s['lz77']) is not bool):
@@ -69,6 +74,12 @@ def validate_result(directory, result):
                 raise ValueError('Histogram-cap ablation did not enforce cap')
         if variant == 'hybrid420' and not tree and any(c != [4, 2, 0] for c in s['uint_configs']):
             raise ValueError('Fixed HybridUint ablation changed configuration')
+        if variant in DIRECT_VARIANTS and not tree:
+            cap = 64 if variant == 'native_direct_rate64' else 32
+            if s['prefix'] or s['clusters'] > cap or 'context_map' not in s:
+                raise ValueError('Direct-ANS control changed coder or exceeded cap')
+            if variant == 'native_direct_balanced' and any(c != [4, 2, 0] for c in s['uint_configs']):
+                raise ValueError('Balanced direct ANS changed its fixed configuration')
         if tree: tree_bits += s['model_bits'] + s['token_bits']
         else:
             model_bits += s['model_bits']; token_bits += s['token_bits']
@@ -84,6 +95,14 @@ def validate_controls(results):
     full no-LZ77 encoder must independently produce the same partition.
     """
     by_variant = {r['variant']: r for r in results}
+    direct = [r for r in results if r['variant'] in DIRECT_VARIANTS]
+    if direct:
+        if 'native' not in by_variant:
+            raise ValueError('Direct ANS requires the native coding control')
+        reference_trees = [s for s in by_variant['native']['scopes'] if s['kind'] == 'tree']
+        for row in direct:
+            if [s for s in row['scopes'] if s['kind'] == 'tree'] != reference_trees:
+                raise ValueError('Direct ANS changed tree coding')
     transplants = [r for r in results if r['variant'].startswith('reference_map32')]
     if not transplants:
         return 0

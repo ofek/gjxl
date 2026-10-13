@@ -15,6 +15,12 @@ parameters, trees and coding scopes are captured e9 decisions. The separate
 The [machine-readable ledger](modular-entropy-ablation-results.json) contains
 every measured control, bit attribution, input binding and qualification result.
 
+The subsequent [native direct-ANS comparison](modular-direct-ans.md) finds that
+GJXL already has the required native clustering machinery in another entry
+point. Its rate/64 control reaches −0.3282% automatic and +0.5720% buffered
+versus stock on these captured decisions. That narrows the next implementation
+to width-selection and policy integration, rather than another clustering port.
+
 ## Controlled boundary
 
 The [prepared-stream replay](modular-prepared-streams.md) previously established
@@ -141,7 +147,7 @@ poor result. Capping the no-LZ77 path at 32 adds 11,937 bytes. Even on that exac
 partition, native data coding costs another 15,895 bytes. These successive
 controls expose more than one mechanism, not an LZ77-only explanation.
 The logged integer configurations point to a further targeted control: the
-native Prefix-to-ANS path uses nine configurations, whereas the reference
+native Prefix-to-ANS path uses eight configurations, whereas the reference
 selects high-depth configurations absent from that portfolio. GJXL already has
 a wider portfolio in its separate direct-ANS path. That is a source-grounded
 lead, not an isolated measurement of the portfolio's contribution.
@@ -168,14 +174,13 @@ reference/native adapter has no production managed-storage qualification.
 
 The next implementation sequence is:
 
-1. Compare the existing native direct-ANS modes on these exact token controls
-   before duplicating their machinery. Use the reference partition as the
-   quality oracle; distinguish partition changes from integer/model choices.
-2. Implement the missing native grouping behavior, using prepared context
-   populations and the direct-ANS boundary. Preserve deterministic decisions,
-   avoid a Prefix-code construction detour, and qualify capacity, cost and
-   managed scratch. Merely increasing the current cap does not address the
-   demonstrated grouping-quality loss.
+1. The [existing direct-ANS comparison](modular-direct-ans.md) is now complete:
+   reuse that native clustering machinery. Keep these reference-partition
+   controls as the quality oracle.
+2. Qualify estimated alphabet-width selection and connect the native direct
+   path through an explicit private policy, using prepared context populations
+   and appropriate managed bounds. Avoid a Prefix-code construction detour.
+   Merely increasing the old path's cap does not address its grouping loss.
 3. Isolate the high-depth integer portfolio and LZ77 requirements on the ramp
    and additional held-out structured/16-bit inputs. Do not hide these cases
    behind the photographic aggregate.

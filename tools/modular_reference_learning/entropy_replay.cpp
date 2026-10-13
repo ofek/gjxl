@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 Yunho Cho
 #include "entropy_replay.h"
+#include "codestream/ans_internal.h"
 #include "codestream/headers_internal.h"
 #include "codestream/modular/stream_encoder.h"
 #include "codestream/modular/tree_codec.h"
@@ -10,11 +11,14 @@
 #include "lib/jxl/enc_cluster.h"
 #include "lib/jxl/enc_context_map.h"
 #include "lib/jxl/memory_manager_internal.h"
+#include <algorithm>
+#include <array>
 #include <fstream>
 #include <memory>
 #include <set>
 #include <sstream>
 #include <stdexcept>
+#include <vector>
 
 namespace reference_learning {
 namespace native = gjxl::modular_internal;
@@ -37,6 +41,7 @@ struct Variant {
   size_t clusters = SIZE_MAX;
   bool hybrid420 = false, approximate = false, nonstreaming = false;
   bool reference_partition = false;
+  int direct_ans_mode = -1;
 };
 std::vector<Variant> Variants(const std::string &names) {
   const std::vector<Variant> supported = {
@@ -54,7 +59,15 @@ std::vector<Variant> Variants(const std::string &names) {
       {"ans_approx", false, false, -1, false, SIZE_MAX, false, true},
       {"nonstreaming", false, false, -1, false, SIZE_MAX, false, false, true},
       {"reference_map32", false, true, 0, false, 32, false, false, false, true},
-      {"reference_map32_native_tree", true, true, 0, false, 32, false, false, false, true}};
+      {"reference_map32_native_tree", true, true, 0, false, 32, false, false, false, true},
+      {.name = "native_direct_balanced", .native_tree = true, .native_data = true,
+       .clusters = 32, .direct_ans_mode = 0},
+      {.name = "native_direct_high_density", .native_tree = true, .native_data = true,
+       .clusters = 32, .direct_ans_mode = 1},
+      {.name = "native_direct_rate", .native_tree = true, .native_data = true,
+       .clusters = 32, .direct_ans_mode = 2},
+      {.name = "native_direct_rate64", .native_tree = true, .native_data = true,
+       .clusters = 64, .direct_ans_mode = 2}};
   std::vector<Variant> result;
   std::set<std::string> seen;
   std::istringstream in(names);
@@ -192,14 +205,20 @@ public:
     const auto begin = writer->bits_written();
     if (stats.native) {
       std::vector<uint8_t> reference_map;
-      if (!tree && variant.reference_partition) {
+      if (!tree && variant.direct_ans_mode >= 0) {
+        Ok(gjxl::codestream_internal::OptimizeDirectAnsEntropyCode(
+            streams_, {.context_count = static_cast<uint32_t>(contexts),
+                       .maximum_ans_clusters = variant.clusters},
+            static_cast<gjxl::codestream_internal::DirectAnsEntropyMode>(variant.direct_ans_mode),
+            &native_));
+      } else if (!tree && variant.reference_partition) {
         native_ = ReferencePartition(streams_, contexts, params);
         reference_map.assign(native_.context_map.begin(), native_.context_map.end());
       } else {
         Ok(gjxl::OptimizeEntropyCode(streams_, {.context_count = static_cast<uint32_t>(contexts)},
                                      &native_));
       }
-      if (!tree) {
+      if (!tree && variant.direct_ans_mode < 0) {
         gjxl::EntropyCode ans;
         Ok(gjxl::OptimizeAnsEntropyCode(streams_, native_, &ans));
         native_ = std::move(ans);

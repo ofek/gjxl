@@ -9,7 +9,7 @@ from pathlib import Path
 from analyze import sha
 from analyze_coding_replay import analyze as analyze_coding
 from coding_replay import project
-from entropy_replay import VARIANTS, validate_controls, validate_result
+from entropy_replay import DIRECT_VARIANTS, VARIANTS, validate_controls, validate_result
 from study_provenance import freeze_build
 
 
@@ -27,6 +27,8 @@ def main():
         parser.error('Repeated entropy variant')
     if any(v.startswith('reference_map32') for v in args.variants) and 'no_lz77_clusters32' not in args.variants:
         parser.error('Partition transplants require no_lz77_clusters32')
+    if set(args.variants) & set(DIRECT_VARIANTS) and 'native' not in args.variants:
+        parser.error('Direct ANS requires native')
     checked = analyze_coding(args.coding_study)
     source_manifest = json.loads((args.coding_study / 'manifest.json').read_text())
     cases = source_manifest['cases']

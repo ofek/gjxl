@@ -8,7 +8,7 @@ from pathlib import Path
 from analyze import sha
 from analyze_coding_replay import analyze as analyze_coding
 from coding_replay import project
-from entropy_replay import VARIANTS, validate_controls, validate_result
+from entropy_replay import BASE_VARIANTS, PARTITION_VARIANTS, VARIANTS, validate_controls, validate_result
 
 
 def analyze(root):
@@ -105,6 +105,7 @@ def qualify(release, partition, sanitizer, validation):
     """Join only directly measured cells; verify the two studies' common control."""
     studies = [analyze(p) for p in (release, partition, sanitizer)]
     base, maps, sanitized = studies
+    qualified_variants = BASE_VARIANTS + PARTITION_VARIANTS
     full_cases = {(name, policy) for name in
                   ('photo-macan', 'photo-flower', 'alpha-flower', 'chessboard', 'splines')
                   for policy in ('auto', 'buffered')} | {('alpha16-ramp', 'auto')}
@@ -113,9 +114,9 @@ def qualify(release, partition, sanitizer, validation):
     for result, expected in zip(studies, (full_cases, full_cases, sanitizer_cases)):
         if {(r['input'], r['policy']) for r in result['results']} != expected:
             raise ValueError('Incomplete entropy qualification cohort')
-    if (base['variants'] != list(VARIANTS[:13]) or
-            maps['variants'] != ['no_lz77_clusters32', *VARIANTS[13:]] or
-            sanitized['variants'] != list(VARIANTS)):
+    if (base['variants'] != list(BASE_VARIANTS) or
+            maps['variants'] != ['no_lz77_clusters32', *PARTITION_VARIANTS] or
+            sanitized['variants'] != list(qualified_variants)):
         raise ValueError('Incomplete entropy qualification variants')
     manifests = [json.loads((p / 'manifest.json').read_text()) for p in (release, partition, sanitizer)]
     if len({m['coding_study'] for m in manifests}) != 1:
@@ -129,7 +130,7 @@ def qualify(release, partition, sanitizer, validation):
         if sha(release / path) != sha(partition / path):
             raise ValueError('Common reference control changed between studies')
     for name, policy in sanitizer_cases:
-        for variant in VARIANTS:
+        for variant in qualified_variants:
             source = partition if variant.startswith('reference_map32') else release
             path = f'{name}-{policy}/encoded/{variant}.jxl'
             if sha(source / path) != sha(sanitizer / path):
@@ -166,8 +167,8 @@ def qualify(release, partition, sanitizer, validation):
         total['delta_bytes_from_reference_entropy'] = {k: v - baseline for k, v in total['variant_bytes'].items()}
         total['delta_percent_from_stock'] = {k: 100 * (v / total['stock_bytes'] - 1)
                                              for k, v in total['variant_bytes'].items()}
-    base['variants'] = list(VARIANTS)
-    base['files'] = len(full_cases) * len(VARIANTS)  # Unique measured case/variant cells.
+    base['variants'] = list(qualified_variants)
+    base['files'] = len(full_cases) * len(qualified_variants)  # Unique measured case/variant cells.
     base['transplanted_data_scopes_match_full_reference'] = maps['transplanted_data_scopes_match_full_reference']
     base['qualification'] = {
         'release_generated_files_in_two_studies': studies[1]['files'] + 13 * len(full_cases),
