@@ -105,8 +105,10 @@ managed peak on this cohort. All variants remain within their computed bounds.
 The earlier **2.79× sample-model CPU speedup** is a separate component benchmark;
 this integration adds no whole-encoder timing claim.
 
-Next port the reference palette constructor and cheap RCT/WP selection, then
-compose native preparation/fitting once per selected shared or local coding
+The [fixed-gradient cost primitive](modular-selection-cost.md) is now qualified
+against pinned libjxl values and RCT rankings. Next port the reference palette
+constructor and WP cost, integrate selection, then compose native
+preparation/fitting once per selected shared or local coding
 scope. Full/held-out rate, exhaustive-policy comparisons and paired whole-stage
 time/resource checks remain the gates for promoting a default.
 

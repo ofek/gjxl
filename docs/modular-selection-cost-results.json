@@ -1,0 +1,182 @@
+{
+  "schema": 1,
+  "reference_revision": "e8ff09762481785938d8e4e01333ed3917571161",
+  "scope": "Exact fixed-gradient transform costs on Apple AArch64, plus identical RCT candidates and strict-order winners on generated/captured planes. Captured planes already have e9 transforms; these are additional hypothetical RCTs, not original policy decisions.",
+  "qualification": {
+    "native_ctest_per_build": 3,
+    "research_ctest_per_build": 10,
+    "generated_cases_per_backend": 396,
+    "exact_estimates_per_backend": 2372,
+    "exact_rct_rankings_per_backend": 104,
+    "backends": [
+      "NEON",
+      "portable four-lane arithmetic"
+    ],
+    "builds": [
+      "Release",
+      "ASan/UBSan"
+    ],
+    "capture_cases": 11,
+    "capture_totals": {
+      "canonical_streams": 416,
+      "populated_streams": 391,
+      "pixels": 73913379,
+      "exact_estimates": 6724,
+      "exact_rct_rankings": 332
+    },
+    "sanitizer_cases": 4,
+    "sanitizer_totals": {
+      "canonical_streams": 89,
+      "populated_streams": 80,
+      "pixels": 16310982,
+      "exact_estimates": 1343,
+      "exact_rct_rankings": 66
+    },
+    "sanitizer_results_identical": 4,
+    "managed_allocations_per_estimate": 0,
+    "histogram_stack_bytes": 8772,
+    "sanitizer_limits": [
+      "Linked pinned reference archives uninstrumented",
+      "Reference vptr checks excluded for no-RTTI interoperability",
+      "LeakSanitizer unavailable on this macOS runtime; native estimator has no heap allocation"
+    ],
+    "timing_qualified": false,
+    "palette_selection_qualified": false,
+    "wp_selection_qualified": false,
+    "native_policy_qualified": false,
+    "default_promotion_qualified": false
+  },
+  "results": [
+    {
+      "input": "photo-macan",
+      "policy": "auto",
+      "summary": {
+        "canonical_streams": 6,
+        "populated_streams": 4,
+        "pixels": 750000,
+        "exact_estimates": 82,
+        "exact_rct_rankings": 4
+      }
+    },
+    {
+      "input": "photo-macan",
+      "policy": "buffered",
+      "summary": {
+        "canonical_streams": 6,
+        "populated_streams": 4,
+        "pixels": 750000,
+        "exact_estimates": 82,
+        "exact_rct_rankings": 4
+      }
+    },
+    {
+      "input": "photo-flower",
+      "policy": "auto",
+      "summary": {
+        "canonical_streams": 57,
+        "populated_streams": 54,
+        "pixels": 10287648,
+        "exact_estimates": 1083,
+        "exact_rct_rankings": 54
+      }
+    },
+    {
+      "input": "photo-flower",
+      "policy": "buffered",
+      "summary": {
+        "canonical_streams": 57,
+        "populated_streams": 54,
+        "pixels": 10287648,
+        "exact_estimates": 1083,
+        "exact_rct_rankings": 54
+      }
+    },
+    {
+      "input": "alpha-flower",
+      "policy": "auto",
+      "summary": {
+        "canonical_streams": 57,
+        "populated_streams": 54,
+        "pixels": 13716864,
+        "exact_estimates": 1083,
+        "exact_rct_rankings": 54
+      }
+    },
+    {
+      "input": "alpha-flower",
+      "policy": "buffered",
+      "summary": {
+        "canonical_streams": 57,
+        "populated_streams": 54,
+        "pixels": 13716864,
+        "exact_estimates": 1083,
+        "exact_rct_rankings": 54
+      }
+    },
+    {
+      "input": "chessboard",
+      "policy": "auto",
+      "summary": {
+        "canonical_streams": 18,
+        "populated_streams": 16,
+        "pixels": 1316754,
+        "exact_estimates": 56,
+        "exact_rct_rankings": 2
+      }
+    },
+    {
+      "input": "chessboard",
+      "policy": "buffered",
+      "summary": {
+        "canonical_streams": 18,
+        "populated_streams": 17,
+        "pixels": 1316847,
+        "exact_estimates": 56,
+        "exact_rct_rankings": 2
+      }
+    },
+    {
+      "input": "splines",
+      "policy": "auto",
+      "summary": {
+        "canonical_streams": 66,
+        "populated_streams": 64,
+        "pixels": 10621695,
+        "exact_estimates": 997,
+        "exact_rct_rankings": 49
+      }
+    },
+    {
+      "input": "splines",
+      "policy": "buffered",
+      "summary": {
+        "canonical_streams": 66,
+        "populated_streams": 64,
+        "pixels": 10621695,
+        "exact_estimates": 997,
+        "exact_rct_rankings": 49
+      }
+    },
+    {
+      "input": "alpha16-ramp",
+      "policy": "auto",
+      "summary": {
+        "canonical_streams": 8,
+        "populated_streams": 6,
+        "pixels": 527364,
+        "exact_estimates": 122,
+        "exact_rct_rankings": 6
+      }
+    }
+  ],
+  "validation_manifest": "/Users/yunhocho/GitHub/gjxl-modular-learning-cost/build/selection-cost-validation/manifest.json",
+  "validation_manifest_sha256": "d2dad58c07596d9f7bd9d61ad077f0dd5107732676d6852b1db557ba51fa9752",
+  "bound_validation_files": 2887,
+  "artifacts": {
+    "/Users/yunhocho/GitHub/gjxl-modular-learning-cost/build/reference-learning/selection-cost-qualified/manifest.json": "c6f850743fc383a83d23a6853eb9fcc28d4a56f15283d6a72a905a29569e95f2",
+    "/Users/yunhocho/GitHub/gjxl-modular-learning-cost/build/reference-learning/selection-cost-qualified/results.jsonl": "7e3ee0c2867088362ea3b1d722e5af8b57ba4fd334aad332efa7e22fe2a239b0",
+    "/Users/yunhocho/GitHub/gjxl-modular-learning-cost/build/reference-learning/selection-cost-qualified-asan/manifest.json": "e061d1ad3aaecd2cff908b91c715a66f5a8b52e20432340c0873dab582375d83",
+    "/Users/yunhocho/GitHub/gjxl-modular-learning-cost/build/reference-learning/selection-cost-qualified-asan/results.jsonl": "a3650fff8fe499ef61d3c742bbd0e18dfed146bdc1ef64d7456432a73dad0453"
+  },
+  "analyzer_sha256": "f78d2197f6364ec72dd671e8ae8af82383bf9ca036fc0b8dcfe8b7d0c25b2ae8"
+}

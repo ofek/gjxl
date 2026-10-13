@@ -18,4 +18,8 @@ void ReplayEntropyInput(const std::filesystem::path &source,
                         const std::filesystem::path &description,
                         const std::filesystem::path &output, const std::string &variants,
                         std::ostream &out, bool measure = false);
+// Compare the fixed-gradient selection proxy on captured planes and all 19
+// eligible RCTs. No tokenization, fitting, output encoding or timing claim.
+void ReplaySelectionCostInput(const std::filesystem::path &source,
+                              const std::filesystem::path &description, std::ostream &out);
 } // namespace reference_learning

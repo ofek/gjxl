@@ -24,8 +24,10 @@ unchanged native coding reach the stock total on that captured-decision
 cohort. [Native direct ANS with estimated selection](modular-prepared-entropy.md)
 is now integrated and qualified at the private prepared-stream boundary,
 preserving the standalone controls and closing that conditional aggregate gap.
-The high-depth LZ77 exception, reference palette construction and cheap
-selection remain to be implemented or qualified.
+The [fixed-gradient selection estimator](modular-selection-cost.md) now
+matches pinned SIMD costs and RCT candidate ordering on generated and captured
+planes. The high-depth LZ77 exception, reference palette construction, WP cost
+and complete native selection remain to be implemented or qualified.
 A blanket global-tree replacement is not justified.
 
 ## Selection happens before expensive tree fitting
@@ -46,9 +48,9 @@ The [fixed-predictor estimator](https://github.com/libjxl/libjxl/blob/e8ff097624
 uses clamped-gradient residuals and contextual token histograms, with entropy
 plus extra-bit cost. `EstimateWPCost` uses WP residuals and 34 contexts derived
 from its predictor property. These use the default 4/2/0 HybridUint proxy,
-separately from the 4/1/2 training proxy. The SIMD estimator must be studied and
-qualified directly; a superficially similar scalar entropy calculation is not
-a reference-equivalent ranking oracle.
+separately from the 4/1/2 training proxy. The native fixed-gradient estimator is
+now qualified directly against pinned SIMD values, including rounding and
+ties; complete selection and the separate WP estimator are still pending.
 
 GJXL's current `RankModularRcts` uses bounded samples and Gradient/Left/Top
 profiles; it is not the reference estimator. Its existing ranking should not

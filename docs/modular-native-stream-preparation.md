@@ -126,8 +126,10 @@ and the [prepared-stream encoder](modular-prepared-entropy.md) qualifies
 per-stream WP headers and global/local tree and entropy scopes. Token and
 decoded-pixel equality now cover these prescribed decisions.
 
-Next port reference palette construction and qualify the cheap transform/WP estimators so
-expensive learning happens on selected coding scopes. Keep the exhaustive
+The [fixed-gradient estimator](modular-selection-cost.md) now matches pinned
+cost values and RCT rankings on generated/captured planes. Next port reference
+palette construction and WP cost, then integrate selection so expensive
+learning happens on selected coding scopes. Keep the exhaustive
 new-learner and all-predictor controls, then apply whole-stage timing, rate,
 resource and held-out gates before default promotion or GPU work. The
 [acceptance criteria](modular-tree-learning-cost.md#proposed-acceptance-criteria)

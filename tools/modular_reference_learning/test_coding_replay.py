@@ -70,6 +70,50 @@ class CodingReplayTest(unittest.TestCase):
         validate_result(self.root, result)
         self.assertEqual((result['local_trees'], result['global_trees']), (0, 1))
 
+    def test_selection_cost_projection(self):
+        from selection_cost_replay import validate_result as validate_cost
+        self.save()
+        path = self.root / 'cost.txt'; path.write_text(project(self.root))
+        run = subprocess.run([str(BINARY), 'stream-cost-check', str(self.source), str(path)],
+                             capture_output=True, text=True)
+        self.assertEqual(run.returncode, 0, run.stderr)
+        result = json.loads(run.stdout)
+        source = {'width': 3, 'height': 3}
+        self.assertEqual(validate_cost(self.root, source, result)['exact_estimates'], 3)
+        for key, value in [('costs_exact', False), ('managed_allocations', 1), ('timing_qualified', True)]:
+            with self.assertRaises(ValueError): validate_cost(self.root, source, {**result, key: value})
+        for key, value in [('native_bits', 99), ('reference_bits', 99), ('pixels', 99)]:
+            bad = copy.deepcopy(result); bad['streams'][0]['base'][key] = value
+            with self.assertRaises(ValueError): validate_cost(self.root, source, bad)
+
+    def test_selection_cost_rct_ties(self):
+        from selection_cost_replay import validate_result as validate_cost
+        self.source.write_bytes(b'P6\n3 3\n255\n' + bytes(27))
+        image = self.learning['images'][0]
+        image['channels'] = [{**image['channels'][0], 'component': c, 'offset': 36 * c}
+                             for c in range(3)]
+        self.learning['pixel_bytes'] = 108
+        self.coding['channels'] = 3
+        (self.root / 'streams/learning-0.i32le').write_bytes(bytes(108))
+        self.save()
+        path = self.root / 'cost.txt'; path.write_text(project(self.root))
+        run = subprocess.run([str(BINARY), 'stream-cost-check', str(self.source), str(path)],
+                             capture_output=True, text=True)
+        self.assertEqual(run.returncode, 0, run.stderr)
+        result = json.loads(run.stdout)
+        source = {'width': 3, 'height': 3}
+        self.assertEqual(validate_cost(self.root, source, result)['exact_rct_rankings'], 1)
+        self.assertEqual(result['streams'][0]['selected_rct'], 0)
+        for change in ('missing', 'reordered', 'winner', 'identity', 'scope'):
+            bad = copy.deepcopy(result); row = bad['streams'][0]
+            if change == 'missing': row['rct_candidates'].pop()
+            if change == 'reordered': row['rct_candidates'].reverse()
+            if change == 'winner': row['selected_rct'] = 6
+            if change == 'identity': row['rct_candidates'][0]['cost']['extra_bits'] += 1
+            if change == 'scope': bad['streams'].pop()
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                validate_cost(self.root, source, bad)
+
     def test_projection_rejects_semantic_mismatch(self):
         good = copy.deepcopy(self.coding)
         for key, value in [('schema', 2), ('width', 4), ('stream_id', 1), ('local_tree', False),

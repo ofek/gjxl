@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 Yunho Cho
 #include "coding_replay.h"
+#include "selection_cost_replay.h"
 #include "codestream/modular/prepared_streams.h"
 #include "entropy_replay.h"
 #include "io/pnm.h"
@@ -184,7 +185,7 @@ void CheckTokens(const Stream &stream, const native::DecisionTree &tree,
 namespace {
 void ReplayInput(const std::filesystem::path &source, const std::filesystem::path &description,
                  const std::filesystem::path &output, const std::string &variants,
-                 std::ostream &out, bool measure = false) {
+                 std::ostream &out, bool measure = false, bool selection_cost = false) {
   static_assert(std::endian::native == std::endian::little);
   gjxl::io::IntegerImage original;
   Ok(gjxl::io::ReadPnm(source, &original));
@@ -324,6 +325,10 @@ void ReplayInput(const std::filesystem::path &source, const std::filesystem::pat
   Require(mapped == captured.size(), "Unexpected captured coding stream ID");
   const native::PreparedModularStreamsView input{original.extent, format,
                                                  has_global ? &global_tree : nullptr, streams};
+  if (selection_cost) {
+    ReplaySelectionCosts(input, plan, profile.metadata.bits, out);
+    return;
+  }
   size_t token_count = 0;
   {
     native::PreparedModularStreamTokens tokens;
@@ -395,5 +400,9 @@ void ReplayEntropyInput(const std::filesystem::path &source,
                         std::ostream &out, bool measure) {
   Require(!variants.empty(), "Empty entropy variants");
   ReplayInput(source, description, output, variants, out, measure);
+}
+void ReplaySelectionCostInput(const std::filesystem::path &source,
+                              const std::filesystem::path &description, std::ostream &out) {
+  ReplayInput(source, description, {}, {}, out, false, true);
 }
 } // namespace reference_learning

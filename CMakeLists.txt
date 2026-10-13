@@ -290,6 +290,7 @@ add_library(
   src/codec/modular/quantized_tree_learning.cpp
   src/codec/modular/histogram_tree_learning.cpp
   src/codec/modular/histogram_sample_preparation.cpp
+  src/codec/modular/selection_cost.cpp
   src/codec/modular/transform/transform.cpp
   src/codec/modular/transform/palette.cpp
   src/codec/modular/transform/squeeze.cpp
@@ -2357,6 +2358,10 @@ if(GJXL_BUILD_TESTS)
   add_executable(gjxl_modular_histogram_preparation_test tests/modular_histogram_preparation_test.cpp)
   target_link_libraries(gjxl_modular_histogram_preparation_test PRIVATE gjxl_codestream)
   add_test(NAME modular_histogram_preparation COMMAND gjxl_modular_histogram_preparation_test)
+
+  add_executable(gjxl_modular_selection_cost_test tests/modular_selection_cost_test.cpp)
+  target_link_libraries(gjxl_modular_selection_cost_test PRIVATE gjxl_codec)
+  add_test(NAME modular_selection_cost COMMAND gjxl_modular_selection_cost_test)
   set_tests_properties(modular_histogram_preparation PROPERTIES TIMEOUT 60)
 
   add_executable(gjxl_ans_selection_test tests/ans_selection_test.cpp)
