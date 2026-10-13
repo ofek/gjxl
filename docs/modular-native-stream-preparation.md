@@ -120,6 +120,10 @@ chains and channel ranges, the observed palettes above 256 colors, per-stream
 WP headers, and global/local trees with the matching entropy scope. Token and
 decoded-pixel equality must precede automatic selection.
 
+The [ordered-transform follow-up](modular-ordered-transforms.md) now qualifies
+prescribed RCT anywhere in the sequence and palettes through 1,024 entries.
+Per-stream coding/tree/entropy scope and reference palette construction remain.
+
 After that, port and qualify the reference's cheap transform/WP estimators so
 expensive learning happens on selected coding scopes. Keep the exhaustive
 new-learner and all-predictor controls, then apply whole-stage timing, rate,

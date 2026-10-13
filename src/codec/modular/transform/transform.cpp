@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 Yunho Cho
 #include "codec/modular/transform/operations.h"
+#include "codec/modular/transform/rct.h"
 #include <algorithm>
 
 namespace gjxl::modular_internal {
@@ -11,13 +12,15 @@ Status ShapeStep(const ChannelShape &in, const TransformDescriptor &t, ChannelSh
     return Invalid();
   ChannelShape p = in;
   const size_t end = t.begin + t.count;
-  if (t.kind == TransformKind::kPalette) {
+  if (t.kind == TransformKind::kPalette || t.kind == TransformKind::kRct) {
     const auto first = in.descriptors[t.begin];
     for (size_t c = t.begin; c < end; ++c) {
       const auto ch = in.descriptors[c];
       if (ch.extent != first.extent || ch.hshift != first.hshift || ch.vshift != first.vshift)
         return Invalid();
     }
+  }
+  if (t.kind == TransformKind::kPalette) {
     p.count = in.count + 2 - t.count;
     if (p.count > kMaximumTransformedChannels)
       return Invalid();
@@ -27,7 +30,7 @@ Status ShapeStep(const ChannelShape &in, const TransformDescriptor &t, ChannelSh
     for (size_t c = 0; c < in.count; ++c)
       if (c <= t.begin || c >= end)
         p.descriptors[dest++] = in.descriptors[c];
-  } else {
+  } else if (t.kind == TransformKind::kSqueeze) {
     if (in.count + t.count > kMaximumTransformedChannels)
       return Invalid();
     const size_t offset = t.in_place ? end : in.count;
@@ -61,6 +64,28 @@ void Copy(const ModularImage &in, size_t src, ModularImage *out, size_t dst) {
     std::copy_n(v.Row(y), v.descriptor.extent.width,
                 samples.data() + y * v.descriptor.extent.width);
 }
+Status ApplyRct(const ModularImage &in, const TransformDescriptor &t, bool inverse,
+                ModularImage *out) {
+  const auto shape = in.view(t.begin).descriptor.extent;
+  const std::array source = {in.view(t.begin), in.view(t.begin + 1), in.view(t.begin + 2)};
+  const std::array destination = {out->samples(t.begin), out->samples(t.begin + 1),
+                                  out->samples(t.begin + 2)};
+  for (size_t y = 0; y < shape.height; ++y)
+    for (size_t x = 0; x < shape.width; ++x) {
+      const std::array<int32_t, 3> v = {source[0].Row(y)[x], source[1].Row(y)[x],
+                                       source[2].Row(y)[x]};
+      const auto result = inverse ? InverseRctWide(v, t.rct_type) : ForwardRctWide(v, t.rct_type);
+      for (size_t c = 0; c < 3; ++c) {
+        if (result[c] < INT32_MIN || result[c] > INT32_MAX)
+          return Invalid();
+        destination[c][y * shape.width + x] = static_cast<int32_t>(result[c]);
+      }
+    }
+  for (size_t c = 0; c < in.channel_count(); ++c)
+    if (c < t.begin || c >= size_t{t.begin} + 3)
+      Copy(in, c, out, c);
+  return Status::Ok();
+}
 Status Run(const ModularImage &in, const TransformSequence &seq,
            const std::array<ChannelShape, kMaximumTransforms + 1> &shapes, bool inverse,
            ModularImage *out) {
@@ -87,7 +112,8 @@ Status Run(const ModularImage &in, const TransformSequence &seq,
     } else {
       const auto &t = seq.entries[inverse ? i - 1 : i];
       auto s = t.kind == TransformKind::kPalette ? ApplyPalette(source, t, inverse, &next)
-                                                 : ApplySqueeze(source, t, inverse, &next);
+               : t.kind == TransformKind::kRct  ? ApplyRct(source, t, inverse, &next)
+                                                : ApplySqueeze(source, t, inverse, &next);
       if (!s.ok())
         return s;
     }
@@ -109,6 +135,9 @@ Status ValidateTransforms(const TransformSequence &s) {
         return Invalid();
     } else if (t.kind == TransformKind::kSqueeze) {
       if (t.count > 19)
+        return Invalid();
+    } else if (t.kind == TransformKind::kRct) {
+      if (t.count != 3 || t.rct_type >= 42)
         return Invalid();
     } else
       return Invalid();

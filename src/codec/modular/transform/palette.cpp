@@ -18,7 +18,10 @@ Status ApplyPalette(const ModularImage &in, const TransformDescriptor &t, bool i
   const size_t end = t.begin + t.count;
   if (!inverse) {
     using Color = std::array<int32_t, 4>;
-    std::array<Color, kMaximumPaletteColors> palette{};
+    // Fixed 16 KiB scratch, independent of image size; output planes account
+    // for the dictionary's retained backing in the existing shape planner.
+    // Only the initialized [0, used) prefix is read; do not clear unused capacity.
+    std::array<Color, kMaximumPaletteColors> palette;
     size_t used = 0;
     const auto shape = in.view(t.begin).descriptor.extent;
     auto color = [&](size_t x, size_t y) {

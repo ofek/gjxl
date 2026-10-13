@@ -2341,6 +2341,10 @@ if(GJXL_BUILD_TESTS)
   target_link_libraries(gjxl_modular_foundation_test PRIVATE gjxl_codestream)
   add_test(NAME modular_foundation COMMAND gjxl_modular_foundation_test)
 
+  add_executable(gjxl_modular_transform_contract_test tests/modular_transform_contract_test.cpp)
+  target_link_libraries(gjxl_modular_transform_contract_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_transform_contract COMMAND gjxl_modular_transform_contract_test)
+
   add_executable(gjxl_modular_histogram_learning_test tests/modular_histogram_learning_test.cpp)
   target_link_libraries(gjxl_modular_histogram_learning_test PRIVATE gjxl_codestream)
   add_test(NAME modular_histogram_learning COMMAND gjxl_modular_histogram_learning_test)

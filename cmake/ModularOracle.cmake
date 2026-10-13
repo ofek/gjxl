@@ -80,8 +80,10 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
 endif()
 add_test(NAME modular_transform COMMAND gjxl_modular_transform_test
   "${CMAKE_CURRENT_BINARY_DIR}/modular-transform")
+add_test(NAME modular_ordered_transform COMMAND gjxl_modular_transform_test
+  "${CMAKE_CURRENT_BINARY_DIR}/modular-ordered-transform" ordered)
 if(WIN32)
-  set_tests_properties(modular_transform PROPERTIES
+  set_tests_properties(modular_transform modular_ordered_transform PROPERTIES
     ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:${GJXL_MODULAR_ORACLE_BUILD}/tools")
 endif()
 

@@ -90,20 +90,25 @@ Per-stream settings matter before local trees are considered. Photo-macan's
 four data groups use RCTs **8, 0, 40, 40** and WP mode **1** throughout, although
 its tree is global. Photo-flower uses four nonidentity RCT types; **52 of 54**
 data groups select WP mode 2. The alpha version selects WP mode 2 in **53 of
-54** groups. The current native preparation bridge instead uses default WP
+54** groups. The earlier native preparation bridge instead used default WP
 parameters and frozen native transforms. Matching its samples/trees was a
 valid common-profile control, not preparation parity with these actual e9
 stream choices.
 
-The structured traces also contain palettes larger than the native limit:
+The structured traces also contain palettes larger than the native control's limit:
 chessboard uses palettes of **662 and 862 colors**, and splines includes **285,
-338 and 417 colors**. Native `kMaximumPaletteColors` is currently 256, and its
+338 and 417 colors**. That control's `kMaximumPaletteColors` was 256, and its
 coding policy and frame writer apply one shared WP/global transform policy.
 Chessboard also has palette-before-RCT chains, including an RCT starting after
-two metadata channels. Native policy currently represents RCT only as the first
+two metadata channels. That native policy represented RCT only as the first
 transform on the first three color planes. The per-stream contract must preserve
 transform order and channel ranges too. These are concrete representation/policy
 boundaries, not inferred causes of the entire compression gap.
+
+The later [ordered-transform contract](modular-ordered-transforms.md) qualifies
+RCT sequences/ranges and palettes up to 1,024 entries. This supplies the
+prescribed mechanics; per-stream coding scope and reference palette ordering
+still require implementation.
 
 The next implementation order is:
 

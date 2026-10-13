@@ -595,6 +595,9 @@ tokenization consume those shapes. Bounded transform selection remains in
 `codestream/modular/search.*` and complete-file orchestration in `workflow.cpp`.
 The initial limits are eight descriptors, 64 channels, exact palettes of up to 256
 entries, and explicit nonempty squeeze splits of ordinary channels.
+The [learning-cost follow-up](modular-ordered-transforms.md) extends the prescribed
+CPU contract to ordered RCT ranges and 1,024-entry palettes, with independent
+qualification and no automatic-search or GPU-policy expansion.
 
 Implement and qualify palette before squeeze. Each transform needs:
 

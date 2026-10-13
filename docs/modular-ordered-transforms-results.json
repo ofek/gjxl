@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "scope": "Prescribed CPU ordered transforms; no per-stream policy, rate or timing qualification",
+  "source_parent": "524403a32a0ac1f227e997970dc50f6b1e44d195",
+  "reference_revision": "e8ff09762481785938d8e4e01333ed3917571161",
+  "prescribed_palette_limit": 1024,
+  "automatic_search_palette_limit": 256,
+  "qualification": {
+    "ordered_cases": 175,
+    "ordered_files": 350,
+    "parsed_headers": 4520,
+    "release_sanitizer_identical_files": 350,
+    "legacy_cases": 453,
+    "legacy_files": 906,
+    "frozen_native_artifacts": 286,
+    "frozen_reference_artifacts": 286,
+    "release_ctest_entries": 11,
+    "asan_ubsan_ctest_entries": 3,
+    "palette_capture_cases_audited": 58,
+    "palette_capture_cases_with_implicit_indices": 0,
+    "timing_qualified": false,
+    "rate_qualified": false
+  },
+  "sanitizer_environment": {
+    "UBSAN_OPTIONS": "halt_on_error=1",
+    "ASAN_OPTIONS": "detect_leaks=0"
+  },
+  "sanitizer_limits": [
+    "Pinned reference archives uninstrumented",
+    "Reference vptr checks disabled because the pinned archives omit RTTI",
+    "LeakSanitizer unavailable; managed leak assertions run"
+  ],
+  "artifacts": {
+    "manifest": "/Users/yunhocho/GitHub/gjxl-modular-learning-cost/build/ordered-transform-validation/manifest.json",
+    "manifest_sha256": "dd47f80583c06d4d334a68e682720d3d978cab21d21705a865a84fa7907fbe61",
+    "bound_files": 1648,
+    "source_patch_sha256": "4bdcb7449d21e4c1b1401f6ae424b6f2227a23ad52267b3d4a6cd86e1598da5e"
+  },
+  "next": [
+    "Per-stream WP and ordered transform ownership",
+    "Global/local tree and matching entropy-model scope",
+    "Reference palette construction and cheap transform/WP estimators",
+    "Whole-stage timing, rate, resource and held-out qualification"
+  ]
+}

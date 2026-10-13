@@ -372,7 +372,7 @@ void TransformValidation() {
       t.colors = 0;
       break;
     case 4:
-      t.colors = 257;
+      t.colors = kMaximumPaletteColors + 1;
       break;
     case 5:
       t.begin = 4;

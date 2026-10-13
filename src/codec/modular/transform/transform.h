@@ -5,16 +5,19 @@
 #include <array>
 
 namespace gjxl::modular_internal {
-// Deliberately bounded CPU subset. RCT remains the optional first transform.
+// Deliberately bounded CPU subset. Entries execute in order, in the channel
+// coordinates produced by the preceding entries. The legacy policy.rct still
+// precedes this sequence. Palette deltas and implicit colors are not supported.
 inline constexpr size_t kMaximumTransforms = 8;
 inline constexpr size_t kMaximumTransformedChannels = 64;
-inline constexpr size_t kMaximumPaletteColors = 256;
-enum class TransformKind : uint8_t { kPalette, kSqueeze };
+inline constexpr size_t kMaximumPaletteColors = 1024;
+enum class TransformKind : uint8_t { kPalette, kSqueeze, kRct };
 struct TransformDescriptor {
   TransformKind kind = TransformKind::kPalette;
   uint8_t begin = 0, count = 1;
   uint16_t colors = 1; // Exact palette capacity; unused entries are zero.
   bool horizontal = true, in_place = true;
+  uint8_t rct_type = 0; // RCT requires count=3; type 0 is an explicit identity.
   bool operator==(const TransformDescriptor &) const = default;
 };
 struct TransformSequence {
