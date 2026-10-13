@@ -122,20 +122,35 @@ public:
     return {(prediction_ + 3) >> 3, property};
   }
   bool Update(int32_t value, size_t x, size_t y) {
+    return UpdateState<false>(value, x, y);
+  }
+  // The reference selection proxy narrows history errors modulo 2^32. Its
+  // separate residual-overflow test decides whether to reject a WP candidate.
+  // Keep the checked coding/training contract above unchanged.
+  void UpdateWrapping(int32_t value, size_t x, size_t y) {
+    (void)UpdateState<true>(value, x, y);
+  }
+
+private:
+  template <bool Wrap> bool UpdateState(int32_t value, size_t x, size_t y) {
     const size_t current = (y & 1) ? 0 : width_ + 2;
     const size_t previous = (y & 1) ? width_ + 2 : 0;
     const int64_t scaled = int64_t{value} * 8;
     const int64_t error = prediction_ - scaled;
-    if (error < std::numeric_limits<int32_t>::min() || error > std::numeric_limits<int32_t>::max())
-      return false;
+    if constexpr (!Wrap) {
+      if (error < std::numeric_limits<int32_t>::min() || error > std::numeric_limits<int32_t>::max())
+        return false;
+    }
     std::array<uint32_t, 4> errors{};
     for (size_t i = 0; i < 4; ++i) {
       const uint64_t magnitude = (std::abs(predictions_[i] - scaled) + 3) >> 3;
-      if (magnitude > std::numeric_limits<uint32_t>::max())
-        return false;
+      if constexpr (!Wrap) {
+        if (magnitude > std::numeric_limits<uint32_t>::max())
+          return false;
+      }
       errors[i] = static_cast<uint32_t>(magnitude);
     }
-    error_[current + x] = static_cast<int32_t>(error);
+    error_[current + x] = std::bit_cast<int32_t>(static_cast<uint32_t>(error));
     for (size_t i = 0; i < 4; ++i) {
       prediction_errors_[i][current + x] = errors[i];
       prediction_errors_[i][previous + x + 1] += errors[i];
@@ -143,7 +158,6 @@ public:
     return true;
   }
 
-private:
   size_t width_;
   WeightedPredictorParameters parameters_;
   std::array<int64_t, 4> predictions_{};

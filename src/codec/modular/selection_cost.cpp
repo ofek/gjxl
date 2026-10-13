@@ -10,6 +10,7 @@
 #include <bit>
 #include <cmath>
 #include <limits>
+#include <stdexcept>
 
 #if (defined(__aarch64__) || defined(_M_ARM64)) && !defined(GJXL_SELECTION_COST_SCALAR)
 #include <arm_neon.h>
@@ -33,6 +34,58 @@ struct Histogram {
   uint32_t total = 0;
 };
 static_assert(sizeof(std::array<Histogram, 17>) < 9 * 1024);
+static_assert(sizeof(std::array<Histogram, 34>) < 18 * 1024);
+
+constexpr std::array<int32_t, 33> kWeightedCuts{
+    -500, -392, -255, -191, -127, -95, -63, -47, -31, -23, -15, -11, -7,  -4,  -3,  -1, 0,
+    1,    3,    5,    7,    11,   15,  23,  31,  47,  63,  95,  127, 191, 255, 392, 500};
+constexpr auto WeightedContextMap() {
+  std::array<uint8_t, 1001> map{};
+  for (size_t i = 0; i < map.size(); ++i)
+    for (auto cut : kWeightedCuts)
+      map[i] += cut >= static_cast<int32_t>(i) - 500;
+  return map;
+}
+constexpr auto kWeightedContextMap = WeightedContextMap();
+
+struct Population {
+  size_t pixels = 0, maximum_width = 0;
+};
+Status Validate(std::span<const ModularChannelView> channels, Population *out) {
+  Population p;
+  for (const auto &ch : channels) {
+    if (ch.descriptor.extent.empty())
+      continue;
+    if (auto s = ch.Validate(); !s.ok())
+      return s;
+    size_t area;
+    if (!ch.descriptor.extent.try_area(&area) || area > INT32_MAX ||
+        area > (SIZE_MAX / 128) - p.pixels)
+      return Status::InvalidArgument("Modular transform cost population overflow");
+    p.pixels += area;
+    p.maximum_width = std::max(p.maximum_width, ch.descriptor.extent.width);
+  }
+  *out = p;
+  return Status::Ok();
+}
+Status PlanWeighted(std::span<const ModularChannelView> channels, size_t mode,
+                    Population *population, resource_budget_internal::HostStorageBound *out) {
+  if (mode >= kSelectionWeightedPresets.size())
+    return Status::InvalidArgument("Invalid Modular weighted cost mode");
+  if (auto s = Validate(channels, population); !s.ok())
+    return s;
+  using namespace resource_budget_internal;
+  HostStorageBound bound;
+  if (const size_t w = population->maximum_width; w != 0) {
+    if (w > SIZE_MAX / 2 - 2 ||
+        !bound.AddVector<uint32_t>((w + 2) * 2, VectorCapacityPolicy::kFreshExact, 4) ||
+        !bound.AddVector<int32_t>((w + 2) * 2, VectorCapacityPolicy::kFreshExact))
+      return Status::InvalidArgument("Modular weighted cost scratch overflow");
+  }
+  bound.retained_bytes = 0;
+  *out = bound;
+  return Status::Ok();
+}
 
 #if GJXL_SELECTION_NEON
 float32x4_t FastLog2(float32x4_t x) {
@@ -82,7 +135,7 @@ float Shannon(const Histogram &h) {
 #endif
 }
 uint32_t Pack(uint32_t residual) { return (residual << 1) ^ (0u - (residual >> 31)); }
-void Add(uint32_t packed, Histogram *h, uint32_t *extra) {
+template <class Extra> void Add(uint32_t packed, Histogram *h, Extra *extra) {
   uint32_t token = packed;
   if (packed >= 16) {
     const uint32_t nbits = std::bit_width(packed) - 3;
@@ -161,17 +214,10 @@ Status EstimateModularTransformCost(std::span<const ModularChannelView> channels
   if (!out)
     return Status::InvalidArgument("Null Modular transform cost output");
   ModularTransformCost cost;
-  for (const auto &ch : channels) {
-    if (ch.descriptor.extent.empty())
-      continue;
-    if (auto s = ch.Validate(); !s.ok())
-      return s;
-    size_t area;
-    if (!ch.descriptor.extent.try_area(&area) || area > INT32_MAX ||
-        area > (SIZE_MAX / 128) - cost.pixels)
-      return Status::InvalidArgument("Modular transform cost population overflow");
-    cost.pixels += area;
-  }
+  Population population;
+  if (auto s = Validate(channels, &population); !s.ok())
+    return s;
+  cost.pixels = population.pixels;
   for (const auto &ch : channels) {
     if (ch.descriptor.extent.empty())
       continue;
@@ -188,5 +234,74 @@ Status EstimateModularTransformCost(std::span<const ModularChannelView> channels
                                  static_cast<size_t>(cost.histogram_fraction));
   *out = cost;
   return Status::Ok();
+}
+
+Status ComputeModularWeightedCostStorageBound(std::span<const ModularChannelView> channels,
+                                              size_t mode,
+                                              resource_budget_internal::HostStorageBound *out) {
+  if (!out)
+    return Status::InvalidArgument("Null Modular weighted cost bound");
+  Population population;
+  return PlanWeighted(channels, mode, &population, out);
+}
+Status EstimateModularWeightedCost(std::span<const ModularChannelView> channels, size_t mode,
+                                   ModularWeightedCost *out) {
+#pragma STDC FP_CONTRACT OFF
+  if (!out)
+    return Status::InvalidArgument("Null Modular weighted cost output");
+  Population population;
+  resource_budget_internal::HostStorageBound bound;
+  if (auto s = PlanWeighted(channels, mode, &population, &bound); !s.ok())
+    return s;
+  try {
+    ModularWeightedCost cost;
+    cost.pixels = population.pixels;
+    for (const auto &ch : channels) {
+      const auto [w, h] = ch.descriptor.extent;
+      if (!w || !h)
+        continue;
+      WeightedPredictor<resource_budget_internal::ResourceClass::kPreparation> wp(
+          w, kSelectionWeightedPresets[mode]);
+      std::array<Histogram, 34> histograms{};
+      for (size_t y = 0; y < h; ++y) {
+        const int32_t *row = ch.Row(y), *top = y ? ch.Row(y - 1) : nullptr;
+        for (size_t x = 0; x < w; ++x) {
+          const int64_t left = x ? row[x - 1] : y ? top[0] : 0;
+          const int64_t north = y ? top[x] : left;
+          const int64_t northwest = x && y ? top[x - 1] : left;
+          const int64_t northeast = y && x + 1 < w ? top[x + 1] : north;
+          const int64_t northnorth = y > 1 ? ch.Row(y - 2)[x] : north;
+          const auto [wide_guess, property] =
+              wp.Predict(x, y, north, left, northeast, northwest, northnorth);
+          // EstimateWPCost narrows the prediction before SubOverflow. History
+          // narrowing is independent of residual-overflow rejection.
+          const int32_t guess = std::bit_cast<int32_t>(static_cast<uint32_t>(wide_guess));
+          const int64_t residual = int64_t{row[x]} - guess;
+          cost.residual_overflow |= residual < INT32_MIN || residual > INT32_MAX;
+          const size_t context = property < -500  ? 33
+                                 : property > 500 ? 0
+                                                  : kWeightedContextMap[property + 500];
+          Add(Pack(static_cast<uint32_t>(residual)), &histograms[context], &cost.extra_bits);
+          wp.UpdateWrapping(row[x], x, y);
+        }
+      }
+      if (cost.residual_overflow) {
+        cost.bits = std::numeric_limits<float>::max();
+        *out = cost;
+        return Status::Ok();
+      }
+      for (const auto &histogram : histograms)
+        cost.histogram_bits += Shannon(histogram);
+    }
+    cost.bits = cost.histogram_bits + static_cast<float>(cost.extra_bits);
+    *out = cost;
+    return Status::Ok();
+  } catch (const resource_budget_internal::ManagedAllocationFailure &e) {
+    return e.status();
+  } catch (const std::bad_alloc &) {
+    return Status::OutOfMemory("Modular weighted cost allocation failed");
+  } catch (const std::length_error &) {
+    return Status::InvalidArgument("Modular weighted cost allocation overflow");
+  }
 }
 } // namespace gjxl::modular_internal

@@ -94,9 +94,13 @@ add_test(NAME modular_prepared_stream_reference COMMAND gjxl_modular_prepared_st
 # These exact-cost controls use the qualified four-lane Apple AArch64 oracle.
 # A different reference SIMD width can change floating-point reduction/rounding.
 if(APPLE AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$")
+  include("${CMAKE_CURRENT_LIST_DIR}/ModularSelectionOracle.cmake")
+  gjxl_generate_wp_cost_oracle("${modular_oracle_source}"
+    "${CMAKE_CURRENT_BINARY_DIR}/modular_wp_cost_reference.cpp")
   foreach(selection_variant reference scalar_reference)
     add_executable(gjxl_modular_selection_cost_${selection_variant}_test
-      tests/modular_selection_cost_reference_test.cpp)
+      tests/modular_selection_cost_reference_test.cpp
+      "${CMAKE_CURRENT_BINARY_DIR}/modular_wp_cost_reference.cpp")
     target_link_libraries(gjxl_modular_selection_cost_${selection_variant}_test PRIVATE gjxl_codec gjxl_modular_reference)
     if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
       target_compile_options(gjxl_modular_selection_cost_${selection_variant}_test PRIVATE -fno-sanitize=vptr)

@@ -127,8 +127,9 @@ per-stream WP headers and global/local tree and entropy scopes. Token and
 decoded-pixel equality now cover these prescribed decisions.
 
 The [fixed-gradient estimator](modular-selection-cost.md) now matches pinned
-cost values and RCT rankings on generated/captured planes. Next port reference
-palette construction and WP cost, then integrate selection so expensive
+cost values and RCT rankings on generated/captured planes, and the
+[WP estimator](modular-weighted-cost.md) now matches all five reference modes.
+Next port reference palette construction, then integrate selection so expensive
 learning happens on selected coding scopes. Keep the exhaustive
 new-learner and all-predictor controls, then apply whole-stage timing, rate,
 resource and held-out gates before default promotion or GPU work. The

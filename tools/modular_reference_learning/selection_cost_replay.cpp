@@ -7,9 +7,11 @@
 #include "lib/jxl/memory_manager_internal.h"
 #include "lib/jxl/modular/transform/enc_rct.h"
 #include "lib/jxl/modular/transform/transform.h"
+#include "modular_wp_cost_reference.h"
 #include <algorithm>
 #include <array>
 #include <bit>
+#include <limits>
 #include <ostream>
 #include <stdexcept>
 #include <vector>
@@ -48,6 +50,24 @@ float Compare(std::span<const native::ModularChannelView> views, const jxl::Imag
       << ",\"extra_bits\":" << cost.extra_bits << ",\"pixels\":" << cost.pixels << '}';
   return cost.bits;
 }
+jxl::Image ReferenceImage(std::span<const native::ModularChannelView> views, size_t bit_depth,
+                          JxlMemoryManager *memory) {
+  jxl::Image reference(memory);
+  reference.bitdepth = bit_depth;
+  for (const auto &view : views) {
+    const auto &d = view.descriptor;
+    const bool meta = d.role == native::ChannelRole::kMetadata;
+    reference.nb_meta_channels += meta;
+    auto created = jxl::Channel::Create(memory, d.extent.width, d.extent.height,
+                                        meta ? -1 : d.hshift, meta ? -1 : d.vshift);
+    Require(created.ok(), "Reference cost channel allocation failed");
+    auto channel = std::move(created).value_();
+    for (size_t y = 0; y < d.extent.height; ++y)
+      std::copy_n(view.Row(y), d.extent.width, channel.Row(y));
+    reference.channel.push_back(std::move(channel));
+  }
+  return reference;
+}
 } // namespace
 void ReplaySelectionCosts(const native::PreparedModularStreamsView &input,
                           const native::ModularStreamPlan &plan, size_t bit_depth,
@@ -58,22 +78,8 @@ void ReplaySelectionCosts(const native::PreparedModularStreamsView &input,
          "\"streams\":[";
   for (size_t i = 0; i < input.streams.size(); ++i) {
     const auto views = input.streams[i].channels;
-    jxl::Image reference(&memory);
-    reference.bitdepth = bit_depth;
-    size_t metadata = 0;
-    for (const auto &view : views) {
-      const auto &d = view.descriptor;
-      const bool meta = d.role == native::ChannelRole::kMetadata;
-      metadata += meta;
-      auto created = jxl::Channel::Create(&memory, d.extent.width, d.extent.height,
-                                          meta ? -1 : d.hshift, meta ? -1 : d.vshift);
-      Require(created.ok(), "Reference cost channel allocation failed");
-      auto channel = std::move(created).value_();
-      for (size_t y = 0; y < d.extent.height; ++y)
-        std::copy_n(view.Row(y), d.extent.width, channel.Row(y));
-      reference.channel.push_back(std::move(channel));
-    }
-    reference.nb_meta_channels = metadata;
+    auto reference = ReferenceImage(views, bit_depth, &memory);
+    const size_t metadata = reference.nb_meta_channels;
     bool eligible = views.size() >= metadata + 3;
     if (eligible) {
       const auto d = views[metadata].descriptor;
@@ -133,6 +139,68 @@ void ReplaySelectionCosts(const native::PreparedModularStreamsView &input,
       }
     }
     out << "],\"selected_rct\":" << best_rct << '}';
+  }
+  out << "]}\n";
+}
+void ReplayWeightedCosts(const native::PreparedModularStreamsView &input,
+                         const native::ModularStreamPlan &plan, size_t bit_depth,
+                         std::ostream &out) {
+  using namespace gjxl::resource_budget_internal;
+  JxlMemoryManager memory;
+  Require(bool(jxl::MemoryManagerInit(&memory, nullptr)), "Reference allocation setup failed");
+  out << "{\"schema\":1,\"costs_exact\":true,\"managed_storage_qualified\":true,"
+         "\"timing_qualified\":false,\"streams\":[";
+  for (size_t i = 0; i < input.streams.size(); ++i) {
+    const auto views = input.streams[i].channels;
+    auto reference = ReferenceImage(views, bit_depth, &memory);
+    out << (i ? "," : "") << "{\"id\":" << plan.streams[i].id << ",\"channels\":" << views.size()
+        << ",\"metadata_channels\":" << reference.nb_meta_channels << ",\"candidates\":[";
+    float best = std::numeric_limits<float>::max();
+    size_t best_mode = 0;
+    for (size_t mode = 0; mode < 5; ++mode) {
+      HostStorageBound bound;
+      ArmNextManagedHostAllocationFailureForTest();
+      const auto planned = native::ComputeModularWeightedCostStorageBound(views, mode, &bound);
+      const bool pending = ManagedHostAllocationFailurePendingForTest();
+      DisarmManagedHostAllocationFailureForTest();
+      Ok(planned);
+      Require(pending, "Native WP cost planner allocated");
+      ResourceBudget budget(bound.peak_bytes);
+      ResourceReservation reservation;
+      native::ModularWeightedCost cost;
+      if (bound.peak_bytes) {
+        Ok(budget.Reserve(bound.peak_bytes, &reservation));
+        ResourceContextScope scope({&reservation, ResourceClass::kPreparation});
+        Ok(native::EstimateModularWeightedCost(views, mode, &cost));
+      } else {
+        ArmNextManagedHostAllocationFailureForTest();
+        const auto status = native::EstimateModularWeightedCost(views, mode, &cost);
+        const bool unallocated = ManagedHostAllocationFailurePendingForTest();
+        DisarmManagedHostAllocationFailureForTest();
+        Ok(status);
+        Require(unallocated, "Empty WP estimate allocated");
+      }
+      const auto usage = budget.snapshot();
+      Require(usage.peak_backing_bytes <= bound.peak_bytes && usage.total.backing_count == 0 &&
+                  usage.total.pending_count == 0 && bound.retained_bytes == 0,
+              "Native WP estimator exceeded its plan or retained history");
+      const float expected = jxl::gjxl_cost_reference::EstimateWPCost(reference, mode);
+      Require(std::bit_cast<uint32_t>(cost.bits) == std::bit_cast<uint32_t>(expected),
+              "Native/reference captured WP costs differ");
+      Require(cost.residual_overflow == (expected == std::numeric_limits<float>::max()),
+              "Native/reference WP residual rejection differs");
+      out << (mode ? "," : "") << "{\"mode\":" << mode << ",\"native_bits\":" << cost.bits
+          << ",\"reference_bits\":" << expected << ",\"histogram_bits\":" << cost.histogram_bits
+          << ",\"extra_bits\":" << cost.extra_bits << ",\"pixels\":" << cost.pixels
+          << ",\"residual_overflow\":" << (cost.residual_overflow ? "true" : "false")
+          << ",\"storage_bound_bytes\":" << bound.peak_bytes
+          << ",\"managed_peak_bytes\":" << usage.peak_backing_bytes << ",\"retained_bytes\":0}";
+      if (cost.bits < best) {
+        best = cost.bits;
+        best_mode = mode;
+      }
+    }
+    out << "],\"selected_mode\":" << best_mode << '}';
   }
   out << "]}\n";
 }

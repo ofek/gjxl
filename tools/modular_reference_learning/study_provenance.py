@@ -39,6 +39,8 @@ def freeze_build(binary, output):
     artifacts[str(patch)] = sha(patch)
     for name in ("CMakeCache.txt", "compile_commands.json"):
         copy(binary.parent / name, output / name)
+    if (binary.parent / 'modular_wp_cost_reference.cpp').exists():
+        copy(binary.parent / 'modular_wp_cost_reference.cpp', output / 'modular_wp_cost_reference.cpp')
     cache = dict(line.split("=", 1) for line in (binary.parent / "CMakeCache.txt").read_text().splitlines()
                  if line and not line.startswith(("#", "//")) and "=" in line)
     roots = {key.split(":")[0]: Path(value) for key, value in cache.items() if key.split(":")[0] in

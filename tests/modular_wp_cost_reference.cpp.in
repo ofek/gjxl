@@ -1,0 +1,11 @@
+// Copyright (c) the JPEG XL Project Authors.
+// SPDX-License-Identifier: BSD-3-Clause
+// EstimateWPCost is extracted verbatim from pristine pinned enc_modular.cc.
+#include "lib/jxl/enc_ans_params.h"
+#include "lib/jxl/modular/encoding/context_predict.h"
+#include "lib/jxl/pack_signed.h"
+#include <limits>
+
+namespace jxl::gjxl_cost_reference {
+@GJXL_REFERENCE_WP_BODY@
+} // namespace jxl::gjxl_cost_reference

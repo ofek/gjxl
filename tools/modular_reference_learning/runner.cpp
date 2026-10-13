@@ -276,9 +276,12 @@ int main(int argc, char **argv) try {
   std::cout << std::setprecision(17);
   Require(argc >= 2, "Usage: reference_learning reference|bridge|replay ...");
   const std::string mode = argv[1];
-  if (mode == "stream-cost-check") {
-    Require(argc == 4, "stream-cost-check SOURCE DESCRIPTION");
-    capture::ReplaySelectionCostInput(argv[2], argv[3], std::cout);
+  if (mode == "stream-cost-check" || mode == "stream-wp-cost-check") {
+    Require(argc == 4, "stream-[wp-]cost-check SOURCE DESCRIPTION");
+    if (mode == "stream-cost-check")
+      capture::ReplaySelectionCostInput(argv[2], argv[3], std::cout);
+    else
+      capture::ReplayWeightedCostInput(argv[2], argv[3], std::cout);
     return 0;
   }
   if (mode == "stream-entropy-check" || mode == "stream-entropy-time") {

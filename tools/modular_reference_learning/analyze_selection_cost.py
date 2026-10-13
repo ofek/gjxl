@@ -11,7 +11,7 @@ from selection_cost_replay import analyze
 PIN = 'e8ff09762481785938d8e4e01333ed3917571161'
 
 
-def qualify(release, sanitizer, validation):
+def qualify(release, sanitizer, validation, native_test_count=3):
     results = [analyze(p) for p in (release, sanitizer)]
     full = {(name, policy) for name in
             ('photo-macan', 'photo-flower', 'alpha-flower', 'chessboard', 'splines')
@@ -51,14 +51,14 @@ def qualify(release, sanitizer, validation):
         root = validation / build
         if sha(bound(root / 'reference_learning')) != sha(study / 'reference_learning'):
             raise ValueError('Tested transform-cost binary differs from replay')
-        for log_name, count in (('native-ctest.log', 3), ('research-ctest.log', 10)):
+        for log_name, count in (('native-ctest.log', native_test_count), ('research-ctest.log', 10)):
             log = bound(root / log_name).read_text()
             if (len(re.findall(rf'\d+/{count} Test\s+#\d+:.*Passed', log)) != count or
                     not re.search(rf'^100% tests passed(?:, 0 tests failed)? out of {count}$', log, re.M)):
                 raise ValueError('Incomplete transform-cost checks')
         native_log = bound(root / 'native-LastTest.log').read_text()
         if ('Modular transform-cost allocation and validation contracts passed' not in native_log or
-                native_log.count('Test Passed.') != 3):
+                native_log.count('Test Passed.') != native_test_count):
             raise ValueError('Missing transform-cost allocation/validation controls')
         counts = re.findall(r'^Transform-cost reference: (\d+) cases, (\d+) exact estimates, '
                             r'(\d+) exact RCT rankings$', native_log, re.M)
@@ -101,7 +101,7 @@ def qualify(release, sanitizer, validation):
                   'and strict-order winners on generated/captured planes. Captured planes already '
                   'have e9 transforms; these are additional hypothetical RCTs, not original policy decisions.'),
         'qualification': {
-            'native_ctest_per_build': 3, 'research_ctest_per_build': 10,
+            'native_ctest_per_build': native_test_count, 'research_ctest_per_build': 10,
             'generated_cases_per_backend': cases, 'exact_estimates_per_backend': estimates,
             'exact_rct_rankings_per_backend': rankings,
             'backends': ['NEON', 'portable four-lane arithmetic'], 'builds': ['Release', 'ASan/UBSan'],

@@ -4,12 +4,15 @@
 #include "codec/modular/transform/rct.h"
 #include "lib/jxl/enc_modular_simd.h"
 #include "lib/jxl/memory_manager_internal.h"
+#include "lib/jxl/modular/encoding/context_predict.h"
 #include "lib/jxl/modular/transform/enc_rct.h"
 #include "lib/jxl/modular/transform/transform.h"
+#include "modular_wp_cost_reference.h"
 #include <algorithm>
 #include <array>
 #include <bit>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 #include <vector>
 
@@ -20,6 +23,7 @@ using namespace gjxl::resource_budget_internal;
 constexpr std::array<uint8_t, 19> kRcts{0, 6,  5,  10, 26, 40, 12, 19, 8, 4,
                                         9, 15, 16, 17, 32, 33, 2,  1,  3};
 size_t cases = 0, estimates = 0, rankings = 0;
+size_t wp_estimates = 0, wp_rankings = 0, wp_overflows = 0, wp_wrapped = 0, wp_finite_wrapped = 0;
 void Check(bool ok, const char *message) {
   if (!ok)
     throw std::runtime_error(message);
@@ -53,6 +57,91 @@ float Compare(std::span<const ModularChannelView> views, const jxl::Image &refer
   }
   ++estimates;
   return expected;
+}
+size_t CompareHistory(const ModularChannelView &view, const jxl::weighted::Header &header,
+                      size_t mode) {
+  const auto [w, h] = view.descriptor.extent;
+  WeightedPredictor<ResourceClass::kPreparation> native(w, kSelectionWeightedPresets[mode]);
+  jxl::weighted::State reference(header, w, h);
+  jxl::Properties property(1);
+  size_t wrapped = 0;
+  for (size_t y = 0; y < h; ++y)
+    for (size_t x = 0; x < w; ++x) {
+      const int64_t left = x ? view.Row(y)[x - 1] : y ? view.Row(y - 1)[0] : 0;
+      const int64_t north = y ? view.Row(y - 1)[x] : left;
+      const int64_t northwest = x && y ? view.Row(y - 1)[x - 1] : left;
+      const int64_t northeast = y && x + 1 < w ? view.Row(y - 1)[x + 1] : north;
+      const int64_t northnorth = y > 1 ? view.Row(y - 2)[x] : north;
+      const auto actual = native.Predict(x, y, north, left, northeast, northwest, northnorth);
+      const auto expected = reference.Predict<true>(x, y, w, north, left, northeast, northwest,
+                                                    northnorth, &property, 0);
+      Check(actual.first == expected && actual.second == property[0],
+            "Wrapped WP prediction/property differs");
+      // Checked updates remain supported for coding/training. Where they reject,
+      // use the explicit reference narrowing and compare the following pixels.
+      if (!native.Update(view.Row(y)[x], x, y)) {
+        native.UpdateWrapping(view.Row(y)[x], x, y);
+        ++wrapped;
+      }
+      reference.UpdateErrors(view.Row(y)[x], x, y, w);
+    }
+  return wrapped;
+}
+void CompareWeighted(std::span<const ModularChannelView> views, const jxl::Image &reference) {
+  std::array<float, 5> actual{}, expected{};
+  for (size_t mode = 0; mode < 5; ++mode) {
+    jxl::weighted::Header header;
+    jxl::weighted::PredictorMode(mode, &header);
+    const auto &preset = kSelectionWeightedPresets[mode];
+    Check(std::ranges::equal(preset.coefficients,
+                             std::array{header.p1C, header.p2C, header.p3Ca, header.p3Cb,
+                                        header.p3Cc, header.p3Cd, header.p3Ce}) &&
+              std::ranges::equal(preset.weights, header.w),
+          "Native WP preset differs");
+    size_t wrapped = 0;
+    // Cost comparisons cover the larger images; direct state comparisons also
+    // exercise every pixel of all small full-depth/edge fixtures.
+    if (reference.channel[0].w * reference.channel[0].h < 1024)
+      for (const auto &view : views)
+        wrapped += CompareHistory(view, header, mode);
+    wp_wrapped += wrapped;
+    HostStorageBound bound;
+    ArmNextManagedHostAllocationFailureForTest();
+    const auto planned = ComputeModularWeightedCostStorageBound(views, mode, &bound);
+    const bool pending = ManagedHostAllocationFailurePendingForTest();
+    DisarmManagedHostAllocationFailureForTest();
+    Check(planned.ok() && pending, "WP cost planner failed or allocated");
+    ResourceBudget budget(bound.peak_bytes);
+    ResourceReservation reservation;
+    Ok(budget.Reserve(bound.peak_bytes, &reservation));
+    ModularWeightedCost cost;
+    {
+      ResourceContextScope scope({&reservation, ResourceClass::kPreparation});
+      Ok(EstimateModularWeightedCost(views, mode, &cost));
+    }
+    Check(budget.snapshot().peak_backing_bytes <= bound.peak_bytes &&
+              budget.snapshot().total.backing_count == 0 &&
+              budget.snapshot().total.pending_count == 0,
+          "WP cost exceeded its bound or retained history");
+    actual[mode] = cost.bits;
+    expected[mode] = jxl::gjxl_cost_reference::EstimateWPCost(reference, mode);
+    if (std::bit_cast<uint32_t>(actual[mode]) != std::bit_cast<uint32_t>(expected[mode])) {
+      std::cerr << "WP mode " << mode << " native " << actual[mode] << " reference "
+                << expected[mode] << '\n';
+      throw std::runtime_error("Pinned weighted cost differs");
+    }
+    Check(cost.residual_overflow == (expected[mode] == std::numeric_limits<float>::max()),
+          "WP residual-overflow rejection differs");
+    wp_overflows += cost.residual_overflow;
+    wp_finite_wrapped += wrapped && !cost.residual_overflow;
+    ++wp_estimates;
+  }
+  std::array<size_t, 5> a{0, 1, 2, 3, 4}, b = a;
+  std::stable_sort(a.begin(), a.end(), [&](size_t x, size_t y) { return actual[x] < actual[y]; });
+  std::stable_sort(b.begin(), b.end(),
+                   [&](size_t x, size_t y) { return expected[x] < expected[y]; });
+  Check(a == b, "WP ranking/tie order differs");
+  ++wp_rankings;
 }
 void Case(size_t w, size_t h, size_t channels, unsigned pattern, bool rank) {
   JxlMemoryManager memory;
@@ -109,6 +198,7 @@ void Case(size_t w, size_t h, size_t channels, unsigned pattern, bool rank) {
       }
   }
   Compare(views, reference);
+  CompareWeighted(views, reference);
   if (rank) {
     std::array<float, 19> native_costs{}, reference_costs{};
     for (size_t i = 0; i < kRcts.size(); ++i) {
@@ -165,6 +255,10 @@ int main() try {
     Case(1025, 769, 4, pattern, true);
   std::cout << "Transform-cost reference: " << cases << " cases, " << estimates
             << " exact estimates, " << rankings << " exact RCT rankings\n";
+  Check(wp_overflows && wp_wrapped && wp_finite_wrapped, "WP overflow controls were not exercised");
+  std::cout << "Weighted-cost reference: " << wp_estimates << " exact estimates, " << wp_rankings
+            << " exact rankings, " << wp_overflows << " rejected candidates, " << wp_wrapped
+            << " wrapped history updates, " << wp_finite_wrapped << " finite wrapped candidates\n";
 } catch (const std::exception &e) {
   std::cerr << e.what() << '\n';
   return 1;

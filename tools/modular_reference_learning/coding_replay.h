@@ -22,4 +22,6 @@ void ReplayEntropyInput(const std::filesystem::path &source,
 // eligible RCTs. No tokenization, fitting, output encoding or timing claim.
 void ReplaySelectionCostInput(const std::filesystem::path &source,
                               const std::filesystem::path &description, std::ostream &out);
+void ReplayWeightedCostInput(const std::filesystem::path &source,
+                             const std::filesystem::path &description, std::ostream &out);
 } // namespace reference_learning

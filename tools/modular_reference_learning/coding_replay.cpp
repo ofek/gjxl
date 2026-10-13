@@ -185,7 +185,8 @@ void CheckTokens(const Stream &stream, const native::DecisionTree &tree,
 namespace {
 void ReplayInput(const std::filesystem::path &source, const std::filesystem::path &description,
                  const std::filesystem::path &output, const std::string &variants,
-                 std::ostream &out, bool measure = false, bool selection_cost = false) {
+                 std::ostream &out, bool measure = false, bool selection_cost = false,
+                 bool weighted_cost = false) {
   static_assert(std::endian::native == std::endian::little);
   gjxl::io::IntegerImage original;
   Ok(gjxl::io::ReadPnm(source, &original));
@@ -329,6 +330,10 @@ void ReplayInput(const std::filesystem::path &source, const std::filesystem::pat
     ReplaySelectionCosts(input, plan, profile.metadata.bits, out);
     return;
   }
+  if (weighted_cost) {
+    ReplayWeightedCosts(input, plan, profile.metadata.bits, out);
+    return;
+  }
   size_t token_count = 0;
   {
     native::PreparedModularStreamTokens tokens;
@@ -404,5 +409,9 @@ void ReplayEntropyInput(const std::filesystem::path &source,
 void ReplaySelectionCostInput(const std::filesystem::path &source,
                               const std::filesystem::path &description, std::ostream &out) {
   ReplayInput(source, description, {}, {}, out, false, true);
+}
+void ReplayWeightedCostInput(const std::filesystem::path &source,
+                             const std::filesystem::path &description, std::ostream &out) {
+  ReplayInput(source, description, {}, {}, out, false, false, true);
 }
 } // namespace reference_learning

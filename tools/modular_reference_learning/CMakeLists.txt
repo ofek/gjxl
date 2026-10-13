@@ -8,6 +8,8 @@ foreach(var GJXL_BUILD REFERENCE_SOURCE REFERENCE_BUILD GENERATED_SOURCE)
     message(FATAL_ERROR "Set ${var} to an absolute path")
   endif()
 endforeach()
+include("${GJXL_SOURCE}/cmake/ModularSelectionOracle.cmake")
+gjxl_generate_wp_cost_oracle("${REFERENCE_SOURCE}" "${CMAKE_CURRENT_BINARY_DIR}/modular_wp_cost_reference.cpp")
 # Native fitting uses ordinary production compiler settings. Reference-specific
 # vectorization/RTTI flags below apply only to the adapter/reference target.
 add_library(native_histogram_fit OBJECT
@@ -19,6 +21,7 @@ add_executable(reference_learning runner.cpp reference_capture.cpp native_fit.cp
   $<TARGET_OBJECTS:native_histogram_fit>
   ${GJXL_SOURCE}/src/io/pnm.cpp
   ${GENERATED_SOURCE}/reference_codec.cpp
+  ${CMAKE_CURRENT_BINARY_DIR}/modular_wp_cost_reference.cpp
   ${GENERATED_SOURCE}/lib/jxl/modular/encoding/enc_ma.cc
   ${GENERATED_SOURCE}/lib/jxl/modular/encoding/enc_encoding.cc)
 target_include_directories(reference_learning PRIVATE

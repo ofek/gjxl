@@ -7,4 +7,7 @@ namespace reference_learning {
 void ReplaySelectionCosts(const gjxl::modular_internal::PreparedModularStreamsView &input,
                           const gjxl::modular_internal::ModularStreamPlan &plan, size_t bit_depth,
                           std::ostream &out);
+void ReplayWeightedCosts(const gjxl::modular_internal::PreparedModularStreamsView &input,
+                         const gjxl::modular_internal::ModularStreamPlan &plan, size_t bit_depth,
+                         std::ostream &out);
 } // namespace reference_learning

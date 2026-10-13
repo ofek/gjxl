@@ -114,6 +114,36 @@ class CodingReplayTest(unittest.TestCase):
             with self.subTest(change=change), self.assertRaises(ValueError):
                 validate_cost(self.root, source, bad)
 
+    def test_weighted_cost_projection(self):
+        from selection_cost_replay import validate_weighted_result
+        self.source.write_bytes(b'P5\n3 3\n255\n' + bytes(9))
+        (self.root / 'streams/learning-0.i32le').write_bytes(bytes(36))
+        self.save()
+        path = self.root / 'cost.txt'; path.write_text(project(self.root))
+        run = subprocess.run([str(BINARY), 'stream-wp-cost-check', str(self.source), str(path)],
+                             capture_output=True, text=True)
+        self.assertEqual(run.returncode, 0, run.stderr)
+        result = json.loads(run.stdout); source = {'width': 3, 'height': 3}
+        summary = validate_weighted_result(self.root, source, result)
+        self.assertEqual((summary['exact_estimates'], summary['exact_wp_rankings'], summary['empty_wp_ties']),
+                         (15, 1, 2))
+        for key, value in [('costs_exact', False), ('managed_storage_qualified', False), ('timing_qualified', True)]:
+            with self.assertRaises(ValueError): validate_weighted_result(self.root, source, {**result, key: value})
+        for key, value in [('native_bits', 9), ('reference_bits', 9), ('histogram_bits', 9),
+                           ('pixels', 99), ('residual_overflow', True), ('storage_bound_bytes', 0),
+                           ('managed_peak_bytes', 201), ('retained_bytes', 1)]:
+            bad = copy.deepcopy(result); bad['streams'][0]['candidates'][0][key] = value
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                validate_weighted_result(self.root, source, bad)
+        for change in ('missing', 'reordered', 'winner', 'scope'):
+            bad = copy.deepcopy(result); row = bad['streams'][0]
+            if change == 'missing': row['candidates'].pop()
+            if change == 'reordered': row['candidates'].reverse()
+            if change == 'winner': row['selected_mode'] = 1
+            if change == 'scope': bad['streams'].pop()
+            with self.subTest(change=change), self.assertRaises(ValueError):
+                validate_weighted_result(self.root, source, bad)
+
     def test_projection_rejects_semantic_mismatch(self):
         good = copy.deepcopy(self.coding)
         for key, value in [('schema', 2), ('width', 4), ('stream_id', 1), ('local_tree', False),
