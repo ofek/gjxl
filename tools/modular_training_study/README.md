@@ -158,9 +158,10 @@ candidate count, resource peaks, top-level phases, detailed training attribution
 and entropy diagnostics.
 
 `training.stages` contains disjoint nested intervals inside `stages.training`;
-do not add both levels into an end-to-end total. Sample gathering includes the
-complete weighted-predictor scan, quota preparation, and retained training
-samples. The split-scanning interval includes histogram updates and candidate
+do not add both levels into an end-to-end total. Sample gathering includes quota
+preparation and retained training samples. It also includes the complete weighted
+predictor scan when completed features are not shared with learning. The
+split-scanning interval includes histogram updates and candidate
 threshold scoring. Tree control excludes the separately attributed preparation,
 histogram, sorting, and scanning intervals. Entropy diagnostics retain their
 existing nesting: prefix value aggregation is inside prefix configuration search.
@@ -186,13 +187,55 @@ order are identical to the CPU control. `--metal --no-profile` is supported too;
 actual `gpu_submissions` and `gpu_allocations` remain recorded with profiling off.
 
 The JSON route is `hybrid-complete-search`. The `adaptive_gpu` object contains
-feature preparation/reuse/eviction counts and GPU/fallback candidate counts. Its
-`feature_seconds` and `token_seconds` are nested subsets of `stages.tokens`, not
-additional phases or device-only timestamps. The older `gpu_input_tokens` stage
+feature preparation/reuse/eviction counts and GPU/fallback candidate counts.
+`feature_seconds` spans both learning and token consumers; its
+`learning_feature_seconds` subset is inside `stages.training`, and the remainder
+plus `token_seconds` is inside `stages.tokens`. These are not additional phases
+or device-only timestamps. The older `gpu_input_tokens` stage
 belongs to the separate prescribed unpack/RCT/token route and stays zero here.
 The CPU-only build rejects `--metal` explicitly. Compare complete bytes and the
 entire winning policy, including weighted parameters, before interpreting paired
 CPU/hybrid timings.
+
+Every Metal search route lets learning borrow the same completed weighted
+prediction map as token generation by default. Append `--no-shared-features` for
+the unshared comparison control; `--shared-features` remains an explicit enable
+switch. Sharing does not change the learner, candidates or entropy policy.
+The cache retains one transformed configuration per encoder call. See
+[`gpu-modular-shared-features.md`](../../docs/gpu-modular-shared-features.md) for its
+ownership contract, validation and paired measurements.
+
+With sharing enabled, `feature_seconds` includes preparation requested by either
+consumer. `learning_feature_seconds` is the subset within `stages.training`;
+subtract it from `feature_seconds` before combining the remainder with
+`token_seconds` under `stages.tokens`. It is separate from the nested training
+stages, including `sample_gathering`. `feature_preparations + feature_reuses`
+equals GPU token requests plus `learning_feature_uses`. The learner reports full
+population counts in `weighted_prediction_samples` and `reused_prediction_samples`;
+their sum is `population`. In the search route every prepared map is weighted,
+so `adaptive_gpu.feature_samples + training.weighted_prediction_samples` counts
+the weighted predictor evaluations actually performed by both producers.
+
+The older frozen-study tools retain their original route assumptions; use them
+with their recorded binaries and revisions. Use `shared_features.py` for new
+off/on paired captures:
+
+```sh
+python3 tools/modular_training_study/shared_features.py capture build/shared-features-pilot \
+  --binary build/release/gjxl_modular_search_profile \
+  --inputs-manifest /path/to/entropy-pipeline-qualified/manifest.json
+python3 tools/modular_training_study/shared_features.py audit build/shared-features-pilot \
+  --output build/shared-features-results.json
+```
+
+This runs three small image pairs and two pairs per original 12 MP image, using
+one frozen binary with explicit `--no-shared-features` and `--shared-features`
+arms. New manifests use schema 2; auditing still accepts the original schema 1
+pilot, whose frozen binary defaulted to unshared features. It retains the exact
+source patch relative to HEAD, build configuration, input and output hashes,
+complete candidate ledgers, and power/thermal/process observations. The audit
+checks byte identity, every candidate decision/cost, training work, eliminated
+prediction evaluations, timing nesting and unchanged admission bounds.
 
 The frozen one-pair pilot and validation command are documented in
 [`gpu-adaptive-modular-hybrid.md`](../../docs/gpu-adaptive-modular-hybrid.md).
