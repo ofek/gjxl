@@ -49,6 +49,7 @@ struct PreparedModularEntropyOptions {
   // this default value. The optimizer and storage planner share this limit.
   size_t maximum_ans_clusters = kDefaultDirectAnsClusters;
 };
+[[nodiscard]] Status ValidatePreparedModularEntropyOptions(const PreparedModularEntropyOptions &options);
 // Allocation-free validation/planning. Borrowed samples, views, trees, prior
 // outputs and their lifetimes remain the caller's responsibility. Managed
 // bounds cover fresh tokenization, serial modeling/emission, assembly and

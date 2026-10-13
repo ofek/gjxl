@@ -40,6 +40,16 @@ target_link_libraries(gjxl_modular_reference PUBLIC
   "${GJXL_MODULAR_ORACLE_BUILD}/third_party/brotli/${modular_oracle_prefix}brotlienc${modular_oracle_link}"
   "${GJXL_MODULAR_ORACLE_BUILD}/third_party/brotli/${modular_oracle_prefix}brotlidec${modular_oracle_link}"
   "${GJXL_MODULAR_ORACLE_BUILD}/third_party/brotli/${modular_oracle_prefix}brotlicommon${modular_oracle_link}")
+add_executable(gjxl_modular_reference_workflow_check
+  tools/modular_reference_learning/reference_workflow_check.cpp src/io/pnm.cpp)
+target_include_directories(gjxl_modular_reference_workflow_check PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/tests")
+target_link_libraries(gjxl_modular_reference_workflow_check PRIVATE gjxl_codestream gjxl_modular_reference)
+target_link_libraries(gjxl_modular_reference_workflow_test PRIVATE gjxl_modular_reference)
+target_compile_definitions(gjxl_modular_reference_workflow_test PRIVATE GJXL_REFERENCE_WORKFLOW_ORACLE=1)
+if(WIN32)
+  set_tests_properties(modular_reference_workflow PROPERTIES
+    ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:${GJXL_MODULAR_ORACLE_BUILD}/tools")
+endif()
 target_link_libraries(gjxl_ans_selection_test PRIVATE gjxl_modular_reference)
 target_compile_definitions(gjxl_ans_selection_test PRIVATE GJXL_ANS_SELECTION_REFERENCE=1)
 target_link_libraries(gjxl_modular_training_budget_test PRIVATE gjxl_modular_reference)

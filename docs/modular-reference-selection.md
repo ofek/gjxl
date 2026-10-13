@@ -136,10 +136,10 @@ The first incomplete freeze is preserved separately; the second includes the
 exported compiler commands. Exporting that metadata changed no tested binary.
 The pre-commit source snapshot is authoritative.
 
-Next connect this selector to the qualified global/local stream layout and
-native preparation/fitter, counting one fit per selected scope. Compare actual
-decisions from original inputs with stock e9, then apply the exhaustive
-new-learner, held-out rate, whole-stage timing and resource gates in the
-[search plan](modular-reference-search-policy.md). Automatic streaming scope,
-the high-depth LZ77 exception and default promotion remain open. This milestone
-does not establish whole-encoder rate or performance parity.
+The subsequent [native workflow integration](modular-reference-workflow.md)
+connects this selector to automatic/buffered scope, native preparation/fitting,
+and complete coding. It qualifies decisions from original inputs and reports
+16-input Best/all rate controls. The exhaustive new-learner, held-out,
+whole-stage timing and promotion gates in the
+[search plan](modular-reference-search-policy.md) remain open. Patch-frame
+support and the high-depth LZ77 exception remain explicit limitations.

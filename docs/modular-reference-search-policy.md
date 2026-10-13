@@ -101,9 +101,12 @@ speed effect.
 
 The established whole-image path emits global-tree stream headers. The new
 private prepared-stream path also supports local trees/models and ordered
-per-stream transform/WP headers, qualified against actual captures. Automatic
-policy selection has not been connected. Splitting a global fit into smaller
-fits and merging the trees would not reproduce local tree/entropy coding.
+per-stream transform/WP headers, qualified against actual captures. The
+subsequent [private workflow](modular-reference-workflow.md) connects automatic
+policy selection and qualifies original-input decisions, learning scopes, and
+raw trees. The public default still uses its established path. Splitting a
+global fit into smaller fits and merging the trees would not reproduce local
+tree/entropy coding.
 
 ## Next controls and implementation order
 

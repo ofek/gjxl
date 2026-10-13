@@ -483,6 +483,9 @@ Status MakeModel(std::span<const EntropyTokenStreamView> streams, size_t context
 }
 } // namespace
 
+Status ValidatePreparedModularEntropyOptions(const PreparedModularEntropyOptions &options) {
+  return ValidateOptions(options);
+}
 Status ComputePreparedModularStreamsStoragePlan(const PreparedModularStreamsView &input,
                                                 EntropyCodingMode mode,
                                                 ModularWorkflowStoragePlan *out) {
