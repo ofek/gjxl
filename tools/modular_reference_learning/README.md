@@ -74,6 +74,21 @@ The paired mode alternates execution order after one warmup each and measures
 native storage separately during its warmup. See the
 [native fitting contract](../../docs/modular-native-histogram-learning.md).
 
+`validation-replay FIXTURE REPEATS` separately times repeated admission checks
+on already converted samples. The validation-scan follow-up retains full
+validation inside ordinary native fitting timers. Its combined report can be
+recreated with:
+
+```sh
+python3 tools/modular_reference_learning/analyze_validation_scan.py \
+  --paired build/reference-learning/native-validation-scan-paired \
+  --verify build/reference-learning/native-validation-scan-verify \
+  --scan build/reference-learning/validation-scan \
+  --validation build/reference-learning/validation-scan-validation \
+  --baseline docs/modular-native-histogram-learning-results.json \
+  --output docs/modular-histogram-validation-scan-results.json
+```
+
 For scalar arithmetic qualification, configure a separate build with
 `-DCMAKE_CXX_FLAGS=-DGJXL_HISTOGRAM_SCALAR=1`. This validates the scalar fallback
 against the pinned four-lane reference; it does not qualify another reference

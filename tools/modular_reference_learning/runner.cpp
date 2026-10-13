@@ -272,6 +272,30 @@ int main(int argc, char **argv) try {
   std::cout << std::setprecision(17);
   Require(argc >= 2, "Usage: reference_learning reference|bridge|replay ...");
   const std::string mode = argv[1];
+  if (mode == "validation-replay") {
+    Require(argc == 4, "validation-replay FIXTURE REPEATS");
+    const size_t repeats = std::stoul(argv[3]);
+    Require(repeats && repeats <= 10000, "Invalid validation repetitions");
+    const auto fixture = capture::ReadFixture(argv[2]);
+    const auto samples = capture::NativeSamples(fixture.samples);
+    std::vector<native::HistogramMultiplierRange> multipliers;
+    for (const auto &m : fixture.multipliers)
+      multipliers.push_back({m.range, m.multiplier});
+    native::HistogramTreeLearningOptions options;
+    options.split_threshold = fixture.threshold;
+    options.fast_decode_multiplier = fixture.fast_decode_multiplier;
+    options.static_range = fixture.range;
+    options.multipliers = multipliers;
+    options.maximum_samples = native::kHistogramMaximumSamples;
+    Ok(native::ValidateHistogramTrainingSamples(samples, options));
+    const capture::Timer timer;
+    for (size_t i = 0; i < repeats; ++i)
+      Ok(native::ValidateHistogramTrainingSamples(samples, options));
+    const auto elapsed = timer.Elapsed();
+    std::cout << "{\"repeats\":" << repeats << ",\"cpu\":" << elapsed.cpu
+              << ",\"wall\":" << elapsed.wall << ",\"validated\":true}\n";
+    return 0;
+  }
   if (mode == "preparation-self-test") {
     Require(argc == 2, "preparation-self-test takes no arguments");
     const auto count = capture::RunPreparationDifferentialTests();

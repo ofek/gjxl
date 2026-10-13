@@ -338,8 +338,14 @@ now match all 32 Best/all-predictor bridge controls, including every prepared
 sample field, raw tree, complete encoded file and independent decoded image.
 See [native sample preparation](modular-native-sample-preparation.md) for the
 managed-storage qualification and explicit rejection of a reproduced pinned
-reference weight-overflow case. Paired complete-learning timing, the small-fit
-outliers, search-policy qualification and default promotion remain ahead.
+reference weight-overflow case.
+
+**Small-fit follow-up:** vectorizable validation reductions retain all checks
+and resolve the observed small-fit overhead. The repeated study passes the
+1.5× CPU target on all 64 stock-reference spline fits, including all 19 prior
+outliers; all 233 trees still match. See
+[validation cost](modular-histogram-validation-cost.md). Paired complete-learning
+timing, search-policy qualification and default promotion remain ahead.
 
 ## Measurement limits and validation
 

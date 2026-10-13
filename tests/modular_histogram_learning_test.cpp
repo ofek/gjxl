@@ -134,6 +134,19 @@ void ValidationAndFailures() {
   rejects([](auto &s) { s.thresholds[0] = {0, 0}; });
   rejects([](auto &s) { s.thresholds[0] = {INT32_MAX}; });
   rejects([](auto &s) { s.residuals[0][0].extra_bits = 64; });
+  // Reductions must retain rejection across SIMD blocks and their tails.
+  rejects([](auto &s) { s.weights.back() = 0; });
+  rejects([](auto &s) { s.weights.back() = UINT16_MAX; });
+  rejects([](auto &s) { s.values[0].back() = UINT8_MAX; });
+  rejects([](auto &s) { s.residuals[0].back().extra_bits = 128; });
+  rejects([](auto &s) {
+    s.static_property_count = 1;
+    s.properties[0] = 0;
+    s.thresholds[0] = {0};
+    s.static_values[0].assign(s.weights.size(), 0);
+    s.static_values[0].back() = UINT32_MAX;
+    s.values[0].clear();
+  });
   HistogramTreeLearningOptions options;
   options.split_threshold = std::numeric_limits<float>::quiet_NaN();
   rejects([](auto &) {}, options);

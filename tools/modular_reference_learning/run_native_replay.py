@@ -50,10 +50,10 @@ def main():
     source = Path(__file__).resolve().parent
     repo = source.parents[1]
     sources = sorted(source.glob("*.cpp")) + sorted(source.glob("*.h")) + sorted(source.glob("*.py"))
-    sources += [source / "CMakeLists.txt", repo / "CMakeLists.txt", repo / "LICENSE",
-                repo / "src/codec/modular/histogram_tree_learning.h",
-                repo / "src/codec/modular/histogram_tree_learning.cpp",
-                repo / "tests/modular_histogram_learning_test.cpp"]
+    sources += [source / "CMakeLists.txt", repo / "CMakeLists.txt", repo / "LICENSE"]
+    sources += sorted((repo / "src/codec/modular").glob("histogram_*.h"))
+    sources += sorted((repo / "src/codec/modular").glob("histogram_*.cpp"))
+    sources += sorted((repo / "tests").glob("modular_histogram*_test.cpp"))
     artifacts = {str(binary): sha(binary), **corpus_artifacts}
     for path in sources:
         target = args.output / "source" / path.relative_to(repo)

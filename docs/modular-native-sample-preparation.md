@@ -129,8 +129,9 @@ It does not occur in the 32 corpus controls. No change to libjxl was made.
 
 ## Remaining work
 
-Measure preparation and complete learning in paired, warmed runs. Resolve the
-19 sub-millisecond fitting outliers already reported by the matched fitter
-study, then qualify a search policy that avoids repeated large fits. Held-out
-rate, correctness and resource qualification still precede default promotion
-and selection of a GPU implementation target.
+Measure preparation and complete learning in paired, warmed runs, then qualify
+a search policy that avoids repeated large fits. The
+[validation-scan follow-up](modular-histogram-validation-cost.md) addresses the
+19 previously reported small-fit outliers. Held-out rate, correctness and
+resource qualification still precede default promotion and selection of a GPU
+implementation target.

@@ -10,9 +10,10 @@ uses its existing learner.
 
 All **233** captured reference trees match exactly. On identical inputs, the
 native fitter uses **0.9477×** the reference's summed median CPU time in the
-paired study. The proposed per-fit 1.5× target is not fully passed: 19 very small
-single-leaf fits exceed it. These results qualify the fitting implementation
-with an explicit small-fit limitation; they are not an end-to-end speed result.
+initial paired study. That study had 19 small single-leaf outliers above the
+proposed 1.5× target. A [validation-scan follow-up](modular-histogram-validation-cost.md)
+now passes the target on all 64 affected-group fixtures, including those 19,
+and rechecks all 233 trees. Neither study is an end-to-end speed result.
 
 ## Contract and reference fidelity
 
@@ -124,7 +125,10 @@ ratio is **3.306×**. Their summed medians are **10.812 ms native / 4.358 ms
 reference**, an excess of **6.454 ms**. Do not hide this behind the aggregate or
 call the strict per-fit gate passed. The ledger does not isolate how much of
 that small-fit overhead is validation versus scratch setup; that attribution
-remains part of the preparation/fit boundary work before promotion.
+was left open by that initial study. The subsequent
+[validation-scan attribution and optimization](modular-histogram-validation-cost.md)
+resolves those observed outliers; the original measurements above are retained
+as their baseline.
 
 Every warmup remains within its computed managed-storage reservation. Fitting
 scratch plus result backing ranges from **766,124 to 779,488 bytes** in this

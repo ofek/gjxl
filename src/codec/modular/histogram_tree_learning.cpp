@@ -615,18 +615,26 @@ Status ValidateHistogramTrainingSamples(const HistogramTrainingSamples &s,
                                         HistogramTreeLearningOptions o) {
   if (auto status = ValidateShape(s, o); !status.ok())
     return status;
-  size_t total = 0;
+  // Reductions keep complete admission checks while allowing vectorization.
+  // Shape validation bounds row count by 2^24; uint16 weights therefore fit
+  // in this uint64 sum even for malformed populations.
+  uint64_t total = 0;
+  uint16_t minimum_weight = UINT16_MAX;
   for (auto count : s.weights) {
-    if (!count || count > o.maximum_samples - total)
-      return Status::InvalidArgument("Invalid histogram sample weights");
     total += count;
+    minimum_weight = std::min(minimum_weight, count);
   }
+  if (!minimum_weight || total > o.maximum_samples)
+    return Status::InvalidArgument("Invalid histogram sample weights");
   if (total != s.total_samples)
     return Status::InvalidArgument("Histogram sample count mismatch");
-  for (size_t pred = 0; pred < s.predictor_count; ++pred)
+  for (size_t pred = 0; pred < s.predictor_count; ++pred) {
+    uint8_t extra_bits = 0;
     for (auto token : s.residuals[pred])
-      if (token.extra_bits > 63)
-        return Status::InvalidArgument("Invalid histogram residual token");
+      extra_bits |= token.extra_bits;
+    if (extra_bits > 63)
+      return Status::InvalidArgument("Invalid histogram residual token");
+  }
   for (size_t p = 0; p < s.property_count; ++p) {
     const auto &cuts = s.thresholds[p];
     if (!std::is_sorted(cuts.begin(), cuts.end()) ||
@@ -635,13 +643,17 @@ Status ValidateHistogramTrainingSamples(const HistogramTrainingSamples &s,
                            (p < s.static_property_count && cuts.front() < 0))))
       return Status::InvalidArgument("Invalid histogram property cuts");
     if (p < s.static_property_count) {
+      uint32_t maximum_bin = 0;
       for (auto bin : s.static_values[p])
-        if (bin > cuts.size())
-          return Status::InvalidArgument("Invalid histogram static bin");
+        maximum_bin = std::max(maximum_bin, bin);
+      if (maximum_bin > cuts.size())
+        return Status::InvalidArgument("Invalid histogram static bin");
     } else {
+      uint8_t maximum_bin = 0;
       for (auto bin : s.values[p - s.static_property_count])
-        if (bin > cuts.size())
-          return Status::InvalidArgument("Invalid histogram property bin");
+        maximum_bin = std::max(maximum_bin, bin);
+      if (maximum_bin > cuts.size())
+        return Status::InvalidArgument("Invalid histogram property bin");
     }
   }
   return Status::Ok();
