@@ -14,8 +14,10 @@ corroborates its fit counts. The subsequent
 actual stream pixels/options and quantifies the global/local workflow tradeoff.
 It confirms that per-stream WP/RCT settings matter even with a global tree, and
 that larger palettes are required on the structured cases. The immediate native
-target is per-stream WP preparation followed by actual-stream replay and coding
-contracts; a blanket global-tree replacement is not justified.
+preparation gap is now closed by
+[per-stream WP preparation and actual-stream replay](modular-native-stream-preparation.md).
+The next target is the per-stream coding contract; a blanket global-tree
+replacement is not justified.
 
 ## Selection happens before expensive tree fitting
 
@@ -74,11 +76,11 @@ These observations establish a policy difference, not its isolated rate or
 speed effect.
 
 The native coding path currently emits global-tree stream headers. Its encoder
-already supports custom WP coefficients and transforms, but the new sample
-preparer is qualified only for the default WP header. Local-tree emission and
-per-stream preparation settings need explicit contracts if the controlled
-reference results justify porting them. Splitting a global fit into smaller
-fits and merging the trees would not reproduce local tree/entropy coding.
+already supports custom WP coefficients and transforms, and sample preparation
+now matches actual captured per-stream WP settings. Local-tree emission and
+ordered per-stream transform/WP policies still need explicit coding contracts.
+Splitting a global fit into smaller fits and merging the trees would not
+reproduce local tree/entropy coding.
 
 ## Next controls and implementation order
 

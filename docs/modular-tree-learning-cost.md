@@ -368,6 +368,13 @@ CPU; on splines it costs 2.96× learning CPU and increases bytes. See
 native work must carry per-stream WP/RCT/palette choices and support local scope,
 not simply combine every group into one global fit.
 
+**Actual-stream preparation update:** per-stream WP parameters now feed native
+preparation. The [replay qualification](modular-native-stream-preparation.md)
+matches all 199 captured e9 learning calls / 195 fits, including local palettes,
+empty events and true 16-bit RGBA. It also exposes and fixes implicit scalar
+entropy contraction; the normal Release executable is unchanged by that fix.
+Per-stream coding/selection, whole-stage qualification and promotion remain.
+
 ## Measurement limits and validation
 
 All measurements use Apple M4 Pro, Release AppleClang builds and the same

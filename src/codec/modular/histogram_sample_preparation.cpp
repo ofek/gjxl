@@ -121,6 +121,7 @@ Status Preflight(std::span<const HistogramTrainingImage> images,
     const auto &image = images[i];
     if (image.channels.size() > 65535 ||
         image.metadata_channels > image.channels.size() ||
+        !image.weighted.valid() ||
         (image.extent.empty() && !image.channels.empty()))
       return Status::InvalidArgument("Invalid histogram training image");
     plan.maximum_channels =
@@ -485,7 +486,7 @@ struct HistogramSampleBuilder {
         const auto threshold = SamplingThreshold(
             PixelFraction(size_t{w} * h, options.sampling_fraction));
         WeightedPredictor<resource_budget_internal::ResourceClass::kPreparation>
-            wp(w);
+            wp(w, image.weighted);
         for (size_t y = 0; y < h; ++y) {
           int64_t previous_gradient = 0;
           for (size_t x = 0; x < w; ++x) {

@@ -76,6 +76,10 @@ float FastLog2(float x) {
   return p / q + static_cast<float>(exponent);
 }
 float EstimateBits(const int32_t *counts, size_t symbols) {
+  // Match the reference's separate multiply and subtract. Implicit contraction
+  // changes rounding in close split/predictor decisions; explicit std::fma in
+  // FastLog2 remains intentional. Scope this to the scalar fallback.
+#pragma STDC FP_CONTRACT OFF
   int32_t total = 0;
   for (size_t i = 0; i < symbols; ++i)
     total += counts[i];

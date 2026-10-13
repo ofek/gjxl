@@ -13,6 +13,9 @@ struct HistogramTrainingImage {
   Extent2D extent;
   std::span<const ModularChannelView> channels;
   size_t metadata_channels = 0;
+  // Applies to this stream's channels; predictor state still resets for each
+  // channel. These must be the parameters used when tokenizing the same data.
+  WeightedPredictorParameters weighted;
 };
 struct HistogramSamplingOptions {
   float sampling_fraction = 0.5f * 1.3f;
@@ -27,8 +30,8 @@ struct HistogramSamplingOptions {
                                                          Predictor::kGradient};
   std::array<uint8_t, kPropertyCount> properties{0,  1, 15, 9, 10, 11, 12, 13,
                                                  14, 2, 3,  4, 5,  6,  7,  8};
-  // Reference default WP header only; previous-channel properties are outside
-  // this profile. Multiplier boxes are copied into the prepared result.
+  // Previous-channel properties are outside this profile. Multiplier boxes
+  // are copied into the prepared result.
   std::span<const HistogramMultiplierRange> multipliers;
 };
 struct HistogramPreparationStats {

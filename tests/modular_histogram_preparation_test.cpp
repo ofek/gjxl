@@ -123,6 +123,26 @@ void AdmissionAndPublication() {
                 .ok() &&
             bound == old_bound,
         "Invalid preparation storage planning changed output");
+  for (bool coefficient : {false, true}) {
+    auto &wp = image.images[0].weighted;
+    if (coefficient)
+      wp.coefficients[3] = 32;
+    else
+      wp.weights[2] = 16;
+    ArmNextManagedHostAllocationFailureForTest();
+    const auto planned = ComputeHistogramSamplePreparationStorageBound(
+        image.images, options, &bound);
+    const auto prepared =
+        PrepareHistogramSamples(image.images, &output, options);
+    Check(planned.code() == StatusCode::kInvalidArgument &&
+              prepared.code() == planned.code() && bound == old_bound &&
+              unchanged() && ManagedHostAllocationFailurePendingForTest(),
+          "Invalid stream WP allocated or changed published output");
+    DisarmManagedHostAllocationFailureForTest();
+    wp = {};
+  }
+  // Exercise failure publication with a valid nondefault stream header too.
+  image.images[0].weighted = {{8, 8, 4, 0, 3, 23, 2}, {13, 12, 12, 12}};
   size_t failures = 0;
   for (; failures < 100; ++failures) {
     ArmManagedHostAllocationFailureAfterForTest(failures);
@@ -141,47 +161,55 @@ void AdmissionAndPublication() {
 }
 void StorageAndPopulation() {
   Image image;
-  for (size_t bins : {2, 8, 32, 256}) {
-    HistogramSamplingOptions options;
-    options.maximum_property_values = bins;
-    HostStorageBound bound;
-    Ok(ComputeHistogramSamplePreparationStorageBound(image.images, options,
-                                                     &bound));
-    ResourceBudget budget(bound.peak_bytes);
-    ResourceReservation reservation;
-    Ok(budget.Reserve(bound.peak_bytes, &reservation));
-    size_t peak;
-    {
-      ResourceContextScope scope({&reservation, ResourceClass::kPreparation});
-      PreparedHistogramSamples prepared;
-      Ok(PrepareHistogramSamples(image.images, &prepared, options));
-      peak = budget.snapshot().peak_backing_bytes;
-      Check(peak <= bound.peak_bytes, "Preparation exceeded its storage bound");
-      Check(prepared.stats().scanned_pixels == image.pixels.size() &&
-                prepared.stats().population == 2 * image.pixels.size() &&
-                prepared.stats().selected_samples ==
-                    prepared.samples().total_samples &&
-                std::accumulate(prepared.samples().weights.begin(),
-                                prepared.samples().weights.end(),
-                                size_t{0}) == prepared.samples().total_samples,
-            "Preparation lost selected population");
+  for (bool custom_wp : {false, true}) {
+    image.images[0].weighted =
+        custom_wp ? WeightedPredictorParameters{{8, 8, 4, 0, 3, 23, 2},
+                                                {13, 12, 12, 12}}
+                  : WeightedPredictorParameters{};
+    for (size_t bins : {2, 8, 32, 256}) {
+      HistogramSamplingOptions options;
+      options.maximum_property_values = bins;
+      HostStorageBound bound;
+      Ok(ComputeHistogramSamplePreparationStorageBound(image.images, options,
+                                                       &bound));
+      ResourceBudget budget(bound.peak_bytes);
+      ResourceReservation reservation;
+      Ok(budget.Reserve(bound.peak_bytes, &reservation));
+      size_t peak;
+      {
+        ResourceContextScope scope({&reservation, ResourceClass::kPreparation});
+        PreparedHistogramSamples prepared;
+        Ok(PrepareHistogramSamples(image.images, &prepared, options));
+        peak = budget.snapshot().peak_backing_bytes;
+        Check(peak <= bound.peak_bytes,
+              "Preparation exceeded its storage bound");
+        Check(prepared.stats().scanned_pixels == image.pixels.size() &&
+                  prepared.stats().population == 2 * image.pixels.size() &&
+                  prepared.stats().selected_samples ==
+                      prepared.samples().total_samples &&
+                  std::accumulate(prepared.samples().weights.begin(),
+                                  prepared.samples().weights.end(),
+                                  size_t{0}) ==
+                      prepared.samples().total_samples,
+              "Preparation lost selected population");
+      }
+      Check(budget.snapshot().total.backing_count == 0,
+            "Preparation leaked managed storage");
+      ResourceBudget short_budget(peak - 1);
+      ResourceReservation short_reservation;
+      Ok(short_budget.Reserve(peak - 1, &short_reservation));
+      {
+        ResourceContextScope scope(
+            {&short_reservation, ResourceClass::kPreparation});
+        PreparedHistogramSamples prepared;
+        Check(PrepareHistogramSamples(image.images, &prepared, options)
+                      .resource_plan_exceeded() &&
+                  prepared.samples().weights.empty(),
+              "Preparation escaped its admitted storage");
+      }
+      Check(short_budget.snapshot().total.backing_count == 0,
+            "Failed preparation leaked managed storage");
     }
-    Check(budget.snapshot().total.backing_count == 0,
-          "Preparation leaked managed storage");
-    ResourceBudget short_budget(peak - 1);
-    ResourceReservation short_reservation;
-    Ok(short_budget.Reserve(peak - 1, &short_reservation));
-    {
-      ResourceContextScope scope(
-          {&short_reservation, ResourceClass::kPreparation});
-      PreparedHistogramSamples prepared;
-      Check(PrepareHistogramSamples(image.images, &prepared, options)
-                    .resource_plan_exceeded() &&
-                prepared.samples().weights.empty(),
-            "Preparation escaped its admitted storage");
-    }
-    Check(short_budget.snapshot().total.backing_count == 0,
-          "Failed preparation leaked managed storage");
   }
   // Tiny planes select every pixel, regardless of the requested fraction.
   std::array<int32_t, 3> pixels{0, -1, 65535};

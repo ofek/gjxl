@@ -5,6 +5,7 @@
 #include "paired_learning.h"
 #include "policy_trace.h"
 #include "reference_capture.h"
+#include "stream_replay.h"
 
 #include <algorithm>
 #include <filesystem>
@@ -274,6 +275,11 @@ int main(int argc, char **argv) try {
   std::cout << std::setprecision(17);
   Require(argc >= 2, "Usage: reference_learning reference|bridge|replay ...");
   const std::string mode = argv[1];
+  if (mode == "stream-prepare-check") {
+    Require(argc == 4, "stream-prepare-check DESCRIPTION PIXELS");
+    capture::ReplayLearningInput(argv[2], argv[3], std::cout);
+    return 0;
+  }
   if (mode == "validation-replay") {
     Require(argc == 4, "validation-replay FIXTURE REPEATS");
     const size_t repeats = std::stoul(argv[3]);

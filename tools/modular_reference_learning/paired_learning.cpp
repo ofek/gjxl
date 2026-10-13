@@ -35,9 +35,9 @@ void RunPairedLearning(std::span<const jxl::Image> images,
               repeats <= 20,
           "Invalid paired-learning control");
   // Borrow the reference planes so both paths see identical pixels and strides.
-  const auto borrowed = BorrowReferenceImages(images);
-  const auto native_options = NativeSamplingOptions(option);
   const std::vector<jxl::ModularOptions> options(images.size(), option);
+  const auto borrowed = BorrowReferenceImages(images, options);
+  const auto native_options = NativeSamplingOptions(option);
   gjxl::resource_budget_internal::HostStorageBound preparation_bound, fit_bound;
   Ok(native::ComputeHistogramSamplePreparationStorageBound(
       borrowed.images, native_options, &preparation_bound));

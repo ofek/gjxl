@@ -30,17 +30,27 @@ void Equal(const A &a, const B &b, const std::string &name) {
 } // namespace
 
 BorrowedTrainingImages
-BorrowReferenceImages(std::span<const jxl::Image> images) {
+BorrowReferenceImages(std::span<const jxl::Image> images,
+                      std::span<const jxl::ModularOptions> options) {
+  Require(images.size() == options.size(),
+          "Mismatched reference image/options");
   BorrowedTrainingImages result;
   result.channels.resize(images.size());
   result.images.resize(images.size());
   for (size_t i = 0; i < images.size(); ++i) {
     const auto &image = images[i];
+    bool included = image.w && image.h;
     for (size_t c = 0; c < image.channel.size(); ++c) {
       const auto &channel = image.channel[c];
-      const auto stride = static_cast<size_t>(channel.plane.PixelsPerRow());
-      const size_t size =
-          channel.w && channel.h ? (channel.h - 1) * stride + channel.w : 0;
+      if (c >= image.nb_meta_channels &&
+          (channel.w > options[i].max_chan_size ||
+           channel.h > options[i].max_chan_size))
+        included = false;
+      const auto stride =
+          included ? static_cast<size_t>(channel.plane.PixelsPerRow()) : 0;
+      const size_t size = included && channel.w && channel.h
+                              ? (channel.h - 1) * stride + channel.w
+                              : 0;
       native::ChannelDescriptor descriptor;
       descriptor.extent = {static_cast<uint32_t>(channel.w),
                            static_cast<uint32_t>(channel.h)};
@@ -56,13 +66,29 @@ BorrowReferenceImages(std::span<const jxl::Image> images) {
         {static_cast<uint32_t>(image.w), static_cast<uint32_t>(image.h)},
         result.channels[i],
         static_cast<size_t>(image.nb_meta_channels)};
+    jxl::weighted::Header wp;
+    if (jxl::PredictorHasWeighted(options[i].predictor)) {
+      Require(options[i].wp_mode >= 0 && options[i].wp_mode <= 4,
+              "Reference WP preset is outside the e9 profile");
+      jxl::weighted::PredictorMode(options[i].wp_mode, &wp);
+    }
+    const std::array coefficients{wp.p1C,  wp.p2C,  wp.p3Ca, wp.p3Cb,
+                                  wp.p3Cc, wp.p3Cd, wp.p3Ce};
+    for (size_t j = 0; j < coefficients.size(); ++j) {
+      Require(coefficients[j] >= 0 && coefficients[j] <= 31,
+              "Invalid reference WP coefficient");
+      result.images[i].weighted.coefficients[j] =
+          static_cast<uint8_t>(coefficients[j]);
+    }
+    for (size_t j = 0; j < 4; ++j) {
+      Require(wp.w[j] <= 15, "Invalid reference WP weight");
+      result.images[i].weighted.weights[j] = static_cast<uint8_t>(wp.w[j]);
+    }
   }
   return result;
 }
 native::HistogramSamplingOptions
 NativeSamplingOptions(const jxl::ModularOptions &options) {
-  Require(options.wp_mode == 0,
-          "Custom WP header is outside native preparation profile");
   jxl::TreeSamples shape;
   Require(bool(shape.SetPredictor(options.predictor, options.wp_tree_mode)) &&
               bool(shape.SetProperties(options.splitting_heuristics_properties,
@@ -155,17 +181,17 @@ CheckPreparedTree(native::PreparedHistogramSamples &prepared,
 
 namespace {
 void CheckPreparationCase(
-    const std::vector<jxl::Image> &images, const jxl::ModularOptions &option,
-    size_t start,
+    const std::vector<jxl::Image> &images,
+    std::span<const jxl::ModularOptions> options, size_t start,
     const std::vector<jxl::ModularMultiplierInfo> &multipliers = {}) {
-  std::vector<jxl::ModularOptions> options(images.size(), option);
-  auto native_options = NativeSamplingOptions(option);
+  auto native_options = NativeSamplingOptions(options[start]);
   native_options.first_group = start;
   std::vector<native::HistogramMultiplierRange> native_multipliers;
   for (const auto &m : multipliers)
     native_multipliers.push_back({m.range, m.multiplier});
   native_options.multipliers = native_multipliers;
-  const auto borrowed = BorrowReferenceImages(std::span(images).subspan(start));
+  const auto borrowed = BorrowReferenceImages(std::span(images).subspan(start),
+                                              options.subspan(start));
   using namespace gjxl::resource_budget_internal;
   HostStorageBound bound;
   Ok(native::ComputeHistogramSamplePreparationStorageBound(
@@ -200,6 +226,13 @@ void CheckPreparationCase(
             "Empty reference preparation unexpectedly fitted");
   }
   CheckPreparedTree(prepared, expected);
+}
+void CheckPreparationCase(
+    const std::vector<jxl::Image> &images, const jxl::ModularOptions &option,
+    size_t start,
+    const std::vector<jxl::ModularMultiplierInfo> &multipliers = {}) {
+  const std::vector<jxl::ModularOptions> options(images.size(), option);
+  CheckPreparationCase(images, options, start, multipliers);
 }
 } // namespace
 
@@ -308,7 +341,9 @@ size_t RunPreparationDifferentialTests() {
   {
     auto overflow_option = option;
     overflow_option.predictor = jxl::Predictor::Zero;
-    const auto borrowed = BorrowReferenceImages(special);
+    const std::vector<jxl::ModularOptions> overflow_options(special.size(),
+                                                            overflow_option);
+    const auto borrowed = BorrowReferenceImages(special, overflow_options);
     native::PreparedHistogramSamples prepared;
     const auto status = native::PrepareHistogramSamples(
         borrowed.images, &prepared, NativeSamplingOptions(overflow_option));
@@ -365,6 +400,42 @@ size_t RunPreparationDifferentialTests() {
   special[520].channel[0].Row(0)[100] = -2;
   add_channel(special[522], 513, 5, -1);
   CheckPreparationCase(special, option, 520);
-  return cases + 5;
+
+  // Five presets plus a mixed-preset batch, with Best, all predictors and a
+  // nonweighted predictor. In the last case the reference ignores wp_mode,
+  // including for property 15, so the effective header must remain default.
+  special.clear();
+  for (size_t i = 0; i < 8; ++i) {
+    special.emplace_back(&manager);
+    if (i < 2 || i == 5)
+      continue;
+    add_channel(special[i], 862, 3, 0);
+    special[i].nb_meta_channels = 1;
+    for (size_t c = 0; c < 3; ++c)
+      add_channel(special[i], 43 + i, 35 + c, 0);
+    for (size_t c = 0; c < special[i].channel.size(); ++c) {
+      auto &ch = special[i].channel[c];
+      for (size_t y = 0; y < ch.h; ++y)
+        for (size_t x = 0; x < ch.w; ++x)
+          ch.Row(y)[x] = static_cast<int32_t>((x * 1973 + y * 503 + x * y * 31 +
+                                               c * 997 + i * 7) %
+                                              131071) -
+                         65535;
+    }
+  }
+  option.max_chan_size = 128;
+  option.nb_repeats = 0.65f;
+  option.max_property_values = 256;
+  for (auto predictor : {jxl::Predictor::Best, jxl::Predictor::Variable,
+                         jxl::Predictor::Gradient}) {
+    option.predictor = predictor;
+    for (int mode = 0; mode < 6; ++mode) {
+      std::vector<jxl::ModularOptions> options(special.size(), option);
+      for (size_t i = 0; i < options.size(); ++i)
+        options[i].wp_mode = mode == 5 ? i % 5 : mode;
+      CheckPreparationCase(special, options, 2);
+    }
+  }
+  return cases + 5 + 18;
 }
 } // namespace reference_learning

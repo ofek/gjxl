@@ -18,9 +18,10 @@ learning-stage speedup or qualify automatic candidate selection.
 `histogram_sample_preparation.h/.cpp` borrows channel views for a synchronous
 call. An image normally corresponds to one canonical Modular stream; empty
 image entries preserve group-ID holes, and channel numbering resets for each
-image. Metadata is a leading channel prefix. The supported profile has the
-default weighted-predictor header and properties 0–15; previous-channel
-properties and custom WP headers are outside this implementation.
+image. Metadata is a leading channel prefix. The original qualification below
+uses the default weighted-predictor header and properties 0–15. A subsequent
+[per-stream WP extension](modular-native-stream-preparation.md) now qualifies
+actual e9 stream preparation; previous-channel properties remain unsupported.
 
 The implementation preserves pinned libjxl
 `e8ff09762481785938d8e4e01333ed3917571161` behavior:

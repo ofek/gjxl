@@ -68,12 +68,46 @@ python3 tools/modular_reference_learning/analyze_native_preparation.py \
 
 Use a new output directory. `--inputs` restricts a diagnostic run; omit
 `--validation` when the archived final build validation is unavailable.
-`preparation-self-test` runs 101 generated reference/native comparisons plus
+`preparation-self-test` runs 119 generated reference/native comparisons plus
 the explicit pinned-reference weight-overflow rejection regression.
 `native_preparation_test` checks the native admission, atomic publication and
 managed allocation/storage contract. Both and the ledger tests run under CTest.
 See the [preparation report](../../docs/modular-native-sample-preparation.md) for
 profile limits and timing caveats. Defaults and candidate selection are unchanged.
+
+## Actual e9 stream preparation replay
+
+`stream-prepare-check DESCRIPTION PIXELS` reconstructs one captured learning
+call, checks the reference tree against its original capture, compares every
+native prepared field, and checks the native raw tree and component storage
+bounds. It preserves per-stream WP presets, excluded channel descriptors and
+group-ID holes. It is a correctness check, not a timing or coding experiment.
+
+```sh
+python3 tools/modular_reference_learning/run_stream_replay.py \
+  --binary build/reference-learning/stream-replay-bin/reference_learning \
+  --policy-study build/reference-learning/reference-policy \
+  --policy-validation build/reference-learning/reference-policy-validation \
+  --output build/reference-learning/stream-replay
+python3 tools/modular_reference_learning/analyze_stream_replay.py \
+  --study build/reference-learning/stream-replay \
+  --output build/reference-learning/stream-replay-summary.json
+```
+
+Use fresh build/output paths. The runner requires the qualified policy captures
+and their validation archive, adding its true 16-bit control to the five-input
+auto/buffered matrix. Optional `--cases INPUT:VARIANT ...` selects a diagnostic
+subset. `stream_replay.py --trace JSON --output DESCRIPTION` projects a single
+capture for direct replay; pixel payloads stay in their original bound files.
+Unsupported mixed sampling/growth options are rejected, not approximated.
+
+The combined report is reproduced with the analyzer's `--scalar`, `--sanitizer`,
+`--default-wp`, `--scalar-default-wp`, `--corpus` and `--validation` arguments.
+They bind full scalar replay, the three sanitizer input controls, both sets of
+eight default-WP encodes, final build/test artifacts and the scalar rounding
+regression. See [the qualification](../../docs/modular-native-stream-preparation.md).
+Historical preparation analyzers retain their original 101-case expectation;
+their old validation archives are not rewritten.
 
 ## Paired complete learning
 

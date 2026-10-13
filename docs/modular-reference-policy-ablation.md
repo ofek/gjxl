@@ -109,7 +109,8 @@ The next implementation order is:
 
 1. Add per-stream WP parameters to native sample preparation and replay these
    actual captured streams, matching reference samples and trees. Keep the
-   existing default-WP bridge as a regression control.
+   existing default-WP bridge as a regression control. This is now qualified
+   in [actual-stream preparation](modular-native-stream-preparation.md).
 2. Define and qualify per-stream coding policies, including ordered local
    palette/RCT chains, their channel ranges, and the palette sizes actually
    required by these controls. Preserve exact

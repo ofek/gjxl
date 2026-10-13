@@ -10,7 +10,8 @@ struct BorrowedTrainingImages {
   std::vector<gjxl::modular_internal::HistogramTrainingImage> images;
 };
 BorrowedTrainingImages
-BorrowReferenceImages(std::span<const jxl::Image> images);
+BorrowReferenceImages(std::span<const jxl::Image> images,
+                      std::span<const jxl::ModularOptions> options);
 gjxl::modular_internal::HistogramSamplingOptions
 NativeSamplingOptions(const jxl::ModularOptions &options);
 void CheckPreparedSamples(
