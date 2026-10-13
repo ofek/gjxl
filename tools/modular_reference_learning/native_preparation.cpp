@@ -61,6 +61,8 @@ BorrowReferenceImages(std::span<const jxl::Image> images) {
 }
 native::HistogramSamplingOptions
 NativeSamplingOptions(const jxl::ModularOptions &options) {
+  Require(options.wp_mode == 0,
+          "Custom WP header is outside native preparation profile");
   jxl::TreeSamples shape;
   Require(bool(shape.SetPredictor(options.predictor, options.wp_tree_mode)) &&
               bool(shape.SetProperties(options.splitting_heuristics_properties,
@@ -128,11 +130,8 @@ void CheckPreparedSamples(const native::PreparedHistogramSamples &prepared,
                     fixture.multipliers[i].multiplier,
             "Prepared multiplier mismatch");
 }
-native::DecisionTree
-CheckPreparedTree(native::PreparedHistogramSamples &prepared,
-                  const jxl::Tree &expected) {
-  native::DecisionTree tree;
-  Ok(native::LearnPreparedHistogramTree(prepared, &tree));
+void CheckNativeTree(const native::DecisionTree &tree,
+                     const jxl::Tree &expected) {
   Require(tree.size == expected.size(), "Prepared tree node count mismatch");
   for (size_t i = 0; i < tree.size; ++i) {
     const auto &a = tree.nodes[i];
@@ -144,6 +143,13 @@ CheckPreparedTree(native::PreparedHistogramSamples &prepared,
                 a.offset == b.predictor_offset && a.multiplier == b.multiplier,
             "Prepared tree mismatch at node " + std::to_string(i));
   }
+}
+native::DecisionTree
+CheckPreparedTree(native::PreparedHistogramSamples &prepared,
+                  const jxl::Tree &expected) {
+  native::DecisionTree tree;
+  Ok(native::LearnPreparedHistogramTree(prepared, &tree));
+  CheckNativeTree(tree, expected);
   return tree;
 }
 

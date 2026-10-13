@@ -63,6 +63,7 @@ FIXTURE REPEATS`, the existing `paired-replay` mode, and
 
 This resolves the observed small-fit validation overhead without bypassing
 validation. Native sample preparation and fitting remain private, with encoder
-defaults unchanged. Paired complete-learning timing and qualification of
-candidate count, predictor policy and training scope are still needed before
-promotion or GPU work.
+defaults unchanged. The [paired complete-learning pilot](modular-native-learning-timing.md)
+now also qualifies preparation plus fitting on the three small pilot inputs.
+Qualification of candidate count, predictor policy and training scope is still
+needed before promotion or GPU work.

@@ -129,8 +129,11 @@ It does not occur in the 32 corpus controls. No change to libjxl was made.
 
 ## Remaining work
 
-Measure preparation and complete learning in paired, warmed runs, then qualify
-a search policy that avoids repeated large fits. The
+The [paired complete-learning pilot](modular-native-learning-timing.md) now
+matches reference samples/trees on all six controls and uses 0.9110× its summed
+median CPU time. Large-image preparation timing is not yet qualified. Next,
+qualify a [search and training-scope policy](modular-reference-search-policy.md)
+that avoids repeated large candidate fits. The
 [validation-scan follow-up](modular-histogram-validation-cost.md) addresses the
 19 previously reported small-fit outliers. Held-out rate, correctness and
 resource qualification still precede default promotion and selection of a GPU

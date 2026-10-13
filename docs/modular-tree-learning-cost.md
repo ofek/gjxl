@@ -2,7 +2,7 @@
 
 The main causes are multiplicative: GJXL repeats an expensive fit for several
 transform candidates, and each fit uses a sort-and-sweep implementation with
-all 14 predictors. Libjxl e9 usually fits one tree for the photographic inputs,
+all 14 predictors. Libjxl e9 avoids a full fit per transform candidate, normally
 uses two predictors, and searches compact property histograms without sorting
 each node. This is primarily an algorithm and search-policy issue, rather than
 evidence that the current learning loop should be moved directly to the GPU.
@@ -278,9 +278,12 @@ identical legacy compressed bytes do not.
    speedup established by the present study.
 
 4. **Reduce repeated large fits with a separately qualified search policy.**
-   Study the reference transform-selection policy first. Aim for one large
-   fit per selected global context, with a bounded additional fit only where
-   ambiguity justifies it; count metadata/local learning events separately.
+   Study the reference transform selection and global/local training scope
+   first. Aim for one fit per selected coding scope, with a bounded additional
+   candidate fit only where ambiguity justifies it; count metadata/local
+   learning events separately. Large-image e9 can learn local group trees, so
+   minimizing the raw fit count is not the objective. See the
+   [reference policy audit and next controls](modular-reference-search-policy.md).
    A cheap native shortlist is an alternative only after its ranking has been
    tested against exhaustive search using the *new* learner. The current small
    learner's ranking cannot be assumed to transfer.
@@ -345,7 +348,17 @@ and resolve the observed small-fit overhead. The repeated study passes the
 1.5× CPU target on all 64 stock-reference spline fits, including all 19 prior
 outliers; all 233 trees still match. See
 [validation cost](modular-histogram-validation-cost.md). Paired complete-learning
-timing, search-policy qualification and default promotion remain ahead.
+timing on the three pilots is now documented below; search-policy qualification
+and default promotion remain ahead.
+
+**Paired learning update:** native preparation plus fitting matches the captured
+samples/trees on all six pilot predictor controls and uses 0.9110× the reference's
+summed median CPU time. Non-fit time is close in aggregate (1.0233×), with all
+individual results retained in [the timing report](modular-native-learning-timing.md).
+This is matched global learning, not stock e9 search or complete encode timing.
+The next policy milestone must qualify training scope as well as transform and
+predictor selection: the reference uses local trees on the large corpus inputs,
+while this bridge uses one global tree.
 
 ## Measurement limits and validation
 

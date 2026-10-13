@@ -36,6 +36,38 @@ managed allocation/storage contract. Both and the ledger tests run under CTest.
 See the [preparation report](../../docs/modular-native-sample-preparation.md) for
 profile limits and timing caveats. Defaults and candidate selection are unchanged.
 
+## Paired complete learning
+
+`paired-learning INPUT POLICY FIXTURE best|all REPEATS` times preparation plus
+fitting on identical immutable transformed planes and strides. Both paths warm
+once, then alternate order; samples are checked in the native warmup and every
+measured tree is checked after timing. Native admission/validation, allocation
+and temporary sample release are included; image conversion and comparisons
+are excluded. No encodes run in this mode.
+
+```sh
+python3 tools/modular_reference_learning/run_native_preparation.py \
+  --binary build/reference-learning/bin/reference_learning \
+  --corpus build/reference-learning/corpus \
+  --output build/reference-learning/native-learning-pilot \
+  --mode paired-learning --repeats 3 \
+  --inputs photo-macan alpha-ria gray-patches
+python3 tools/modular_reference_learning/analyze_paired_learning.py \
+  --study build/reference-learning/native-learning-pilot \
+  --corpus build/reference-learning/corpus \
+  --validation build/reference-learning/native-learning-validation \
+  --output docs/modular-native-learning-timing-results.json
+```
+
+Use a new output directory; optional `--variants best all` restricts predictor
+controls. The validation argument binds archived Release/ASan test logs and
+representative paired controls; omit it without that local archive. The
+analyzer checks fixture/policy/input hashes against the frozen bridge, exact
+checks, run order, expected shapes, raw stdout and timing nesting. Reference
+non-fit time is a per-run difference, including sample release and wrapper
+overhead, not an isolated preparation timer. See the
+[timing report](../../docs/modular-native-learning-timing.md) for the limits.
+
 ## Native fitting replay
 
 The harness also builds the dependency-free native fitter under ordinary

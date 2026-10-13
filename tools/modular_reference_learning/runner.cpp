@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Yunho Cho
 #include "native_fit.h"
 #include "native_preparation.h"
+#include "paired_learning.h"
 #include "reference_capture.h"
 
 #include <algorithm>
@@ -304,9 +305,11 @@ int main(int argc, char **argv) try {
                  "weight_overflow_rejected\":true}\n";
     return 0;
   }
-  if (mode == "prepare-check") {
-    Require(argc == 6 || argc == 7,
-            "prepare-check INPUT POLICY FIXTURE best|all [OUTPUT]");
+  if (mode == "prepare-check" || mode == "paired-learning") {
+    const bool paired = mode == "paired-learning";
+    Require(paired ? argc == 7 : (argc == 6 || argc == 7),
+            "prepare-check INPUT POLICY FIXTURE best|all [OUTPUT]; "
+            "paired-learning INPUT POLICY FIXTURE best|all REPEATS");
     Require(std::string(argv[5]) == "best" || std::string(argv[5]) == "all",
             "Invalid predictor control");
     gjxl::io::IntegerImage input;
@@ -325,6 +328,17 @@ int main(int argc, char **argv) try {
     native::ModularStreamPlan plan;
     Ok(native::BuildModularStreamPlan(geometry, shape.channels(),
                                       shape.metadata, &plan));
+    const auto fixture = capture::ReadFixture(argv[4]);
+    if (paired) {
+      JxlMemoryManager manager;
+      Require(bool(jxl::MemoryManagerInit(&manager, nullptr)),
+              "Reference memory manager initialization failed");
+      const auto images = ReferenceImages(frame, plan, &manager);
+      capture::RunPairedLearning(
+          images, ReferenceOptions(policy, std::string(argv[5]) == "all"),
+          fixture, std::stoul(argv[6]), std::cout);
+      return 0;
+    }
     size_t count = 0;
     for (const auto &stream : plan.streams)
       count = std::max(count, stream.id + 1);
@@ -348,7 +362,6 @@ int main(int argc, char **argv) try {
     }
     const auto options = capture::NativeSamplingOptions(
         ReferenceOptions(policy, std::string(argv[5]) == "all"));
-    const auto fixture = capture::ReadFixture(argv[4]);
     using namespace gjxl::resource_budget_internal;
     HostStorageBound bound;
     Ok(native::ComputeHistogramSamplePreparationStorageBound(borrowed.images,

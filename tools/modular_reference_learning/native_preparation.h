@@ -16,6 +16,8 @@ NativeSamplingOptions(const jxl::ModularOptions &options);
 void CheckPreparedSamples(
     const gjxl::modular_internal::PreparedHistogramSamples &samples,
     const Fixture &reference);
+void CheckNativeTree(const gjxl::modular_internal::DecisionTree &tree,
+                     const jxl::Tree &expected);
 gjxl::modular_internal::DecisionTree
 CheckPreparedTree(gjxl::modular_internal::PreparedHistogramSamples &samples,
                   const jxl::Tree &expected);

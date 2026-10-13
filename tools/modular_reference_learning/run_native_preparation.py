@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Qualify native preparation against frozen reference samples and encoded bytes."""
+"""Check native preparation or time paired learning against frozen reference data."""
 import argparse
 import json
 import shutil
@@ -16,7 +16,12 @@ def main():
     parser.add_argument("--corpus", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--inputs", nargs="+")
+    parser.add_argument("--variants", nargs="+", choices=("best", "all"))
+    parser.add_argument("--mode", choices=("prepare-check", "paired-learning"), default="prepare-check")
+    parser.add_argument("--repeats", type=int, default=3, help="Measured pairs after one warmup per implementation")
     args = parser.parse_args()
+    if not 1 <= args.repeats <= 20:
+        parser.error("repeats must be in [1, 20]")
     args.binary, args.corpus, args.output = (p.resolve() for p in (args.binary, args.corpus, args.output))
     corpus, rows, artifacts = load_study(args.corpus)
     inputs = {item["name"]: item for item in corpus["inputs"]}
@@ -28,6 +33,8 @@ def main():
             continue
         if args.inputs and row["input"] not in args.inputs:
             continue
+        if args.variants and row["variant"] not in args.variants:
+            continue
         fixtures = [p for p in row["artifacts"] if p.endswith(".bin")]
         if len(fixtures) != 1:
             raise ValueError("Native canonical-stream bridge requires one global fixture")
@@ -36,6 +43,10 @@ def main():
                 "policy": str(directory / "policy.txt"), "path": inputs[row["input"]]["path"],
                 "expected_output": str(directory / "output.jxl"), "expected_sha256": row["output_sha256"],
                 "expected_bytes": row["result"]["bytes"]}
+        fits = row["result"]["learning"]["fits"]
+        if len(fits) != 1:
+            raise ValueError("Expected one bridge fit")
+        case["expected_shape"] = {k: fits[0][k] for k in ("samples", "distinct", "nodes", "predictors", "properties")}
         cases.append(case)
         for field in ("fixture", "policy", "path", "expected_output"):
             artifacts[case[field]] = sha(case[field])
@@ -80,19 +91,35 @@ def main():
                 "source_status": subprocess.check_output(["git", "-C", str(repo), "status", "--short"], text=True),
                 "source_snapshot_is_authoritative": True,
                 "timing_scope": "Single storage-tracked correctness run per case; diagnostic only. Preparation includes admission RNG, quantization, sample collection, deduplication and allocation. Fitting, transforms, stream planning, verification and encoding excluded."}
+    if args.mode == "paired-learning":
+        manifest.update({"mode": args.mode, "repeats": args.repeats, "warmups_per_implementation": 1,
+                         "timing_scope": "Same process and identical transformed planes/strides, options and expected tree; one warmup each, then serial pairs with alternating order. Total includes sample preparation, fitting and sample release. Native admission/validation and allocations are included. Image transforms/copies, fixture loading and verification are excluded. No managed-accounting scope. Reference non-fit is total minus fit, not an isolated preparation timer. Uncontrolled desktop."})
     (args.output / "manifest.json").write_text(json.dumps(manifest, indent=2) + "\n")
     with (args.output / "results.jsonl").open("x") as ledger:
         for case in cases:
             directory = args.output / f"{case['input']}-{case['variant']}"
             directory.mkdir()
             encoded = directory / "output.jxl"
-            command = [str(binary), "prepare-check", case["path"], case["policy"], case["fixture"], case["variant"], str(encoded)]
+            paired = args.mode == "paired-learning"
+            command = [str(binary), args.mode, case["path"], case["policy"], case["fixture"], case["variant"],
+                       str(args.repeats) if paired else str(encoded)]
             start = time.monotonic()
             result = subprocess.run(command, text=True, capture_output=True)
-            (directory / "stdout.json").write_text(result.stdout)
+            (directory / ("stdout.jsonl" if paired else "stdout.json")).write_text(result.stdout)
             (directory / "stderr.log").write_text(result.stderr)
             if result.returncode:
                 raise RuntimeError(f"Failed {case['input']} {case['variant']}: {result.stderr}")
+            if paired:
+                runs = [json.loads(line) for line in result.stdout.splitlines()]
+                if len(runs) != args.repeats or not all(
+                        r["samples_exact_in_warmup"] is True and r["trees_exact"] is True for r in runs):
+                    raise ValueError("Missing paired sample/tree verification")
+                record = {"input": case["input"], "variant": case["variant"], "command": command,
+                          "elapsed_seconds": time.monotonic() - start, "runs": runs,
+                          "artifacts": {str(p): sha(p) for p in directory.iterdir()}}
+                ledger.write(json.dumps(record) + "\n"); ledger.flush()
+                print(case["input"], case["variant"], "paired", len(runs), "exact", flush=True)
+                continue
             data = json.loads(result.stdout)
             if not all(data[k] is True for k in ("samples_exact", "tree_exact", "decoded_exact")):
                 raise ValueError("Missing exact preparation/fit/decode check")
