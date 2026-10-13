@@ -6,7 +6,7 @@ from analyze_policy_study import numbered
 from stream_replay import integer, project as project_learning
 
 
-def project(directory):
+def project(directory, entropy=False):
     images, global_tree = {}, None
     for path in numbered(directory / 'streams', 'learning'):
         trace = json.loads(path.read_text())
@@ -26,7 +26,7 @@ def project(directory):
                 raise ValueError('Repeated captured stream')
             images[stream] = (im, trace['tree'] if trace['local_stream_id'] >= 0 else None,
                               pixels, trace['pixel_bytes'])
-    rows = ['gjxl-coding-input-v1']
+    rows = ['gjxl-coding-input-v2' if entropy else 'gjxl-coding-input-v1']
 
     def row(tag, values):
         rows.append(tag + ' ' + ' '.join(map(str, values)))
@@ -54,6 +54,17 @@ def project(directory):
                        im['metadata_channels'], len(channels)])
         row('options', [o['max_chan_size'], o['group_dim'], o['predictor'], o['wp_mode'],
                         int(o['skip_encoder_fast_path'])])
+        if entropy:
+            h = o['histogram_params']
+            if (h['initialize_global_state'] is not True or h['add_missing_symbols'] is not False or
+                    h['add_fixed_histograms'] is not False or h['image_widths'] != [] or
+                    type(h['force_huffman']) is not bool or type(h['streaming_mode']) is not bool):
+                raise ValueError('Unsupported captured histogram state')
+            maximum = h['max_histograms']
+            maximum = -1 if maximum == (1 << 64) - 1 else integer(maximum, 1, 256)
+            row('entropy', [integer(h['clustering'], 0, 2), integer(h['uint_method'], 0, 4),
+                            integer(h['lz77_method'], 0, 15), integer(h['ans_histogram_strategy'], 0, 2),
+                            maximum, int(h['force_huffman']), 1, int(h['streaming_mode']), 0, 0, 0])
         row('wp', [*o['wp_coefficients'], *o['wp_weights']])
         row('transforms', [integer(len(c['transforms']), 0, 8)])
         for t in c['transforms']:

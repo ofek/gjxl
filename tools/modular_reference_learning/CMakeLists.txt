@@ -15,7 +15,7 @@ add_library(native_histogram_fit OBJECT
   ${GJXL_SOURCE}/src/codec/modular/histogram_sample_preparation.cpp)
 target_include_directories(native_histogram_fit PRIVATE
   ${GJXL_SOURCE}/include ${GJXL_SOURCE}/src)
-add_executable(reference_learning runner.cpp reference_capture.cpp native_fit.cpp native_fit_tests.cpp native_preparation.cpp paired_learning.cpp policy_trace.cpp stream_replay.cpp coding_replay.cpp
+add_executable(reference_learning runner.cpp reference_capture.cpp native_fit.cpp native_fit_tests.cpp native_preparation.cpp paired_learning.cpp policy_trace.cpp stream_replay.cpp coding_replay.cpp entropy_replay.cpp
   $<TARGET_OBJECTS:native_histogram_fit>
   ${GJXL_SOURCE}/src/io/pnm.cpp
   ${GENERATED_SOURCE}/reference_codec.cpp
@@ -77,4 +77,7 @@ add_test(NAME stream_replay_contract
     --binary $<TARGET_FILE:reference_learning>)
 add_test(NAME coding_replay_contract
   COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_coding_replay.py
+    --binary $<TARGET_FILE:reference_learning>)
+add_test(NAME entropy_replay_contract
+  COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/test_entropy_replay.py
     --binary $<TARGET_FILE:reference_learning>)

@@ -314,3 +314,33 @@ executable into the output directory so rebuilding the harness does not replace
 the binary bound to completed captures. The preliminary `pilot` was made before
 final compiler/error-path qualification; use `corpus` and `pilot-qualified` for
 the committed measurements.
+
+## Same-token entropy controls
+
+After the prepared-stream coding replay, `run_entropy_replay.py` keeps the
+captured transformed samples, trees, WP headers and stream scopes fixed while
+varying downstream entropy coding. The [ablation report](../../docs/modular-entropy-ablation.md)
+defines the controls, conditional conclusions and remaining exceptions.
+Every emitted file is independently decoded. The native control must match
+the frozen coding replay; partition transplants must match the context maps
+emitted by the full reference no-LZ77/cap-32 encoder. These runs do no learning
+or transform selection and are not timing benchmarks.
+
+```sh
+python3 tools/modular_reference_learning/run_entropy_replay.py \
+  --binary build/reference-learning/entropy-partition-bin/reference_learning \
+  --coding-study build/reference-learning/coding-replay \
+  --output build/reference-learning/new-entropy-study
+python3 tools/modular_reference_learning/analyze_entropy_replay.py \
+  --study build/reference-learning/new-entropy-study \
+  --output build/reference-learning/new-entropy-analysis.json
+```
+
+The default runs all 15 controls; `--variants` permits a declared subset and
+`--cases` selects `input:policy` pairs. Either `reference_map32` transplant
+requires `no_lz77_clusters32` in the same run. Configure the research binary
+against the native prepared-stream archives and the pinned reference build.
+The combined report additionally takes `--partition-study`,
+`--sanitizer-study` and `--validation`; its cohort and byte-identity gates are
+specific to the qualified 13-control plus three-control study described in
+the report.

@@ -111,11 +111,12 @@ of being hidden by the photo-weighted aggregate. Detailed Prefix sizes and
 per-input buffered results are in the ledger.
 
 The native path currently writes no LZ77 and retains its existing entropy
-optimization choices. This is a known behavioral difference, not evidence
-that LZ77 alone explains these gaps. The next diagnostic should keep these
-same trees/tokens and ablate the pinned downstream pipeline: tree coding,
-clustering/HybridUint/ANS selection, and LZ77. Do that before attributing the
-remaining rate loss to training coverage or changing the matched learner.
+optimization choices. The subsequent [same-token entropy ablations](modular-entropy-ablation.md)
+now isolate the large automatic-cohort loss to data-context grouping: a
+reference partition with unchanged native coding reaches −0.0021% versus
+stock on that cohort. LZ77 changes no bytes on those five images, but is
+significant on the separate ramp. This is a research transplant, not a native
+policy implementation, and the ramp still needs further downstream work.
 
 ## Qualification
 
@@ -157,8 +158,9 @@ Builds and correctness checks overlap; elapsed times are not benchmark data.
 
 ## Next integration gates
 
-1. Isolate the downstream size differences on these exact captured tokens
-   with reference-side ablations; avoid another speculative learning change.
+1. Use the [qualified downstream ablations](modular-entropy-ablation.md) to
+   implement the missing data-context grouping behavior, comparing existing
+   direct-ANS machinery first and retaining the high-depth/LZ77 exceptions.
 2. Port reference palette construction and the cheap transform/WP estimators,
    matching values, tie order, selected transforms and prepared pixels.
 3. Connect native preparation/fitting once per selected coding scope, preserving

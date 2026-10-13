@@ -3,6 +3,7 @@
 #pragma once
 #include <filesystem>
 #include <iosfwd>
+#include <string>
 
 namespace reference_learning {
 // Encode frozen, already transformed e9 streams with native tree/model scopes.
@@ -11,4 +12,10 @@ namespace reference_learning {
 void ReplayCodingInput(const std::filesystem::path &source,
                        const std::filesystem::path &description,
                        const std::filesystem::path &output, std::ostream &out);
+// v2 projection additionally carries captured entropy settings. All variants
+// use the same checked tree/sample tokens and native frame/stream headers.
+void ReplayEntropyInput(const std::filesystem::path &source,
+                        const std::filesystem::path &description,
+                        const std::filesystem::path &output, const std::string &variants,
+                        std::ostream &out);
 } // namespace reference_learning

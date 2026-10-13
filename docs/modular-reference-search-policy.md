@@ -18,9 +18,12 @@ preparation gap is now closed by
 [per-stream WP preparation and actual-stream replay](modular-native-stream-preparation.md).
 The [per-stream coding contract](modular-prepared-streams.md) now reproduces
 captured e9 tree/sample tokens and exact decodes with local/shared model scopes.
-Its conditional rate gap still needs downstream ablations; reference palette
-construction and cheap selection remain unported. A blanket global-tree
-replacement is not justified.
+The [downstream ablations](modular-entropy-ablation.md) now isolate its large
+automatic-cohort rate gap to data-context grouping. Reference groups plus
+unchanged native coding reach the stock total on that captured-decision
+cohort; native grouping, the high-depth exceptions, reference palette
+construction and cheap selection remain to be implemented or qualified.
+A blanket global-tree replacement is not justified.
 
 ## Selection happens before expensive tree fitting
 

@@ -375,6 +375,14 @@ empty events and true 16-bit RGBA. It also exposes and fixes implicit scalar
 entropy contraction; the normal Release executable is unchanged by that fix.
 Per-stream coding/selection, whole-stage qualification and promotion remain.
 
+**Downstream rate update:** the [prepared-stream encoder](modular-prepared-streams.md)
+now reproduces actual e9 tree/sample tokens and exact decodes with shared/local
+entropy scopes. The [same-token ablations](modular-entropy-ablation.md) locate
+its remaining automatic-cohort rate loss in data-context grouping. A reference
+partition transplant closes that aggregate loss with unchanged native coding;
+this is conditional rate evidence, not native search or timing qualification.
+The separate 16-bit ramp still needs LZ77 and further entropy controls.
+
 ## Measurement limits and validation
 
 All measurements use Apple M4 Pro, Release AppleClang builds and the same

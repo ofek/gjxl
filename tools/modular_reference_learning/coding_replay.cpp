@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Yunho Cho
 #include "coding_replay.h"
 #include "codestream/modular/prepared_streams.h"
+#include "entropy_replay.h"
 #include "io/pnm.h"
 #include "lib/jxl/memory_manager_internal.h"
 #include "lib/jxl/modular/encoding/enc_encoding.h"
@@ -180,9 +181,10 @@ void CheckTokens(const Stream &stream, const native::DecisionTree &tree,
 }
 } // namespace
 
-void ReplayCodingInput(const std::filesystem::path &source,
-                       const std::filesystem::path &description,
-                       const std::filesystem::path &output, std::ostream &out) {
+namespace {
+void ReplayInput(const std::filesystem::path &source, const std::filesystem::path &description,
+                 const std::filesystem::path &output, const std::string &variants,
+                 std::ostream &out) {
   static_assert(std::endian::native == std::endian::little);
   gjxl::io::IntegerImage original;
   Ok(gjxl::io::ReadPnm(source, &original));
@@ -191,7 +193,7 @@ void ReplayCodingInput(const std::filesystem::path &source,
   Ok(native::ResolveModularInput(original.extent, format, &profile));
   const auto expected = Unpack(original, profile);
   Reader in(description);
-  in.Tag("gjxl-coding-input-v1");
+  in.Tag(variants.empty() ? "gjxl-coding-input-v1" : "gjxl-coding-input-v2");
   native::DecisionTree global_tree;
   const bool has_global = ReadTree(in, &global_tree);
   in.Tag("streams");
@@ -217,6 +219,24 @@ void ReplayCodingInput(const std::filesystem::path &source,
     o.skip_encoder_fast_path = in.Integer(0, 1);
     o.max_properties = 0;
     o.zero_tokens = false;
+    if (!variants.empty()) {
+      in.Tag("entropy");
+      auto &p = o.histogram_params;
+      p.clustering = static_cast<jxl::HistogramParams::ClusteringType>(in.Integer(0, 2));
+      p.uint_method = static_cast<jxl::HistogramParams::HybridUintMethod>(in.Integer(0, 4));
+      p.lz77_method = static_cast<jxl::HistogramParams::LZ77Method>(in.Integer(0, 15));
+      p.ans_histogram_strategy =
+          static_cast<jxl::HistogramParams::ANSHistogramStrategy>(in.Integer(0, 2));
+      const auto maximum = in.Integer(-1, 256);
+      Require(maximum == -1 || maximum > 0, "Invalid histogram limit");
+      p.max_histograms = maximum == -1 ? SIZE_MAX : maximum;
+      p.force_huffman = in.Integer(0, 1);
+      p.initialize_global_state = in.Integer(1, 1);
+      p.streaming_mode = in.Integer(0, 1);
+      p.add_missing_symbols = in.Integer(0, 0);
+      p.add_fixed_histograms = in.Integer(0, 0);
+      Require(in.Integer(0, 0) == 0, "Unexpected initial image widths");
+    }
     in.Tag("wp");
     for (auto &c : stream.weighted.coefficients)
       c = in.Integer(0, 31);
@@ -263,6 +283,7 @@ void ReplayCodingInput(const std::filesystem::path &source,
   native::ModularStreamPlan plan;
   Ok(native::BuildModularStreamPlan(geometry, full.channels(), full.metadata, &plan));
   std::vector<native::PreparedModularStreamView> streams(plan.streams.size());
+  std::vector<jxl::HistogramParams> parameters(streams.size());
   size_t mapped = 0, coded_streams = 0;
   for (size_t i = 0; i < plan.streams.size(); ++i) {
     const auto &slot = plan.streams[i];
@@ -297,6 +318,7 @@ void ReplayCodingInput(const std::filesystem::path &source,
     }
     streams[i] = {stream.views, stream.weighted, 0, stream.transforms,
                   stream.local ? &stream.tree : nullptr};
+    parameters[i] = stream.options.histogram_params;
     coded_streams += !stream.planes.empty();
   }
   Require(mapped == captured.size(), "Unexpected captured coding stream ID");
@@ -315,6 +337,10 @@ void ReplayCodingInput(const std::filesystem::path &source,
       CheckTokens(stream, stream.local ? stream.tree : global_tree,
                   stream.local ? tokens.local_tree_tokens[i] : tokens.global_tree_tokens,
                   tokens.streams[i], profile.metadata.bits);
+    }
+    if (!variants.empty()) {
+      ReplayEntropyAblations(input, plan, tokens, parameters, expected, output, variants, out);
+      return;
     }
   }
   Require(std::filesystem::create_directory(output), "Coding output already exists");
@@ -356,5 +382,18 @@ void ReplayCodingInput(const std::filesystem::path &source,
             "Captured encode leaked managed storage");
   }
   out << "]}\n";
+}
+} // namespace
+void ReplayCodingInput(const std::filesystem::path &source,
+                       const std::filesystem::path &description,
+                       const std::filesystem::path &output, std::ostream &out) {
+  ReplayInput(source, description, output, {}, out);
+}
+void ReplayEntropyInput(const std::filesystem::path &source,
+                        const std::filesystem::path &description,
+                        const std::filesystem::path &output, const std::string &variants,
+                        std::ostream &out) {
+  Require(!variants.empty(), "Empty entropy variants");
+  ReplayInput(source, description, output, variants, out);
 }
 } // namespace reference_learning

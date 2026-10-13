@@ -276,6 +276,11 @@ int main(int argc, char **argv) try {
   std::cout << std::setprecision(17);
   Require(argc >= 2, "Usage: reference_learning reference|bridge|replay ...");
   const std::string mode = argv[1];
+  if (mode == "stream-entropy-check") {
+    Require(argc == 6, "stream-entropy-check SOURCE DESCRIPTION OUTPUT VARIANTS");
+    capture::ReplayEntropyInput(argv[2], argv[3], argv[4], argv[5], std::cout);
+    return 0;
+  }
   if (mode == "stream-encode-check") {
     Require(argc == 5, "stream-encode-check SOURCE DESCRIPTION OUTPUT");
     capture::ReplayCodingInput(argv[2], argv[3], argv[4], std::cout);
