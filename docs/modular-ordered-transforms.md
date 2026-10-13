@@ -94,11 +94,12 @@ ordering still needs reference-equivalent preparation. Prescribed palette
 tests use an independent exact dictionary and the pinned inverse/decoder;
 they do not claim equality to libjxl's heuristic forward palette selection.
 
-The next contract must keep each stream's WP and transform sequence, its
-global/local tree choice, and the corresponding entropy-model scope together.
-Qualify native tokens and decoded pixels on captured prepared streams first;
-then implement reference palette construction and the cheap transform/WP
-estimators before fitting selected scopes. The [existing whole-stage rate,
+The subsequent [prepared-stream coding contract](modular-prepared-streams.md)
+now keeps each stream's WP and transform sequence, its global/local tree choice,
+and the corresponding entropy-model scope together. Captured e9 tree/sample
+tokens and decoded pixels match, but a conditional downstream rate gap remains.
+Isolate that gap and implement reference palette construction and the cheap
+transform/WP estimators before fitting selected scopes. The [existing whole-stage rate,
 time, resource and held-out gates](modular-tree-learning-cost.md#proposed-acceptance-criteria)
 still govern promotion.
 

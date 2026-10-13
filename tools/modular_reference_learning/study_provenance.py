@@ -22,10 +22,19 @@ def freeze_build(binary, output):
     copy(binary, frozen)
     paths = [p for p in source.iterdir() if p.suffix in (".cpp", ".h", ".py") or p.name == "CMakeLists.txt"]
     paths += [repo / "CMakeLists.txt", repo / "LICENSE"]
-    paths += list((repo / "src/codec/modular").glob("histogram_*.[ch]*"))
-    paths += list((repo / "tests").glob("modular_histogram*_test.cpp"))
-    for path in paths:
+    # Bind the native sources behind the linked archives as well as the small
+    # directly compiled fitter. New private adapters can change other native
+    # modules; archive hashes alone do not preserve their source provenance.
+    for directory in ("src", "include", "cmake"):
+        paths += [p for p in (repo / directory).rglob("*") if p.is_file()]
+    paths += list((repo / "tests").glob("modular*"))
+    for path in sorted(set(paths)):
+        if not path.is_file():
+            continue
         copy(path, output / "source" / path.relative_to(repo))
+    patch = output / "working-tree.patch"
+    patch.write_bytes(subprocess.check_output(["git", "-C", str(repo), "diff", "--binary", "HEAD"]))
+    artifacts[str(patch)] = sha(patch)
     for name in ("CMakeCache.txt", "compile_commands.json"):
         copy(binary.parent / name, output / name)
     cache = dict(line.split("=", 1) for line in (binary.parent / "CMakeCache.txt").read_text().splitlines()

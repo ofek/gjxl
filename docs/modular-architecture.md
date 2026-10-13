@@ -16,6 +16,11 @@ encoding is available through C++, C, Rust and the integer-input CLI. Originally
 `67caa6d89830f6a13c057923e34f80753a161e9d` and pinned libjxl
 `e8ff09762481785938d8e4e01333ed3917571161`.
 
+The later private [prepared-stream CPU encoder](modular-prepared-streams.md)
+adds ordered local transforms/WP headers and local or shared tree/model scopes.
+It matches the saved e9 coding tokens and decoded pixels; automatic selection,
+downstream rate parity, default promotion and GPU admission remain separate.
+
 The work has two phases:
 
 1. Extract reusable Modular machinery from the existing VarDCT implementation,

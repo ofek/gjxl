@@ -20,6 +20,11 @@ Status WriteCodingStreamHeader(const WeightedPredictorParameters &weighted, uint
 }
 Status WriteCodingStreamHeader(const WeightedPredictorParameters &weighted, uint8_t rct,
                                const TransformSequence &transforms, BitWriter *writer) {
+  return WriteCodingStreamHeader(weighted, rct, transforms, true, writer);
+}
+Status WriteCodingStreamHeader(const WeightedPredictorParameters &weighted, uint8_t rct,
+                               const TransformSequence &transforms, bool use_global_tree,
+                               BitWriter *writer) {
   if (!writer)
     return Status::InvalidArgument("Null Modular stream header output");
   if (!weighted.valid() || rct >= 42)
@@ -27,7 +32,7 @@ Status WriteCodingStreamHeader(const WeightedPredictorParameters &weighted, uint
   if (auto s = ValidateTransforms(transforms); !s.ok())
     return s;
   return writer->WithMaxBits(MaximumCodingStreamHeaderBits(transforms), [&]() -> Status {
-    if (auto s = writer->WriteBits(1, 1); !s.ok())
+    if (auto s = writer->WriteBits(1, use_global_tree); !s.ok())
       return s;
     const bool defaults = weighted == WeightedPredictorParameters{};
     if (auto s = writer->WriteBits(1, defaults); !s.ok())

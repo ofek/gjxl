@@ -120,6 +120,9 @@ The next implementation order is:
    palette/RCT chains, their channel ranges, and the palette sizes actually
    required by these controls. Preserve exact
    pixels through native tokenization, headers and entropy emission.
+   This is now qualified in the
+   [prepared-stream coding replay](modular-prepared-streams.md), which also
+   identifies a remaining downstream conditional rate gap.
 3. Qualify global and local learning/coding on the same prepared streams, then
    port reference-style cheap transform/WP selection. Keep the all-predictor
    control and the existing exhaustive new-learner comparison; do not turn

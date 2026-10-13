@@ -31,6 +31,9 @@ and VarDCT's use of shared integer-stream mechanisms.
 The later [ordered-transform CPU contract](modular-ordered-transforms.md)
 supports RCT entries after palette/squeeze and prescribed palettes through
 1,024 colors. Transform sequences remain excluded from private GPU admission.
+The subsequent [prepared-stream CPU contract](modular-prepared-streams.md)
+qualifies local/shared tree and model scopes with per-stream transforms/WP.
+That private coding path does not expand GPU eligibility or public defaults.
 
 ## First slice: operation and storage contract
 

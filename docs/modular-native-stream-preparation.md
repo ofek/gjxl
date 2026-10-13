@@ -12,6 +12,9 @@ also checks the scalar fallback, sanitizer controls, managed storage and
 default-WP encoded-byte regressions. This is preparation/fitting correctness
 on captured transformed streams. It does not implement the per-stream coding
 policy or change encoder defaults, and it supplies no new timing or rate claim.
+The subsequent [prepared-stream encoder](modular-prepared-streams.md) now also
+matches captured coding tokens and exact decodes, while exposing a downstream
+rate gap that is separate from this matched learning result.
 
 ## Native contract and replay
 

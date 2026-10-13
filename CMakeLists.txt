@@ -357,6 +357,7 @@ add_library(
   src/codestream/modular/tokenization.cpp
   src/codestream/modular/storage_plan.cpp
   src/codestream/modular/frame_encoder.cpp
+  src/codestream/modular/prepared_streams.cpp
   src/codestream/modular/public.cpp
   src/codestream/modular/workflow.cpp
   src/codestream/modular/prepared_encoder.cpp
@@ -2344,6 +2345,10 @@ if(GJXL_BUILD_TESTS)
   add_executable(gjxl_modular_transform_contract_test tests/modular_transform_contract_test.cpp)
   target_link_libraries(gjxl_modular_transform_contract_test PRIVATE gjxl_codestream)
   add_test(NAME modular_transform_contract COMMAND gjxl_modular_transform_contract_test)
+
+  add_executable(gjxl_modular_prepared_stream_test tests/modular_prepared_stream_test.cpp)
+  target_link_libraries(gjxl_modular_prepared_stream_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_prepared_stream COMMAND gjxl_modular_prepared_stream_test)
 
   add_executable(gjxl_modular_histogram_learning_test tests/modular_histogram_learning_test.cpp)
   target_link_libraries(gjxl_modular_histogram_learning_test PRIVATE gjxl_codestream)

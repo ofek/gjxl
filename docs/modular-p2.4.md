@@ -8,6 +8,8 @@ transform search is part of the existing explicit `search=true` option.
 This is the original P2.4 record. The later
 [ordered-transform contract](modular-ordered-transforms.md) adds RCT entries
 and raises the prescribed palette cap to 1,024; search stays capped at 256.
+The later [prepared-stream contract](modular-prepared-streams.md) also supports
+ordered transforms in local group headers with local/shared tree/model scopes.
 
 ## Architecture and supported profile
 
