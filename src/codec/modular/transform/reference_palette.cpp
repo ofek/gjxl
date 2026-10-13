@@ -5,6 +5,8 @@
 #include "codec/modular/transform/reference_palette.h"
 #include "codec/modular/transform/operations.h"
 #include <algorithm>
+#include <bit>
+#include <stdexcept>
 
 namespace gjxl::modular_internal {
 namespace {
@@ -134,7 +136,7 @@ bool Build(std::span<const ModularChannelView> input, const ReferencePaletteOpti
   return true;
 }
 TransformDescriptor Descriptor(const ReferencePaletteOptions &o, size_t colors) {
-  TransformDescriptor t{TransformKind::kPalette, o.begin, o.count, static_cast<uint16_t>(colors)};
+  TransformDescriptor t{TransformKind::kPalette, o.begin, o.count, static_cast<uint32_t>(colors)};
   t.palette_bit_depth = o.bit_depth;
   t.palette_ordered = o.ordered;
   return t;
@@ -142,7 +144,9 @@ TransformDescriptor Descriptor(const ReferencePaletteOptions &o, size_t colors) 
 Status Shape(std::span<const ModularChannelView> input, size_t metadata,
              const ReferencePaletteOptions &o, size_t colors, ChannelShape *out) {
   if (input.empty() || input.size() > kMaximumTransformedChannels || !o.count || o.count > 4 ||
-      !o.bit_depth || o.bit_depth > 24 || o.maximum_colors > kMaximumPaletteColors)
+      !o.bit_depth || o.bit_depth > 24 ||
+      o.maximum_colors >
+          (o.count == 1 ? kMaximumReferenceChannelPaletteColors : kMaximumPaletteColors))
     return Invalid();
   ChannelShape source;
   source.count = input.size();
@@ -168,6 +172,123 @@ void Copy(ModularChannelView source, std::span<int32_t> destination) {
   for (size_t y = 0; y < h; ++y)
     std::copy_n(source.Row(y), w, destination.data() + y * w);
 }
+// Large single-channel dictionaries have no implicit entries or frequency
+// ordering. A <=65536 value span uses a membership bitmap plus per-word ranks,
+// avoiding a heap LUT. Sparse signed ranges use two bounded managed arrays.
+struct ChannelDictionary {
+  std::array<uint64_t, 1024> present{};
+  std::array<uint32_t, 1024> preceding;
+  resource_budget_internal::ManagedVector<int32_t> values;
+  resource_budget_internal::ManagedVector<uint32_t> lookup;
+  int32_t minimum = 0;
+  uint32_t colors = 0;
+  bool dense = true, accepted = false;
+  size_t Slot(int32_t value) const {
+    uint32_t hash = static_cast<uint32_t>(value);
+    hash ^= hash >> 16;
+    hash *= 0x7feb352du;
+    hash ^= hash >> 15;
+    hash *= 0x846ca68bu;
+    hash ^= hash >> 16;
+    size_t slot = hash & (lookup.size() - 1);
+    while (lookup[slot] && values[lookup[slot] - 1] != value)
+      slot = (slot + 1) & (lookup.size() - 1);
+    return slot;
+  }
+  Status Discover(ModularChannelView input, uint32_t limit) {
+    const auto [w, h] = input.descriptor.extent;
+    minimum = input.Row(0)[0];
+    int32_t maximum = minimum;
+    for (size_t y = 0; y < h; ++y)
+      for (size_t x = 0; x < w; ++x) {
+        minimum = std::min(minimum, input.Row(y)[x]);
+        maximum = std::max(maximum, input.Row(y)[x]);
+      }
+    dense = int64_t{maximum} - minimum < 65536;
+    try {
+      if (!dense) {
+        const size_t capacity = std::min(size_t{limit}, w * h);
+        values.reserve(capacity);
+        lookup.resize(std::bit_ceil(2 * capacity));
+      }
+      for (size_t y = 0; y < h; ++y)
+        for (size_t x = 0; x < w; ++x) {
+          const int32_t value = input.Row(y)[x];
+          if (dense) {
+            const size_t offset = int64_t{value} - minimum;
+            const uint64_t bit = uint64_t{1} << (offset % 64);
+            auto &word = present[offset / 64];
+            if (word & bit)
+              continue;
+            if (colors == limit)
+              return Status::Ok();
+            word |= bit;
+          } else {
+            const size_t slot = Slot(value);
+            if (lookup[slot])
+              continue;
+            if (colors == limit)
+              return Status::Ok();
+            values.push_back(value);
+            lookup[slot] = colors + 1;
+          }
+          ++colors;
+        }
+      if (dense) {
+        uint32_t before = 0;
+        for (size_t i = 0; i < present.size(); ++i) {
+          preceding[i] = before;
+          before += std::popcount(present[i]);
+        }
+      } else {
+        std::sort(values.begin(), values.end());
+        std::fill(lookup.begin(), lookup.end(), 0);
+        for (size_t i = 0; i < values.size(); ++i)
+          lookup[Slot(values[i])] = static_cast<uint32_t>(i + 1);
+      }
+      accepted = true;
+      return Status::Ok();
+    } catch (const resource_budget_internal::ManagedAllocationFailure &e) {
+      return e.status();
+    } catch (const std::bad_alloc &) {
+      return Status::OutOfMemory("Channel palette allocation failed");
+    } catch (const std::length_error &) {
+      return Invalid();
+    }
+  }
+  uint32_t Index(int32_t value) const {
+    if (!dense)
+      return lookup[Slot(value)] - 1;
+    const size_t offset = int64_t{value} - minimum;
+    return preceding[offset / 64] +
+           std::popcount(present[offset / 64] & ((uint64_t{1} << (offset % 64)) - 1));
+  }
+  void Write(std::span<const ModularChannelView> input, size_t begin, ModularImage *out) const {
+    auto palette = out->samples(0);
+    if (dense) {
+      size_t index = 0;
+      for (size_t i = 0; i < present.size(); ++i) {
+        uint64_t word = present[i];
+        while (word) {
+          palette[index++] = static_cast<int32_t>(
+              int64_t{minimum} + static_cast<int64_t>(64 * i + std::countr_zero(word)));
+          word &= word - 1;
+        }
+      }
+    } else {
+      std::copy(values.begin(), values.end(), palette.begin());
+    }
+    const auto [w, h] = input[begin].descriptor.extent;
+    auto indices = out->samples(begin + 1);
+    for (size_t y = 0; y < h; ++y)
+      for (size_t x = 0; x < w; ++x)
+        indices[y * w + x] = Index(input[begin].Row(y)[x]);
+    for (size_t c = 0; c < input.size(); ++c)
+      if (c != begin)
+        Copy(input[c], out->samples(c + 1));
+  }
+};
+static_assert(sizeof(ChannelDictionary) < 13 * 1024);
 void Write(std::span<const ModularChannelView> input, const ReferencePaletteOptions &o,
            const Dictionary &d, ModularImage *out) {
   for (size_t c = 0; c < o.count; ++c)
@@ -187,6 +308,24 @@ void Write(std::span<const ModularChannelView> input, const ReferencePaletteOpti
       Copy(input[c], out->samples(c < o.begin ? c + 1 : c + 2 - o.count));
 }
 } // namespace
+Status ComputeReferenceChannelPaletteScratchBound(Extent2D extent, uint32_t maximum_colors,
+                                                  resource_budget_internal::HostStorageBound *out) {
+  size_t area;
+  if (!out || extent.empty() || !extent.try_area(&area) ||
+      maximum_colors > kMaximumReferenceChannelPaletteColors)
+    return Invalid();
+  resource_budget_internal::HostStorageBound bound;
+  if (maximum_colors > kMaximumPaletteColors) {
+    const size_t capacity = std::min(size_t{maximum_colors}, area);
+    using resource_budget_internal::VectorCapacityPolicy;
+    if (!bound.AddVector<int32_t>(capacity, VectorCapacityPolicy::kFreshExact) ||
+        !bound.AddVector<uint32_t>(std::bit_ceil(2 * capacity), VectorCapacityPolicy::kFreshExact))
+      return Invalid();
+    bound.retained_bytes = 0;
+  }
+  *out = bound;
+  return Status::Ok();
+}
 Status ComputeReferencePaletteStorageBound(std::span<const ModularChannelView> input,
                                            size_t metadata, const ReferencePaletteOptions &o,
                                            resource_budget_internal::HostStorageBound *out) {
@@ -201,6 +340,15 @@ Status ComputeReferencePaletteStorageBound(std::span<const ModularChannelView> i
   if (o.maximum_colors >= 2)
     if (auto s = ComputeModularImageStorageBound(shape.channels(), shape.metadata, &bound); !s.ok())
       return s;
+  if (o.count == 1) {
+    resource_budget_internal::HostStorageBound scratch;
+    if (auto s = ComputeReferenceChannelPaletteScratchBound(input[o.begin].descriptor.extent,
+                                                            o.maximum_colors, &scratch);
+        !s.ok())
+      return s;
+    if (!bound.Add(scratch))
+      return Invalid();
+  }
   *out = bound;
   return Status::Ok();
 }
@@ -211,17 +359,35 @@ Status TryBuildReferencePalette(std::span<const ModularChannelView> input, size_
   resource_budget_internal::HostStorageBound bound;
   if (auto s = ComputeReferencePaletteStorageBound(input, metadata, o, &bound); !s.ok())
     return s;
-  Dictionary dictionary;
   ReferencePaletteCandidate candidate;
-  if (Build(input.subspan(o.begin, o.count), o, &dictionary)) {
-    ChannelShape shape;
-    if (auto s = Shape(input, metadata, o, dictionary.colors, &shape); !s.ok())
+  if (o.count == 1 && o.maximum_colors > kMaximumPaletteColors) {
+    ChannelDictionary dictionary;
+    if (auto s = dictionary.Discover(input[o.begin], o.maximum_colors); !s.ok())
       return s;
-    if (auto s = ModularImage::Create(shape.channels(), shape.metadata, &candidate.image); !s.ok())
-      return s;
-    Write(input, o, dictionary, &candidate.image);
-    candidate.transform = Descriptor(o, dictionary.colors);
-    candidate.applied = true;
+    if (dictionary.accepted) {
+      ChannelShape shape;
+      if (auto s = Shape(input, metadata, o, dictionary.colors, &shape); !s.ok())
+        return s;
+      if (auto s = ModularImage::Create(shape.channels(), shape.metadata, &candidate.image);
+          !s.ok())
+        return s;
+      dictionary.Write(input, o.begin, &candidate.image);
+      candidate.transform = Descriptor(o, dictionary.colors);
+      candidate.applied = true;
+    }
+  } else {
+    Dictionary dictionary;
+    if (Build(input.subspan(o.begin, o.count), o, &dictionary)) {
+      ChannelShape shape;
+      if (auto s = Shape(input, metadata, o, dictionary.colors, &shape); !s.ok())
+        return s;
+      if (auto s = ModularImage::Create(shape.channels(), shape.metadata, &candidate.image);
+          !s.ok())
+        return s;
+      Write(input, o, dictionary, &candidate.image);
+      candidate.transform = Descriptor(o, dictionary.colors);
+      candidate.applied = true;
+    }
   }
   *out = std::move(candidate);
   return Status::Ok();
@@ -233,6 +399,15 @@ Status ApplyReferencePalette(const ModularImage &in, const TransformDescriptor &
     for (size_t c = 0; c < in.channel_count(); ++c)
       views[c] = in.view(c);
     const auto input = std::span(views).first(in.channel_count());
+    if (t.count == 1 && t.colors > kMaximumPaletteColors) {
+      ChannelDictionary dictionary;
+      if (auto s = dictionary.Discover(input[t.begin], t.colors); !s.ok())
+        return s;
+      if (!dictionary.accepted || dictionary.colors != t.colors)
+        return Invalid();
+      dictionary.Write(input, t.begin, out);
+      return Status::Ok();
+    }
     const ReferencePaletteOptions o{
         t.begin, t.count, t.palette_bit_depth,
         static_cast<uint16_t>(

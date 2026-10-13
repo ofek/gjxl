@@ -13,11 +13,12 @@ inline constexpr size_t kMaximumTransformedChannels = 64;
 inline constexpr size_t kMaximumPaletteColors = 1024;
 inline constexpr size_t kImplicitPaletteColors = 189;
 inline constexpr size_t kMaximumReferencePaletteColors = kMaximumPaletteColors + kImplicitPaletteColors;
+inline constexpr uint32_t kMaximumReferenceChannelPaletteColors = 5376 + 65535;
 enum class TransformKind : uint8_t { kPalette, kSqueeze, kRct };
 struct TransformDescriptor {
   TransformKind kind = TransformKind::kPalette;
   uint8_t begin = 0, count = 1;
-  uint16_t colors = 1;
+  uint32_t colors = 1;
   bool horizontal = true, in_place = true;
   uint8_t rct_type = 0; // RCT requires count=3; type 0 is an explicit identity.
   // Zero keeps the legacy explicit dictionary/capacity construction. Nonzero

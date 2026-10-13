@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 Yunho Cho
 #include "codestream/modular/storage_plan.h"
+#include "codec/modular/transform/reference_palette.h"
 #include "codestream/headers_internal.h"
 #include "codestream/modular/tree_codec.h"
 #include "codestream/modular/stream_encoder.h"
@@ -118,6 +119,17 @@ Status ComputeModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat fo
       return s;
     if (!image.Add(stage))
       return Overflow();
+    if (i < policy.transforms.size) {
+      const auto &t = policy.transforms.entries[i];
+      if (t.kind == TransformKind::kPalette && t.palette_bit_depth && t.count == 1) {
+        HostStorageBound scratch;
+        if (auto s = ComputeReferenceChannelPaletteScratchBound(
+                shapes[i].descriptors[t.begin].extent, t.colors, &scratch); !s.ok())
+          return s;
+        if (!image.Add(scratch))
+          return Overflow();
+      }
+    }
   }
   if (!tokens.AddVector<EntropyToken>(p.tokens, VectorCapacityPolicy::kFreshExact) ||
       !tokens.AddVector<EntropyTokenStreamView>(p.streams, VectorCapacityPolicy::kFreshExact))

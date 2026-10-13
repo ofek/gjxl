@@ -8,6 +8,12 @@ needed alongside the [gradient](modular-selection-cost.md) and
 palette proposals, RCT/WP settings and training scope remains the next
 integration step; no public default changes here.
 
+The subsequent [channel-compaction extension](modular-channel-palette.md)
+adds single-channel dictionaries through the 70,911-entry wire maximum. The
+bounded construction and measurements below describe this earlier milestone;
+the extension retains its outputs and adds sparse scratch planning and wider
+header support.
+
 The [qualification ledger](modular-reference-palette-results.json) binds the
 source, binaries, tests and generated files. These checks establish construction
 and coding correctness, not whole-policy parity, rate recovery or a speedup.

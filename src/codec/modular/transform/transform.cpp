@@ -136,8 +136,8 @@ Status ValidateTransforms(const TransformSequence &s) {
       if (t.count > 4 || t.palette_bit_depth > 24 ||
           (!t.palette_bit_depth && (!t.colors || t.colors > kMaximumPaletteColors)) ||
           (t.palette_bit_depth &&
-           (t.colors > kMaximumReferencePaletteColors ||
-            (t.count == 1 && (!t.colors || t.colors > kMaximumPaletteColors)))))
+           (t.count == 1 ? (!t.colors || t.colors > kMaximumReferenceChannelPaletteColors)
+                         : t.colors > kMaximumReferencePaletteColors)))
         return Invalid();
     } else if (t.kind == TransformKind::kSqueeze) {
       if (t.count > 19)

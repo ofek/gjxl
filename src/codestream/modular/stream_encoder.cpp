@@ -80,9 +80,10 @@ Status WriteCodingStreamHeader(const WeightedPredictorParameters &weighted, uint
                                     : writer->WriteBits(15, 3 | (uint64_t{t.count - 1u} << 2));
             !s.ok())
           return s;
-        if (auto s = t.colors < 256
-                         ? writer->WriteBits(10, uint64_t{t.colors} << 2)
-                         : writer->WriteBits(12, 1 | (uint64_t{t.colors - 256u} << 2));
+        if (auto s = t.colors < 256 ? writer->WriteBits(10, uint64_t{t.colors} << 2)
+                     : t.colors < 1280 ? writer->WriteBits(12, 1 | (uint64_t{t.colors - 256u} << 2))
+                     : t.colors < 5376 ? writer->WriteBits(14, 2 | (uint64_t{t.colors - 1280u} << 2))
+                                       : writer->WriteBits(18, 3 | (uint64_t{t.colors - 5376u} << 2));
             !s.ok())
           return s;
         if (auto s = writer->WriteBits(6, 0); !s.ok())

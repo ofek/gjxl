@@ -4,6 +4,7 @@
 #include "codec/modular/selection_cost.h"
 #include "codec/modular/transform/reference_palette.h"
 #include "codestream/modular/prepared_streams.h"
+#include "codestream/modular/stream_encoder.h"
 #include "codestream/modular/workflow.h"
 #include <algorithm>
 #include <filesystem>
@@ -11,7 +12,9 @@
 #include <iostream>
 #include <stdexcept>
 #ifdef GJXL_PALETTE_REFERENCE
+#include "lib/jxl/dec_bit_reader.h"
 #include "lib/jxl/memory_manager_internal.h"
+#include "lib/jxl/modular/encoding/encoding.h"
 #include "lib/jxl/modular/modular_image.h"
 #include "lib/jxl/modular/transform/enc_palette.h"
 #include "lib/jxl/modular/transform/palette.h"
@@ -49,7 +52,7 @@ struct Fixture {
   size_t metadata = 0;
   ReferencePaletteOptions options;
 };
-Fixture Make(const std::vector<Color> &pixels, uint8_t count, uint8_t bits, uint16_t limit,
+Fixture Make(const std::vector<Color> &pixels, uint8_t count, uint8_t bits, uint32_t limit,
              bool ordered, bool embedded, size_t width = 0) {
   Fixture f;
   f.metadata = embedded ? 2 : 0;
@@ -165,7 +168,7 @@ void Case(const Fixture &f, bool fault = false, int expected_width = -1) {
   auto status = ComputeReferencePaletteStorageBound(f.views, f.metadata, f.options, &bound);
   const bool pending = ManagedHostAllocationFailurePendingForTest();
   DisarmManagedHostAllocationFailureForTest();
-  Check(status.ok() && pending && bound.retained_bytes == bound.peak_bytes,
+  Check(status.ok() && pending && bound.retained_bytes <= bound.peak_bytes,
         "Palette planner failed/allocated");
   ResourceBudget budget(std::max(size_t{1}, bound.peak_bytes));
   ResourceReservation reservation;
@@ -250,14 +253,53 @@ void Case(const Fixture &f, bool fault = false, int expected_width = -1) {
           break;
       }
       Check(completed, "Fault sweep did not finish");
+      if (candidate.transform.colors > kMaximumPaletteColors) {
+        TransformSequence single;
+        single.size = 1;
+        single.entries[0] = candidate.transform;
+        completed = false;
+        for (size_t fail = 0; fail < 70; ++fail) {
+          ResourceBudget budget(bound.peak_bytes);
+          ResourceReservation reservation;
+          Ok(budget.Reserve(bound.peak_bytes, &reservation));
+          auto aliased = Own(f.views, f.metadata);
+          {
+            ResourceContextScope scope({&reservation, ResourceClass::kPreparation});
+            ArmManagedHostAllocationFailureAfterForTest(fail);
+            const auto status = ForwardTransforms(aliased, single, &aliased);
+            const bool pending = ManagedHostAllocationFailurePendingForTest();
+            DisarmManagedHostAllocationFailureForTest();
+            if (status.ok()) {
+              Check(pending && Same(aliased, candidate.image),
+                    "Wide prescribed forward recovery differs");
+              completed = true;
+            } else {
+              Check(!pending && status.code() == StatusCode::kOutOfMemory &&
+                        Same(aliased, original),
+                    "Wide prescribed forward failure changed aliased input");
+              ++failures;
+            }
+          }
+          aliased = {};
+          Check(budget.snapshot().total.backing_count == 0 &&
+                    budget.snapshot().total.pending_count == 0 &&
+                    budget.snapshot().peak_backing_bytes <= bound.peak_bytes,
+                "Wide prescribed forward scratch exceeded bound or leaked");
+          if (completed)
+            break;
+        }
+        Check(completed, "Wide prescribed forward fault sweep incomplete");
+      }
     }
   } else {
     Check(candidate.image.channel_count() == 0, "Rejected candidate retained image");
-    ArmNextManagedHostAllocationFailureForTest();
-    status = TryBuildReferencePalette(f.views, f.metadata, f.options, &candidate);
-    const bool unused = ManagedHostAllocationFailurePendingForTest();
-    DisarmManagedHostAllocationFailureForTest();
-    Check(status.ok() && unused && !candidate.applied, "Rejected palette allocated");
+    if (f.options.maximum_colors <= kMaximumPaletteColors) {
+      ArmNextManagedHostAllocationFailureForTest();
+      status = TryBuildReferencePalette(f.views, f.metadata, f.options, &candidate);
+      const bool unused = ManagedHostAllocationFailurePendingForTest();
+      DisarmManagedHostAllocationFailureForTest();
+      Check(status.ok() && unused && !candidate.applied, "Rejected small palette allocated");
+    }
   }
   Check(f.backing == unchanged, "Palette mutated borrowed input");
   candidate.image = {};
@@ -493,7 +535,118 @@ void EmptyDictionaryContracts() {
   Check(replacement.applied && Same(replacement.image, candidate.image),
         "Aliased palette publication differs");
 }
+void WideGenerated() {
+  for (size_t colors : std::array<size_t, 13>{1, 2, 1024, 1025, 1279, 1280, 4096, 5375, 5376, 62259,
+                                              65535, 65536, 70911}) {
+    for (bool sparse : {false, true}) {
+      if ((!sparse && colors > 65536) || (sparse && colors > 4096 && colors != 70911))
+        continue;
+      std::vector<Color> pixels;
+      for (size_t i = colors; i > 0; --i) {
+        const int32_t value =
+            sparse ? static_cast<int32_t>(uint32_t(i - 1) * 65537u) : int32_t(i - 1) - 30000;
+        pixels.push_back({value, 0, 0, 0});
+      }
+      const uint32_t limit = std::max(uint32_t{1025}, static_cast<uint32_t>(colors));
+      try {
+        Case(Make(pixels, 1, 24, limit, true, true), colors == 1025, colors);
+        if (colors > 1025)
+          Case(Make(pixels, 1, 24, limit - 1, false, false));
+      } catch (...) {
+        std::cerr << "wide colors=" << colors << " sparse=" << sparse << '\n';
+        throw;
+      }
+    }
+  }
+  Case(Make({Color{INT32_MIN}, Color{INT32_MAX}}, 1, 24, 70911, true, true), true, 2);
+  // Full 16-bit span in source order, including rank 65535 and a 65536-entry
+  // palette. This catches truncation in both descriptor and wire encoding.
+  std::vector<Color> dense;
+  for (int32_t i = 0; i < 65536; ++i)
+    dense.push_back({i, 0, 0, 0});
+  Case(Make(dense, 1, 16, 65536, true, false, 256), true, 65536);
+
+  auto fixture = Make(dense, 1, 16, 70912, true, false, 256);
+  HostStorageBound bound{17, 19};
+  ReferencePaletteCandidate output;
+  Check(!ComputeReferencePaletteStorageBound(fixture.views, 0, fixture.options, &bound).ok() &&
+            bound == HostStorageBound{17, 19} &&
+            !TryBuildReferencePalette(fixture.views, 0, fixture.options, &output).ok(),
+        "Unsupported channel palette limit accepted");
+  Check(!ComputeReferenceChannelPaletteScratchBound({0, 1}, 70911, &bound).ok() &&
+            !ComputeReferenceChannelPaletteScratchBound({1, 1}, 70912, &bound).ok() &&
+            !ComputeReferenceChannelPaletteScratchBound({1, 1}, 70911, nullptr).ok(),
+        "Invalid channel palette scratch plan accepted");
+  // A rejected sparse proposal still allocates bounded discovery scratch.
+  std::vector<Color> sparse;
+  for (uint32_t i = 0; i < 1026; ++i)
+    sparse.push_back({static_cast<int32_t>(i * 65537u), 0, 0, 0});
+  auto rejected = Make(sparse, 1, 24, 1025, true, false);
+  Ok(ComputeReferencePaletteStorageBound(rejected.views, 0, rejected.options, &bound));
+  for (size_t fail = 0; fail <= 2; ++fail) {
+    ResourceBudget budget(bound.peak_bytes);
+    ResourceReservation reservation;
+    Ok(budget.Reserve(bound.peak_bytes, &reservation));
+    ReferencePaletteCandidate sentinel;
+    sentinel.applied = true;
+    sentinel.transform.colors = 73;
+    sentinel.image = Own(rejected.views, 0);
+    const auto before = Own(rejected.views, 0);
+    {
+      ResourceContextScope scope({&reservation, ResourceClass::kPreparation});
+      ArmManagedHostAllocationFailureAfterForTest(fail);
+      const auto status = TryBuildReferencePalette(rejected.views, 0, rejected.options, &sentinel);
+      const bool pending = ManagedHostAllocationFailurePendingForTest();
+      DisarmManagedHostAllocationFailureForTest();
+      if (fail < 2) {
+        Check(status.code() == StatusCode::kOutOfMemory && !pending && sentinel.applied &&
+                  sentinel.transform.colors == 73 && Same(sentinel.image, before),
+              "Rejected sparse palette allocation failure changed output");
+        ++failures;
+      } else {
+        Check(status.ok() && pending && !sentinel.applied && sentinel.image.channel_count() == 0,
+              "Sparse policy rejection differs");
+      }
+      Check(budget.snapshot().total.backing_count == 0 &&
+                budget.snapshot().total.pending_count == 0 &&
+                budget.snapshot().peak_backing_bytes <= bound.peak_bytes,
+            "Sparse scratch leaked/exceeded bound");
+    }
+  }
+}
 #ifdef GJXL_PALETTE_REFERENCE
+void WideHeaders() {
+  size_t headers = 0;
+  for (uint32_t colors : {1024, 1025, 1279, 1280, 5375, 5376, 65535, 65536, 70910, 70911})
+    for (size_t offset = 0; offset < 8; ++offset)
+      for (bool shared : {false, true}) {
+        TransformSequence sequence;
+        sequence.size = 1;
+        sequence.entries[0] = {TransformKind::kPalette, 8, 1, colors};
+        sequence.entries[0].palette_bit_depth = 16;
+        BitWriter writer;
+        Ok(writer.WriteBits(offset, 0));
+        Ok(WriteCodingStreamHeader({}, 0, sequence, shared, &writer));
+        Check(writer.bits_written() - offset <= MaximumCodingStreamHeaderBits(sequence),
+              "Wide palette header exceeded its bound");
+        const auto bytes = writer.padded_bytes();
+        jxl::BitReader reader(bytes);
+        struct Closer {
+          jxl::BitReader &reader;
+          ~Closer() { (void)reader.Close(); }
+        } closer{reader};
+        reader.SkipBits(offset);
+        jxl::GroupHeader header;
+        Check(bool(jxl::Bundle::Read(&reader, &header)) && reader.AllReadsWithinBounds() &&
+                  reader.TotalBitsConsumed() == writer.bits_written() &&
+                  header.use_global_tree == shared && header.transforms.size() == 1 &&
+                  header.transforms[0].nb_colors == colors && header.transforms[0].begin_c == 8 &&
+                  header.transforms[0].num_c == 1 && header.transforms[0].nb_deltas == 0,
+              "Wide palette header differs from pinned reader");
+        ++headers;
+      }
+  std::cout << "wide palette headers=" << headers << '\n';
+}
 void SaveFile(std::span<const uint8_t> bytes) {
   if (!artifacts.empty()) {
     std::ofstream out(artifacts / ("case-" + std::to_string(files) + ".jxl"), std::ios::binary);
@@ -502,10 +655,14 @@ void SaveFile(std::span<const uint8_t> bytes) {
   }
   ++files;
 }
-void FileCase(uint8_t bits, uint8_t count, size_t scenario, bool local_palette) {
+void FileCase(uint8_t bits, uint8_t count, size_t scenario, bool local_palette,
+              uint32_t wide_colors = 0) {
   namespace ref = gjxl::test::modular_reference;
   std::vector<Color> pixels;
-  if (scenario == 0 || scenario == 1) {
+  if (wide_colors) {
+    for (uint32_t i = 0; i < wide_colors; ++i)
+      pixels.push_back({static_cast<int32_t>(i), 0, 0, 0});
+  } else if (scenario == 0 || scenario == 1) {
     for (size_t repeat = 0; repeat < (scenario == 0 ? 1 : 2); ++repeat)
       for (size_t k = 0; k < 189; ++k)
         pixels.push_back(Cube(k, bits));
@@ -544,7 +701,8 @@ void FileCase(uint8_t bits, uint8_t count, size_t scenario, bool local_palette) 
   ReferencePaletteCandidate global;
   ModularCodingPolicy policy;
   if (!local_palette) {
-    Ok(TryBuildReferencePalette(source, 0, {0, count, bits, 1024, true}, &global));
+    Ok(TryBuildReferencePalette(
+        source, 0, {0, count, bits, std::max(uint32_t{1024}, wide_colors), true}, &global));
     Check(global.applied, "Global file palette rejected");
     policy.transforms.size = 1;
     policy.transforms.entries[0] = global.transform;
@@ -674,11 +832,21 @@ int main(int argc, char **argv) {
       artifacts = argv[1];
       std::filesystem::create_directories(artifacts);
     }
-    Generated();
-    Contracts();
-    EmptyDictionaryContracts();
+    const bool wide = argc > 2 && std::string(argv[2]) == "wide";
+    if (wide)
+      WideGenerated();
+    else {
+      Generated();
+      Contracts();
+      EmptyDictionaryContracts();
+    }
 #ifdef GJXL_PALETTE_REFERENCE
-    Files();
+    if (wide) {
+      WideHeaders();
+      for (uint32_t colors : {1025, 1279, 1280, 5375, 5376, 62259, 65535, 65536})
+        FileCase(16, 1, 0, false, colors);
+    } else
+      Files();
 #endif
     std::cout << "palette cases=" << cases << " accepted=" << accepted << " empty=" << empty
               << " enlarged=" << enlarged << " allocation_failures=" << failures

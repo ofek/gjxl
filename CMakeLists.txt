@@ -2350,6 +2350,8 @@ if(GJXL_BUILD_TESTS)
   add_executable(gjxl_modular_reference_palette_test tests/modular_reference_palette_test.cpp)
   target_link_libraries(gjxl_modular_reference_palette_test PRIVATE gjxl_codestream)
   add_test(NAME modular_reference_palette COMMAND gjxl_modular_reference_palette_test)
+  add_test(NAME modular_reference_channel_palette COMMAND gjxl_modular_reference_palette_test
+    "${CMAKE_CURRENT_BINARY_DIR}/modular-reference-channel-palette-native" wide)
 
   add_executable(gjxl_modular_prepared_stream_test tests/modular_prepared_stream_test.cpp)
   target_link_libraries(gjxl_modular_prepared_stream_test PRIVATE gjxl_codestream)
