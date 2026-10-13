@@ -53,6 +53,10 @@ class EntropyTest(test_coding_replay.CodingReplayTest):
         next(s for s in bad['scopes'] if s['kind'] == 'data')['prefix'] = True
         with self.assertRaises(ValueError): validate_result(self.root, bad)
         estimated = next(r for r in results if r['variant'] == 'native_direct_estimated')
+        for key, value in (('exact', False), ('planned_peak_bytes', 1), ('retained_bytes', 1)):
+            bad = copy.deepcopy(estimated)
+            bad['prepared_stream_control'][key] = value
+            with self.assertRaises(ValueError): validate_result(self.root, bad)
         bad = copy.deepcopy(estimated)
         next(s for s in bad['scopes'] if s['kind'] == 'data')['ans_work']['token_cost_candidates'] = 1
         with self.assertRaises(ValueError): validate_result(self.root, bad)

@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Yunho Cho
 #include "codestream/modular/prepared_streams.h"
 #include "codec/modular/profile.h"
+#include "codestream/ans_internal.h"
 #include "codestream/headers_internal.h"
 #include "codestream/modular/stream_encoder.h"
 #include "codestream/modular/tree_codec.h"
@@ -15,6 +16,30 @@ using namespace codestream_internal;
 using namespace resource_budget_internal;
 Status Invalid() { return Status::InvalidArgument("Invalid prepared Modular streams"); }
 Status Overflow() { return Status::InvalidArgument("Prepared Modular stream storage overflow"); }
+using EntropyPolicy = PreparedModularEntropyPolicy;
+Status ValidateOptions(const PreparedModularEntropyOptions &options) {
+  if (auto s = ValidateAnsSelectionMode(options.selection); !s.ok())
+    return s;
+  if (options.policy == EntropyPolicy::kDirectRateAns)
+    return options.maximum_ans_clusters && options.maximum_ans_clusters <= kMaximumAnsClusters
+               ? Status::Ok()
+               : Invalid();
+  return (options.policy == EntropyPolicy::kPrefix ||
+          options.policy == EntropyPolicy::kAnsFromPrefix) &&
+                 options.maximum_ans_clusters == kDefaultDirectAnsClusters
+             ? Status::Ok()
+             : Invalid();
+}
+EntropyCodingMode CodingMode(const PreparedModularEntropyOptions &options) {
+  return options.policy == EntropyPolicy::kPrefix ? EntropyCodingMode::kPrefix
+                                                  : EntropyCodingMode::kAns;
+}
+PreparedModularEntropyOptions LegacyOptions(EntropyCodingMode mode,
+                                            AnsSelectionMode selection = AnsSelectionMode::kExact) {
+  return {.policy = mode == EntropyCodingMode::kPrefix ? EntropyPolicy::kPrefix
+                                                       : EntropyPolicy::kAnsFromPrefix,
+          .selection = selection};
+}
 bool Add(size_t value, size_t *total) {
   if (value > SIZE_MAX - *total)
     return false;
@@ -174,19 +199,23 @@ struct ModelBound {
   size_t bits = 0;
   HostStorageBound owned, optimization, writing;
 };
-Status ModelStorage(size_t tokens, size_t contexts, size_t streams, EntropyCodingMode mode,
-                    ModelBound *out) {
+Status ModelStorage(size_t tokens, size_t contexts, size_t streams,
+                    const PreparedModularEntropyOptions &entropy, ModelBound *out) {
   ModelBound p;
-  EntropyOptimizationStorageOptions options{.policy = EntropyStoragePolicy::kPrefix,
-                                            .tokens = tokens,
-                                            .contexts = contexts,
-                                            .sections = streams,
-                                            .return_cost = false};
+  const bool direct = entropy.policy == EntropyPolicy::kDirectRateAns;
+  const auto mode = CodingMode(entropy);
+  EntropyOptimizationStorageOptions options{
+      .policy = direct ? EntropyStoragePolicy::kRateOptimizedAns : EntropyStoragePolicy::kPrefix,
+      .tokens = tokens,
+      .contexts = contexts,
+      .sections = streams,
+      .return_cost = false,
+      .maximum_ans_clusters = entropy.maximum_ans_clusters};
   EntropyOptimizationStoragePlan prefix, ans;
   if (auto s = ComputeEntropyOptimizationStoragePlan(options, &prefix); !s.ok())
     return s;
   p.optimization = prefix.working;
-  if (mode == EntropyCodingMode::kAns) {
+  if (entropy.policy == EntropyPolicy::kAnsFromPrefix) {
     options.policy = EntropyStoragePolicy::kAnsFromPrefix;
     if (auto s = ComputeEntropyOptimizationStoragePlan(options, &ans); !s.ok())
       return s;
@@ -194,8 +223,10 @@ Status ModelStorage(size_t tokens, size_t contexts, size_t streams, EntropyCodin
       return Overflow();
   }
   EntropyModelStoragePlan model;
-  if (auto s = ComputeEntropyModelStoragePlan(mode, contexts,
-                                              std::min(contexts, kMaximumPrefixClusters), &model);
+  if (auto s = ComputeEntropyModelStoragePlan(
+          mode, contexts,
+          std::min(contexts, direct ? entropy.maximum_ans_clusters : kMaximumPrefixClusters),
+          &model);
       !s.ok())
     return s;
   p.bits = 1 + model.maximum_bits; // No LZ77, followed by the model.
@@ -209,7 +240,7 @@ struct StreamBound {
   HostStorageBound scratch;
 };
 Status StreamStorage(const PreparedModularStreamView &stream, const StreamInfo &info,
-                     EntropyCodingMode mode, StreamBound *out) {
+                     const PreparedModularEntropyOptions &entropy, StreamBound *out) {
   StreamBound p;
   if (!info.present) {
     *out = p;
@@ -218,7 +249,8 @@ Status StreamStorage(const PreparedModularStreamView &stream, const StreamInfo &
   p.bits = MaximumCodingStreamHeaderBits(stream.transforms);
   if (info.tokens) {
     EntropyTokenEmissionStoragePlan payload;
-    if (auto s = ComputeEntropyTokenEmissionStoragePlan(mode, info.tokens, &payload); !s.ok())
+    if (auto s = ComputeEntropyTokenEmissionStoragePlan(CodingMode(entropy), info.tokens, &payload);
+        !s.ok())
       return s;
     if (!Add(payload.maximum_bits, &p.bits) || !p.scratch.Add(payload.scratch))
       return Overflow();
@@ -227,7 +259,7 @@ Status StreamStorage(const PreparedModularStreamView &stream, const StreamInfo &
       ModelBound model;
       if (auto s = ComputeGlobalTreeStoragePlan(info.tree_tokens, &tree); !s.ok())
         return s;
-      if (auto s = ModelStorage(info.tokens, info.contexts, 1, mode, &model); !s.ok())
+      if (auto s = ModelStorage(info.tokens, info.contexts, 1, entropy, &model); !s.ok())
         return s;
       if (!Add(tree.maximum_bits, &p.bits) || !Add(model.bits, &p.bits) ||
           !p.scratch.Add(tree.scratch) || !p.scratch.Add(model.optimization) ||
@@ -238,10 +270,12 @@ Status StreamStorage(const PreparedModularStreamView &stream, const StreamInfo &
   *out = p;
   return Status::Ok();
 }
-Status Plan(const PreparedModularStreamsView &input, EntropyCodingMode mode,
+Status Plan(const PreparedModularStreamsView &input, const PreparedModularEntropyOptions &entropy,
             ModularWorkflowStoragePlan *out, FrameInfo *frame_out = nullptr) {
-  if (!out || (mode != EntropyCodingMode::kPrefix && mode != EntropyCodingMode::kAns))
+  if (!out)
     return Invalid();
+  if (auto s = ValidateOptions(entropy); !s.ok())
+    return s;
   FrameInfo frame;
   if (auto s = DescribeFrame(input, &frame); !s.ok())
     return s;
@@ -283,8 +317,8 @@ Status Plan(const PreparedModularStreamsView &input, EntropyCodingMode mode,
             ModularTreeTokenCount(*input.global_tree, frame.global_tree), &tree);
         !s.ok())
       return s;
-    if (auto s =
-            ModelStorage(global_tokens, frame.global_tree.leaves, p.streams, mode, &global_model);
+    if (auto s = ModelStorage(global_tokens, frame.global_tree.leaves, p.streams, entropy,
+                              &global_model);
         !s.ok())
       return s;
     if (!Add(tree.maximum_bits, &p.maximum_global_bits) ||
@@ -298,7 +332,7 @@ Status Plan(const PreparedModularStreamsView &input, EntropyCodingMode mode,
     StreamBound stream;
     if (auto s = DescribeStream(input, frame, i, &info); !s.ok())
       return s;
-    if (auto s = StreamStorage(input.streams[i], info, mode, &stream); !s.ok())
+    if (auto s = StreamStorage(input.streams[i], info, entropy, &stream); !s.ok())
       return s;
     scratch.peak_bytes = std::max(scratch.peak_bytes, stream.scratch.peak_bytes);
     if (i == 0) {
@@ -420,15 +454,22 @@ Status Tokenize(const PreparedModularStreamsView &input, const FrameInfo &frame,
   return Status::Ok();
 }
 Status MakeModel(std::span<const EntropyTokenStreamView> streams, size_t contexts,
-                 EntropyCodingMode mode, AnsSelectionMode selection, EntropyCode *out) {
+                 const PreparedModularEntropyOptions &entropy, EntropyCode *out) {
   ProfileScope profile(ProfileStage::kModel);
+  if (entropy.policy == EntropyPolicy::kDirectRateAns)
+    return OptimizeDirectAnsEntropyCode(streams,
+                                        {.context_count = static_cast<uint32_t>(contexts),
+                                         .maximum_ans_clusters = entropy.maximum_ans_clusters},
+                                        DirectAnsEntropyMode::kRateOptimized, out, nullptr, nullptr,
+                                        entropy.selection);
   if (auto s =
           OptimizeEntropyCode(streams, {.context_count = static_cast<uint32_t>(contexts)}, out);
       !s.ok())
     return s;
-  if (mode == EntropyCodingMode::kAns) {
+  if (entropy.policy == EntropyPolicy::kAnsFromPrefix) {
     EntropyCode ans;
-    if (auto s = OptimizeAnsEntropyCode(streams, *out, &ans, nullptr, nullptr, selection); !s.ok())
+    if (auto s = OptimizeAnsEntropyCode(streams, *out, &ans, nullptr, nullptr, entropy.selection);
+        !s.ok())
       return s;
     *out = std::move(ans);
   }
@@ -439,7 +480,14 @@ Status MakeModel(std::span<const EntropyTokenStreamView> streams, size_t context
 Status ComputePreparedModularStreamsStoragePlan(const PreparedModularStreamsView &input,
                                                 EntropyCodingMode mode,
                                                 ModularWorkflowStoragePlan *out) {
-  return Plan(input, mode, out);
+  if (mode != EntropyCodingMode::kPrefix && mode != EntropyCodingMode::kAns)
+    return Invalid();
+  return Plan(input, LegacyOptions(mode), out);
+}
+Status ComputePreparedModularStreamsStoragePlan(const PreparedModularStreamsView &input,
+                                                const PreparedModularEntropyOptions &options,
+                                                ModularWorkflowStoragePlan *out) {
+  return Plan(input, options, out);
 }
 Status TokenizePreparedModularStreams(const PreparedModularStreamsView &input,
                                       PreparedModularStreamTokens *out) try {
@@ -458,14 +506,19 @@ Status TokenizePreparedModularStreams(const PreparedModularStreamsView &input,
 }
 
 Status EncodePreparedModularStreams(const PreparedModularStreamsView &input, EntropyCodingMode mode,
-                                    CodestreamBuffer *out, AnsSelectionMode selection) try {
+                                    CodestreamBuffer *out, AnsSelectionMode selection) {
+  if (mode != EntropyCodingMode::kPrefix && mode != EntropyCodingMode::kAns)
+    return Invalid();
+  return EncodePreparedModularStreams(input, LegacyOptions(mode, selection), out);
+}
+Status EncodePreparedModularStreams(const PreparedModularStreamsView &input,
+                                    const PreparedModularEntropyOptions &entropy,
+                                    CodestreamBuffer *out) try {
   if (!out)
     return Invalid();
-  if (auto s = ValidateAnsSelectionMode(selection); !s.ok())
-    return s;
   ModularWorkflowStoragePlan plan;
   FrameInfo frame;
-  if (auto s = Plan(input, mode, &plan, &frame); !s.ok())
+  if (auto s = Plan(input, entropy, &plan, &frame); !s.ok())
     return s;
   thread_budget_internal::EncodeScope serial(1);
   Storage<BitWriter> sections;
@@ -479,8 +532,7 @@ Status EncodePreparedModularStreams(const PreparedModularStreamsView &input, Ent
       for (size_t i = 0; i < shared.size(); ++i)
         if (!input.streams[i].local_tree)
           shared[i] = tokens.streams[i];
-      if (auto s = MakeModel(shared, frame.global_tree.leaves, mode, selection, &global_model);
-          !s.ok())
+      if (auto s = MakeModel(shared, frame.global_tree.leaves, entropy, &global_model); !s.ok())
         return s;
     }
     sections.resize(plan.geometry.section_count());
@@ -490,7 +542,7 @@ Status EncodePreparedModularStreams(const PreparedModularStreamsView &input, Ent
       const EntropyCode *model = &global_model;
       if (stream.local_tree && tokens.streams[i].size()) {
         if (auto s = MakeModel(std::span(tokens.streams).subspan(i, 1),
-                               (stream.local_tree->size + 1) / 2, mode, selection, &local_model);
+                               (stream.local_tree->size + 1) / 2, entropy, &local_model);
             !s.ok())
           return s;
         model = &local_model;
@@ -538,7 +590,7 @@ Status EncodePreparedModularStreams(const PreparedModularStreamsView &input, Ent
       StreamBound bound;
       if (auto s = DescribeStream(input, frame, i, &info); !s.ok())
         return s;
-      if (auto s = StreamStorage(input.streams[i], info, mode, &bound); !s.ok())
+      if (auto s = StreamStorage(input.streams[i], info, entropy, &bound); !s.ok())
         return s;
       if (!Add(7, &bound.bits))
         return Overflow();

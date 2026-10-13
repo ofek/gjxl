@@ -14,6 +14,11 @@ scopes are still captured reference decisions. The
 [full ledger](modular-direct-ans-estimated-results.json) binds rate, counters,
 independent reconstruction, allocation tests and timing evidence.
 
+The subsequent [prepared-stream integration](modular-prepared-entropy.md) now
+qualifies an explicit private routing option and its stream-level resource
+contract. It reproduces all 55 files here; public-default and whole-encoder
+performance qualification remain separate.
+
 ## Implementation and contract
 
 `OptimizeDirectAnsEntropyCode` now accepts the existing `AnsSelectionMode`
@@ -138,9 +143,9 @@ serial timing protocol before producing the report. `entropy_model_timing.py`
 provides explicit `run` and `analyze` commands; timing evidence never replaces
 the separate profiled rate controls.
 
-The next change is an explicit private prepared-stream entropy policy using
-direct rate/64 with estimated width selection. It needs stream-level storage,
-failure-publication and complete-file differential qualification, retaining
-the exact and Prefix-derived controls. Native palette/RCT/WP selection,
+An explicit private prepared-stream entropy policy is now
+[qualified separately](modular-prepared-entropy.md), including stream-level
+storage, failure publication and complete-file comparison with these controls.
+Native palette/RCT/WP selection,
 one fit per selected scope, held-out rate and whole-stage performance remain
 required before public defaults or GPU routing change.

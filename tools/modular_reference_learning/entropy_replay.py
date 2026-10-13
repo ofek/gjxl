@@ -20,6 +20,20 @@ def validate_result(directory, result):
     timed = result.get('model_timing_recorded', False)
     if type(timed) is not bool:
         raise ValueError('Invalid model timing evidence flag')
+    if 'prepared_stream_control' in result:
+        control = result['prepared_stream_control']
+        prepared = variant == 'native' or (not timed and variant in DIRECT_VARIANTS[2:])
+        fields = ('peak_bytes', 'planned_peak_bytes', 'retained_bytes', 'planned_retained_bytes',
+                  'maximum_codestream_bytes')
+        if prepared:
+            if (not isinstance(control, dict) or set(control) != {'exact', *fields} or
+                    control['exact'] is not True or any(type(control[k]) is not int or control[k] <= 0 for k in fields) or
+                    not result['bytes'] == control['retained_bytes'] <= control['planned_retained_bytes'] or
+                    control['peak_bytes'] > control['planned_peak_bytes'] or
+                    result['bytes'] > control['maximum_codestream_bytes']):
+                raise ValueError('Missing prepared-stream equality or managed-storage evidence')
+        elif control is not None:
+            raise ValueError('Unexpected prepared-stream control')
     if (result['schema'] != 1 or variant not in VARIANTS or result['timing_qualified'] is not False or
             any(result[k] is not True for k in ('tokens_exact', 'trees_exact', 'decoded_exact')) or
             result['native_control_exact'] is not (True if variant == 'native' else None)):

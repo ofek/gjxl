@@ -21,8 +21,11 @@ captured e9 tree/sample tokens and exact decodes with local/shared model scopes.
 The [downstream ablations](modular-entropy-ablation.md) now isolate its large
 automatic-cohort rate gap to data-context grouping. Reference groups plus
 unchanged native coding reach the stock total on that captured-decision
-cohort; native grouping, the high-depth exceptions, reference palette
-construction and cheap selection remain to be implemented or qualified.
+cohort. [Native direct ANS with estimated selection](modular-prepared-entropy.md)
+is now integrated and qualified at the private prepared-stream boundary,
+preserving the standalone controls and closing that conditional aggregate gap.
+The high-depth LZ77 exception, reference palette construction and cheap
+selection remain to be implemented or qualified.
 A blanket global-tree replacement is not justified.
 
 ## Selection happens before expensive tree fitting

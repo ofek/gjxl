@@ -360,3 +360,12 @@ NEW_DIRECTORY` performs one warmup and five serial interleaved rounds, and its
 `analyze_estimated_entropy.py` combines the rate, sanitizer, native storage and
 timing qualification. See the [estimated-width report](../../docs/modular-direct-ans-estimated.md)
 for the measured scope and remaining integration work.
+
+The original native control and all four direct rate/estimated controls also
+compare complete output against the private prepared-stream encoder under its
+managed-storage reservation. New records carry `prepared_stream_control`
+equality/peak/retained bounds. Direct comparisons are omitted in model-timing
+mode. Historical frozen records remain readable. Use
+`analyze_prepared_entropy.py` to qualify these integrated paths against the
+previous standalone controls and generated Release/sanitizer files; see the
+[integration report](../../docs/modular-prepared-entropy.md).

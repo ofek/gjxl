@@ -7,6 +7,7 @@
 #include "lib/jxl/modular/encoding/enc_ma.h"
 #include "lib/jxl/modular/modular_image.h"
 #include "lib/jxl/pack_signed.h"
+#include "modular_prepared_entropy_cases.h"
 #include "modular_reference.h"
 #include <filesystem>
 #include <fstream>
@@ -256,30 +257,42 @@ void Case(PackedModularFormat format, size_t scenario, size_t scope) {
     Ok(TokenizePreparedModularStreams(input, &tokens));
     CheckTokens(input, tokens, layout);
   }
-  for (auto mode : {EntropyCodingMode::kPrefix, EntropyCodingMode::kAns}) {
+  for (const auto &variant : test::kPreparedEntropyCases) {
+    const auto &options = variant.options;
     ModularWorkflowStoragePlan plan;
-    Ok(ComputePreparedModularStreamsStoragePlan(input, mode, &plan));
+    Ok(ComputePreparedModularStreamsStoragePlan(input, options, &plan));
     ResourceBudget budget(plan.working.peak_bytes);
     ResourceReservation reservation;
     Ok(budget.Reserve(plan.working.peak_bytes, &reservation));
     gjxl::codestream_internal::CodestreamBuffer encoded;
     {
       ResourceContextScope resource({&reservation, ResourceClass::kPreparation});
-      Ok(EncodePreparedModularStreams(input, mode, &encoded));
+      Ok(EncodePreparedModularStreams(input, options, &encoded));
     }
     Check(encoded.size() <= plan.maximum_codestream_bytes &&
               budget.snapshot().peak_backing_bytes <= plan.working.peak_bytes,
           "Scoped encoder exceeded managed storage bound");
     Check(ref::DecodeLossless(encoded.view()) == original, "Scoped file does not decode exactly");
-    if (scenario == 0 && scope == 0) {
-      ModularEncodingOptions options;
-      options.entropy = mode;
+    if (scenario == 0 && scope == 0 &&
+        options.policy != PreparedModularEntropyPolicy::kDirectRateAns) {
+      ModularEncodingOptions legacy_options;
+      legacy_options.entropy = options.policy == PreparedModularEntropyPolicy::kPrefix
+                                   ? EntropyCodingMode::kPrefix
+                                   : EntropyCodingMode::kAns;
       std::vector<uint8_t> legacy;
-      Ok(EncodeModularImage(packed, options, &legacy));
+      Ok(EncodeModularImage(packed, legacy_options, &legacy));
       Check(std::ranges::equal(encoded.view(), legacy), "Shared-tree bridge changed legacy bytes");
     }
     if (!artifacts.empty()) {
-      std::ofstream out(artifacts / ("case-" + std::to_string(files) + ".jxl"), std::ios::binary);
+      // Preserve historical control names while adding explicit direct
+      // policies.
+      const auto name =
+          options.policy == PreparedModularEntropyPolicy::kDirectRateAns
+              ? std::string(variant.name) + "-case-" + std::to_string(cases)
+              : "case-" +
+                    std::to_string(cases * 2 + (options.policy ==
+                                                PreparedModularEntropyPolicy::kAnsFromPrefix));
+      std::ofstream out(artifacts / (name + ".jxl"), std::ios::binary);
       out.write(reinterpret_cast<const char *>(encoded.data()), encoded.size());
       Check(bool(out), "Artifact write failed");
     }

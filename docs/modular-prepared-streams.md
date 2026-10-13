@@ -158,15 +158,16 @@ Builds and correctness checks overlap; elapsed times are not benchmark data.
 
 ## Next integration gates
 
-1. Integrate [direct ANS with qualified estimated width selection](modular-direct-ans-estimated.md)
-   through an explicit private policy with stream-level managed bounds;
-   retain the high-depth/LZ77 exceptions and exact controls.
-2. Port reference palette construction and the cheap transform/WP estimators,
+The [direct-ANS integration](modular-prepared-entropy.md) is now qualified through
+an explicit private policy with stream-level managed bounds. It preserves the
+standalone exact/estimated controls; the high-depth LZ77 gap remains visible.
+
+1. Port reference palette construction and the cheap transform/WP estimators,
    matching values, tie order, selected transforms and prepared pixels.
-3. Connect native preparation/fitting once per selected coding scope, preserving
+2. Connect native preparation/fitting once per selected coding scope, preserving
    the shared/local entropy choice. Count and prohibit repeated full fits for
    transform candidates in the proposed policy.
-4. Run paired whole-stage timing, full/held-out rate, resource and exhaustive
+3. Run paired whole-stage timing, full/held-out rate, resource and exhaustive
    new-learner comparisons under the
    [existing promotion gates](modular-tree-learning-cost.md#proposed-acceptance-criteria).
    Default promotion and GPU implementation remain separate milestones.

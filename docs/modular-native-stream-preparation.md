@@ -14,7 +14,9 @@ on captured transformed streams. It does not implement the per-stream coding
 policy or change encoder defaults, and it supplies no new timing or rate claim.
 The subsequent [prepared-stream encoder](modular-prepared-streams.md) now also
 matches captured coding tokens and exact decodes, while exposing a downstream
-rate gap that is separate from this matched learning result.
+rate gap that is separate from this matched learning result. The
+[direct-ANS follow-up](modular-prepared-entropy.md) closes that conditional
+automatic-cohort aggregate gap through an explicit private policy.
 
 ## Native contract and replay
 
@@ -117,17 +119,14 @@ evidence.
 
 ## Next implementation boundary
 
-The learner can now consume these actual e9 inputs faithfully. The next task
-is to represent and emit **per-stream coding policies**: ordered palette/RCT
-chains and channel ranges, the observed palettes above 256 colors, per-stream
-WP headers, and global/local trees with the matching entropy scope. Token and
-decoded-pixel equality must precede automatic selection.
+The learner can now consume these actual e9 inputs faithfully. The
+[ordered-transform follow-up](modular-ordered-transforms.md) qualifies
+prescribed RCT anywhere in the sequence and palettes through 1,024 entries,
+and the [prepared-stream encoder](modular-prepared-entropy.md) qualifies
+per-stream WP headers and global/local tree and entropy scopes. Token and
+decoded-pixel equality now cover these prescribed decisions.
 
-The [ordered-transform follow-up](modular-ordered-transforms.md) now qualifies
-prescribed RCT anywhere in the sequence and palettes through 1,024 entries.
-Per-stream coding/tree/entropy scope and reference palette construction remain.
-
-After that, port and qualify the reference's cheap transform/WP estimators so
+Next port reference palette construction and qualify the cheap transform/WP estimators so
 expensive learning happens on selected coding scopes. Keep the exhaustive
 new-learner and all-predictor controls, then apply whole-stage timing, rate,
 resource and held-out gates before default promotion or GPU work. The

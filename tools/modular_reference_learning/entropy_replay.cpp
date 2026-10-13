@@ -429,11 +429,37 @@ void ReplayEntropyAblations(const native::PreparedModularStreamsView &input,
     const size_t toc_bits = file.bits_written() - header_bits - section_bits - padding;
     Require(ref::DecodeLossless(file.padded_bytes()) == expected,
             "Entropy ablation decode differs");
-    if (variant.name == "native") {
+    size_t prepared_peak = 0, prepared_retained = 0;
+    native::ModularWorkflowStoragePlan prepared_bound;
+    const bool prepared_control = variant.name == "native" || (!measure && variant.direct_ans_mode == 2);
+    if (prepared_control) {
+      native::PreparedModularEntropyOptions options;
+      if (variant.direct_ans_mode == 2) {
+        options.policy = native::PreparedModularEntropyPolicy::kDirectRateAns;
+        options.maximum_ans_clusters = variant.clusters;
+        options.selection = variant.estimated ? gjxl::AnsSelectionMode::kEstimated : gjxl::AnsSelectionMode::kExact;
+      }
+      Ok(native::ComputePreparedModularStreamsStoragePlan(input, options, &prepared_bound));
+      namespace resource = gjxl::resource_budget_internal;
+      resource::ResourceBudget budget(prepared_bound.working.peak_bytes);
+      resource::ResourceReservation reservation;
+      Ok(budget.Reserve(prepared_bound.working.peak_bytes, &reservation));
       gjxl::codestream_internal::CodestreamBuffer control;
-      Ok(native::EncodePreparedModularStreams(input, gjxl::EntropyCodingMode::kAns, &control));
+      {
+        resource::ResourceContextScope admitted({&reservation, resource::ResourceClass::kPreparation});
+        Ok(native::EncodePreparedModularStreams(input, options, &control));
+      }
       Require(std::ranges::equal(control.view(), file.padded_bytes()),
-              "Native entropy control bytes differ");
+              "Prepared-stream entropy control bytes differ");
+      prepared_peak = budget.snapshot().peak_backing_bytes;
+      prepared_retained = budget.snapshot().total.live_capacity_bytes + budget.snapshot().total.idle_capacity_bytes;
+      Require(control.size() <= prepared_bound.maximum_codestream_bytes &&
+                  prepared_peak <= prepared_bound.working.peak_bytes &&
+                  prepared_retained <= prepared_bound.output.retained_bytes,
+              "Prepared-stream entropy control exceeded its storage plan");
+      control.Reset();
+      Require(budget.snapshot().total.backing_count == 0 && budget.snapshot().total.pending_count == 0,
+              "Prepared-stream entropy control leaked managed storage");
     }
     const auto path = output / (variant.name + ".jxl");
     std::ofstream binary(path, std::ios::binary);
@@ -450,7 +476,15 @@ void ReplayEntropyAblations(const native::PreparedModularStreamsView &input,
         << ",\"stream_header_bits\":" << stream_header_bits
         << ",\"section_padding_bits\":" << padding << ",\"tree_bits\":" << tree_bits
         << ",\"data_model_bits\":" << data_model_bits << ",\"data_token_bits\":" << data_token_bits
-        << ",\"scopes\":[";
+        << ",\"prepared_stream_control\":";
+    if (prepared_control)
+      out << "{\"exact\":true,\"peak_bytes\":" << prepared_peak
+          << ",\"planned_peak_bytes\":" << prepared_bound.working.peak_bytes
+          << ",\"retained_bytes\":" << prepared_retained
+          << ",\"planned_retained_bytes\":" << prepared_bound.output.retained_bytes
+          << ",\"maximum_codestream_bytes\":" << prepared_bound.maximum_codestream_bytes << '}';
+    else out << "null";
+    out << ",\"scopes\":[";
     for (size_t i = 0; i < records.size(); ++i) {
       if (i)
         out << ',';
