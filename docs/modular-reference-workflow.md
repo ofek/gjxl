@@ -20,6 +20,9 @@ provenance and per-image results. Runs overlapped correctness work and are
 **not timing measurements**. Passing this corpus's aggregate rate target does
 not establish per-image, held-out, search, or performance gates.
 
+The subsequent [integrated timing study](modular-reference-workflow-timing.md)
+qualifies the whole-learning and complete-encode intervals separately.
+
 ## Selection, learning, and ownership
 
 `PrepareReferenceModularFrame` owns the unpacked samples, selected transformed
@@ -177,10 +180,10 @@ python3 tools/modular_reference_learning/analyze_reference_workflow.py \
 original-input encodes. The driver uses the pinned test oracle only for
 independent decoding; production libraries have no libjxl dependency.
 
-Next measure integrated learning and complete encoding on interleaved,
-otherwise idle runs against stock e9. Then compare selection with exhaustive
-search using the **new learner**, retain Best/all controls, and apply held-out
-and per-image gates before promotion. Patch-frame and high-depth entropy
-differences remain explicit limitations. The
+The subsequent timing study meets the current-corpus whole-learning aim for
+Best. Next compare selection with exhaustive search using the **new learner**,
+retain Best/all controls, and apply held-out and per-image gates before
+promotion. Patch-frame and high-depth entropy differences remain explicit
+limitations. The
 [search plan](modular-reference-search-policy.md) governs those separate
 decisions and subsequent GPU prioritization.

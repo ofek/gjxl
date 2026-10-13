@@ -211,9 +211,11 @@ int main(int argc, char **argv) try {
   ModularProfile profile;
   ProfileSession session(&profile);
   ReferenceModularFrame frame;
-  std::ostringstream preparation, coding;
+  std::ostringstream preparation, coding, total;
   preparation << std::setprecision(17);
   coding << std::setprecision(17);
+  total << std::setprecision(17);
+  const Timer whole;
   {
     Timer timer;
     Ok(PrepareReferenceModularFrame(view, options, budget, &frame));
@@ -234,6 +236,13 @@ int main(int argc, char **argv) try {
     Ok(EncodePreparedModularStreams(frame.view(), options.entropy, &bytes));
     timer.Write(coding);
   }
+  // Trace output requires retained prepared data. Timing runs release it
+  // within the total interval, as the complete native wrapper does. Source
+  // IO/unpacking for the independent decoder and all verification stay out.
+  if (mode == "timing") {
+    frame = {};
+    whole.Write(total);
+  }
   Check(reference::DecodeLossless(bytes.view()) == original,
         "Decoded source integers differ");
   if (mode == "trace")
@@ -253,7 +262,7 @@ int main(int argc, char **argv) try {
   std::ofstream result(directory / "result.json");
   result.exceptions(std::ios::failbit | std::ios::badbit);
   result << std::setprecision(17) << std::boolalpha
-         << "{\"schema\":1,\"buffering\":\"" << buffering
+         << "{\"schema\":2,\"buffering\":\"" << buffering
          << "\",\"predictors\":\"" << predictors
          << "\",\"exact_decode\":true,\"bytes\":" << encoded_size
          << ",\"stats\":";
@@ -264,6 +273,10 @@ int main(int argc, char **argv) try {
          << ",\"prepare\":" << preparation.str()
          << ",\"encode_prepared\":" << coding.str() << ",\"profile_wall\":";
   Array(result, profile.seconds);
+  result << ",\"profile_cpu\":";
+  Array(result, profile.cpu_seconds);
+  result << ",\"total\":" << (mode == "timing" ? total.str() : "null")
+         << ",\"total_includes_prepared_teardown\":" << (mode == "timing");
   result << "}\n";
   result.close();
   std::cout << directory.string() << ": " << encoded_size << " bytes; "

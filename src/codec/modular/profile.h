@@ -5,10 +5,12 @@
 #include <array>
 #include <chrono>
 #include <cstddef>
+#include <ctime>
 
 namespace gjxl::modular_internal {
-// Private, opt-in caller-wall-time instrumentation. Workers are deliberately
-// not given the sink: tokenization/emission measure the caller's joined interval.
+// Private, opt-in caller-wall and process-CPU instrumentation. Workers are
+// deliberately not given the sink: tokenization/emission measure the caller's
+// joined interval, with process CPU including joined workers' work.
 enum class ProfileStage {
   kInput,
   kTransforms,
@@ -21,6 +23,7 @@ enum class ProfileStage {
 };
 struct ModularProfile {
   std::array<double, static_cast<size_t>(ProfileStage::kCount)> seconds{};
+  std::array<double, static_cast<size_t>(ProfileStage::kCount)> cpu_seconds{};
   ModularCodingPolicy resolved;
   size_t encoded_candidates = 0;
 };
@@ -44,6 +47,7 @@ public:
   explicit ProfileScope(ProfileStage stage) : sink_(active_modular_profile), stage_(stage) {
     if (sink_) {
       start_ = Clock::now();
+      cpu_start_ = std::clock();
       parent_ = current_;
       current_ = this;
     }
@@ -51,9 +55,13 @@ public:
   ~ProfileScope() {
     if (sink_) {
       const double elapsed = std::chrono::duration<double>(Clock::now() - start_).count();
+      const double cpu = double(std::clock() - cpu_start_) / CLOCKS_PER_SEC;
       sink_->seconds[static_cast<size_t>(stage_)] += elapsed - children_;
-      if (parent_ && parent_->sink_ == sink_)
+      sink_->cpu_seconds[static_cast<size_t>(stage_)] += cpu - cpu_children_;
+      if (parent_ && parent_->sink_ == sink_) {
         parent_->children_ += elapsed;
+        parent_->cpu_children_ += cpu;
+      }
       current_ = parent_;
     }
   }
@@ -65,7 +73,8 @@ private:
   ModularProfile *sink_;
   ProfileStage stage_;
   Clock::time_point start_{};
+  std::clock_t cpu_start_ = 0;
   ProfileScope *parent_ = nullptr;
-  double children_ = 0;
+  double children_ = 0, cpu_children_ = 0;
 };
 } // namespace gjxl::modular_internal

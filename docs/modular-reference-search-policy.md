@@ -142,3 +142,10 @@ new-learner search, a whole-learning-stage aim of ≤2× stock e9, and eventual
 aggregate rate within +1% of e9 without regressing the qualified native total.
 These are separate gates. Core learner parity does not satisfy the search,
 whole-stage, held-out or rate gates by itself.
+
+The [integrated workflow timing study](modular-reference-workflow-timing.md)
+now measures Best at 0.8983× e9 learning CPU on 15 matched original-input
+problems. The 16-input complete-file rate is +0.3905% versus e9 and improves
+the qualified native aggregate, but individual regressions remain. This meets
+the current-corpus whole-learning aim; exhaustive new-learner, held-out and
+per-image/default-promotion gates remain open.
