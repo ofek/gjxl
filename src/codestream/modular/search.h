@@ -32,11 +32,18 @@ struct TrainingCoverage {
   size_t minimum_slice_samples = 0, maximum_slice_samples = 0;
   size_t slice_floor = 0;
   uint64_t quota_hash = 14695981039346656037ULL;
+  // Diagnostic fingerprints include sample positions, all properties and all
+  // predictor residuals. Computed only when the caller requests coverage.
+  uint64_t original_sample_hash = 14695981039346656037ULL;
+  uint64_t entropy_sample_hash = 14695981039346656037ULL;
   bool operator==(const TrainingCoverage &) const = default;
 };
 // Deterministic uniform sampling in canonical stream/channel/raster order.
 // The retained candidates use the original uniform samples and bit-width cost.
 // Optional entropy learning uses a separate, bounded stratified sample set.
+// An optional completed feature span must describe this exact frame, canonical
+// plan and weighted parameters, and remain immutable/alive through the call.
+// Empty selects the scalar oracle; a nonempty span must cover every sample.
 [[nodiscard]] Status LearnModularPolicies(const ModularEncoderFrame &frame,
                                           const ModularStreamPlan &plan, uint8_t rct,
                                           ModularCodingPolicy *single, ModularCodingPolicy *split,
@@ -44,7 +51,8 @@ struct TrainingCoverage {
                                           TreeLearningOptions learning = {},
                                           TrainingCoverage *coverage = nullptr,
                                           TreeLearningCheckpoints *checkpoints = nullptr,
-                                          GpuBackend *tree_gpu = nullptr);
+                                          GpuBackend *tree_gpu = nullptr,
+                                          std::span<const WeightedPredictorFeature> features = {});
 // Frame and layout must describe the completed transforms in base. Learn on
 // those channels (including metadata), preserving transforms and WP parameters.
 [[nodiscard]] Status
@@ -53,7 +61,8 @@ LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStreamPlan &
                      ModularCodingPolicy *split, ModularCodingPolicy *entropy = nullptr,
                      TreeLearningOptions learning = {}, TrainingCoverage *coverage = nullptr,
                      TreeLearningCheckpoints *checkpoints = nullptr,
-                                          GpuBackend *tree_gpu = nullptr);
+                     GpuBackend *tree_gpu = nullptr,
+                     std::span<const WeightedPredictorFeature> features = {});
 [[nodiscard]] Status
 ComputeModularSearchStoragePlan(Extent2D extent, PackedModularFormat format, EntropyCodingMode mode,
                                 ModularWorkflowStoragePlan *out, size_t cpu_threads = 1,

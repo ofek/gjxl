@@ -63,11 +63,17 @@ void Fixture(PackedModularFormat format, EntropyCodingMode entropy, AnsSelection
   options.adaptive_gpu = gpu;
   options.adaptive_ans_cost = gpu != nullptr;
   options.adaptive_tree_statistics = gpu != nullptr;
+  const bool default_shared_features = options.adaptive_shared_features;
+  Check(default_shared_features, "Adaptive GPU search should share learning features by default");
+  options.adaptive_shared_features = false;
   Ledger oracle, measured;
   options.candidate_observer = &oracle;
   ModularProfile reference, result;
   std::vector<uint8_t> full, sized, unprofiled;
   { ProfileSession profile(&reference); Ok(EncodeModularImage(source, options, &full)); }
+  // The measured/shared path must preserve every candidate, cost and tie from
+  // the unshared complete-emission oracle, including the final winner re-encode.
+  options.adaptive_shared_features = default_shared_features;
   options.search_evaluation = ModularSearchEvaluation::kMeasureAll;
   options.candidate_observer = &measured;
   size_t capacity;

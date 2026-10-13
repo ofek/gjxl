@@ -14,10 +14,7 @@ struct AdaptiveModularTokenSlice {
   uint32_t reserved[2]{};
   bool operator==(const AdaptiveModularTokenSlice &) const = default;
 };
-struct AdaptiveModularWeightedFeature {
-  int64_t prediction = 0, property15 = 0;
-  bool operator==(const AdaptiveModularWeightedFeature &) const = default;
-};
+using AdaptiveModularWeightedFeature = modular_internal::WeightedPredictorFeature;
 struct AdaptiveModularTreeEligibility {
   size_t node_count = 0, context_count = 0;
   bool weighted = false;

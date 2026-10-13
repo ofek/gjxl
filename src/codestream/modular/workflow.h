@@ -28,6 +28,10 @@ struct ModularEncodingOptions {
   bool adaptive_ans_cost = false;
   // Private original-learner statistics route; requires adaptive_gpu and search.
   bool adaptive_tree_statistics = false;
+  // Share one completed feature layout between learning and token generation.
+  // Applies only to adaptive_gpu search; false retains the scalar learning
+  // gather as a paired control. CPU-only and prescribed routes ignore it.
+  bool adaptive_shared_features = true;
   // Private exact population producer. Wide/small/unsupported inputs retain the
   // complete CPU producer; device errors propagate without a hidden retry.
   bool adaptive_populations = false;

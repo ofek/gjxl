@@ -48,6 +48,13 @@ struct WeightedPredictorParameters {
   bool operator==(const WeightedPredictorParameters &) const = default;
 };
 
+// Completed weighted history in canonical stream/channel/slice raster order.
+// Shared by sampled learning and tokenization; neither consumer mutates it.
+struct WeightedPredictorFeature {
+  int64_t prediction = 0, property15 = 0;
+  bool operator==(const WeightedPredictorFeature &) const = default;
+};
+
 constexpr std::array<uint32_t, 64> Reciprocals() {
   std::array<uint32_t, 64> values{};
   for (size_t i = 0; i < values.size(); ++i)

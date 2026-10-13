@@ -90,11 +90,13 @@ void Stages(const std::array<const char *, N> &names, const std::array<double, N
 } // namespace
 
 int main(int argc, char **argv) try {
-  if (argc < 6 || argc > 13)
+  if (argc < 6 || argc > 14)
     throw std::runtime_error(
-        "gjxl_modular_search_profile INPUT OUTPUT SAMPLES LEAVES THREADS [--metal|--metal-ans|--metal-learn] [--estimated-ans] [--measure-all|--shortlist] [--candidate-ledger] [--metal-populations] [--no-profile]");
+        "gjxl_modular_search_profile INPUT OUTPUT SAMPLES LEAVES THREADS [--metal|--metal-ans|--metal-learn] [--estimated-ans] [--measure-all|--shortlist] [--candidate-ledger] [--metal-populations] [--shared-features|--no-shared-features] [--no-profile]");
   bool profiling = true, metal = false, metal_ans = false, metal_learn = false, estimated = false;
   bool measure = false, shortlist = false, ledger = false, populations = false;
+  bool shared_features_set = false;
+  gjxl::modular_internal::ModularEncodingOptions options;
   CandidateLedger candidates;
   for (int i = 6; i < argc; ++i) {
     const std::string_view argument(argv[i]);
@@ -106,10 +108,17 @@ int main(int argc, char **argv) try {
     else if (argument == "--measure-all" && !measure && !shortlist) measure = true;
     else if (argument == "--shortlist" && !measure && !shortlist) shortlist = true;
     else if (argument == "--metal-populations" && !populations) populations = true;
+    else if ((argument == "--shared-features" || argument == "--no-shared-features") &&
+             !shared_features_set) {
+      options.adaptive_shared_features = argument == "--shared-features";
+      shared_features_set = true;
+    }
     else if (argument == "--candidate-ledger" && !ledger) ledger = true;
     else throw std::runtime_error("Unknown or duplicate profiling option");
   }
   if (populations && !metal) throw std::runtime_error("--metal-populations requires a Metal route");
+  if (shared_features_set && options.adaptive_shared_features && !metal)
+    throw std::runtime_error("--shared-features requires a Metal route");
   std::unique_ptr<GpuBackend> gpu;
   double backend_setup_seconds = 0;
   if (metal) {
@@ -121,7 +130,6 @@ int main(int argc, char **argv) try {
     throw std::runtime_error("This profile tool was built without Metal");
 #endif
   }
-  gjxl::modular_internal::ModularEncodingOptions options;
   options.entropy = EntropyCodingMode::kAns;
   options.search = true;
   options.learning = {Number(argv[3]), Number(argv[4])};
@@ -196,6 +204,7 @@ int main(int argc, char **argv) try {
             << ",\"ans_selection\":\"" << (estimated ? "estimated" : "exact") << '"'
             << ",\"search_evaluation\":\"" << (shortlist ? "shortlist" : measure ? "measure-all" : "encode-all") << '"'
             << ",\"adaptive_populations\":" << (populations ? "true" : "false")
+            << ",\"shared_features\":" << (metal && options.adaptive_shared_features ? "true" : "false")
             << ",\"candidate_ledger_enabled\":" << (ledger ? "true" : "false")
             << ",\"candidate_emissions\":" << profile.candidate_emissions
             << ",\"screened_candidates\":" << profile.screened_candidates
@@ -219,9 +228,13 @@ int main(int argc, char **argv) try {
          profile.seconds);
   const auto &g = profile.adaptive_gpu;
   std::cout << ",\"adaptive_gpu\":{\"feature_seconds\":" << g.feature_seconds
+            << ",\"learning_feature_seconds\":" << g.learning_feature_seconds
             << ",\"token_seconds\":" << g.token_seconds
             << ",\"feature_preparations\":" << g.feature_preparations
             << ",\"feature_reuses\":" << g.feature_reuses << ",\"evictions\":" << g.evictions
+            << ",\"feature_samples\":" << g.feature_samples
+            << ",\"learning_feature_uses\":" << g.learning_feature_uses
+            << ",\"learning_feature_fallbacks\":" << g.learning_feature_fallbacks
             << ",\"encoded_candidates\":" << g.encoded_candidates
             << ",\"cpu_fallback_candidates\":" << g.cpu_fallback_candidates
             << ",\"ans_gpu_groups\":" << g.ans_gpu_groups
@@ -250,6 +263,8 @@ int main(int argc, char **argv) try {
                     "tree_control", "quantized_learning"},
          t.seconds);
   std::cout << ",\"learning_calls\":" << t.learning_calls << ",\"population\":" << t.population
+            << ",\"weighted_prediction_samples\":" << t.weighted_prediction_samples
+            << ",\"reused_prediction_samples\":" << t.reused_prediction_samples
             << ",\"samples\":" << t.samples << ",\"split_evaluations\":" << t.split_evaluations
             << ",\"sorted_properties\":" << t.sorted_properties
             << ",\"sorted_samples\":" << t.sorted_samples << "},\"entropy_work\":{";

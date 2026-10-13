@@ -3,6 +3,7 @@
 #pragma once
 #include "codestream/modular/storage_plan.h"
 #include "codestream/modular/workflow.h"
+#include "codestream/modular/search.h"
 #include "gpu/ops/modular_adaptive_tokens.h"
 
 namespace gjxl::modular_internal {
@@ -24,6 +25,8 @@ ComputeAdaptiveModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat f
 // One immutable source and one live layout per encoder call. Input backing and
 // backend outlive the cache. Tree and entropy mode are deliberately not keys.
 // Eviction releases the old owner before constructing a different layout.
+// Learning borrows the same completed weighted map as token generation. Its
+// CPU frame is prepared from this cache's source, never a caller-supplied image.
 // This helper does not admit a call: the caller owns the composed reservation,
 // CPU execution scope and failure-atomic public output publication.
 class AdaptiveModularTokenCache {
@@ -38,9 +41,17 @@ public:
                               codestream_internal::CodestreamBuffer *out,
                               AnsSelectionMode selection = AnsSelectionMode::kExact,
                               ModularCandidateEvaluation *evaluation = nullptr);
+  [[nodiscard]] Status Learn(const ModularCodingPolicy &base, ModularCodingPolicy *single,
+                             ModularCodingPolicy *split, ModularCodingPolicy *entropy = nullptr,
+                             TreeLearningOptions learning = {}, TrainingCoverage *coverage = nullptr,
+                             TreeLearningCheckpoints *checkpoints = nullptr,
+                             GpuBackend *tree_gpu = nullptr);
 
 private:
-  [[nodiscard]] Status Prepare(const ModularCodingPolicy &policy, ModularEncoderFrame *fallback);
+  // Learning retains a CPU frame for neighborhoods; encoding releases it before
+  // allocating tokens. !ready is a pre-production capability/shape fallback.
+  [[nodiscard]] Status Prepare(const ModularCodingPolicy &policy, bool learning,
+                               ModularEncoderFrame *frame, bool *ready);
   void Evict();
   modular_gpu_internal::GpuAdaptiveModularTokenGeneration *operation_;
   const PackedModularImageView input_;

@@ -3739,6 +3739,9 @@ if(GJXL_BUILD_TESTS)
   add_test(NAME metal_modular_adaptive_workflow COMMAND gjxl_metal_modular_adaptive_workflow_test
     "${CMAKE_CURRENT_BINARY_DIR}/metal-modular-adaptive-workflow")
   set_tests_properties(metal_modular_adaptive_workflow PROPERTIES TIMEOUT 600)
+  add_test(NAME metal_modular_shared_features COMMAND gjxl_metal_modular_adaptive_workflow_test
+    "${CMAKE_CURRENT_BINARY_DIR}/metal-modular-shared-features" --shared-features)
+  set_tests_properties(metal_modular_shared_features PROPERTIES TIMEOUT 300)
 
   add_executable(gjxl_metal_modular_workflow_test tests/metal_modular_workflow_test.cpp)
   target_link_libraries(gjxl_metal_modular_workflow_test PRIVATE gjxl_codestream gjxl_metal)

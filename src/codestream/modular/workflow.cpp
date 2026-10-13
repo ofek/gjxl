@@ -138,9 +138,25 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
   auto options = requested;
   options.search = false;
   options.adaptive_tree_statistics = false;
+  options.adaptive_shared_features = false;
   // Always retain the exact default learner and candidate order. Experimental
   // budgets/modes append candidates after this complete baseline search.
   options.learning = {};
+  auto learn = [&](const ModularCodingPolicy &base, ModularCodingPolicy *single,
+                   ModularCodingPolicy *split, ModularCodingPolicy *entropy,
+                   TreeLearningOptions learning, TreeLearningCheckpoints *checkpoints = nullptr) -> Status {
+    if (cache && requested.adaptive_shared_features)
+      return cache->Learn(base, single, split, entropy, learning, nullptr, checkpoints, tree_gpu);
+    ModularEncoderFrame frame;
+    if (auto s = ModularEncoderFrame::Prepare(input, base, &frame); !s.ok()) return s;
+    ChannelShape shape;
+    if (auto s = DescribeImage(frame.image(), &shape); !s.ok()) return s;
+    ModularStreamPlan layout;
+    if (auto s = BuildModularStreamPlan(storage.geometry, shape.channels(), shape.metadata, &layout);
+        !s.ok()) return s;
+    return LearnModularPolicies(frame, layout, base, single, split, entropy, learning, nullptr,
+                                checkpoints, tree_gpu);
+  };
   // The traversal below is shared by the emission oracle and exact sizing.
   // Keep the winning policy even when profiling is disabled: measurement must
   // re-create and emit that policy once, after all candidate owners are released.
@@ -218,19 +234,9 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
     if (rct && profile.channel_count < 3)
       continue;
     ModularCodingPolicy single, split, entropy;
-    {
-      ModularEncoderFrame frame;
-      ModularStreamPlan layout;
-      if (auto s = ModularEncoderFrame::Prepare(input, rct, &frame); !s.ok())
-        return s;
-      if (auto s = BuildModularStreamPlan(storage.geometry, profile.channels(), 0, &layout);
-          !s.ok())
-        return s;
-      if (auto s =
-              LearnModularPolicies(frame, layout, rct, &single, &split, &entropy, options.learning, nullptr, nullptr, tree_gpu);
-          !s.ok())
-        return s;
-    }
+    ModularCodingPolicy base;
+    base.rct = rct;
+    if (auto s = learn(base, &single, &split, &entropy, options.learning); !s.ok()) return s;
     auto &fixed_candidate = context_candidates[context_count++];
     fixed_candidate.rct = rct;
     fixed_candidate.tree = fixed;
@@ -266,19 +272,9 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
   for (size_t i = 0; i < ranking.count; ++i) {
     const uint8_t rct = ranking.shortlist[i];
     ModularCodingPolicy single, split, learned, weighted;
-    {
-      ModularEncoderFrame frame;
-      ModularStreamPlan layout;
-      if (auto s = ModularEncoderFrame::Prepare(input, rct, &frame); !s.ok())
-        return s;
-      if (auto s = BuildModularStreamPlan(storage.geometry, profile.channels(), 0, &layout);
-          !s.ok())
-        return s;
-      if (auto s =
-              LearnModularPolicies(frame, layout, rct, &single, &split, &learned, options.learning, nullptr, nullptr, tree_gpu);
-          !s.ok())
-        return s;
-    }
+    ModularCodingPolicy base;
+    base.rct = rct;
+    if (auto s = learn(base, &single, &split, &learned, options.learning); !s.ok()) return s;
     weighted.rct = rct;
     weighted.tree = fixed;
     for (size_t kind = 0; kind < 2; ++kind) {
@@ -293,22 +289,7 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
   // tokenization, then preserve the transform sequence in the learned policy.
   for (size_t i = 0; i < count; ++i) {
     ModularCodingPolicy single, split, learned;
-    {
-      ModularEncoderFrame frame;
-      if (auto s = ModularEncoderFrame::Prepare(input, candidates[i], &frame); !s.ok())
-        return s;
-      ChannelShape shape;
-      if (auto s = DescribeImage(frame.image(), &shape); !s.ok())
-        return s;
-      ModularStreamPlan layout;
-      if (auto s = BuildModularStreamPlan(storage.geometry, shape.channels(), shape.metadata,
-                                          &layout); !s.ok())
-        return s;
-      if (auto s = LearnModularPolicies(frame, layout, candidates[i], &single, &split, &learned,
-                                        options.learning, nullptr, nullptr, tree_gpu);
-          !s.ok())
-        return s;
-    }
+    if (auto s = learn(candidates[i], &single, &split, &learned, options.learning); !s.ok()) return s;
     if (learned == candidates[i])
       continue;
     if (auto s = consider(learned); !s.ok()) return s;
@@ -317,24 +298,8 @@ Status EncodeSearch(PackedModularImageView input, const ModularEncodingOptions &
     auto try_learning = [&](const ModularCodingPolicy &base) -> Status {
       ModularCodingPolicy single, split, learned;
       TreeLearningCheckpoints checkpoints;
-      {
-        ModularEncoderFrame frame;
-        if (auto s = ModularEncoderFrame::Prepare(input, base, &frame); !s.ok())
-          return s;
-        ChannelShape shape;
-        if (auto s = DescribeImage(frame.image(), &shape); !s.ok())
-          return s;
-        ModularStreamPlan layout;
-        if (auto s =
-                BuildModularStreamPlan(storage.geometry, shape.channels(), shape.metadata, &layout);
-            !s.ok())
-          return s;
-        if (auto s = LearnModularPolicies(frame, layout, base, &single, &split, &learned,
-                                          requested.learning, nullptr,
-                                          requested.tree_checkpoints ? &checkpoints : nullptr, tree_gpu);
-            !s.ok())
-          return s;
-      }
+      if (auto s = learn(base, &single, &split, &learned, requested.learning,
+                          requested.tree_checkpoints ? &checkpoints : nullptr); !s.ok()) return s;
       if (auto s = consider(learned); !s.ok()) return s;
       for (size_t i = 0; i < checkpoints.size; ++i) {
         if (checkpoints.trees[i].size == learned.tree.size) continue;

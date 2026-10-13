@@ -40,13 +40,20 @@ enum class TrainingProfileStage {
 struct TrainingWorkProfile {
   std::array<double, static_cast<size_t>(TrainingProfileStage::kCount)> seconds{};
   size_t learning_calls = 0, population = 0, samples = 0;
+  // Full-population weighted recurrences computed here versus supplied by the
+  // feature owner. Reused features do not allocate/copy a second full map.
+  size_t weighted_prediction_samples = 0, reused_prediction_samples = 0;
   size_t split_evaluations = 0, sorted_properties = 0, sorted_samples = 0;
   bool operator==(const TrainingWorkProfile &) const = default;
 };
 struct AdaptiveGpuWorkProfile {
-  // Nested within kTokens, not additional top-level caller-wall stages.
+  // Feature preparation belongs to its requesting stage. The learning subset
+  // is nested in kTraining; feature_seconds - learning_feature_seconds and
+  // token_seconds are nested in kTokens. None are extra top-level intervals.
   double feature_seconds = 0, token_seconds = 0;
+  double learning_feature_seconds = 0;
   size_t feature_preparations = 0, feature_reuses = 0, evictions = 0;
+  size_t feature_samples = 0, learning_feature_uses = 0, learning_feature_fallbacks = 0;
   size_t encoded_candidates = 0, cpu_fallback_candidates = 0;
   // Exact ANS cost is nested in kModel/entropy_work.ans_token_cost_nanoseconds.
   size_t ans_gpu_groups = 0, ans_gpu_states = 0, ans_cpu_fallback_groups = 0;

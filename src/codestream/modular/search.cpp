@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <new>
 #include <numeric>
+#include <optional>
 namespace gjxl::modular_internal {
 using namespace resource_budget_internal;
 namespace {
@@ -326,17 +327,19 @@ Status ComputeModularSearchStoragePlan(Extent2D extent, PackedModularFormat form
 Status LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStreamPlan &plan,
                             uint8_t rct, ModularCodingPolicy *single, ModularCodingPolicy *split,
                             ModularCodingPolicy *entropy, TreeLearningOptions learning,
-                            TrainingCoverage *coverage, TreeLearningCheckpoints *checkpoints, GpuBackend *tree_gpu) {
+                            TrainingCoverage *coverage, TreeLearningCheckpoints *checkpoints, GpuBackend *tree_gpu,
+                            std::span<const WeightedPredictorFeature> features) {
   ModularCodingPolicy base;
   base.rct = rct;
   return LearnModularPolicies(frame, plan, base, single, split, entropy, learning, coverage,
-                              checkpoints, tree_gpu);
+                              checkpoints, tree_gpu, features);
 }
 Status LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStreamPlan &plan,
                             const ModularCodingPolicy &base, ModularCodingPolicy *single,
                             ModularCodingPolicy *split, ModularCodingPolicy *entropy,
                             TreeLearningOptions learning, TrainingCoverage *coverage,
-                            TreeLearningCheckpoints *checkpoints, GpuBackend *tree_gpu) try {
+                            TreeLearningCheckpoints *checkpoints, GpuBackend *tree_gpu,
+                            std::span<const WeightedPredictorFeature> features) try {
   if (auto s = ValidateTreeLearningOptions(learning); !s.ok())
     return s;
   const auto &metadata = frame.metadata();
@@ -362,6 +365,8 @@ Status LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStrea
   }
   if (!total)
     return Status::InvalidArgument("Empty Modular training frame");
+  if (!features.empty() && (!features.data() || features.size() != total))
+    return Status::InvalidArgument("Incomplete Modular training feature map");
   const size_t stride = total / kDefaultTrainingSamples + (total % kDefaultTrainingSamples != 0);
   ManagedVector<TrainingSample> samples;
   samples.resize(std::min(total, kDefaultTrainingSamples));
@@ -453,12 +458,15 @@ Status LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStrea
                            (end - begin);
       };
       size_t local_sample = 0, next_sample = position(0), local = 0;
-      WeightedPredictor<ResourceClass::kPreparation> wp(w, base.weighted);
+      std::optional<WeightedPredictor<ResourceClass::kPreparation>> wp;
+      if (features.empty())
+        wp.emplace(w, base.weighted);
       for (size_t y = 0; y < h; ++y) {
         int64_t previous_gradient = 0;
         for (size_t x = 0; x < w; ++x, ++ordinal, ++local) {
           const auto n = Neighbors(view, x, y);
-          const auto weighted = wp.Predict(x, y, n.top, n.left, n.top_right, n.top_left, n.top_top);
+          const auto weighted = wp ? wp->Predict(x, y, n.top, n.left, n.top_right, n.top_left, n.top_top)
+                                   : std::pair{features[ordinal].prediction, features[ordinal].property15};
           const auto properties =
               Properties(n, property_channel, stream.id, x, y, previous_gradient, weighted.second);
           previous_gradient = properties[9];
@@ -477,6 +485,17 @@ Status LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStrea
                 return Status::Unsupported("Modular training residual exceeds supported range");
               sample.residuals[p] = static_cast<int32_t>(residual);
             }
+            if (coverage) {
+              auto hash = [&](uint64_t *value) {
+                *value = (*value ^ ordinal) * 1099511628211ULL;
+                for (auto property : sample.properties)
+                  *value = (*value ^ static_cast<uint64_t>(property)) * 1099511628211ULL;
+                for (auto residual : sample.residuals)
+                  *value = (*value ^ static_cast<uint64_t>(residual)) * 1099511628211ULL;
+              };
+              if (original_sample) hash(&stats.original_sample_hash);
+              if (entropy_sample) hash(&stats.entropy_sample_hash);
+            }
             if (original_sample)
               samples[used++] = sample;
             if (entropy_sample) {
@@ -484,7 +503,7 @@ Status LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStrea
               next_sample = position(++local_sample);
             }
           }
-          if (!wp.Update(view.Row(y)[x], x, y))
+          if (wp && !wp->Update(view.Row(y)[x], x, y))
             return Status::Unsupported("Modular training weighted state exceeds supported range");
         }
       }
@@ -500,6 +519,7 @@ Status LearnModularPolicies(const ModularEncoderFrame &frame, const ModularStrea
     ++work.learning_calls;
     work.population += total;
     work.samples += sampled;
+    (features.empty() ? work.weighted_prediction_samples : work.reused_prediction_samples) += total;
   }
   // The prescribed tree is irrelevant to learning; retain only transform and
   // prediction settings, avoiding copies of an unrelated large tree.

@@ -22,13 +22,14 @@ using namespace gjxl::modular_gpu_internal;
 using namespace gjxl::resource_budget_internal;
 size_t cases = 0, decoded_samples = 0, fault_checks = 0;
 std::filesystem::path artifacts;
+std::string context;
 void Check(bool value, const char *message) {
   if (!value)
     throw std::runtime_error(message);
 }
 void Ok(const Status &s) {
   if (!s.ok())
-    throw std::runtime_error(std::string(s.message()));
+    throw std::runtime_error(context + ": " + std::string(s.message()));
 }
 void Empty(const ExecutionDomain &domain) {
   const auto s = domain.snapshot();
@@ -98,9 +99,13 @@ void Case(GpuBackend &gpu, const Fixture &f, ModularEncodingOptions options, boo
           bool require_gpu_statistics = false) {
   options.adaptive_ans_cost = ans_cost;
   options.adaptive_tree_statistics = tree_statistics;
+  const bool shared = options.adaptive_shared_features;
+  options.adaptive_gpu = &gpu;
   const auto plan = Plan(f, options);
   options.adaptive_ans_cost = false;
   options.adaptive_tree_statistics = false;
+  options.adaptive_shared_features = false;
+  options.adaptive_gpu = nullptr;
   std::vector<uint8_t> cpu, hybrid{7, 8, 9};
   ModularProfile baseline, actual;
   Ok(ExecutionDomain::Create({plan.cpu.working.peak_bytes, options.cpu_thread_count},
@@ -117,6 +122,7 @@ void Case(GpuBackend &gpu, const Fixture &f, ModularEncodingOptions options, boo
   options.adaptive_gpu = &gpu;
   options.adaptive_ans_cost = ans_cost;
   options.adaptive_tree_statistics = tree_statistics;
+  options.adaptive_shared_features = shared;
   const auto before = gpu.stats();
   {
     ProfileSession profile(&actual);
@@ -174,11 +180,12 @@ void Case(GpuBackend &gpu, const Fixture &f, ModularEncodingOptions options, boo
               g.tree_prepare_seconds == 0 && g.tree_evaluate_seconds == 0,
           "Disabled learner statistics invoked the new route");
   }
-  Check(g.feature_preparations + g.feature_reuses == g.encoded_candidates &&
+  Check(g.feature_preparations + g.feature_reuses == g.encoded_candidates + g.learning_feature_uses &&
             g.evictions + 1 == g.feature_preparations && g.feature_seconds > 0 &&
             g.token_seconds > 0 &&
-            g.feature_seconds + g.token_seconds <=
+            g.feature_seconds - g.learning_feature_seconds + g.token_seconds <=
                 actual.seconds[static_cast<size_t>(ProfileStage::kTokens)] + 1e-6 &&
+            g.learning_feature_seconds <= actual.seconds[static_cast<size_t>(ProfileStage::kTraining)] + 1e-6 &&
             baseline.adaptive_gpu == AdaptiveGpuWorkProfile{},
         "Adaptive profile has missing work or overlapping intervals");
   if (options.search) {
@@ -188,6 +195,12 @@ void Case(GpuBackend &gpu, const Fixture &f, ModularEncodingOptions options, boo
               a.split_evaluations == b.split_evaluations &&
               a.sorted_properties == b.sorted_properties && a.sorted_samples == b.sorted_samples,
           "Adaptive search changed training work or did not reuse features");
+    Check(b.weighted_prediction_samples == b.population && b.reused_prediction_samples == 0 &&
+              a.weighted_prediction_samples == (shared ? 0 : a.population) &&
+              a.reused_prediction_samples == (shared ? a.population : 0) &&
+              g.learning_feature_uses == (shared ? a.learning_calls : 0) &&
+              g.learning_feature_fallbacks == 0,
+          "Shared learning recomputed weighted history or omitted reuse attribution");
   }
   actual.resolved = {};
   Empty(*options.execution_domain);
@@ -235,11 +248,30 @@ public:
 // the real Metal operation; this shim injects faults between search candidates.
 class FaultCapability final : public NoCapability, public GpuAdaptiveModularTokenGeneration {
 public:
+  struct BorrowFault final : PreparedGpuAdaptiveModularFeatures {
+    std::unique_ptr<PreparedGpuAdaptiveModularFeatures> owner;
+    unsigned kind;
+    BorrowFault(std::unique_ptr<PreparedGpuAdaptiveModularFeatures> value, unsigned failure)
+        : owner(std::move(value)), kind(failure) {}
+    BackendId backend_id() const noexcept override { return owner->backend_id(); }
+    const codec_internal::ImageMetadata &metadata() const noexcept override { return owner->metadata(); }
+    size_t token_count() const noexcept override { return owner->token_count(); }
+    std::span<const AdaptiveModularTokenSlice> slices() const noexcept override { return owner->slices(); }
+    bool has_weighted_features() const noexcept override { return owner->has_weighted_features(); }
+    Status BorrowWeightedHostView(std::span<const AdaptiveModularWeightedFeature> *out) const override {
+      if (kind == 1) return Status::DeviceError("Injected host feature borrow failure");
+      if (kind == 2) return Status::Unsupported("Injected host feature borrowing unsupported");
+      if (auto s = owner->BorrowWeightedHostView(out); !s.ok()) return s;
+      *out = out->first(out->size() - 1);
+      return Status::Ok();
+    }
+  };
   explicit FaultCapability(GpuBackend &gpu)
       : native(*QueryGpuAdaptiveModularTokenGeneration(gpu)) {}
   GpuAdaptiveModularTokenGeneration &native;
   size_t preparations = 0, generations = 0, fail_preparation = 0, fail_generation = 0;
   bool limited = false, unsupported_after_preflight = false;
+  unsigned borrow_failure = 0;
   ModularTokenDeviceLimits adaptive_modular_limits() const noexcept override {
     auto limits = native.adaptive_modular_limits();
     if (limited)
@@ -256,17 +288,21 @@ public:
       return unsupported_after_preflight
                  ? Status::Unsupported("Injected numeric feature failure")
                  : Status::DeviceError("Injected replacement feature failure");
-    return native.PrepareAdaptiveModularFeatures(frame, slices, parameters, weighted, out);
+    if (auto s = native.PrepareAdaptiveModularFeatures(frame, slices, parameters, weighted, out); !s.ok())
+      return s;
+    if (borrow_failure) *out = std::make_unique<BorrowFault>(std::move(*out), borrow_failure);
+    return Status::Ok();
   }
   Status GenerateAdaptiveModularTokens(const PreparedGpuAdaptiveModularFeatures &features,
                                        const DecisionTree &tree,
                                        std::unique_ptr<PreparedGpuModularTokens> *out) override {
     if (++generations == fail_generation)
       return Status::DeviceError("Injected later candidate failure");
-    return native.GenerateAdaptiveModularTokens(features, tree, out);
+    const auto *wrapped = dynamic_cast<const BorrowFault *>(&features);
+    return native.GenerateAdaptiveModularTokens(wrapped ? *wrapped->owner : features, tree, out);
   }
 };
-void FallbacksAndFailures(GpuBackend &gpu) {
+void FallbacksAndFailures(GpuBackend &gpu, bool shared = false) {
   Fixture f(PackedModularFormat::kRgb8, {9, 7});
   ModularEncodingOptions options;
   options.search = true;
@@ -275,6 +311,7 @@ void FallbacksAndFailures(GpuBackend &gpu) {
   const auto plan = Plan(f, options);
   std::vector<uint8_t> expected, output;
   Ok(EncodeModularImage(f.view, options, &expected));
+  options.adaptive_shared_features = shared;
   NoCapability absent;
   FaultCapability restricted(gpu);
   restricted.limited = true;
@@ -292,6 +329,10 @@ void FallbacksAndFailures(GpuBackend &gpu) {
               profile.adaptive_gpu.cpu_fallback_candidates == profile.encoded_candidates &&
               profile.encoded_candidates > 1 && profile.adaptive_gpu.encoded_candidates == 0 &&
               profile.adaptive_gpu.feature_preparations == 0 &&
+              profile.adaptive_gpu.learning_feature_fallbacks ==
+                  (shared ? profile.training_work.learning_calls : 0) &&
+              profile.training_work.weighted_prediction_samples == profile.training_work.population &&
+              profile.training_work.reused_prediction_samples == 0 &&
               gpu.stats().successful_allocations == before.successful_allocations &&
               gpu.stats().committed_submissions == before.committed_submissions,
           "Capability fallback changed bytes or touched the GPU");
@@ -489,12 +530,13 @@ void TreeAttemptFailure() {
   }
 }
 void AllocationSweep(GpuBackend &gpu, bool ans_cost = false,
-                     AnsSelectionMode selection = AnsSelectionMode::kExact) {
+                     AnsSelectionMode selection = AnsSelectionMode::kExact, bool shared = false) {
   Fixture f(PackedModularFormat::kGray8, {1, 1});
   ModularEncodingOptions options;
   options.adaptive_gpu = &gpu;
   options.adaptive_ans_cost = ans_cost;
   options.ans_selection = selection;
+  options.adaptive_shared_features = shared;
   if (ans_cost)
     options.entropy = EntropyCodingMode::kAns;
   options.search = true;
@@ -583,12 +625,155 @@ void CacheKeys(GpuBackend &gpu) {
         "weighted/transformed inputs");
   Empty(*domain);
 }
+void SharedLearning(GpuBackend &gpu, PackedModularFormat format, bool palette) {
+  context = "shared learning format " + std::to_string(int(format)) + (palette ? " palette" : " pattern");
+  Fixture f(format, {257, 19}, palette);
+  ModularEncodingOptions options;
+  options.search = true;
+  options.tree_checkpoints = true;
+  options.learning = {4096, 32};
+  options.adaptive_gpu = &gpu;
+  options.adaptive_shared_features = false;
+  const auto control_plan = Plan(f, options);
+  options.adaptive_shared_features = true;
+  const auto plan = Plan(f, options);
+  Check(plan == control_plan, "Shared feature ownership increased the whole-call reservation");
+  options.learning.mode = TreeLearningMode::kQuantized;
+  const auto quantized_plan = Plan(f, options);
+  options.adaptive_shared_features = false;
+  Check(quantized_plan == Plan(f, options), "Shared quantized feature ownership increased the reservation");
+  const size_t peak = std::max(plan.peak_bytes, quantized_plan.peak_bytes);
+  std::array<ModularCodingPolicy, 4> transforms;
+  uint16_t colors;
+  Ok(ProbePalette(f.view, &colors));
+  size_t count;
+  Ok(BuildTransformCandidates(f.view.extent, format, colors, &transforms, &count));
+  std::vector<ModularCodingPolicy> policies(1);
+  for (size_t i = 0; i < count; ++i) policies.push_back(transforms[i]);
+  auto custom = policies.back();
+  custom.weighted.coefficients = {3, 29, 5, 17, 11, 2, 1};
+  custom.weighted.weights = {0, 15, 7, 1};
+  policies.push_back(custom);
+  policies.push_back({}); // Revisit an evicted layout, not a persistent second slot.
+  std::shared_ptr<const ExecutionDomain> domain;
+  Ok(ExecutionDomain::Create({peak, 1}, &domain));
+  ModularProfile profile;
+  {
+    codestream_internal::WorkflowAdmission admission;
+    Ok(admission.Start(peak, domain));
+    thread_budget_internal::CpuExecutionScope execution;
+    Ok(execution.Start(domain, 1));
+    ManagedHostScope managed(ResourceClass::kPreparation);
+    AdaptiveModularTokenCache cache(gpu, f.view);
+    for (const auto &base : policies)
+      for (auto mode : {TreeLearningMode::kLegacy, TreeLearningMode::kQuantized}) {
+        ModularCodingPolicy single, split, entropy, expected_single, expected_split, expected_entropy;
+        TrainingCoverage coverage, expected_coverage;
+        TreeLearningCheckpoints checkpoints, expected_checkpoints;
+        const TreeLearningOptions learning{4096, 32, mode};
+        {
+          ModularEncoderFrame frame;
+          Ok(ModularEncoderFrame::Prepare(f.view, base, &frame));
+          ChannelShape shape;
+          Ok(DescribeImage(frame.image(), &shape));
+          ModularStreamPlan layout;
+          Ok(BuildModularStreamPlan(plan.cpu.geometry, shape.channels(), shape.metadata, &layout));
+          Ok(LearnModularPolicies(frame, layout, base, &expected_single, &expected_split,
+                                  &expected_entropy, learning, &expected_coverage, &expected_checkpoints));
+          // A malformed borrowed map must fail before publishing any policies.
+          const WeightedPredictorFeature feature;
+          Check(LearnModularPolicies(frame, layout, base, &single, &split, &entropy, learning,
+                                     nullptr, nullptr, nullptr, std::span(&feature, 1)).code() ==
+                    StatusCode::kInvalidArgument && single == ModularCodingPolicy{} &&
+                    split == ModularCodingPolicy{} && entropy == ModularCodingPolicy{},
+                "Incomplete learning feature map was accepted or published output");
+        }
+        {
+          ProfileSession session(&profile);
+          Ok(cache.Learn(base, &single, &split, &entropy, learning, &coverage, &checkpoints));
+        }
+        Check(single == expected_single && split == expected_split && entropy == expected_entropy &&
+                  coverage == expected_coverage && checkpoints == expected_checkpoints,
+              "Shared learning changed sampled features, policies or growth checkpoints");
+      }
+  }
+  const auto &g = profile.adaptive_gpu;
+  Check(g.feature_preparations == policies.size() && g.feature_reuses == policies.size() &&
+            g.evictions + 1 == g.feature_preparations &&
+            g.learning_feature_uses == 2 * policies.size() && g.learning_feature_fallbacks == 0 &&
+            profile.training_work.weighted_prediction_samples == 0 &&
+            profile.training_work.reused_prediction_samples == profile.training_work.population,
+        "Shared learning did not reuse one layout across budgets/modes or evict changed keys");
+  Empty(*domain);
+}
+void SharedFeatureAdmission(GpuBackend &gpu) {
+  Fixture f(PackedModularFormat::kGray8, {9, 7});
+  for (GpuBackend *backend : {static_cast<GpuBackend *>(nullptr), &gpu})
+    for (bool search : {false, true}) {
+      ModularEncodingOptions defaults;
+      Check(defaults.adaptive_shared_features, "Shared learning features are not the default");
+      defaults.adaptive_gpu = backend;
+      defaults.search = search;
+      defaults.learning = {32, 32};
+      std::vector<uint8_t> actual, control;
+      ModularProfile profile;
+      {
+        ProfileSession session(&profile);
+        Ok(EncodeModularImage(f.view, defaults, &actual));
+      }
+      defaults.adaptive_shared_features = false;
+      Ok(EncodeModularImage(f.view, defaults, &control));
+      Check(actual == control && profile.adaptive_gpu.learning_feature_fallbacks == 0 &&
+                profile.adaptive_gpu.learning_feature_uses ==
+                    (backend && search ? profile.training_work.learning_calls : 0) &&
+                profile.training_work.reused_prediction_samples ==
+                    (backend && search ? profile.training_work.population : 0),
+            "Default sharing changed bytes or escaped the adaptive GPU search route");
+    }
+  ModularEncodingOptions options;
+  std::vector<uint8_t> output{7, 8, 9};
+  options.adaptive_gpu = &gpu;
+  options.search = true;
+  const auto plan = Plan(f, options);
+  Ok(ExecutionDomain::Create({plan.peak_bytes, 1}, &options.execution_domain));
+  for (unsigned kind = 1; kind <= 3; ++kind) {
+    FaultCapability faulty(gpu);
+    faulty.borrow_failure = kind;
+    options.adaptive_gpu = &faulty;
+    ModularProfile profile;
+    Status status;
+    {
+      ProfileSession session(&profile);
+      status = EncodeModularImage(f.view, options, &output);
+    }
+    Check(status.code() == (kind == 1 ? StatusCode::kDeviceError :
+                            kind == 2 ? StatusCode::kUnsupported : StatusCode::kInternal) &&
+              output == std::vector<uint8_t>({7, 8, 9}) && faulty.preparations == 1 &&
+              faulty.generations == 1 && profile.training_work.learning_calls == 0 &&
+              profile.adaptive_gpu.learning_feature_fallbacks == 0,
+          "Feature borrowing failure retried learning or published output");
+    profile.resolved = {};
+    Empty(*options.execution_domain);
+    ++fault_checks;
+  }
+}
 } // namespace
 int main(int argc, char **argv) try {
   artifacts = argc > 1 ? argv[1] : "metal-modular-adaptive-workflow";
   std::filesystem::create_directories(artifacts);
   std::unique_ptr<GpuBackend> gpu;
   Ok(CreateEmbeddedMetalBackend({}, &gpu));
+  if (argc > 2 && std::string_view(argv[2]) == "--shared-features") {
+    SharedFeatureAdmission(*gpu);
+    for (auto format : {PackedModularFormat::kGray8, PackedModularFormat::kRgb8,
+                        PackedModularFormat::kRgba8, PackedModularFormat::kGray16,
+                        PackedModularFormat::kRgb16, PackedModularFormat::kRgba16})
+      for (bool palette : {false, true}) SharedLearning(*gpu, format, palette);
+    Check(DefaultResourceBudget().snapshot().total.live_capacity_bytes == 0,
+          "Shared learning qualification leaked global backing");
+    std::cout << "Shared sample fingerprints, learned policies, checkpoints, cache keys and borrow failures match\n";
+    return 0;
+  }
   for (auto format :
        {PackedModularFormat::kGray8, PackedModularFormat::kRgb8, PackedModularFormat::kRgba8,
         PackedModularFormat::kGray16, PackedModularFormat::kRgb16, PackedModularFormat::kRgba16})
@@ -666,13 +851,18 @@ int main(int argc, char **argv) try {
     options.learning = {512, 32};
     Case(*gpu, small, options, false, false, false, true, false);
   }
+  context = "workflow fallback and failures";
   FallbacksAndFailures(*gpu);
+  FallbacksAndFailures(*gpu, true);
   AnsFallback(*gpu);
   TreeFallbackAndAdmission(*gpu);
   TreeAttemptFailure();
+  context = "workflow allocation sweeps";
   AllocationSweep(*gpu);
   AllocationSweep(*gpu, true);
   AllocationSweep(*gpu, true, AnsSelectionMode::kEstimated);
+  AllocationSweep(*gpu, true, AnsSelectionMode::kEstimated, true);
+  context = "cache lifetime and keys";
   SameAddress(*gpu);
   CacheKeys(*gpu);
   gpu.reset();
