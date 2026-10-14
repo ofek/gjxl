@@ -219,8 +219,8 @@ TODO
 BSD 3-Clause "New" or "Revised" License
 ---------------------------------------
 
-The codestream bit-writing and prefix entropy sources contain code adapted
-from the JPEG XL Project.
+The codestream bit-writing, prefix entropy, and Modular histogram tree-learning
+and sample-preparation sources contain code adapted from the JPEG XL Project.
 
 Copyright (c) the JPEG XL Project Authors.
 All rights reserved.

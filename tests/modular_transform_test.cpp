@@ -3,6 +3,9 @@
 #include "codestream/modular/workflow.h"
 #include "codestream/modular/storage_plan.h"
 #include "codestream/modular/search.h"
+#include "codestream/modular/stream_encoder.h"
+#include "lib/jxl/dec_bit_reader.h"
+#include "lib/jxl/modular/encoding/encoding.h"
 #include "lib/jxl/modular/encoding/context_predict.h"
 #include "lib/jxl/modular/encoding/enc_ma.h"
 #include "lib/jxl/pack_signed.h"
@@ -22,7 +25,7 @@ namespace {
 using namespace gjxl;
 using namespace gjxl::modular_internal;
 namespace ref = gjxl::test::modular_reference;
-size_t cases = 0, files = 0;
+size_t cases = 0, files = 0, headers = 0;
 std::filesystem::path artifacts;
 void Check(bool b, const char *m) {
   if (!b)
@@ -33,6 +36,12 @@ void Ok(Status s) {
     throw std::runtime_error(std::string(s.message()));
 }
 void ReferenceStep(jxl::Image &image, const TransformDescriptor &t) {
+  if (t.kind == TransformKind::kRct) {
+    // The reference's image overload returns false for the identity no-op.
+    if (t.rct_type != 0)
+      Check(bool(jxl::FwdRct(image, t.begin, t.rct_type, nullptr)), "Pinned ordered RCT failed");
+    return;
+  }
   if (t.kind == TransformKind::kSqueeze) {
     jxl::SqueezeParams params;
     params.horizontal = t.horizontal;
@@ -146,7 +155,7 @@ void LearnedTokens(const ModularEncoderFrame &frame, const ModularStreamPlan &pl
   }
 }
 void Case(Extent2D extent, PackedModularFormat format, size_t colors, ModularCodingPolicy policy,
-          bool learn = false) {
+          bool learn = false, bool check_tokens = false) {
   ModularInputProfile profile;
   Ok(ResolveModularInput(extent, format, &profile));
   ref::IntegerImage expected{extent.width,
@@ -163,6 +172,9 @@ void Case(Extent2D extent, PackedModularFormat format, size_t colors, ModularCod
         const size_t v = colors ? ((x + 7 * y) % colors) : (x * 739 + y * 131 + x * y * 37);
         uint16_t sample = static_cast<uint16_t>((v * (c * 2 + 1) + c * 19) &
                                                 (profile.metadata.bits == 8 ? 255 : 65535));
+        // Exercise more than 256 distinct RGB tuples in the new 8-bit cases.
+        if (colors > 256 && profile.metadata.bits == 8)
+          sample = static_cast<uint16_t>((v >> (c * 4)) & 255);
         if (c == 3 && v % 3 == 0)
           sample = 0;
         expected.samples.push_back(sample);
@@ -228,21 +240,23 @@ void Case(Extent2D extent, PackedModularFormat format, size_t colors, ModularCod
           Check(v.Row(y)[x] == r.Row(y)[x], "Prescribed transformed sample mismatch");
     }
   }
-  if (learn) {
+  if (learn || check_tokens) {
     ChannelShape shape;
     Ok(DescribeImage(transformed.image(), &shape));
     ModularFrameGeometry geometry;
     Ok(ModularFrameGeometry::Create(extent, &geometry));
     ModularStreamPlan layout;
     Ok(BuildModularStreamPlan(geometry, shape.channels(), shape.metadata, &layout));
-    ModularCodingPolicy single, split, learned, again;
-    Ok(LearnModularPolicies(transformed, layout, policy, &single, &split, &learned));
-    Ok(LearnModularPolicies(transformed, layout, policy, &single, &split, &again));
-    Check(learned == again && learned.transforms == policy.transforms &&
-              learned.rct == policy.rct && learned.weighted == policy.weighted,
-          "Transformed learning lost policy or determinism");
-    LearnedTokens(transformed, layout, learned, reference, &memory);
-    policy = learned;
+    if (learn) {
+      ModularCodingPolicy single, split, learned, again;
+      Ok(LearnModularPolicies(transformed, layout, policy, &single, &split, &learned));
+      Ok(LearnModularPolicies(transformed, layout, policy, &single, &split, &again));
+      Check(learned == again && learned.transforms == policy.transforms &&
+                learned.rct == policy.rct && learned.weighted == policy.weighted,
+            "Transformed learning lost policy or determinism");
+      policy = learned;
+    }
+    LearnedTokens(transformed, layout, policy, reference, &memory);
   }
   for (auto mode : {EntropyCodingMode::kPrefix, EntropyCodingMode::kAns}) {
     ModularWorkflowStoragePlan plan;
@@ -295,11 +309,136 @@ void Case(Extent2D extent, PackedModularFormat format, size_t colors, ModularCod
   Check(bytes == unchanged, "Transform mutated source");
   ++cases;
 }
+TransformDescriptor Rct(uint8_t begin, uint8_t type) {
+  TransformDescriptor t{TransformKind::kRct, begin, 3};
+  t.rct_type = type;
+  return t;
+}
+void Header(const ModularCodingPolicy &p) {
+  for (size_t offset = 0; offset < 8; ++offset) {
+    BitWriter writer;
+    Ok(writer.WriteBits(offset, 0));
+    Ok(WriteCodingStreamHeader(p.weighted, p.rct, p.transforms, &writer));
+    Check(writer.bits_written() - offset <= MaximumCodingStreamHeaderBits(p.transforms),
+          "Ordered header exceeded its bound");
+    const auto bytes = writer.padded_bytes();
+    jxl::BitReader reader(jxl::Bytes(bytes.data(), bytes.size()));
+    struct Closer {
+      jxl::BitReader &reader;
+      ~Closer() { (void)reader.Close(); }
+    } closer{reader};
+    reader.SkipBits(offset);
+    jxl::GroupHeader header;
+    Check(bool(jxl::Bundle::Read(&reader, &header)), "Pinned stream header parse failed");
+    Check(reader.AllReadsWithinBounds() && reader.TotalBitsConsumed() == writer.bits_written() &&
+              header.use_global_tree && header.transforms.size() == p.transforms.size + (p.rct != 0),
+          "Ordered header extent or scope differs");
+    const auto &w = header.wp_header;
+    const std::array<int32_t, 7> coefficients = {w.p1C, w.p2C, w.p3Ca, w.p3Cb, w.p3Cc,
+                                               w.p3Cd, w.p3Ce};
+    Check(std::ranges::equal(coefficients, p.weighted.coefficients) &&
+              std::ranges::equal(w.w, p.weighted.weights), "Ordered header WP differs");
+    for (size_t i = 0; i < header.transforms.size(); ++i) {
+      const auto t = p.rct && i == 0 ? Rct(0, p.rct) : p.transforms.entries[i - (p.rct != 0)];
+      const auto &r = header.transforms[i];
+      if (t.kind == TransformKind::kRct) {
+        Check(r.id == jxl::TransformId::kRCT && r.begin_c == t.begin && r.rct_type == t.rct_type,
+              "Ordered RCT header differs");
+      } else if (t.kind == TransformKind::kPalette) {
+        Check(r.id == jxl::TransformId::kPalette && r.begin_c == t.begin && r.num_c == t.count &&
+                  r.nb_colors == t.colors && r.nb_deltas == 0 && r.predictor == jxl::Predictor::Zero,
+              "Extended palette header differs");
+      } else {
+        Check(r.id == jxl::TransformId::kSqueeze && r.squeezes.size() == 1,
+              "Ordered squeeze header differs");
+        const auto &s = r.squeezes[0];
+        Check(s.begin_c == t.begin && s.num_c == t.count && s.horizontal == t.horizontal &&
+                  s.in_place == t.in_place, "Ordered squeeze parameters differ");
+      }
+    }
+    ++headers;
+  }
+}
+void OrderedCases() {
+  for (uint8_t type = 0; type < 42; ++type) {
+    for (uint8_t begin : {0, 1, 7, 8, 61}) {
+      ModularCodingPolicy p;
+      p.transforms.size = 1;
+      p.transforms.entries[0] = Rct(begin, type);
+      Header(p);
+      p.rct = 6;
+      p.weighted.coefficients = {31, 0, 16, 8, 1, 7, 9};
+      p.weighted.weights = {0, 15, 1, 14};
+      Header(p);
+    }
+    for (auto format : {PackedModularFormat::kRgb8, PackedModularFormat::kRgba16}) {
+      ModularCodingPolicy p;
+      p.transforms.size = 1;
+      p.transforms.entries[0] = Rct(format == PackedModularFormat::kRgb8 ? 0 : 1, type);
+      p.tree.nodes[0].predictor = Predictor::kWeighted;
+      Case({17, 19}, format, 0, p, false, true);
+    }
+    ModularCodingPolicy p;
+    p.transforms.size = 2;
+    p.transforms.entries[0] = {TransformKind::kPalette, 1, 1, 257};
+    p.transforms.entries[1] = Rct(1, type);
+    Case({257, 3}, PackedModularFormat::kRgba16, 257, p, false, true);
+  }
+  for (uint16_t colors : {255, 256, 257, 285, 338, 417, 662, 862, 1024}) {
+    for (uint8_t count : {1, 2, 3, 4})
+      for (uint8_t begin : {0, 7, 8, 60}) {
+        ModularCodingPolicy p;
+        p.transforms.size = 1;
+        p.transforms.entries[0] = {TransformKind::kPalette, begin, count, colors};
+        Header(p);
+      }
+    for (auto format : {PackedModularFormat::kGray16, PackedModularFormat::kRgb8,
+                       PackedModularFormat::kRgba8, PackedModularFormat::kRgb16,
+                       PackedModularFormat::kRgba16}) {
+      ModularInputProfile profile;
+      Ok(ResolveModularInput({1, 1}, format, &profile));
+      ModularCodingPolicy p;
+      p.transforms.size = 1;
+      p.transforms.entries[0] = {TransformKind::kPalette, 0,
+                                 static_cast<uint8_t>(profile.channel_count), colors};
+      p.tree.nodes[0].predictor = Predictor::kWeighted;
+      p.weighted.coefficients = {17, 9, 6, 8, 7, 1, 2};
+      Case({1025, 3}, format, colors, p, false, true);
+    }
+  }
+  ModularCodingPolicy p;
+  p.transforms.size = 3;
+  p.transforms.entries[0] = {TransformKind::kPalette, 0, 1, 182};
+  p.transforms.entries[1] = {TransformKind::kPalette, 2, 1, 73};
+  p.transforms.entries[2] = Rct(2, 33);
+  Case({257, 3}, PackedModularFormat::kRgba16, 73, p, false, true);
+  p.transforms.entries[0] = {TransformKind::kSqueeze, 0, 4, 1, true, false};
+  p.transforms.entries[1] = {TransformKind::kSqueeze, 0, 8, 1, false, false};
+  p.transforms.entries[2] = Rct(8, 40);
+  Case({16, 16}, PackedModularFormat::kRgba16, 0, p, false, true);
+  p.rct = 9;
+  p.transforms.size = kMaximumTransforms;
+  for (size_t i = 0; i < p.transforms.size; ++i)
+    p.transforms.entries[i] = Rct(i % 2, static_cast<uint8_t>(6 + i));
+  Header(p);
+  Case({257, 3}, PackedModularFormat::kRgba16, 0, p, false, true);
+  // Ordered RCT before palette, with learned context and retained legacy RCT.
+  p.transforms.size = 2;
+  p.transforms.entries[0] = Rct(0, 40);
+  p.transforms.entries[1] = {TransformKind::kPalette, 0, 3, 862};
+  Case({1025, 3}, PackedModularFormat::kRgb16, 862, p, true);
+  std::cout << "Ordered transforms qualified: " << cases << " stages, " << files
+            << " complete files, " << headers << " headers\n";
+}
 } // namespace
 int main(int argc, char **argv) try {
   if (argc > 1) {
     artifacts = argv[1];
     std::filesystem::create_directories(artifacts);
+  }
+  if (argc > 2 && std::string(argv[2]) == "ordered") {
+    OrderedCases();
+    return 0;
   }
   for (auto format :
        {PackedModularFormat::kGray8, PackedModularFormat::kRgb8, PackedModularFormat::kRgba8,

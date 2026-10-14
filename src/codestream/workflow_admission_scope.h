@@ -45,6 +45,11 @@ public:
 
   [[nodiscard]] static Status TrimIdle(const ExecutionDomain &domain);
 
+  // Staged workflows share the same ledger as whole-workflow admission. They
+  // must use TryReserve while retaining backing from earlier stages.
+  [[nodiscard]] static const resource_budget_internal::ResourceBudget &
+  Budget(const ExecutionDomain &domain) noexcept { return domain.budget_; }
+
 private:
   std::shared_ptr<const ExecutionDomain> domain_;
   resource_budget_internal::ResourceReservation reservation_;

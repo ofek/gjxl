@@ -20,6 +20,11 @@ Status WriteCodingStreamHeader(const WeightedPredictorParameters &weighted, uint
 }
 Status WriteCodingStreamHeader(const WeightedPredictorParameters &weighted, uint8_t rct,
                                const TransformSequence &transforms, BitWriter *writer) {
+  return WriteCodingStreamHeader(weighted, rct, transforms, true, writer);
+}
+Status WriteCodingStreamHeader(const WeightedPredictorParameters &weighted, uint8_t rct,
+                               const TransformSequence &transforms, bool use_global_tree,
+                               BitWriter *writer) {
   if (!writer)
     return Status::InvalidArgument("Null Modular stream header output");
   if (!weighted.valid() || rct >= 42)
@@ -27,7 +32,7 @@ Status WriteCodingStreamHeader(const WeightedPredictorParameters &weighted, uint
   if (auto s = ValidateTransforms(transforms); !s.ok())
     return s;
   return writer->WithMaxBits(MaximumCodingStreamHeaderBits(transforms), [&]() -> Status {
-    if (auto s = writer->WriteBits(1, 1); !s.ok())
+    if (auto s = writer->WriteBits(1, use_global_tree); !s.ok())
       return s;
     const bool defaults = weighted == WeightedPredictorParameters{};
     if (auto s = writer->WriteBits(1, defaults); !s.ok())
@@ -45,23 +50,23 @@ Status WriteCodingStreamHeader(const WeightedPredictorParameters &weighted, uint
             count < 2 ? writer->WriteBits(2, count) : writer->WriteBits(6, 2 | ((count - 2) << 2));
         !s.ok())
       return s;
-    if (rct) {
-      if (auto s = writer->WriteBits(2, 0); !s.ok())
-        return s; // RCT ID
-      if (auto s = writer->WriteBits(5, 0); !s.ok())
-        return s; // begin_c=0
-      const auto type = rct;
-      Status status = type == 6   ? writer->WriteBits(2, 0)
-                      : type < 4  ? writer->WriteBits(4, 1 | (uint64_t{type} << 2))
-                      : type < 18 ? writer->WriteBits(6, 2 | (uint64_t{type - 2u} << 2))
-                                  : writer->WriteBits(8, 3 | (uint64_t{type - 10u} << 2));
-      if (!status.ok())
-        return status;
-    }
     auto begin = [&](uint8_t c) {
       return c < 8 ? writer->WriteBits(5, uint64_t{c} << 2)
                    : writer->WriteBits(8, 1 | (uint64_t{c - 8u} << 2));
     };
+    auto write_rct = [&](uint8_t channel, uint8_t type) -> Status {
+      if (auto s = writer->WriteBits(2, 0); !s.ok())
+        return s; // RCT ID
+      if (auto s = begin(channel); !s.ok())
+        return s;
+      return type == 6   ? writer->WriteBits(2, 0)
+             : type < 4  ? writer->WriteBits(4, 1 | (uint64_t{type} << 2))
+             : type < 18 ? writer->WriteBits(6, 2 | (uint64_t{type - 2u} << 2))
+                         : writer->WriteBits(8, 3 | (uint64_t{type - 10u} << 2));
+    };
+    if (rct)
+      if (auto s = write_rct(0, rct); !s.ok())
+        return s;
     for (size_t i = 0; i < transforms.size; ++i) {
       const auto &t = transforms.entries[i];
       if (t.kind == TransformKind::kPalette) {
@@ -76,11 +81,16 @@ Status WriteCodingStreamHeader(const WeightedPredictorParameters &weighted, uint
             !s.ok())
           return s;
         if (auto s = t.colors < 256 ? writer->WriteBits(10, uint64_t{t.colors} << 2)
-                                    : writer->WriteBits(12, 1);
+                     : t.colors < 1280 ? writer->WriteBits(12, 1 | (uint64_t{t.colors - 256u} << 2))
+                     : t.colors < 5376 ? writer->WriteBits(14, 2 | (uint64_t{t.colors - 1280u} << 2))
+                                       : writer->WriteBits(18, 3 | (uint64_t{t.colors - 5376u} << 2));
             !s.ok())
           return s;
         if (auto s = writer->WriteBits(6, 0); !s.ok())
           return s; // no deltas, zero predictor
+      } else if (t.kind == TransformKind::kRct) {
+        if (auto s = write_rct(t.begin, t.rct_type); !s.ok())
+          return s;
       } else {
         if (auto s = writer->WriteBits(2, 2); !s.ok())
           return s;

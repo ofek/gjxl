@@ -125,7 +125,7 @@ Status ComputeAdaptiveModularWorkflowStoragePlan(Extent2D extent, PackedModularF
     std::array<ModularCodingPolicy, 4> candidates;
     size_t count;
     if (auto s =
-            BuildTransformCandidates(extent, format, kMaximumPaletteColors, &candidates, &count);
+            BuildTransformCandidates(extent, format, kMaximumSearchPaletteColors, &candidates, &count);
         !s.ok())
       return s;
     for (size_t i = 0; i < count; ++i) {

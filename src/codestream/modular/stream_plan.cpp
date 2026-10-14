@@ -163,6 +163,12 @@ Status BorrowChannelSlice(const ModularChannelView &ch, ModularRect r,
   if (auto s = ch.Validate(); !s.ok())
     return s;
   const auto extent = ch.descriptor.extent;
+  if (extent.empty()) {
+    if (r.x || r.y || r.extent != extent)
+      return Status::InvalidArgument("Invalid empty palette slice");
+    *out = ch;
+    return Status::Ok();
+  }
   if (r.extent.empty() || r.x >= extent.width || r.y >= extent.height ||
       r.extent.width > extent.width - r.x || r.extent.height > extent.height - r.y)
     return Status::InvalidArgument("Modular slice is outside its channel");

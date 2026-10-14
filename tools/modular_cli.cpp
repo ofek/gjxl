@@ -10,9 +10,11 @@ int RunModularCli(int argc, char **argv,
   std::filesystem::path input, output;
   bool srgb = false, modular = false;
   auto usage = [] {
-    std::cerr << "Usage: gjxl_encode --modular --input-color-space srgb [--search] [--entropy "
+    std::cerr << "Usage: gjxl_encode --modular --input-color-space srgb "
+                 "[--policy learned|baseline|search] [--search] [--entropy "
                  "prefix|ans] "
-                 "[--threads 0..256] [--backend auto|cpu] INPUT.pgm|ppm|pam OUTPUT.jxl\n";
+                 "[--threads 0..256] [--backend auto|cpu] INPUT.pgm|ppm|pam OUTPUT.jxl\n"
+                 "Defaults: learned policy, ANS entropy. --search selects legacy policy search.\n";
     return 1;
   };
   for (int i = 1; i < argc; ++i) {
@@ -21,6 +23,17 @@ int RunModularCli(int argc, char **argv,
       modular = true;
     else if (arg == "--search")
       options.search = true;
+    else if (arg == "--policy" && i + 1 < argc) {
+      const std::string_view value = argv[++i];
+      if (value == "learned")
+        options.policy = gjxl::ModularPolicy::kLearned;
+      else if (value == "baseline")
+        options.policy = gjxl::ModularPolicy::kBaseline;
+      else if (value == "search")
+        options.policy = gjxl::ModularPolicy::kSearch;
+      else
+        return usage();
+    }
     else if (arg == "--input-color-space" && i + 1 < argc) {
       if (std::string_view(argv[++i]) != "srgb")
         return usage();

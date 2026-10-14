@@ -1,0 +1,2762 @@
+{
+  "schema": 1,
+  "kind": "uniform-wp-ablation-analysis",
+  "manifest": "/Users/yunhocho/GitHub/gjxl-modular-learning-cost/build/reference-wp-sweep-study/manifest.json",
+  "manifest_sha256": "43c28f9a2db7e43c128154009e3ad269c8096f0ba4e5768628cb77902914d5fa",
+  "verified_artifacts": 772,
+  "source_revision": "1efa40db640a83412d1b56bd7c0ce50db54a8be0",
+  "scope": "Fixed selected palette/RCT/stream scope; Best learner and direct estimated ANS64 unchanged. Replay selected per-stream WP vector, then override every WP-eligible stream uniformly with each of five presets and refit every original learning scope. Selected vector is retained as a candidate. Complete native files and independent exact decodes determine rate. This does not enumerate independent per-stream assignments or other transforms/predictors/scopes. Single-pass timing is diagnostic only; managed memory includes retained baseline and candidate.",
+  "timing_qualified": false,
+  "exhaustive_search_qualified": false,
+  "interpretation": "The minimum tested complete file is an upper bound on the exhaustive optimum; the reported selected-policy rate loss is therefore a lower bound. Exceeding a search-loss gate falsifies it for any exhaustive domain containing these assignments. Passing this subset cannot qualify the exhaustive-search gate.",
+  "aggregate": {
+    "inputs": 16,
+    "exact_files": 112,
+    "baseline_bytes": 8544487,
+    "minimum_tested_bytes": 8512368,
+    "delta_bytes": 32119,
+    "loss_vs_minimum_percent": 0.37732156316550025,
+    "aggregate_search_gate_already_fails": true,
+    "per_image_search_gate_failures": [
+      "gray-patches",
+      "gray16-ramp",
+      "palette-pattern",
+      "alpha16-ramp"
+    ],
+    "stock_e9_bytes": 8511250,
+    "minimum_vs_e9_percent": 0.013135555881915728,
+    "baseline_fits": 200,
+    "candidate_fits": 1200
+  },
+  "cases": [
+    {
+      "input": "photo-macan",
+      "baseline_bytes": 252179,
+      "minimum_tested_bytes": 252179,
+      "winner": "selected-replay",
+      "delta_bytes": 0,
+      "loss_vs_minimum_percent": 0.0,
+      "per_image_search_gate_already_fails": false,
+      "stock_e9_bytes": 252153,
+      "legacy_native_bytes": 260654,
+      "local_trees": false,
+      "eligible_streams": 4,
+      "baseline_stats": {
+        "learning_calls": 1,
+        "fits": 1,
+        "empty_learning_calls": 0,
+        "scanned_pixels": 750000,
+        "selected_samples": 488592,
+        "distinct_samples": 488592,
+        "tree_nodes": 879
+      },
+      "candidates": [
+        {
+          "name": "selected-replay",
+          "mode": -1,
+          "prepare": {
+            "cpu": 0.649859,
+            "wall": 0.655405958
+          },
+          "encode_prepared": {
+            "cpu": 0.088055,
+            "wall": 0.08847675
+          },
+          "bytes": 252179,
+          "changed_streams": 0,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 750000,
+            "selected_samples": 488592,
+            "distinct_samples": 488592,
+            "tree_nodes": 879
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-0",
+          "mode": 0,
+          "prepare": {
+            "cpu": 0.664255,
+            "wall": 0.668903416
+          },
+          "encode_prepared": {
+            "cpu": 0.089765,
+            "wall": 0.091163542
+          },
+          "bytes": 252826,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 750000,
+            "selected_samples": 488592,
+            "distinct_samples": 488592,
+            "tree_nodes": 937
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-1",
+          "mode": 1,
+          "prepare": {
+            "cpu": 0.634679,
+            "wall": 0.642450792
+          },
+          "encode_prepared": {
+            "cpu": 0.087509,
+            "wall": 0.088205584
+          },
+          "bytes": 252179,
+          "changed_streams": 0,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 750000,
+            "selected_samples": 488592,
+            "distinct_samples": 488592,
+            "tree_nodes": 879
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-2",
+          "mode": 2,
+          "prepare": {
+            "cpu": 0.633104,
+            "wall": 0.640341917
+          },
+          "encode_prepared": {
+            "cpu": 0.086319,
+            "wall": 0.08726
+          },
+          "bytes": 252656,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 750000,
+            "selected_samples": 488592,
+            "distinct_samples": 488592,
+            "tree_nodes": 881
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-3",
+          "mode": 3,
+          "prepare": {
+            "cpu": 0.656497,
+            "wall": 0.660854916
+          },
+          "encode_prepared": {
+            "cpu": 0.089292,
+            "wall": 0.089780709
+          },
+          "bytes": 253848,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 750000,
+            "selected_samples": 488592,
+            "distinct_samples": 488592,
+            "tree_nodes": 959
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-4",
+          "mode": 4,
+          "prepare": {
+            "cpu": 0.667079,
+            "wall": 0.670849458
+          },
+          "encode_prepared": {
+            "cpu": 0.08791,
+            "wall": 0.088235125
+          },
+          "bytes": 252718,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 750000,
+            "selected_samples": 488592,
+            "distinct_samples": 488592,
+            "tree_nodes": 895
+          },
+          "exact_decode": true
+        }
+      ],
+      "peak_backing_bytes": 24756249,
+      "peak_committed_bytes": 118776466
+    },
+    {
+      "input": "photo-ria",
+      "baseline_bytes": 208127,
+      "minimum_tested_bytes": 208127,
+      "winner": "selected-replay",
+      "delta_bytes": 0,
+      "loss_vs_minimum_percent": 0.0,
+      "per_image_search_gate_already_fails": false,
+      "stock_e9_bytes": 208131,
+      "legacy_native_bytes": 211044,
+      "local_trees": false,
+      "eligible_streams": 4,
+      "baseline_stats": {
+        "learning_calls": 1,
+        "fits": 1,
+        "empty_learning_calls": 0,
+        "scanned_pixels": 750000,
+        "selected_samples": 488592,
+        "distinct_samples": 488592,
+        "tree_nodes": 461
+      },
+      "candidates": [
+        {
+          "name": "selected-replay",
+          "mode": -1,
+          "prepare": {
+            "cpu": 0.640991,
+            "wall": 0.644579541
+          },
+          "encode_prepared": {
+            "cpu": 0.082084,
+            "wall": 0.082539167
+          },
+          "bytes": 208127,
+          "changed_streams": 0,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 750000,
+            "selected_samples": 488592,
+            "distinct_samples": 488592,
+            "tree_nodes": 461
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-0",
+          "mode": 0,
+          "prepare": {
+            "cpu": 0.62905,
+            "wall": 0.632319083
+          },
+          "encode_prepared": {
+            "cpu": 0.077848,
+            "wall": 0.078059417
+          },
+          "bytes": 210842,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 750000,
+            "selected_samples": 488592,
+            "distinct_samples": 488592,
+            "tree_nodes": 491
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-1",
+          "mode": 1,
+          "prepare": {
+            "cpu": 0.633951,
+            "wall": 0.636704708
+          },
+          "encode_prepared": {
+            "cpu": 0.081796,
+            "wall": 0.082294084
+          },
+          "bytes": 208127,
+          "changed_streams": 0,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 750000,
+            "selected_samples": 488592,
+            "distinct_samples": 488592,
+            "tree_nodes": 461
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-2",
+          "mode": 2,
+          "prepare": {
+            "cpu": 0.626487,
+            "wall": 0.630343458
+          },
+          "encode_prepared": {
+            "cpu": 0.078315,
+            "wall": 0.0786835
+          },
+          "bytes": 208716,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 750000,
+            "selected_samples": 488592,
+            "distinct_samples": 488592,
+            "tree_nodes": 455
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-3",
+          "mode": 3,
+          "prepare": {
+            "cpu": 0.628571,
+            "wall": 0.632440625
+          },
+          "encode_prepared": {
+            "cpu": 0.082663,
+            "wall": 0.083227542
+          },
+          "bytes": 211636,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 750000,
+            "selected_samples": 488592,
+            "distinct_samples": 488592,
+            "tree_nodes": 487
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-4",
+          "mode": 4,
+          "prepare": {
+            "cpu": 0.642981,
+            "wall": 0.647494708
+          },
+          "encode_prepared": {
+            "cpu": 0.08436,
+            "wall": 0.085092917
+          },
+          "bytes": 209706,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 750000,
+            "selected_samples": 488592,
+            "distinct_samples": 488592,
+            "tree_nodes": 467
+          },
+          "exact_decode": true
+        }
+      ],
+      "peak_backing_bytes": 23723331,
+      "peak_committed_bytes": 117359259
+    },
+    {
+      "input": "photo-bliznaca",
+      "baseline_bytes": 240327,
+      "minimum_tested_bytes": 240000,
+      "winner": "wp-2",
+      "delta_bytes": 327,
+      "loss_vs_minimum_percent": 0.13624999999999332,
+      "per_image_search_gate_already_fails": false,
+      "stock_e9_bytes": 240347,
+      "legacy_native_bytes": 242885,
+      "local_trees": false,
+      "eligible_streams": 4,
+      "baseline_stats": {
+        "learning_calls": 1,
+        "fits": 1,
+        "empty_learning_calls": 0,
+        "scanned_pixels": 750000,
+        "selected_samples": 488592,
+        "distinct_samples": 488592,
+        "tree_nodes": 565
+      },
+      "candidates": [
+        {
+          "name": "selected-replay",
+          "mode": -1,
+          "prepare": {
+            "cpu": 0.650342,
+            "wall": 0.658147084
+          },
+          "encode_prepared": {
+            "cpu": 0.098248,
+            "wall": 0.098660166
+          },
+          "bytes": 240327,
+          "changed_streams": 0,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 750000,
+            "selected_samples": 488592,
+            "distinct_samples": 488592,
+            "tree_nodes": 565
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-0",
+          "mode": 0,
+          "prepare": {
+            "cpu": 0.639385,
+            "wall": 0.643331417
+          },
+          "encode_prepared": {
+            "cpu": 0.09527,
+            "wall": 0.095685917
+          },
+          "bytes": 242230,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 750000,
+            "selected_samples": 488592,
+            "distinct_samples": 488592,
+            "tree_nodes": 605
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-1",
+          "mode": 1,
+          "prepare": {
+            "cpu": 0.650749,
+            "wall": 0.655358334
+          },
+          "encode_prepared": {
+            "cpu": 0.097198,
+            "wall": 0.097900959
+          },
+          "bytes": 240327,
+          "changed_streams": 0,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 750000,
+            "selected_samples": 488592,
+            "distinct_samples": 488592,
+            "tree_nodes": 565
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-2",
+          "mode": 2,
+          "prepare": {
+            "cpu": 0.6472,
+            "wall": 0.6521595
+          },
+          "encode_prepared": {
+            "cpu": 0.097694,
+            "wall": 0.098442917
+          },
+          "bytes": 240000,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 750000,
+            "selected_samples": 488592,
+            "distinct_samples": 488592,
+            "tree_nodes": 583
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-3",
+          "mode": 3,
+          "prepare": {
+            "cpu": 0.676539,
+            "wall": 0.682008458
+          },
+          "encode_prepared": {
+            "cpu": 0.104698,
+            "wall": 0.105474541
+          },
+          "bytes": 240691,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 750000,
+            "selected_samples": 488592,
+            "distinct_samples": 488592,
+            "tree_nodes": 707
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-4",
+          "mode": 4,
+          "prepare": {
+            "cpu": 0.644747,
+            "wall": 0.648794375
+          },
+          "encode_prepared": {
+            "cpu": 0.095259,
+            "wall": 0.096088459
+          },
+          "bytes": 240679,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 750000,
+            "selected_samples": 488592,
+            "distinct_samples": 488592,
+            "tree_nodes": 607
+          },
+          "exact_decode": true
+        }
+      ],
+      "peak_backing_bytes": 25411535,
+      "peak_committed_bytes": 119196348
+    },
+    {
+      "input": "photo-flower",
+      "baseline_bytes": 2531609,
+      "minimum_tested_bytes": 2531609,
+      "winner": "selected-replay",
+      "delta_bytes": 0,
+      "loss_vs_minimum_percent": 0.0,
+      "per_image_search_gate_already_fails": false,
+      "stock_e9_bytes": 2537909,
+      "legacy_native_bytes": 2609895,
+      "local_trees": true,
+      "eligible_streams": 54,
+      "baseline_stats": {
+        "learning_calls": 55,
+        "fits": 54,
+        "empty_learning_calls": 1,
+        "scanned_pixels": 10287648,
+        "selected_samples": 6703683,
+        "distinct_samples": 6703683,
+        "tree_nodes": 23095
+      },
+      "candidates": [
+        {
+          "name": "selected-replay",
+          "mode": -1,
+          "prepare": {
+            "cpu": 8.834014,
+            "wall": 8.897267291
+          },
+          "encode_prepared": {
+            "cpu": 1.249492,
+            "wall": 1.257230375
+          },
+          "bytes": 2531609,
+          "changed_streams": 0,
+          "stats": {
+            "learning_calls": 55,
+            "fits": 54,
+            "empty_learning_calls": 1,
+            "scanned_pixels": 10287648,
+            "selected_samples": 6703683,
+            "distinct_samples": 6703683,
+            "tree_nodes": 23095
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-0",
+          "mode": 0,
+          "prepare": {
+            "cpu": 9.021821,
+            "wall": 9.109677333
+          },
+          "encode_prepared": {
+            "cpu": 1.292389,
+            "wall": 1.300294459
+          },
+          "bytes": 2548820,
+          "changed_streams": 54,
+          "stats": {
+            "learning_calls": 55,
+            "fits": 54,
+            "empty_learning_calls": 1,
+            "scanned_pixels": 10287648,
+            "selected_samples": 6703683,
+            "distinct_samples": 6703683,
+            "tree_nodes": 25435
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-1",
+          "mode": 1,
+          "prepare": {
+            "cpu": 8.88314,
+            "wall": 8.950589208
+          },
+          "encode_prepared": {
+            "cpu": 1.263008,
+            "wall": 1.274389958
+          },
+          "bytes": 2533779,
+          "changed_streams": 52,
+          "stats": {
+            "learning_calls": 55,
+            "fits": 54,
+            "empty_learning_calls": 1,
+            "scanned_pixels": 10287648,
+            "selected_samples": 6703683,
+            "distinct_samples": 6703683,
+            "tree_nodes": 23261
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-2",
+          "mode": 2,
+          "prepare": {
+            "cpu": 8.872651,
+            "wall": 8.933086875
+          },
+          "encode_prepared": {
+            "cpu": 1.258584,
+            "wall": 1.267884667
+          },
+          "bytes": 2531709,
+          "changed_streams": 2,
+          "stats": {
+            "learning_calls": 55,
+            "fits": 54,
+            "empty_learning_calls": 1,
+            "scanned_pixels": 10287648,
+            "selected_samples": 6703683,
+            "distinct_samples": 6703683,
+            "tree_nodes": 23139
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-3",
+          "mode": 3,
+          "prepare": {
+            "cpu": 8.86802,
+            "wall": 8.940755167
+          },
+          "encode_prepared": {
+            "cpu": 1.263171,
+            "wall": 1.271335833
+          },
+          "bytes": 2544745,
+          "changed_streams": 54,
+          "stats": {
+            "learning_calls": 55,
+            "fits": 54,
+            "empty_learning_calls": 1,
+            "scanned_pixels": 10287648,
+            "selected_samples": 6703683,
+            "distinct_samples": 6703683,
+            "tree_nodes": 24073
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-4",
+          "mode": 4,
+          "prepare": {
+            "cpu": 8.940063,
+            "wall": 8.995709875
+          },
+          "encode_prepared": {
+            "cpu": 1.280118,
+            "wall": 1.290660833
+          },
+          "bytes": 2537611,
+          "changed_streams": 54,
+          "stats": {
+            "learning_calls": 55,
+            "fits": 54,
+            "empty_learning_calls": 1,
+            "scanned_pixels": 10287648,
+            "selected_samples": 6703683,
+            "distinct_samples": 6703683,
+            "tree_nodes": 23721
+          },
+          "exact_decode": true
+        }
+      ],
+      "peak_backing_bytes": 237061411,
+      "peak_committed_bytes": 477679244
+    },
+    {
+      "input": "gray-macan",
+      "baseline_bytes": 90129,
+      "minimum_tested_bytes": 90108,
+      "winner": "wp-4",
+      "delta_bytes": 21,
+      "loss_vs_minimum_percent": 0.023305366893056068,
+      "per_image_search_gate_already_fails": false,
+      "stock_e9_bytes": 90153,
+      "legacy_native_bytes": 90321,
+      "local_trees": false,
+      "eligible_streams": 4,
+      "baseline_stats": {
+        "learning_calls": 1,
+        "fits": 1,
+        "empty_learning_calls": 0,
+        "scanned_pixels": 250000,
+        "selected_samples": 162864,
+        "distinct_samples": 162864,
+        "tree_nodes": 391
+      },
+      "candidates": [
+        {
+          "name": "selected-replay",
+          "mode": -1,
+          "prepare": {
+            "cpu": 0.209825,
+            "wall": 0.211916625
+          },
+          "encode_prepared": {
+            "cpu": 0.036283,
+            "wall": 0.037024875
+          },
+          "bytes": 90129,
+          "changed_streams": 0,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 250000,
+            "selected_samples": 162864,
+            "distinct_samples": 162864,
+            "tree_nodes": 391
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-0",
+          "mode": 0,
+          "prepare": {
+            "cpu": 0.211855,
+            "wall": 0.214897625
+          },
+          "encode_prepared": {
+            "cpu": 0.037991,
+            "wall": 0.038213625
+          },
+          "bytes": 90345,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 250000,
+            "selected_samples": 162864,
+            "distinct_samples": 162864,
+            "tree_nodes": 427
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-1",
+          "mode": 1,
+          "prepare": {
+            "cpu": 0.208792,
+            "wall": 0.209854958
+          },
+          "encode_prepared": {
+            "cpu": 0.03545,
+            "wall": 0.035587708
+          },
+          "bytes": 90129,
+          "changed_streams": 0,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 250000,
+            "selected_samples": 162864,
+            "distinct_samples": 162864,
+            "tree_nodes": 391
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-2",
+          "mode": 2,
+          "prepare": {
+            "cpu": 0.210541,
+            "wall": 0.212089625
+          },
+          "encode_prepared": {
+            "cpu": 0.034489,
+            "wall": 0.034995709
+          },
+          "bytes": 90221,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 250000,
+            "selected_samples": 162864,
+            "distinct_samples": 162864,
+            "tree_nodes": 409
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-3",
+          "mode": 3,
+          "prepare": {
+            "cpu": 0.208977,
+            "wall": 0.211739875
+          },
+          "encode_prepared": {
+            "cpu": 0.035267,
+            "wall": 0.035702833
+          },
+          "bytes": 90427,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 250000,
+            "selected_samples": 162864,
+            "distinct_samples": 162864,
+            "tree_nodes": 415
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-4",
+          "mode": 4,
+          "prepare": {
+            "cpu": 0.206601,
+            "wall": 0.20826925
+          },
+          "encode_prepared": {
+            "cpu": 0.035276,
+            "wall": 0.035417208
+          },
+          "bytes": 90108,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 250000,
+            "selected_samples": 162864,
+            "distinct_samples": 162864,
+            "tree_nodes": 411
+          },
+          "exact_decode": true
+        }
+      ],
+      "peak_backing_bytes": 7708361,
+      "peak_committed_bytes": 43696349
+    },
+    {
+      "input": "alpha-ria",
+      "baseline_bytes": 228118,
+      "minimum_tested_bytes": 228118,
+      "winner": "selected-replay",
+      "delta_bytes": 0,
+      "loss_vs_minimum_percent": 0.0,
+      "per_image_search_gate_already_fails": false,
+      "stock_e9_bytes": 228013,
+      "legacy_native_bytes": 237730,
+      "local_trees": false,
+      "eligible_streams": 4,
+      "baseline_stats": {
+        "learning_calls": 1,
+        "fits": 1,
+        "empty_learning_calls": 0,
+        "scanned_pixels": 1000000,
+        "selected_samples": 651456,
+        "distinct_samples": 651456,
+        "tree_nodes": 821
+      },
+      "candidates": [
+        {
+          "name": "selected-replay",
+          "mode": -1,
+          "prepare": {
+            "cpu": 0.904047,
+            "wall": 0.912819583
+          },
+          "encode_prepared": {
+            "cpu": 0.102963,
+            "wall": 0.104039
+          },
+          "bytes": 228118,
+          "changed_streams": 0,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 1000000,
+            "selected_samples": 651456,
+            "distinct_samples": 651456,
+            "tree_nodes": 821
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-0",
+          "mode": 0,
+          "prepare": {
+            "cpu": 0.892433,
+            "wall": 0.897596584
+          },
+          "encode_prepared": {
+            "cpu": 0.099766,
+            "wall": 0.100252125
+          },
+          "bytes": 230433,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 1000000,
+            "selected_samples": 651456,
+            "distinct_samples": 651456,
+            "tree_nodes": 807
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-1",
+          "mode": 1,
+          "prepare": {
+            "cpu": 0.906033,
+            "wall": 0.9126465
+          },
+          "encode_prepared": {
+            "cpu": 0.10284,
+            "wall": 0.10363925
+          },
+          "bytes": 228118,
+          "changed_streams": 0,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 1000000,
+            "selected_samples": 651456,
+            "distinct_samples": 651456,
+            "tree_nodes": 821
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-2",
+          "mode": 2,
+          "prepare": {
+            "cpu": 0.913626,
+            "wall": 0.919652875
+          },
+          "encode_prepared": {
+            "cpu": 0.104657,
+            "wall": 0.105568417
+          },
+          "bytes": 228735,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 1000000,
+            "selected_samples": 651456,
+            "distinct_samples": 651456,
+            "tree_nodes": 851
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-3",
+          "mode": 3,
+          "prepare": {
+            "cpu": 0.917102,
+            "wall": 0.923588291
+          },
+          "encode_prepared": {
+            "cpu": 0.104801,
+            "wall": 0.105505167
+          },
+          "bytes": 231704,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 1000000,
+            "selected_samples": 651456,
+            "distinct_samples": 651456,
+            "tree_nodes": 887
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-4",
+          "mode": 4,
+          "prepare": {
+            "cpu": 0.925987,
+            "wall": 0.934787167
+          },
+          "encode_prepared": {
+            "cpu": 0.105765,
+            "wall": 0.106541542
+          },
+          "bytes": 229702,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 1000000,
+            "selected_samples": 651456,
+            "distinct_samples": 651456,
+            "tree_nodes": 871
+          },
+          "exact_decode": true
+        }
+      ],
+      "peak_backing_bytes": 31724958,
+      "peak_committed_bytes": 154363886
+    },
+    {
+      "input": "alpha-flower",
+      "baseline_bytes": 3706105,
+      "minimum_tested_bytes": 3706105,
+      "winner": "selected-replay",
+      "delta_bytes": 0,
+      "loss_vs_minimum_percent": 0.0,
+      "per_image_search_gate_already_fails": false,
+      "stock_e9_bytes": 3715769,
+      "legacy_native_bytes": 3833995,
+      "local_trees": true,
+      "eligible_streams": 54,
+      "baseline_stats": {
+        "learning_calls": 55,
+        "fits": 54,
+        "empty_learning_calls": 1,
+        "scanned_pixels": 13716864,
+        "selected_samples": 8938244,
+        "distinct_samples": 8938244,
+        "tree_nodes": 33345
+      },
+      "candidates": [
+        {
+          "name": "selected-replay",
+          "mode": -1,
+          "prepare": {
+            "cpu": 12.184984,
+            "wall": 12.260898917
+          },
+          "encode_prepared": {
+            "cpu": 1.705398,
+            "wall": 1.717053875
+          },
+          "bytes": 3706105,
+          "changed_streams": 0,
+          "stats": {
+            "learning_calls": 55,
+            "fits": 54,
+            "empty_learning_calls": 1,
+            "scanned_pixels": 13716864,
+            "selected_samples": 8938244,
+            "distinct_samples": 8938244,
+            "tree_nodes": 33345
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-0",
+          "mode": 0,
+          "prepare": {
+            "cpu": 12.591118,
+            "wall": 12.679375458
+          },
+          "encode_prepared": {
+            "cpu": 1.779303,
+            "wall": 1.789873542
+          },
+          "bytes": 3731396,
+          "changed_streams": 54,
+          "stats": {
+            "learning_calls": 55,
+            "fits": 54,
+            "empty_learning_calls": 1,
+            "scanned_pixels": 13716864,
+            "selected_samples": 8938244,
+            "distinct_samples": 8938244,
+            "tree_nodes": 37229
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-1",
+          "mode": 1,
+          "prepare": {
+            "cpu": 12.268185,
+            "wall": 12.350150417
+          },
+          "encode_prepared": {
+            "cpu": 1.74544,
+            "wall": 1.761125292
+          },
+          "bytes": 3711987,
+          "changed_streams": 53,
+          "stats": {
+            "learning_calls": 55,
+            "fits": 54,
+            "empty_learning_calls": 1,
+            "scanned_pixels": 13716864,
+            "selected_samples": 8938244,
+            "distinct_samples": 8938244,
+            "tree_nodes": 34213
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-2",
+          "mode": 2,
+          "prepare": {
+            "cpu": 12.240918,
+            "wall": 12.328741292
+          },
+          "encode_prepared": {
+            "cpu": 1.712267,
+            "wall": 1.725482542
+          },
+          "bytes": 3706232,
+          "changed_streams": 1,
+          "stats": {
+            "learning_calls": 55,
+            "fits": 54,
+            "empty_learning_calls": 1,
+            "scanned_pixels": 13716864,
+            "selected_samples": 8938244,
+            "distinct_samples": 8938244,
+            "tree_nodes": 33379
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-3",
+          "mode": 3,
+          "prepare": {
+            "cpu": 12.377502,
+            "wall": 12.449011708
+          },
+          "encode_prepared": {
+            "cpu": 1.738581,
+            "wall": 1.752741667
+          },
+          "bytes": 3724311,
+          "changed_streams": 54,
+          "stats": {
+            "learning_calls": 55,
+            "fits": 54,
+            "empty_learning_calls": 1,
+            "scanned_pixels": 13716864,
+            "selected_samples": 8938244,
+            "distinct_samples": 8938244,
+            "tree_nodes": 34521
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-4",
+          "mode": 4,
+          "prepare": {
+            "cpu": 12.421645,
+            "wall": 12.540861375
+          },
+          "encode_prepared": {
+            "cpu": 1.740913,
+            "wall": 1.751575666
+          },
+          "bytes": 3715717,
+          "changed_streams": 54,
+          "stats": {
+            "learning_calls": 55,
+            "fits": 54,
+            "empty_learning_calls": 1,
+            "scanned_pixels": 13716864,
+            "selected_samples": 8938244,
+            "distinct_samples": 8938244,
+            "tree_nodes": 34803
+          },
+          "exact_decode": true
+        }
+      ],
+      "peak_backing_bytes": 315473133,
+      "peak_committed_bytes": 629326600
+    },
+    {
+      "input": "chessboard",
+      "baseline_bytes": 131233,
+      "minimum_tested_bytes": 131233,
+      "winner": "selected-replay",
+      "delta_bytes": 0,
+      "loss_vs_minimum_percent": 0.0,
+      "per_image_search_gate_already_fails": false,
+      "stock_e9_bytes": 136329,
+      "legacy_native_bytes": 62805,
+      "local_trees": true,
+      "eligible_streams": 16,
+      "baseline_stats": {
+        "learning_calls": 17,
+        "fits": 16,
+        "empty_learning_calls": 1,
+        "scanned_pixels": 1316754,
+        "selected_samples": 858727,
+        "distinct_samples": 858666,
+        "tree_nodes": 7133
+      },
+      "candidates": [
+        {
+          "name": "selected-replay",
+          "mode": -1,
+          "prepare": {
+            "cpu": 0.98103,
+            "wall": 0.988900209
+          },
+          "encode_prepared": {
+            "cpu": 0.208845,
+            "wall": 0.210809541
+          },
+          "bytes": 131233,
+          "changed_streams": 0,
+          "stats": {
+            "learning_calls": 17,
+            "fits": 16,
+            "empty_learning_calls": 1,
+            "scanned_pixels": 1316754,
+            "selected_samples": 858727,
+            "distinct_samples": 858666,
+            "tree_nodes": 7133
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-0",
+          "mode": 0,
+          "prepare": {
+            "cpu": 0.981476,
+            "wall": 0.987743292
+          },
+          "encode_prepared": {
+            "cpu": 0.208182,
+            "wall": 0.210240584
+          },
+          "bytes": 132656,
+          "changed_streams": 15,
+          "stats": {
+            "learning_calls": 17,
+            "fits": 16,
+            "empty_learning_calls": 1,
+            "scanned_pixels": 1316754,
+            "selected_samples": 858727,
+            "distinct_samples": 858670,
+            "tree_nodes": 7155
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-1",
+          "mode": 1,
+          "prepare": {
+            "cpu": 0.986246,
+            "wall": 0.9975755
+          },
+          "encode_prepared": {
+            "cpu": 0.208132,
+            "wall": 0.209133334
+          },
+          "bytes": 131242,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 17,
+            "fits": 16,
+            "empty_learning_calls": 1,
+            "scanned_pixels": 1316754,
+            "selected_samples": 858727,
+            "distinct_samples": 858666,
+            "tree_nodes": 7167
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-2",
+          "mode": 2,
+          "prepare": {
+            "cpu": 0.983478,
+            "wall": 0.991251125
+          },
+          "encode_prepared": {
+            "cpu": 0.20825,
+            "wall": 0.209823833
+          },
+          "bytes": 133050,
+          "changed_streams": 15,
+          "stats": {
+            "learning_calls": 17,
+            "fits": 16,
+            "empty_learning_calls": 1,
+            "scanned_pixels": 1316754,
+            "selected_samples": 858727,
+            "distinct_samples": 858668,
+            "tree_nodes": 7115
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-3",
+          "mode": 3,
+          "prepare": {
+            "cpu": 1.00535,
+            "wall": 1.011429375
+          },
+          "encode_prepared": {
+            "cpu": 0.21059,
+            "wall": 0.211640916
+          },
+          "bytes": 133234,
+          "changed_streams": 16,
+          "stats": {
+            "learning_calls": 17,
+            "fits": 16,
+            "empty_learning_calls": 1,
+            "scanned_pixels": 1316754,
+            "selected_samples": 858727,
+            "distinct_samples": 858674,
+            "tree_nodes": 7153
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-4",
+          "mode": 4,
+          "prepare": {
+            "cpu": 0.991018,
+            "wall": 1.000705375
+          },
+          "encode_prepared": {
+            "cpu": 0.20806,
+            "wall": 0.208988208
+          },
+          "bytes": 132420,
+          "changed_streams": 14,
+          "stats": {
+            "learning_calls": 17,
+            "fits": 16,
+            "empty_learning_calls": 1,
+            "scanned_pixels": 1316754,
+            "selected_samples": 858727,
+            "distinct_samples": 858671,
+            "tree_nodes": 7059
+          },
+          "exact_decode": true
+        }
+      ],
+      "peak_backing_bytes": 41069165,
+      "peak_committed_bytes": 97905449
+    },
+    {
+      "input": "splines",
+      "baseline_bytes": 257365,
+      "minimum_tested_bytes": 256412,
+      "winner": "wp-1",
+      "delta_bytes": 953,
+      "loss_vs_minimum_percent": 0.3716674726611968,
+      "per_image_search_gate_already_fails": false,
+      "stock_e9_bytes": 258951,
+      "legacy_native_bytes": 295203,
+      "local_trees": true,
+      "eligible_streams": 64,
+      "baseline_stats": {
+        "learning_calls": 65,
+        "fits": 64,
+        "empty_learning_calls": 1,
+        "scanned_pixels": 10621695,
+        "selected_samples": 6924319,
+        "distinct_samples": 6924089,
+        "tree_nodes": 9787
+      },
+      "candidates": [
+        {
+          "name": "selected-replay",
+          "mode": -1,
+          "prepare": {
+            "cpu": 4.809405,
+            "wall": 4.849805625
+          },
+          "encode_prepared": {
+            "cpu": 0.613229,
+            "wall": 0.617343792
+          },
+          "bytes": 257365,
+          "changed_streams": 0,
+          "stats": {
+            "learning_calls": 65,
+            "fits": 64,
+            "empty_learning_calls": 1,
+            "scanned_pixels": 10621695,
+            "selected_samples": 6924319,
+            "distinct_samples": 6924089,
+            "tree_nodes": 9787
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-0",
+          "mode": 0,
+          "prepare": {
+            "cpu": 4.744414,
+            "wall": 4.782522208
+          },
+          "encode_prepared": {
+            "cpu": 0.607384,
+            "wall": 0.611569167
+          },
+          "bytes": 258692,
+          "changed_streams": 17,
+          "stats": {
+            "learning_calls": 65,
+            "fits": 64,
+            "empty_learning_calls": 1,
+            "scanned_pixels": 10621695,
+            "selected_samples": 6924319,
+            "distinct_samples": 6924097,
+            "tree_nodes": 9829
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-1",
+          "mode": 1,
+          "prepare": {
+            "cpu": 4.854064,
+            "wall": 4.890265208
+          },
+          "encode_prepared": {
+            "cpu": 0.607045,
+            "wall": 0.610871292
+          },
+          "bytes": 256412,
+          "changed_streams": 47,
+          "stats": {
+            "learning_calls": 65,
+            "fits": 64,
+            "empty_learning_calls": 1,
+            "scanned_pixels": 10621695,
+            "selected_samples": 6924319,
+            "distinct_samples": 6924085,
+            "tree_nodes": 9733
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-2",
+          "mode": 2,
+          "prepare": {
+            "cpu": 4.849806,
+            "wall": 4.884136125
+          },
+          "encode_prepared": {
+            "cpu": 0.605525,
+            "wall": 0.611292708
+          },
+          "bytes": 257130,
+          "changed_streams": 64,
+          "stats": {
+            "learning_calls": 65,
+            "fits": 64,
+            "empty_learning_calls": 1,
+            "scanned_pixels": 10621695,
+            "selected_samples": 6924319,
+            "distinct_samples": 6924099,
+            "tree_nodes": 9653
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-3",
+          "mode": 3,
+          "prepare": {
+            "cpu": 4.849699,
+            "wall": 4.903305291
+          },
+          "encode_prepared": {
+            "cpu": 0.604391,
+            "wall": 0.609379167
+          },
+          "bytes": 257295,
+          "changed_streams": 64,
+          "stats": {
+            "learning_calls": 65,
+            "fits": 64,
+            "empty_learning_calls": 1,
+            "scanned_pixels": 10621695,
+            "selected_samples": 6924319,
+            "distinct_samples": 6924104,
+            "tree_nodes": 9981
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-4",
+          "mode": 4,
+          "prepare": {
+            "cpu": 4.824196,
+            "wall": 4.867867
+          },
+          "encode_prepared": {
+            "cpu": 0.613443,
+            "wall": 0.617578958
+          },
+          "bytes": 256953,
+          "changed_streams": 64,
+          "stats": {
+            "learning_calls": 65,
+            "fits": 64,
+            "empty_learning_calls": 1,
+            "scanned_pixels": 10621695,
+            "selected_samples": 6924319,
+            "distinct_samples": 6924096,
+            "tree_nodes": 9665
+          },
+          "exact_decode": true
+        }
+      ],
+      "peak_backing_bytes": 229718232,
+      "peak_committed_bytes": 468793429
+    },
+    {
+      "input": "gray-patches",
+      "baseline_bytes": 21591,
+      "minimum_tested_bytes": 21096,
+      "winner": "wp-1",
+      "delta_bytes": 495,
+      "loss_vs_minimum_percent": 2.3464163822525697,
+      "per_image_search_gate_already_fails": true,
+      "stock_e9_bytes": 4912,
+      "legacy_native_bytes": 18299,
+      "local_trees": false,
+      "eligible_streams": 8,
+      "baseline_stats": {
+        "learning_calls": 1,
+        "fits": 1,
+        "empty_learning_calls": 0,
+        "scanned_pixels": 280133,
+        "selected_samples": 182633,
+        "distinct_samples": 182633,
+        "tree_nodes": 771
+      },
+      "candidates": [
+        {
+          "name": "selected-replay",
+          "mode": -1,
+          "prepare": {
+            "cpu": 0.280152,
+            "wall": 0.281498125
+          },
+          "encode_prepared": {
+            "cpu": 0.03811,
+            "wall": 0.038433125
+          },
+          "bytes": 21591,
+          "changed_streams": 0,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 280133,
+            "selected_samples": 182633,
+            "distinct_samples": 182633,
+            "tree_nodes": 771
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-0",
+          "mode": 0,
+          "prepare": {
+            "cpu": 0.277239,
+            "wall": 0.279177333
+          },
+          "encode_prepared": {
+            "cpu": 0.038466,
+            "wall": 0.038718709
+          },
+          "bytes": 21233,
+          "changed_streams": 5,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 280133,
+            "selected_samples": 182633,
+            "distinct_samples": 182633,
+            "tree_nodes": 811
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-1",
+          "mode": 1,
+          "prepare": {
+            "cpu": 0.278692,
+            "wall": 0.281871792
+          },
+          "encode_prepared": {
+            "cpu": 0.037659,
+            "wall": 0.038101875
+          },
+          "bytes": 21096,
+          "changed_streams": 6,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 280133,
+            "selected_samples": 182633,
+            "distinct_samples": 182633,
+            "tree_nodes": 825
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-2",
+          "mode": 2,
+          "prepare": {
+            "cpu": 0.277722,
+            "wall": 0.280501583
+          },
+          "encode_prepared": {
+            "cpu": 0.038042,
+            "wall": 0.038539333
+          },
+          "bytes": 21172,
+          "changed_streams": 5,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 280133,
+            "selected_samples": 182633,
+            "distinct_samples": 182633,
+            "tree_nodes": 815
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-3",
+          "mode": 3,
+          "prepare": {
+            "cpu": 0.27846,
+            "wall": 0.281046041
+          },
+          "encode_prepared": {
+            "cpu": 0.038226,
+            "wall": 0.038622666
+          },
+          "bytes": 21246,
+          "changed_streams": 8,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 280133,
+            "selected_samples": 182633,
+            "distinct_samples": 182633,
+            "tree_nodes": 835
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-4",
+          "mode": 4,
+          "prepare": {
+            "cpu": 0.277691,
+            "wall": 0.280502542
+          },
+          "encode_prepared": {
+            "cpu": 0.037879,
+            "wall": 0.038180583
+          },
+          "bytes": 21210,
+          "changed_streams": 8,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 280133,
+            "selected_samples": 182633,
+            "distinct_samples": 182633,
+            "tree_nodes": 809
+          },
+          "exact_decode": true
+        }
+      ],
+      "peak_backing_bytes": 8484571,
+      "peak_committed_bytes": 48512580
+    },
+    {
+      "input": "palette-358",
+      "baseline_bytes": 1241,
+      "minimum_tested_bytes": 1232,
+      "winner": "wp-0",
+      "delta_bytes": 9,
+      "loss_vs_minimum_percent": 0.7305194805194759,
+      "per_image_search_gate_already_fails": false,
+      "stock_e9_bytes": 1243,
+      "legacy_native_bytes": 1046,
+      "local_trees": false,
+      "eligible_streams": 1,
+      "baseline_stats": {
+        "learning_calls": 1,
+        "fits": 1,
+        "empty_learning_calls": 0,
+        "scanned_pixels": 20854,
+        "selected_samples": 13702,
+        "distinct_samples": 13701,
+        "tree_nodes": 55
+      },
+      "candidates": [
+        {
+          "name": "selected-replay",
+          "mode": -1,
+          "prepare": {
+            "cpu": 0.009307,
+            "wall": 0.009454
+          },
+          "encode_prepared": {
+            "cpu": 0.003878,
+            "wall": 0.003880125
+          },
+          "bytes": 1241,
+          "changed_streams": 0,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 20854,
+            "selected_samples": 13702,
+            "distinct_samples": 13701,
+            "tree_nodes": 55
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-0",
+          "mode": 0,
+          "prepare": {
+            "cpu": 0.009383,
+            "wall": 0.009479917
+          },
+          "encode_prepared": {
+            "cpu": 0.003756,
+            "wall": 0.003772666
+          },
+          "bytes": 1232,
+          "changed_streams": 1,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 20854,
+            "selected_samples": 13702,
+            "distinct_samples": 13701,
+            "tree_nodes": 55
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-1",
+          "mode": 1,
+          "prepare": {
+            "cpu": 0.009237,
+            "wall": 0.009239166
+          },
+          "encode_prepared": {
+            "cpu": 0.003432,
+            "wall": 0.003526709
+          },
+          "bytes": 1265,
+          "changed_streams": 1,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 20854,
+            "selected_samples": 13702,
+            "distinct_samples": 13701,
+            "tree_nodes": 61
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-2",
+          "mode": 2,
+          "prepare": {
+            "cpu": 0.009246,
+            "wall": 0.009312583
+          },
+          "encode_prepared": {
+            "cpu": 0.00412,
+            "wall": 0.004140375
+          },
+          "bytes": 1241,
+          "changed_streams": 0,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 20854,
+            "selected_samples": 13702,
+            "distinct_samples": 13701,
+            "tree_nodes": 55
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-3",
+          "mode": 3,
+          "prepare": {
+            "cpu": 0.009318,
+            "wall": 0.009392291
+          },
+          "encode_prepared": {
+            "cpu": 0.004151,
+            "wall": 0.004186792
+          },
+          "bytes": 1258,
+          "changed_streams": 1,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 20854,
+            "selected_samples": 13702,
+            "distinct_samples": 13701,
+            "tree_nodes": 55
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-4",
+          "mode": 4,
+          "prepare": {
+            "cpu": 0.009555,
+            "wall": 0.009724875
+          },
+          "encode_prepared": {
+            "cpu": 0.003898,
+            "wall": 0.004016375
+          },
+          "bytes": 1244,
+          "changed_streams": 1,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 20854,
+            "selected_samples": 13702,
+            "distinct_samples": 13701,
+            "tree_nodes": 61
+          },
+          "exact_decode": true
+        }
+      ],
+      "peak_backing_bytes": 1218755,
+      "peak_committed_bytes": 6740602
+    },
+    {
+      "input": "gray16-ramp",
+      "baseline_bytes": 2484,
+      "minimum_tested_bytes": 2361,
+      "winner": "wp-1",
+      "delta_bytes": 123,
+      "loss_vs_minimum_percent": 5.209656925031769,
+      "per_image_search_gate_already_fails": true,
+      "stock_e9_bytes": 2502,
+      "legacy_native_bytes": 1292,
+      "local_trees": false,
+      "eligible_streams": 6,
+      "baseline_stats": {
+        "learning_calls": 1,
+        "fits": 1,
+        "empty_learning_calls": 0,
+        "scanned_pixels": 131841,
+        "selected_samples": 86197,
+        "distinct_samples": 86067,
+        "tree_nodes": 31
+      },
+      "candidates": [
+        {
+          "name": "selected-replay",
+          "mode": -1,
+          "prepare": {
+            "cpu": 0.050907,
+            "wall": 0.051083167
+          },
+          "encode_prepared": {
+            "cpu": 0.007437,
+            "wall": 0.007463375
+          },
+          "bytes": 2484,
+          "changed_streams": 0,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 131841,
+            "selected_samples": 86197,
+            "distinct_samples": 86067,
+            "tree_nodes": 31
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-0",
+          "mode": 0,
+          "prepare": {
+            "cpu": 0.05201,
+            "wall": 0.052392125
+          },
+          "encode_prepared": {
+            "cpu": 0.007683,
+            "wall": 0.007702375
+          },
+          "bytes": 2840,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 131841,
+            "selected_samples": 86197,
+            "distinct_samples": 86067,
+            "tree_nodes": 41
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-1",
+          "mode": 1,
+          "prepare": {
+            "cpu": 0.051464,
+            "wall": 0.051930125
+          },
+          "encode_prepared": {
+            "cpu": 0.00755,
+            "wall": 0.007569042
+          },
+          "bytes": 2361,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 131841,
+            "selected_samples": 86197,
+            "distinct_samples": 86072,
+            "tree_nodes": 39
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-2",
+          "mode": 2,
+          "prepare": {
+            "cpu": 0.050371,
+            "wall": 0.050846125
+          },
+          "encode_prepared": {
+            "cpu": 0.007195,
+            "wall": 0.00728025
+          },
+          "bytes": 2492,
+          "changed_streams": 6,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 131841,
+            "selected_samples": 86197,
+            "distinct_samples": 86074,
+            "tree_nodes": 29
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-3",
+          "mode": 3,
+          "prepare": {
+            "cpu": 0.051106,
+            "wall": 0.051803583
+          },
+          "encode_prepared": {
+            "cpu": 0.007402,
+            "wall": 0.007540708
+          },
+          "bytes": 2496,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 131841,
+            "selected_samples": 86197,
+            "distinct_samples": 86067,
+            "tree_nodes": 31
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-4",
+          "mode": 4,
+          "prepare": {
+            "cpu": 0.051688,
+            "wall": 0.052079583
+          },
+          "encode_prepared": {
+            "cpu": 0.007495,
+            "wall": 0.007507083
+          },
+          "bytes": 2431,
+          "changed_streams": 6,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 131841,
+            "selected_samples": 86197,
+            "distinct_samples": 86068,
+            "tree_nodes": 39
+          },
+          "exact_decode": true
+        }
+      ],
+      "peak_backing_bytes": 3802704,
+      "peak_committed_bytes": 21713174
+    },
+    {
+      "input": "screen-pattern",
+      "baseline_bytes": 329,
+      "minimum_tested_bytes": 329,
+      "winner": "selected-replay",
+      "delta_bytes": 0,
+      "loss_vs_minimum_percent": 0.0,
+      "per_image_search_gate_already_fails": false,
+      "stock_e9_bytes": 343,
+      "legacy_native_bytes": 385,
+      "local_trees": false,
+      "eligible_streams": 6,
+      "baseline_stats": {
+        "learning_calls": 1,
+        "fits": 1,
+        "empty_learning_calls": 0,
+        "scanned_pixels": 131889,
+        "selected_samples": 86245,
+        "distinct_samples": 86245,
+        "tree_nodes": 33
+      },
+      "candidates": [
+        {
+          "name": "selected-replay",
+          "mode": -1,
+          "prepare": {
+            "cpu": 0.055333,
+            "wall": 0.055834125
+          },
+          "encode_prepared": {
+            "cpu": 0.007094,
+            "wall": 0.007204541
+          },
+          "bytes": 329,
+          "changed_streams": 0,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 131889,
+            "selected_samples": 86245,
+            "distinct_samples": 86245,
+            "tree_nodes": 33
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-0",
+          "mode": 0,
+          "prepare": {
+            "cpu": 0.054895,
+            "wall": 0.055388792
+          },
+          "encode_prepared": {
+            "cpu": 0.007193,
+            "wall": 0.007290166
+          },
+          "bytes": 329,
+          "changed_streams": 0,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 131889,
+            "selected_samples": 86245,
+            "distinct_samples": 86245,
+            "tree_nodes": 33
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-1",
+          "mode": 1,
+          "prepare": {
+            "cpu": 0.05521,
+            "wall": 0.055718125
+          },
+          "encode_prepared": {
+            "cpu": 0.007492,
+            "wall": 0.00757625
+          },
+          "bytes": 365,
+          "changed_streams": 6,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 131889,
+            "selected_samples": 86245,
+            "distinct_samples": 86245,
+            "tree_nodes": 33
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-2",
+          "mode": 2,
+          "prepare": {
+            "cpu": 0.055015,
+            "wall": 0.055534625
+          },
+          "encode_prepared": {
+            "cpu": 0.007381,
+            "wall": 0.007525042
+          },
+          "bytes": 365,
+          "changed_streams": 6,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 131889,
+            "selected_samples": 86245,
+            "distinct_samples": 86245,
+            "tree_nodes": 33
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-3",
+          "mode": 3,
+          "prepare": {
+            "cpu": 0.054711,
+            "wall": 0.055334542
+          },
+          "encode_prepared": {
+            "cpu": 0.007222,
+            "wall": 0.007326625
+          },
+          "bytes": 365,
+          "changed_streams": 6,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 131889,
+            "selected_samples": 86245,
+            "distinct_samples": 86245,
+            "tree_nodes": 33
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-4",
+          "mode": 4,
+          "prepare": {
+            "cpu": 0.055177,
+            "wall": 0.055580125
+          },
+          "encode_prepared": {
+            "cpu": 0.007216,
+            "wall": 0.007257167
+          },
+          "bytes": 365,
+          "changed_streams": 6,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 131889,
+            "selected_samples": 86245,
+            "distinct_samples": 86245,
+            "tree_nodes": 33
+          },
+          "exact_decode": true
+        }
+      ],
+      "peak_backing_bytes": 3816371,
+      "peak_committed_bytes": 21312976
+    },
+    {
+      "input": "palette-pattern",
+      "baseline_bytes": 1036,
+      "minimum_tested_bytes": 993,
+      "winner": "wp-0",
+      "delta_bytes": 43,
+      "loss_vs_minimum_percent": 4.330312185297069,
+      "per_image_search_gate_already_fails": true,
+      "stock_e9_bytes": 1047,
+      "legacy_native_bytes": 438,
+      "local_trees": false,
+      "eligible_streams": 6,
+      "baseline_stats": {
+        "learning_calls": 1,
+        "fits": 1,
+        "empty_learning_calls": 0,
+        "scanned_pixels": 131969,
+        "selected_samples": 86325,
+        "distinct_samples": 86324,
+        "tree_nodes": 81
+      },
+      "candidates": [
+        {
+          "name": "selected-replay",
+          "mode": -1,
+          "prepare": {
+            "cpu": 0.057069,
+            "wall": 0.05738475
+          },
+          "encode_prepared": {
+            "cpu": 0.009144,
+            "wall": 0.009179458
+          },
+          "bytes": 1036,
+          "changed_streams": 0,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 131969,
+            "selected_samples": 86325,
+            "distinct_samples": 86324,
+            "tree_nodes": 81
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-0",
+          "mode": 0,
+          "prepare": {
+            "cpu": 0.056545,
+            "wall": 0.0568995
+          },
+          "encode_prepared": {
+            "cpu": 0.008933,
+            "wall": 0.009024833
+          },
+          "bytes": 993,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 131969,
+            "selected_samples": 86325,
+            "distinct_samples": 86325,
+            "tree_nodes": 79
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-1",
+          "mode": 1,
+          "prepare": {
+            "cpu": 0.057898,
+            "wall": 0.058441292
+          },
+          "encode_prepared": {
+            "cpu": 0.008976,
+            "wall": 0.008978791
+          },
+          "bytes": 1080,
+          "changed_streams": 5,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 131969,
+            "selected_samples": 86325,
+            "distinct_samples": 86325,
+            "tree_nodes": 81
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-2",
+          "mode": 2,
+          "prepare": {
+            "cpu": 0.056581,
+            "wall": 0.057004084
+          },
+          "encode_prepared": {
+            "cpu": 0.009027,
+            "wall": 0.009085459
+          },
+          "bytes": 1016,
+          "changed_streams": 5,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 131969,
+            "selected_samples": 86325,
+            "distinct_samples": 86324,
+            "tree_nodes": 77
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-3",
+          "mode": 3,
+          "prepare": {
+            "cpu": 0.056243,
+            "wall": 0.056714584
+          },
+          "encode_prepared": {
+            "cpu": 0.00933,
+            "wall": 0.009407208
+          },
+          "bytes": 1084,
+          "changed_streams": 6,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 131969,
+            "selected_samples": 86325,
+            "distinct_samples": 86325,
+            "tree_nodes": 81
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-4",
+          "mode": 4,
+          "prepare": {
+            "cpu": 0.056778,
+            "wall": 0.057321417
+          },
+          "encode_prepared": {
+            "cpu": 0.009162,
+            "wall": 0.009317208
+          },
+          "bytes": 1045,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 131969,
+            "selected_samples": 86325,
+            "distinct_samples": 86324,
+            "tree_nodes": 81
+          },
+          "exact_decode": true
+        }
+      ],
+      "peak_backing_bytes": 3982854,
+      "peak_committed_bytes": 23795665
+    },
+    {
+      "input": "noise16",
+      "baseline_bytes": 825067,
+      "minimum_tested_bytes": 825067,
+      "winner": "selected-replay",
+      "delta_bytes": 0,
+      "loss_vs_minimum_percent": 0.0,
+      "per_image_search_gate_already_fails": false,
+      "stock_e9_bytes": 825073,
+      "legacy_native_bytes": 802311,
+      "local_trees": false,
+      "eligible_streams": 6,
+      "baseline_stats": {
+        "learning_calls": 1,
+        "fits": 1,
+        "empty_learning_calls": 0,
+        "scanned_pixels": 395523,
+        "selected_samples": 258591,
+        "distinct_samples": 258583,
+        "tree_nodes": 1499
+      },
+      "candidates": [
+        {
+          "name": "selected-replay",
+          "mode": -1,
+          "prepare": {
+            "cpu": 0.640033,
+            "wall": 0.64450475
+          },
+          "encode_prepared": {
+            "cpu": 0.080286,
+            "wall": 0.081078042
+          },
+          "bytes": 825067,
+          "changed_streams": 0,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 395523,
+            "selected_samples": 258591,
+            "distinct_samples": 258583,
+            "tree_nodes": 1499
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-0",
+          "mode": 0,
+          "prepare": {
+            "cpu": 0.643867,
+            "wall": 0.64773725
+          },
+          "encode_prepared": {
+            "cpu": 0.080076,
+            "wall": 0.080508209
+          },
+          "bytes": 825434,
+          "changed_streams": 5,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 395523,
+            "selected_samples": 258591,
+            "distinct_samples": 258584,
+            "tree_nodes": 1453
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-1",
+          "mode": 1,
+          "prepare": {
+            "cpu": 0.645098,
+            "wall": 0.649572334
+          },
+          "encode_prepared": {
+            "cpu": 0.079667,
+            "wall": 0.080206791
+          },
+          "bytes": 825074,
+          "changed_streams": 1,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 395523,
+            "selected_samples": 258591,
+            "distinct_samples": 258583,
+            "tree_nodes": 1499
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-2",
+          "mode": 2,
+          "prepare": {
+            "cpu": 0.642339,
+            "wall": 0.645813
+          },
+          "encode_prepared": {
+            "cpu": 0.082668,
+            "wall": 0.083232416
+          },
+          "bytes": 825344,
+          "changed_streams": 6,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 395523,
+            "selected_samples": 258591,
+            "distinct_samples": 258584,
+            "tree_nodes": 1449
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-3",
+          "mode": 3,
+          "prepare": {
+            "cpu": 0.642359,
+            "wall": 0.646485458
+          },
+          "encode_prepared": {
+            "cpu": 0.078823,
+            "wall": 0.079312708
+          },
+          "bytes": 826536,
+          "changed_streams": 6,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 395523,
+            "selected_samples": 258591,
+            "distinct_samples": 258586,
+            "tree_nodes": 1513
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-4",
+          "mode": 4,
+          "prepare": {
+            "cpu": 0.647562,
+            "wall": 0.651380834
+          },
+          "encode_prepared": {
+            "cpu": 0.078842,
+            "wall": 0.07935575
+          },
+          "bytes": 825617,
+          "changed_streams": 6,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 395523,
+            "selected_samples": 258591,
+            "distinct_samples": 258587,
+            "tree_nodes": 1461
+          },
+          "exact_decode": true
+        }
+      ],
+      "peak_backing_bytes": 14980439,
+      "peak_committed_bytes": 66757497
+    },
+    {
+      "input": "alpha16-ramp",
+      "baseline_bytes": 47547,
+      "minimum_tested_bytes": 17399,
+      "winner": "wp-1",
+      "delta_bytes": 30148,
+      "loss_vs_minimum_percent": 173.27432611069602,
+      "per_image_search_gate_already_fails": true,
+      "stock_e9_bytes": 8375,
+      "legacy_native_bytes": 19866,
+      "local_trees": false,
+      "eligible_streams": 6,
+      "baseline_stats": {
+        "learning_calls": 1,
+        "fits": 1,
+        "empty_learning_calls": 0,
+        "scanned_pixels": 527364,
+        "selected_samples": 344788,
+        "distinct_samples": 344448,
+        "tree_nodes": 477
+      },
+      "candidates": [
+        {
+          "name": "selected-replay",
+          "mode": -1,
+          "prepare": {
+            "cpu": 0.478791,
+            "wall": 0.481453542
+          },
+          "encode_prepared": {
+            "cpu": 0.04482,
+            "wall": 0.045190667
+          },
+          "bytes": 47547,
+          "changed_streams": 0,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 527364,
+            "selected_samples": 344788,
+            "distinct_samples": 344448,
+            "tree_nodes": 477
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-0",
+          "mode": 0,
+          "prepare": {
+            "cpu": 0.39441,
+            "wall": 0.397143625
+          },
+          "encode_prepared": {
+            "cpu": 0.033196,
+            "wall": 0.033401667
+          },
+          "bytes": 36452,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 527364,
+            "selected_samples": 344788,
+            "distinct_samples": 344461,
+            "tree_nodes": 191
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-1",
+          "mode": 1,
+          "prepare": {
+            "cpu": 0.403715,
+            "wall": 0.406133625
+          },
+          "encode_prepared": {
+            "cpu": 0.032899,
+            "wall": 0.033112458
+          },
+          "bytes": 17399,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 527364,
+            "selected_samples": 344788,
+            "distinct_samples": 344468,
+            "tree_nodes": 185
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-2",
+          "mode": 2,
+          "prepare": {
+            "cpu": 0.421887,
+            "wall": 0.424745542
+          },
+          "encode_prepared": {
+            "cpu": 0.033965,
+            "wall": 0.034252291
+          },
+          "bytes": 28342,
+          "changed_streams": 6,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 527364,
+            "selected_samples": 344788,
+            "distinct_samples": 344460,
+            "tree_nodes": 169
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-3",
+          "mode": 3,
+          "prepare": {
+            "cpu": 0.483092,
+            "wall": 0.487177417
+          },
+          "encode_prepared": {
+            "cpu": 0.044172,
+            "wall": 0.044495583
+          },
+          "bytes": 47560,
+          "changed_streams": 4,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 527364,
+            "selected_samples": 344788,
+            "distinct_samples": 344448,
+            "tree_nodes": 477
+          },
+          "exact_decode": true
+        },
+        {
+          "name": "wp-4",
+          "mode": 4,
+          "prepare": {
+            "cpu": 0.36861,
+            "wall": 0.370774709
+          },
+          "encode_prepared": {
+            "cpu": 0.03252,
+            "wall": 0.032727667
+          },
+          "bytes": 50702,
+          "changed_streams": 6,
+          "stats": {
+            "learning_calls": 1,
+            "fits": 1,
+            "empty_learning_calls": 0,
+            "scanned_pixels": 527364,
+            "selected_samples": 344788,
+            "distinct_samples": 344445,
+            "tree_nodes": 191
+          },
+          "exact_decode": true
+        }
+      ],
+      "peak_backing_bytes": 16116015,
+      "peak_committed_bytes": 85774712
+    }
+  ],
+  "validation": {
+    "manifest": "/Users/yunhocho/GitHub/gjxl-modular-learning-cost/build/reference-wp-sweep-validation-v2/manifest.json",
+    "manifest_sha256": "c2cececa10acdc572a1696868f2d1dd1555d5edeadce618c62110d6d79b2ab98",
+    "verified_artifacts": 174,
+    "cross_build_exact_files": 56,
+    "final_release_binary_identical_to_study": true,
+    "analyzer_rejected_corruptions": 8,
+    "sanitizer_limits": "Linked reference archives are uninstrumented; reference vptr checks and macOS LeakSanitizer are disabled. Native managed-capacity release checks remain active."
+  }
+}

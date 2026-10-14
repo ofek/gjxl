@@ -1,0 +1,39 @@
+{
+  "schema": 1,
+  "reference_revision": "e8ff09762481785938d8e4e01333ed3917571161",
+  "scope": "Wide single-channel construction and prescribed coding through the palette wire maximum. Does not implement automatic proposal acceptance or RCT/WP/scope selection; no rate, timing or default-promotion claim.",
+  "qualification": {
+    "ctest_entries_per_build": 15,
+    "builds": [
+      "Release",
+      "ASan/UBSan"
+    ],
+    "wide_generated_cases": 34,
+    "wide_accepted": 22,
+    "wide_rejected": 12,
+    "wide_injected_allocation_failures": 44,
+    "maximum_observed_wide_candidate_managed_peak": 1899964,
+    "new_complete_files_per_build": 64,
+    "exact_wide_headers": 160,
+    "maximum_single_channel_colors": 70911,
+    "maximum_single_channel_colors_in_complete_files": 65536,
+    "dense_value_span_limit": 65536,
+    "wide_dictionary_stack_bytes_less_than": 13312,
+    "sparse_scratch": "4 * min(limit,pixels) + 4 * bit_ceil(2 * min(limit,pixels)); retained=0",
+    "prior_palette_cases_unchanged": 876,
+    "prior_palette_fault_sweep_expanded_to": 82,
+    "prior_complete_files_unchanged": 820,
+    "release_sanitizer_identical_complete_files": 884,
+    "managed_storage_qualified": true,
+    "native_policy_qualified": false,
+    "timing_qualified": false,
+    "default_promotion_qualified": false,
+    "sanitizer_limits": "Native code and test adapters instrumented; linked reference archives uninstrumented; reference vptr checks excluded; macOS LeakSanitizer disabled. Managed backing leak checks pass."
+  },
+  "validation_manifest": "/Users/yunhocho/GitHub/gjxl-modular-learning-cost/build/channel-palette-validation/manifest.json",
+  "validation_manifest_sha256": "c99ca6c3f02497862bf0b0bbb22a3e08e20c299bb93a133b26c16cdd497b2792",
+  "bound_validation_files": 5077,
+  "baseline_validation_manifest": "/Users/yunhocho/GitHub/gjxl-modular-learning-cost/build/reference-palette-validation/manifest.json",
+  "baseline_validation_manifest_sha256": "77be5bb75e57e069486d47f3cd6c64822428aaddf3c9f845fdb2c1f9de6c11f7",
+  "analyzer_sha256": "92fb35413d14312aa22046e603106efe0fdecf316c98041e5c3fdbeaa8dec680"
+}

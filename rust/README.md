@@ -28,10 +28,7 @@ quality/distance controls.
 ```rust
 let image = gjxl::ImageView::new(width, height, stride_bytes, &pixels,
                                 gjxl::PixelFormat::Rgba16BeSrgb)?;
-let encoded = context.encode_modular(&image, gjxl::ModularOptions {
-    search: true,
-    entropy: gjxl::ModularEntropy::Ans,
-})?;
+let encoded = context.encode_modular(&image, gjxl::ModularOptions::default())?;
 ```
 
 Use `Gray8Srgb`, `Rgb8Srgb`, `Rgba8Srgb`, or the `Gray16`, `Rgb16`, `Rgba16`
@@ -39,3 +36,10 @@ variants ending in `LeSrgb`/`BeSrgb`. Buffers are byte slices with explicit byte
 order; padded rows and unaligned data are supported. Source colors are sRGB (or
 its gray transfer function); no float conversion or alpha premultiplication is
 performed. Bindgen includes the new sized C options and entry point automatically.
+
+Modular defaults use the one-fit histogram learner with ANS. Select
+`ModularPolicy::Baseline` or `ModularPolicy::Search` for the legacy policies;
+`search: true` remains a compatibility alias for search. Use
+`..ModularOptions::default()` when specifying individual fields. Explicit prefix
+coding remains available. The learned path is currently serial and can return
+`Unavailable` when its shared memory domain is busy.

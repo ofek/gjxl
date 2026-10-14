@@ -21,6 +21,9 @@ inline constexpr size_t MaximumCodingStreamHeaderBits(const TransformSequence &t
 [[nodiscard]] Status WriteCodingStreamHeader(const WeightedPredictorParameters &weighted,
                                              uint8_t rct, const TransformSequence &transforms,
                                              BitWriter *writer);
+[[nodiscard]] Status WriteCodingStreamHeader(const WeightedPredictorParameters &weighted,
+                                             uint8_t rct, const TransformSequence &transforms,
+                                             bool use_global_tree, BitWriter *writer);
 // Internal composition helper: the caller owns an atomic temporary/allotment
 // and handles allocation exceptions. Writes no-LZ77 plus the global model.
 // Scratch is WriteEntropyCode's existing model-emission plan; no model copy.

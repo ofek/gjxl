@@ -5,6 +5,7 @@
 #include "codestream/entropy_readiness_internal.h"
 #include "core/worker_launch_internal.h"
 #include "quantized_frame_fixture.h"
+#include "test_environment.h"
 
 #include <atomic>
 #include <iostream>
@@ -15,6 +16,7 @@ using namespace gjxl;
 using namespace gjxl::codestream_internal;
 using namespace gjxl::thread_budget_internal;
 using gjxl_test::Check;
+using gjxl_test::SetEnvironment;
 
 namespace {
 void Require(bool value, const char* message) {
@@ -71,9 +73,9 @@ void CheckReleased(const ExecutionDomain& domain, size_t cpu) {
 }  // namespace
 
 int main() try {
-  unsetenv("GJXL_EARLY_ENTROPY");
-  unsetenv("GJXL_EXPERIMENT_EAGER_ENTROPY");
-  unsetenv("GJXL_EARLY_DC");
+  SetEnvironment("GJXL_EARLY_ENTROPY");
+  SetEnvironment("GJXL_EXPERIMENT_EAGER_ENTROPY");
+  SetEnvironment("GJXL_EARLY_DC");
   auto owner = gjxl_test::MakeFrame(gjxl_test::kStrategies.size(), 2, 36);
   const auto frame = vardct_frame_internal::BorrowFrame(owner);
   std::vector<uint8_t> expected;
@@ -82,10 +84,9 @@ int main() try {
   for (const char* setting : {static_cast<const char*>(nullptr), "0", "1", "invalid"})
     for (size_t cpu : {1, 2, 4, 8})
       for (int scenario = 0; scenario < 10; ++scenario) {
-        if (setting) setenv("GJXL_EARLY_DC", setting, 1);
-        else unsetenv("GJXL_EARLY_DC");
-        unsetenv("GJXL_EARLY_ENTROPY");
-        if (scenario == 9) setenv("GJXL_EARLY_ENTROPY", "0", 1);
+        SetEnvironment("GJXL_EARLY_DC", setting);
+        SetEnvironment("GJXL_EARLY_ENTROPY");
+        if (scenario == 9) SetEnvironment("GJXL_EARLY_ENTROPY", "0");
         std::shared_ptr<const ExecutionDomain> domain;
         Check(ExecutionDomain::Create({0, cpu}, &domain));
         Provider provider;
@@ -123,10 +124,10 @@ int main() try {
         ++cases;
       }
 
-  unsetenv("GJXL_EARLY_DC");
-  unsetenv("GJXL_EARLY_ENTROPY");
+  SetEnvironment("GJXL_EARLY_DC");
+  SetEnvironment("GJXL_EARLY_ENTROPY");
   for (const char* mode : {"0", "1", "2", "3", "invalid"}) {
-    setenv("GJXL_EXPERIMENT_EAGER_ENTROPY", mode, 1);
+    SetEnvironment("GJXL_EXPERIMENT_EAGER_ENTROPY", mode);
     bool selected = true;
 #ifdef GJXL_TOKENIZATION_EXPERIMENT
     selected = std::strcmp(mode, "3") == 0 || std::strcmp(mode, "invalid") == 0;
@@ -149,7 +150,7 @@ int main() try {
     CheckReleased(*domain, 4);
     ++cases;
   }
-  unsetenv("GJXL_EXPERIMENT_EAGER_ENTROPY");
+  SetEnvironment("GJXL_EXPERIMENT_EAGER_ENTROPY");
   for (auto prediction : {VarDctDcPrediction::kGradient, VarDctDcPrediction::kWeighted})
     for (auto behavior : {VarDctEntropyBehavior::kBalanced,
                          VarDctEntropyBehavior::kHighDensity,
@@ -221,6 +222,7 @@ int main() try {
   for (size_t cpu : {2, 4, 8}) {
     std::shared_ptr<const ExecutionDomain> domain;
     Check(ExecutionDomain::Create({0, cpu}, &domain));
+    const VarDctCodestreamOptions options;
     std::atomic<bool> good{true};
     std::vector<std::jthread> callers;
     for (size_t i = 0; i < 4; ++i) callers.emplace_back([&] {
@@ -231,7 +233,7 @@ int main() try {
         Provider provider;
         AcTokenizationProviderScope provider_scope(&provider);
         std::vector<uint8_t> bytes;
-        if (!EncodeVarDctCodestreamFromView(frame, {}, &bytes).ok() ||
+        if (!EncodeVarDctCodestreamFromView(frame, options, &bytes).ok() ||
             bytes != expected || provider.begins != 1 || provider.finishes != 1) good = false;
       }
     });
@@ -240,7 +242,7 @@ int main() try {
     CheckReleased(*domain, cpu);
     cases += 16;
   }
-  unsetenv("GJXL_EARLY_DC");
+  SetEnvironment("GJXL_EARLY_DC");
   std::cout << "Passed " << cases << " earlier-DC cases: default/opt-out, admission before Begin, "
       "atomic Begin/Finish and launch failures, fallback, and shared-domain calls.\n";
 } catch (const std::exception& error) {

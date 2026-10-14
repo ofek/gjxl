@@ -6,28 +6,76 @@
 #include "codestream/modular/parallel.h"
 
 namespace gjxl::modular_internal {
+size_t ModularTreeTokenCount(const DecisionTree &tree, const TreeLayout &layout) {
+  return 5 * layout.leaves + 2 * (tree.size - layout.leaves);
+}
+void TokenizeValidatedModularTree(const DecisionTree &tree, const TreeLayout &layout,
+                                  std::span<EntropyToken> tokens) {
+  size_t next = 0;
+  auto token = [&](uint32_t context, uint32_t value) { tokens[next++] = {context, value}; };
+  for (size_t i = 0; i < tree.size; ++i) {
+    const auto &node = tree.nodes[layout.breadth_first[i]];
+    token(1, node.property + 1);
+    if (node.property == -1) {
+      token(2, static_cast<uint32_t>(node.predictor));
+      token(3, PackSigned(node.offset));
+      const unsigned shift = std::countr_zero(node.multiplier);
+      token(4, shift);
+      token(5, (node.multiplier >> shift) - 1);
+    } else
+      token(0, PackSigned(node.split));
+  }
+}
 PreparedModularTokens PrepareModularTokenHeader(const ModularCodingPolicy &policy,
                                                 const TreeLayout &layout) {
   PreparedModularTokens result;
   result.policy = policy;
   result.context_count = layout.leaves;
-  result.tree_tokens.resize(5 * layout.leaves + 2 * (policy.tree.size - layout.leaves));
-  auto tree_token = [&](uint32_t context, uint32_t value) {
-    result.tree_tokens[result.tree_token_count++] = {context, value};
-  };
-  for (size_t i = 0; i < policy.tree.size; ++i) {
-    const auto &node = policy.tree.nodes[layout.breadth_first[i]];
-    tree_token(1, node.property + 1);
-    if (node.property == -1) {
-      tree_token(2, static_cast<uint32_t>(node.predictor));
-      tree_token(3, PackSigned(node.offset));
-      const unsigned shift = std::countr_zero(node.multiplier);
-      tree_token(4, shift);
-      tree_token(5, (node.multiplier >> shift) - 1);
-    } else
-      tree_token(0, PackSigned(node.split));
-  }
+  result.tree_token_count = ModularTreeTokenCount(policy.tree, layout);
+  result.tree_tokens.resize(result.tree_token_count);
+  TokenizeValidatedModularTree(policy.tree, layout,
+                               std::span(result.tree_tokens).first(result.tree_token_count));
   return result;
+}
+Status TokenizeValidatedModularChannel(const ModularChannelView &view, size_t channel,
+                                       size_t stream_id, const DecisionTree &tree,
+                                       const TreeLayout &layout,
+                                       const WeightedPredictorParameters &parameters,
+                                       std::span<EntropyToken> tokens) {
+  const auto [w, h] = view.descriptor.extent;
+  if (tokens.size() != w * h)
+    return Status::InvalidArgument("Invalid Modular channel token extent");
+  if (!w || !h)
+    return Status::Ok();
+  std::optional<WeightedPredictor<resource_budget_internal::ResourceClass::kPreparation>> wp;
+  if (layout.weighted)
+    wp.emplace(w, parameters);
+  size_t next = 0;
+  for (size_t y = 0; y < h; ++y) {
+    int64_t previous_gradient = 0;
+    for (size_t x = 0; x < w; ++x) {
+      const auto neighbors = Neighbors(view, x, y);
+      std::pair<int64_t, int64_t> weighted{};
+      if (wp)
+        weighted = wp->Predict(x, y, neighbors.top, neighbors.left, neighbors.top_right,
+                               neighbors.top_left, neighbors.top_top);
+      const auto properties = Properties(neighbors, channel, stream_id, x, y,
+                                         previous_gradient, weighted.second);
+      previous_gradient = properties[9];
+      const size_t leaf = Lookup(tree, properties);
+      const auto &node = tree.nodes[leaf];
+      const int64_t residual = int64_t{view.Row(y)[x]} -
+                               Predict(node.predictor, neighbors, weighted.first) - node.offset;
+      if (residual % node.multiplier != 0 || residual / node.multiplier < INT32_MIN ||
+          residual / node.multiplier > INT32_MAX)
+        return Status::InvalidArgument("Modular leaf cannot represent residual exactly");
+      tokens[next++] = {layout.context[leaf],
+                        PackSigned(static_cast<int32_t>(residual / node.multiplier))};
+      if (wp && !wp->Update(view.Row(y)[x], x, y))
+        return Status::Unsupported("Modular weighted state exceeds supported range");
+    }
+  }
+  return Status::Ok();
 }
 Status TokenizeIdentity(const ModularEncoderFrame &frame, const ModularStreamPlan &plan,
                         PreparedModularTokens *out) {
@@ -49,6 +97,8 @@ Status TokenizeModular(const ModularEncoderFrame &frame, const ModularStreamPlan
     total += area;
   }
   if (auto s = ValidateCodingPolicy(policy); !s.ok())
+    return s;
+  if (auto s = ValidateTransformBitDepth(policy.transforms, frame.metadata().bits); !s.ok())
     return s;
   TreeLayout tree_layout;
   if (auto s = ValidateTree(policy.tree, &tree_layout); !s.ok())
@@ -97,38 +147,11 @@ Status TokenizeModular(const ModularEncoderFrame &frame, const ModularStreamPlan
               const auto [w, h] = view.descriptor.extent;
               if (w * h > offsets[i + 1] - next)
                 return Status::InvalidArgument("Overlapping Modular token count");
-              std::optional<
-                  WeightedPredictor<resource_budget_internal::ResourceClass::kPreparation>>
-                  wp;
-              if (tree_layout.weighted)
-                wp.emplace(w, policy.weighted);
-              for (size_t y = 0; y < h; ++y) {
-                int64_t previous_gradient = 0;
-                for (size_t x = 0; x < w; ++x) {
-                  const auto neighbors = Neighbors(view, x, y);
-                  std::pair<int64_t, int64_t> weighted{};
-                  if (wp)
-                    weighted = wp->Predict(x, y, neighbors.top, neighbors.left, neighbors.top_right,
-                                           neighbors.top_left, neighbors.top_top);
-                  const auto properties = Properties(neighbors, property_channel, stream.id, x, y,
-                                                     previous_gradient, weighted.second);
-                  previous_gradient = properties[9];
-                  const size_t leaf = Lookup(policy.tree, properties);
-                  const auto &node = policy.tree.nodes[leaf];
-                  const int64_t residual = int64_t{view.Row(y)[x]} -
-                                           Predict(node.predictor, neighbors, weighted.first) -
-                                           node.offset;
-                  if (residual % node.multiplier != 0 || residual / node.multiplier < INT32_MIN ||
-                      residual / node.multiplier > INT32_MAX)
-                    return Status::InvalidArgument(
-                        "Modular leaf cannot represent residual exactly");
-                  result.tokens[next++] = {
-                      tree_layout.context[leaf],
-                      PackSigned(static_cast<int32_t>(residual / node.multiplier))};
-                  if (wp && !wp->Update(view.Row(y)[x], x, y))
-                    return Status::Unsupported("Modular weighted state exceeds supported range");
-                }
-              }
+              if (auto s = TokenizeValidatedModularChannel(
+                      view, property_channel, stream.id, policy.tree, tree_layout, policy.weighted,
+                      std::span(result.tokens).subspan(next, w * h)); !s.ok())
+                return s;
+              next += w * h;
               ++property_channel;
             }
             result.streams[i] = EntropyTokenStreamView::Interleaved(

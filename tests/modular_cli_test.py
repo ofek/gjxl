@@ -17,11 +17,17 @@ for channels in [1,3,4]:
     header=f'P7\nWIDTH {w}\nHEIGHT {h}\nDEPTH {channels}\nMAXVAL {(1<<bits)-1}\nTUPLTYPE { {1:"GRAYSCALE",3:"RGB",4:"RGB_ALPHA"}[channels]}\nENDHDR\n'
    else:header=f'P{5 if channels==1 else 6}\n# explicit source sRGB\n{w} {h}\n{(1<<bits)-1}\n'
    path.write_bytes(header.encode()+ (bytes(samples) if bits==8 else b''.join(struct.pack('>H',v) for v in samples)))
-   for entropy in ['prefix','ans']:
-    output=path.with_suffix('.'+entropy+'.jxl')
-    subprocess.run([encoder,'--modular','--input-color-space','srgb','--threads','4','--search','--entropy',entropy,str(path),str(output)],check=True,capture_output=True)
-    subprocess.run([oracle,'--check-file',str(output),str(raw),str(w),str(h),str(channels),str(bits)],check=True,capture_output=True)
-    cases+=1
+   for policy in ['learned','baseline','search']:
+    for entropy in ['prefix','ans']:
+     output=path.with_suffix('.'+policy+'.'+entropy+'.jxl')
+     subprocess.run([encoder,'--modular','--input-color-space','srgb','--threads','4','--policy',policy,'--entropy',entropy,str(path),str(output)],check=True,capture_output=True)
+     subprocess.run([oracle,'--check-file',str(output),str(raw),str(w),str(h),str(channels),str(bits)],check=True,capture_output=True)
+     cases+=1
+   output=path.with_suffix('.default.jxl')
+   subprocess.run([encoder,'--modular','--input-color-space','srgb',str(path),str(output)],check=True,capture_output=True)
+   assert output.read_bytes()==path.with_suffix('.learned.ans.jxl').read_bytes()
+   subprocess.run([oracle,'--check-file',str(output),str(raw),str(w),str(h),str(channels),str(bits)],check=True,capture_output=True)
+   cases+=1
 valid=root/'1-8-False.pnm'; output=root/'atomic.jxl'
 invalids=[b'P5\n1 1\n254\n\0',b'P6\n2 2\n255\n\0',b'PF\n1 1\n-1\n'+bytes(12),
           b'P7\nWIDTH 1\nHEIGHT 1\nDEPTH 2\nMAXVAL 255\nTUPLTYPE GRAYSCALE_ALPHA\nENDHDR\n\0\0',
@@ -31,8 +37,11 @@ for i,data in enumerate(invalids):
  bad=root/f'bad-{i}.pnm';bad.write_bytes(data);output.write_bytes(b'preserve')
  r=subprocess.run([encoder,'--modular','--input-color-space','srgb',str(bad),str(output)],capture_output=True)
  assert r.returncode!=0 and output.read_bytes()==b'preserve'
-for flags in [[],['--input-color-space','linear'],['--input-color-space','srgb','--distance','1'],['--input-color-space','srgb','--backend','cuda'],['--input-color-space','srgb','--threads','257']]:
+invalid_flags=[[],['--input-color-space','linear'],['--input-color-space','srgb','--distance','1'],['--input-color-space','srgb','--backend','cuda'],['--input-color-space','srgb','--threads','257'],['--input-color-space','srgb','--policy','invalid'],['--input-color-space','srgb','--policy','baseline','--search']]
+for flags in invalid_flags:
  output.write_bytes(b'preserve')
  r=subprocess.run([encoder,'--modular',*flags,str(valid),str(output)],capture_output=True)
  assert r.returncode!=0 and output.read_bytes()==b'preserve'
-print(f'{cases} CLI files decoded exactly; {len(invalids)+5} invalid requests preserved output')
+subprocess.run([encoder,'--modular','--input-color-space','srgb','--search',str(valid),str(output)],check=True,capture_output=True)
+assert output.read_bytes()==valid.with_suffix('.search.ans.jxl').read_bytes()
+print(f'{cases} CLI files decoded exactly; {len(invalids)+len(invalid_flags)} invalid requests preserved output; legacy search alias matched')

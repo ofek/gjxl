@@ -26,4 +26,10 @@ struct GlobalTreeStoragePlan {
 [[nodiscard]] Status WriteGlobalTreeInTransaction(
     std::span<const EntropyToken> tokens, BitWriter* writer);
 
+// Local tree syntax has no global-tree-present flag. The existing global plan
+// is a conservative bound for this identical optimizer/write scratch and one
+// fewer syntax bit. The caller owns the surrounding stream transaction.
+[[nodiscard]] Status WriteLocalTreeInTransaction(
+    std::span<const EntropyToken> tokens, BitWriter* writer);
+
 }  // namespace gjxl::modular_internal

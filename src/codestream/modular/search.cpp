@@ -159,7 +159,7 @@ Status ProbePalette(PackedModularImageView input, uint16_t *colors) {
   ModularInputProfile p;
   if (auto s = ResolveModularInput(input.extent, input.format, &p); !s.ok())
     return s;
-  std::array<std::array<int32_t, 4>, kMaximumPaletteColors> entries{};
+  std::array<std::array<int32_t, 4>, kMaximumSearchPaletteColors> entries{};
   size_t used = 0;
   for (size_t y = 0; y < input.extent.height; ++y)
     for (size_t x = 0; x < input.extent.width; ++x) {
@@ -176,7 +176,7 @@ Status ProbePalette(PackedModularImageView input, uint16_t *colors) {
       auto pos = std::lower_bound(entries.begin(), entries.begin() + used, color);
       if (pos != entries.begin() + used && *pos == color)
         continue;
-      if (used == kMaximumPaletteColors) {
+      if (used == kMaximumSearchPaletteColors) {
         *colors = 0;
         return Status::Ok();
       }
@@ -189,7 +189,7 @@ Status ProbePalette(PackedModularImageView input, uint16_t *colors) {
 }
 Status BuildTransformCandidates(Extent2D extent, PackedModularFormat format, uint16_t colors,
                                 std::array<ModularCodingPolicy, 4> *out, size_t *count) {
-  if (!out || !count || colors > kMaximumPaletteColors)
+  if (!out || !count || colors > kMaximumSearchPaletteColors)
     return Status::InvalidArgument("Invalid transform search output");
   ModularInputProfile p;
   if (auto s = ResolveModularInput(extent, format, &p); !s.ok())
@@ -274,7 +274,8 @@ Status ComputeModularSearchStoragePlan(Extent2D extent, PackedModularFormat form
                                       baseline.working.peak_bytes, ranking.peak_bytes});
   std::array<ModularCodingPolicy, 4> candidates;
   size_t count;
-  if (auto s = BuildTransformCandidates(extent, format, kMaximumPaletteColors, &candidates, &count);
+  if (auto s = BuildTransformCandidates(extent, format, kMaximumSearchPaletteColors, &candidates,
+                                         &count);
       !s.ok())
     return s;
   for (size_t i = 0; i < count; ++i) {

@@ -358,27 +358,33 @@ bool OptimizationCase(size_t contexts, size_t n, size_t sections,
     population.maximum_symbol =
         std::max(population.maximum_symbol, token.symbol);
   }
-  for (size_t variant = 0; variant < 15; ++variant) {
-    const std::array policies{kFastPrefix,     kPrefix,
+  const std::array policies{kFastPrefix,     kPrefix,
                               kPrefix,         kBalancedAns,
                               kHighDensityAns, kAnsFromPrefix,
                               kAnsFromPrefix,  kDeferredAnsFromPrefix,
                               kBalancedAns,    kRateOptimizedAns,
                               kRateOptimizedAns, kDeferredRateOptimizedAns,
-                              kBalancedDcAns, kBalancedDcAns, kPrefix};
+                              kBalancedDcAns, kBalancedDcAns,
+                              kRateOptimizedAns, kRateOptimizedAns, kPrefix};
+  for (size_t variant = 0; variant < policies.size(); ++variant) {
+    const bool estimated_direct = variant == 14 || variant == 15;
     EntropyOptimizationStorageOptions o{
         .policy = policies[variant],
         .tokens = n,
         .contexts = contexts,
         .sections = sections,
         .initial_histograms = initial_map ? 17ul : 0ul,
-        .return_cost = variant != 9 && variant != 12 && variant != 14 &&
-                       (pattern != 0 || variant == 2),
-        .retain_prepared_clusters = variant == 2 || variant == 14,
+        .return_cost = variant >= 14 ? variant == 15 :
+                       (variant != 9 && variant != 12 && (pattern != 0 || variant == 2)),
+        .retain_prepared_clusters = variant == 2 || variant == 16,
         .borrow_prepared_clusters = variant == 6 || variant == 7,
         .maximum_ans_clusters = maximum_ans_clusters,
     };
     const auto run = [&](Result *out, EntropyWorkProfile* profile = nullptr) {
+      if (estimated_direct)
+        return OptimizeDirectAnsEntropyCode(
+            views, input, DirectAnsEntropyMode::kRateOptimized, &out->code,
+            o.return_cost ? &out->cost : nullptr, profile, AnsSelectionMode::kEstimated);
       // Exercise the borrowed, unmapped source as well as the owning merge
       // fallback under the same reservation and allocation-failure sweep.
       if ((variant == 3 && initial_map) || variant == 8 || variant == 13)
@@ -416,6 +422,11 @@ bool OptimizationCase(size_t contexts, size_t n, size_t sections,
       EntropyWorkProfile profile;
       if (!Ok(run(&output, &profile)) ||
           !Check(output == oracle, "Optimizer parity failed"))
+        return false;
+      if (estimated_direct &&
+          !Check(profile.ans_alphabet_width_candidate_count == 1 &&
+                     profile.ans_token_cost_candidate_count == (o.return_cost ? 1 : 0),
+                 "Estimated direct ANS measured extra candidates"))
         return false;
     }
     if (!output.Owned().Matches(budget, plan.output.retained_bytes))

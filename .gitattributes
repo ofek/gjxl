@@ -1,2 +1,4 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+# The frozen oracle checks the manifest's exact bytes on every platform.
+testdata/modular/oracle-v*.json text eol=lf

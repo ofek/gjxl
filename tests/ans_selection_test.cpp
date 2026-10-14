@@ -64,7 +64,7 @@ struct CostProbe final : AnsTokenCostEvaluator {
     return Status::Ok();
   }
 };
-void Models() {
+void Models(bool direct) {
   for (uint32_t fixture = 0; fixture < 5; ++fixture) {
     std::vector<std::vector<EntropyToken>> input(4);
     const size_t n = fixture == 0 ? 0 : (fixture == 1 ? 3 : 4097);
@@ -90,6 +90,14 @@ void Models() {
     EntropyCodeCost prefix_cost;
     Ok(OptimizeEntropyCodeAndPrepareClusters(streams, {.context_count = 3}, &prefix, &prefix_cost,
                                              &populations));
+    const auto optimize = [&](std::span<const EntropyTokenStreamView> views,
+                              EntropyCode* code, EntropyCodeCost* cost,
+                              EntropyWorkProfile* profile, AnsSelectionMode selection) {
+      return direct ? OptimizeDirectAnsEntropyCode(
+                          views, {.context_count = 3}, DirectAnsEntropyMode::kRateOptimized,
+                          code, cost, profile, selection)
+                    : OptimizeAnsEntropyCode(views, prefix, code, cost, profile, selection);
+    };
     EntropyCode prefix_without_cost;
     PreparedEntropyClusters retained;
     EntropyWorkProfile retain_profile;
@@ -99,22 +107,33 @@ void Models() {
               retain_profile.prefix_section_measurement_count == 0,
           "Population-only retention changed values/model or measured prefix sections");
     EntropyWorkProfile estimate_profile, exact_profile;
-    Ok(OptimizeAnsEntropyCode(streams, prefix, &estimated, nullptr, &estimate_profile, kEstimated));
+    Ok(optimize(streams, &estimated, nullptr, &estimate_profile, kEstimated));
     Check(estimate_profile.ans_token_cost_nanoseconds == 0 &&
+              estimate_profile.ans_token_cost_candidate_count == 0 &&
               estimate_profile.ans_alphabet_width_candidate_count == 1,
           "Estimated selection simulated candidates or built extra widths");
-    Ok(OptimizeAnsEntropyCode(streams, prefix, &exact, nullptr, &exact_profile));
+    Ok(optimize(streams, &exact, nullptr, &exact_profile, AnsSelectionMode::kExact));
     Check(estimate_profile.ans_uint_config_candidate_count ==
                   exact_profile.ans_uint_config_candidate_count &&
               estimate_profile.ans_histogram_candidate_count ==
                   exact_profile.ans_histogram_candidate_count,
           "Estimation changed upstream candidate search");
     EntropyCodeCost cost;
-    Ok(OptimizeAnsEntropyCode(streams, prefix, &with_cost, &cost, nullptr, kEstimated));
-    Ok(OptimizeAnsEntropyCode(input, prefix, &interleaved, nullptr, nullptr, kEstimated));
-    Ok(OptimizeAnsEntropyCodeWithPreparedClusters(streams, prefix, populations, &prepared_model,
-                                                  nullptr, nullptr, kEstimated));
-    Check(estimated == with_cost && estimated == interleaved && estimated == prepared_model,
+    EntropyWorkProfile cost_profile;
+    Ok(optimize(streams, &with_cost, &cost, &cost_profile, kEstimated));
+    Check(cost_profile.ans_token_cost_candidate_count == 1,
+          "Requested estimated cost did not measure exactly one model");
+    if (direct) {
+      std::vector<EntropyTokenStreamView> views;
+      for (const auto& stream : input) views.push_back(EntropyTokenStreamView::Interleaved(stream));
+      Ok(optimize(views, &interleaved, nullptr, nullptr, kEstimated));
+    } else {
+      Ok(OptimizeAnsEntropyCode(input, prefix, &interleaved, nullptr, nullptr, kEstimated));
+      Ok(OptimizeAnsEntropyCodeWithPreparedClusters(streams, prefix, populations, &prepared_model,
+                                                    nullptr, nullptr, kEstimated));
+      Check(estimated == prepared_model, "Prepared estimated model differs");
+    }
+    Check(estimated == with_cost && estimated == interleaved,
           "Estimated model depends on cost request or token representation");
     BitWriter header;
     Ok(WriteEntropyCode(estimated, &header));
@@ -127,34 +146,44 @@ void Models() {
     }
     Check(total == cost.token_bits && header.bits_written() == cost.model_bits,
           "Exact cost totals changed");
-    CostProbe evaluator;
-    EntropyCode evaluated;
-    Ok(OptimizeAnsEntropyCodeWithCostEvaluator(streams, prefix, evaluator, &evaluated, nullptr,
-                                                nullptr, kEstimated));
-    Check(evaluated == estimated && evaluator.calls == 0,
-          "Estimated selector invoked its exact-cost provider without a cost request");
-    EntropyCodeCost evaluated_cost;
-    Ok(OptimizeAnsEntropyCodeWithCostEvaluator(streams, prefix, evaluator, &evaluated,
-                                                &evaluated_cost, nullptr, kEstimated));
-    Check(evaluated == estimated && evaluator.calls == 1 && evaluator.candidates == 1 &&
-              evaluated_cost == cost,
-          "Estimated selector did not measure exactly the requested selected model");
-    for (auto selection : {AnsSelectionMode::kExact, AnsSelectionMode::kEstimated}) {
-      EntropyCode unprepared_model, reused_model;
-      EntropyCodeCost unprepared_cost, reused_cost;
-      EntropyWorkProfile reuse_profile;
-      CostProbe probe;
-      Ok(OptimizeAnsEntropyCode(streams, prefix, &unprepared_model, &unprepared_cost, nullptr,
-                                 selection));
-      Ok(OptimizeAnsEntropyCodeWithPreparedClusters(streams, prefix, retained, &reused_model,
-          &reused_cost, &reuse_profile, selection, &probe));
-      Check(reused_model == unprepared_model && reused_cost == unprepared_cost && probe.calls > 0 &&
-                reuse_profile.ans_value_collection_nanoseconds == 0 &&
-                reuse_profile.ans_value_aggregation_nanoseconds == 0,
-            "Prepared provider changed model/cost or recollected token populations");
+    // The optional evaluator consumes a prefix partition; direct ANS learns its
+    // own partition and need not select the same model.
+    if (!direct) {
+      CostProbe evaluator;
+      EntropyCode evaluated;
+      EntropyWorkProfile evaluator_profile;
+      Ok(OptimizeAnsEntropyCodeWithCostEvaluator(streams, prefix, evaluator, &evaluated, nullptr,
+                                                  &evaluator_profile, kEstimated));
+      Check(evaluated == estimated && evaluator.calls == 0 &&
+                evaluator_profile.ans_token_cost_candidate_count == 0,
+            "Estimated selector invoked its exact-cost provider without a cost request");
+      EntropyCodeCost evaluated_cost;
+      Ok(OptimizeAnsEntropyCodeWithCostEvaluator(streams, prefix, evaluator, &evaluated,
+                                                  &evaluated_cost, &evaluator_profile, kEstimated));
+      Check(evaluated == estimated && evaluator.calls == 1 && evaluator.candidates == 1 &&
+                evaluator_profile.ans_token_cost_candidate_count == 1 && evaluated_cost == cost,
+            "Estimated selector did not measure exactly the requested selected model");
+      for (auto selection : {AnsSelectionMode::kExact, AnsSelectionMode::kEstimated}) {
+        EntropyCode unprepared_model, reused_model;
+        EntropyCodeCost unprepared_cost, reused_cost;
+        EntropyWorkProfile reuse_profile;
+        CostProbe probe;
+        Ok(OptimizeAnsEntropyCode(streams, prefix, &unprepared_model, &unprepared_cost, nullptr,
+                                   selection));
+        Ok(OptimizeAnsEntropyCodeWithPreparedClusters(streams, prefix, retained, &reused_model,
+            &reused_cost, &reuse_profile, selection, &probe));
+        Check(reused_model == unprepared_model && reused_cost == unprepared_cost && probe.calls > 0 &&
+                  reuse_profile.ans_token_cost_candidate_count == probe.candidates &&
+                  reuse_profile.ans_value_collection_nanoseconds == 0 &&
+                  reuse_profile.ans_value_aggregation_nanoseconds == 0,
+              "Prepared provider changed model/cost, miscounted candidates or recollected populations");
+      }
     }
     PreparedAnsEntropyCode candidates;
-    Ok(PrepareAnsEntropyCodeWithPreparedClusters(streams, prefix, populations, &candidates));
+    if (direct)
+      Ok(PrepareRateOptimizedAnsEntropyCode(streams, {.context_count = 3}, &candidates));
+    else
+      Ok(PrepareAnsEntropyCodeWithPreparedClusters(streams, prefix, populations, &candidates));
     const double chosen = EstimatedBits(streams, estimated);
     bool found = false;
     for (const auto &c : candidates.candidates) {
@@ -166,14 +195,24 @@ void Models() {
     const auto old = estimated;
     const auto old_cost = cost;
     ArmNextManagedHostAllocationFailureForTest();
-    Check(OptimizeAnsEntropyCode(streams, prefix, &estimated, &cost, nullptr,
-                                 static_cast<AnsSelectionMode>(99))
+    Check(optimize(streams, &estimated, &cost, nullptr, static_cast<AnsSelectionMode>(99))
                       .code() == StatusCode::kInvalidArgument &&
               ManagedHostAllocationFailurePendingForTest() && estimated == old && cost == old_cost,
           "Invalid selection allocated or published output");
     DisarmManagedHostAllocationFailureForTest();
+    if (direct) {
+      for (auto mode : {DirectAnsEntropyMode::kBalanced, DirectAnsEntropyMode::kHighDensity}) {
+        ArmNextManagedHostAllocationFailureForTest();
+        Check(OptimizeDirectAnsEntropyCode(streams, {.context_count = 3}, mode,
+                                            &estimated, &cost, nullptr, kEstimated)
+                        .code() == StatusCode::kInvalidArgument &&
+                  ManagedHostAllocationFailurePendingForTest() && estimated == old && cost == old_cost,
+              "Unsupported direct selection allocated or published output");
+        DisarmManagedHostAllocationFailureForTest();
+      }
+    }
   }
-  std::cout
+  std::cout << (direct ? "Direct ANS: " : "Prefix partition: ")
       << "Estimated models, candidate coverage, representations and exact-cost contracts passed\n";
 }
 void Workflow(bool faults) {
@@ -245,8 +284,10 @@ void Workflow(bool faults) {
 } // namespace
 int main(int argc, char **argv) try {
   const bool faults = argc == 2 && std::string_view(argv[1]) == "--allocations";
-  if (!faults)
-    Models();
+  if (!faults) {
+    Models(false);
+    Models(true);
+  }
   Workflow(faults);
   return 0;
 } catch (const std::exception &e) {

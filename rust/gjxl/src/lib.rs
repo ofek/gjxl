@@ -133,15 +133,25 @@ impl Default for EncoderOptions {
 /// Lossless Modular entropy coder.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ModularEntropy {
-    #[default]
     Prefix,
+    #[default]
     Ans,
+}
+/// Lossless Modular selection policy. Learned fits one histogram tree per scope.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum ModularPolicy {
+    #[default]
+    Learned,
+    Baseline,
+    Search,
 }
 /// Lossless controls, independent of VarDCT quality/distance.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct ModularOptions {
+    /// Compatibility alias for Search; conflicts with Baseline.
     pub search: bool,
     pub entropy: ModularEntropy,
+    pub policy: ModularPolicy,
 }
 
 /// Packed nonlinear-sRGB pixel layout.
@@ -375,6 +385,11 @@ impl Context {
             ModularEntropy::Prefix => sys::GJXL_MODULAR_ENTROPY_PREFIX,
             ModularEntropy::Ans => sys::GJXL_MODULAR_ENTROPY_ANS,
         } as sys::GJXLModularEntropy;
+        native.policy = match options.policy {
+            ModularPolicy::Learned => sys::GJXL_MODULAR_POLICY_LEARNED,
+            ModularPolicy::Baseline => sys::GJXL_MODULAR_POLICY_BASELINE,
+            ModularPolicy::Search => sys::GJXL_MODULAR_POLICY_SEARCH,
+        } as sys::GJXLModularPolicy;
         let mut output = NativeBuffer::empty();
         check(unsafe { sys::gjxl_encode_modular(self.raw, &view, &native, &mut output.raw) })?;
         if output.raw.data.is_null() || output.raw.size == 0 {
@@ -795,10 +810,43 @@ mod modular_tests {
             let stride = 257 * format.bytes_per_pixel() + 1;
             let pixels: Vec<u8> = (0..stride * 3).map(|i| (i * 37) as u8).collect();
             let image = ImageView::new(257, 3, stride, &pixels, format).unwrap();
+            let defaults = serial
+                .encode_modular(&image, ModularOptions::default())
+                .unwrap();
+            let view = sys::GJXLImageView {
+                struct_size: std::mem::size_of::<sys::GJXLImageView>() as u32,
+                width: image.width,
+                height: image.height,
+                pixel_format: image.format.native(),
+                pixels: image.pixels.as_ptr().cast(),
+                pixels_size: image.pixels.len(),
+                row_stride_bytes: image.row_stride_bytes,
+            };
+            let mut native_default = NativeBuffer::empty();
+            check(unsafe {
+                sys::gjxl_encode_modular(
+                    serial.raw,
+                    &view,
+                    std::ptr::null(),
+                    &mut native_default.raw,
+                )
+            })
+            .unwrap();
+            let native_bytes = unsafe {
+                std::slice::from_raw_parts(native_default.raw.data, native_default.raw.size)
+            };
+            assert_eq!(defaults, native_bytes);
+            assert_eq!(
+                defaults,
+                parallel
+                    .encode_modular(&image, ModularOptions::default())
+                    .unwrap()
+            );
             for entropy in [ModularEntropy::Prefix, ModularEntropy::Ans] {
                 let options = ModularOptions {
                     search: true,
                     entropy,
+                    ..ModularOptions::default()
                 };
                 let a = serial.encode_modular(&image, options).unwrap();
                 let b = parallel.encode_modular(&image, options).unwrap();

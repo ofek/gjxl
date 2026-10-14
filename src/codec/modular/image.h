@@ -26,7 +26,7 @@ struct ModularChannelView {
   size_t stride = 0;
   [[nodiscard]] Status Validate() const;
   [[nodiscard]] const int32_t *Row(size_t y) const {
-    return backing.data() + y * stride;
+    return backing.empty() ? backing.data() : backing.data() + y * stride;
   }
 };
 
@@ -45,7 +45,9 @@ public:
   ModularImage &operator=(const ModularImage &) = delete;
   ModularImage(ModularImage &&) noexcept = default;
   ModularImage &operator=(ModularImage &&) noexcept = default;
-  // Identity storage only. Preparation inherits the caller's allocation owner.
+  // Identity storage only. A zero-width palette metadata plane (height 1..4,
+  // zero shifts) is retained in channel numbering with no sample allocation.
+  // Preparation inherits the caller's allocation owner.
   // Replacing an image keeps the old backing alive until this succeeds.
   [[nodiscard]] static Status Create(std::span<const ChannelDescriptor> channels,
                                      size_t metadata_channels, ModularImage *out);

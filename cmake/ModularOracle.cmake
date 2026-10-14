@@ -40,6 +40,26 @@ target_link_libraries(gjxl_modular_reference PUBLIC
   "${GJXL_MODULAR_ORACLE_BUILD}/third_party/brotli/${modular_oracle_prefix}brotlienc${modular_oracle_link}"
   "${GJXL_MODULAR_ORACLE_BUILD}/third_party/brotli/${modular_oracle_prefix}brotlidec${modular_oracle_link}"
   "${GJXL_MODULAR_ORACLE_BUILD}/third_party/brotli/${modular_oracle_prefix}brotlicommon${modular_oracle_link}")
+add_executable(gjxl_modular_reference_workflow_check
+  tools/modular_reference_learning/reference_workflow_check.cpp src/io/pnm.cpp)
+target_include_directories(gjxl_modular_reference_workflow_check PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/tests")
+target_link_libraries(gjxl_modular_reference_workflow_check PRIVATE gjxl_codestream gjxl_modular_reference)
+add_executable(gjxl_modular_reference_wp_sweep
+  tools/modular_reference_learning/reference_wp_sweep.cpp src/io/pnm.cpp)
+target_include_directories(gjxl_modular_reference_wp_sweep PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/tests")
+target_link_libraries(gjxl_modular_reference_wp_sweep PRIVATE gjxl_codestream gjxl_modular_reference)
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+add_test(NAME modular_reference_wp_sweep
+  COMMAND ${Python3_EXECUTABLE} "${CMAKE_CURRENT_SOURCE_DIR}/tools/modular_reference_learning/test_reference_wp_sweep.py"
+    --binary $<TARGET_FILE:gjxl_modular_reference_wp_sweep>
+    --out "${CMAKE_CURRENT_BINARY_DIR}/reference-wp-sweep-test")
+set_tests_properties(modular_reference_wp_sweep PROPERTIES TIMEOUT 600)
+target_link_libraries(gjxl_modular_reference_workflow_test PRIVATE gjxl_modular_reference)
+target_compile_definitions(gjxl_modular_reference_workflow_test PRIVATE GJXL_REFERENCE_WORKFLOW_ORACLE=1)
+if(WIN32)
+  set_tests_properties(modular_reference_workflow modular_reference_wp_sweep PROPERTIES
+    ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:${GJXL_MODULAR_ORACLE_BUILD}/tools")
+endif()
 target_link_libraries(gjxl_ans_selection_test PRIVATE gjxl_modular_reference)
 target_compile_definitions(gjxl_ans_selection_test PRIVATE GJXL_ANS_SELECTION_REFERENCE=1)
 target_link_libraries(gjxl_modular_candidate_cost_test PRIVATE gjxl_modular_reference)
@@ -48,6 +68,14 @@ target_link_libraries(gjxl_modular_candidate_search_test PRIVATE gjxl_modular_re
 target_compile_definitions(gjxl_modular_candidate_search_test PRIVATE GJXL_CANDIDATE_COST_REFERENCE=1)
 target_link_libraries(gjxl_modular_training_budget_test PRIVATE gjxl_modular_reference)
 target_compile_definitions(gjxl_modular_training_budget_test PRIVATE GJXL_TRAINING_BUDGET_REFERENCE=1)
+if(WIN32)
+  set_tests_properties(ans_selection ans_selection_faults
+    modular_candidate_cost modular_candidate_search
+    modular_training_budget modular_training_budget_faults
+    modular_training_checkpoints modular_training_checkpoint_faults
+    modular_training_coverage modular_training_coverage_faults PROPERTIES
+    ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:${GJXL_MODULAR_ORACLE_BUILD}/tools")
+endif()
 if(GJXL_BUILD_BENCHMARKS)
   add_executable(gjxl_modular_search_profile tools/modular_training_study/profile.cpp src/io/pnm.cpp)
   target_include_directories(gjxl_modular_search_profile PRIVATE tests)
@@ -93,8 +121,64 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
 endif()
 add_test(NAME modular_transform COMMAND gjxl_modular_transform_test
   "${CMAKE_CURRENT_BINARY_DIR}/modular-transform")
+add_test(NAME modular_ordered_transform COMMAND gjxl_modular_transform_test
+  "${CMAKE_CURRENT_BINARY_DIR}/modular-ordered-transform" ordered)
+
+add_executable(gjxl_modular_reference_palette_oracle_test tests/modular_reference_palette_test.cpp)
+target_link_libraries(gjxl_modular_reference_palette_oracle_test PRIVATE gjxl_codestream gjxl_modular_reference)
+target_compile_definitions(gjxl_modular_reference_palette_oracle_test PRIVATE GJXL_PALETTE_REFERENCE=1)
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+  target_compile_options(gjxl_modular_reference_palette_oracle_test PRIVATE -fno-sanitize=vptr)
+endif()
+add_test(NAME modular_reference_palette_oracle COMMAND gjxl_modular_reference_palette_oracle_test
+  "${CMAKE_CURRENT_BINARY_DIR}/modular-reference-palette")
+add_test(NAME modular_reference_channel_palette_oracle COMMAND gjxl_modular_reference_palette_oracle_test
+  "${CMAKE_CURRENT_BINARY_DIR}/modular-reference-channel-palette" wide)
+
+add_executable(gjxl_modular_prepared_stream_reference_test tests/modular_prepared_stream_reference_test.cpp)
+target_link_libraries(gjxl_modular_prepared_stream_reference_test PRIVATE gjxl_codestream gjxl_modular_reference)
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+  target_compile_options(gjxl_modular_prepared_stream_reference_test PRIVATE -fno-sanitize=vptr)
+endif()
+add_test(NAME modular_prepared_stream_reference COMMAND gjxl_modular_prepared_stream_reference_test
+  "${CMAKE_CURRENT_BINARY_DIR}/modular-prepared-streams")
+
+# These exact-cost controls use the qualified four-lane Apple AArch64 oracle.
+# A different reference SIMD width can change floating-point reduction/rounding.
+if(APPLE AND CMAKE_SYSTEM_PROCESSOR MATCHES "^(arm64|aarch64)$")
+  include("${CMAKE_CURRENT_LIST_DIR}/ModularSelectionOracle.cmake")
+  gjxl_generate_wp_cost_oracle("${modular_oracle_source}"
+    "${CMAKE_CURRENT_BINARY_DIR}/modular_wp_cost_reference.cpp")
+  gjxl_generate_selection_oracle("${modular_oracle_source}"
+    "${CMAKE_CURRENT_BINARY_DIR}/modular_selection_reference.cpp")
+  add_executable(gjxl_modular_reference_selection_oracle_test
+    tests/modular_reference_selection_test.cpp
+    "${CMAKE_CURRENT_BINARY_DIR}/modular_selection_reference.cpp"
+    "${CMAKE_CURRENT_BINARY_DIR}/modular_wp_cost_reference.cpp")
+  target_include_directories(gjxl_modular_reference_selection_oracle_test PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/tests")
+  target_link_libraries(gjxl_modular_reference_selection_oracle_test PRIVATE gjxl_codestream gjxl_modular_reference)
+  target_compile_definitions(gjxl_modular_reference_selection_oracle_test PRIVATE GJXL_SELECTION_REFERENCE=1)
+  target_compile_options(gjxl_modular_reference_selection_oracle_test PRIVATE -fno-sanitize=vptr)
+  add_test(NAME modular_reference_selection_oracle COMMAND gjxl_modular_reference_selection_oracle_test
+    "${CMAKE_CURRENT_BINARY_DIR}/modular-reference-selection")
+  foreach(selection_variant reference scalar_reference)
+    add_executable(gjxl_modular_selection_cost_${selection_variant}_test
+      tests/modular_selection_cost_reference_test.cpp
+      "${CMAKE_CURRENT_BINARY_DIR}/modular_wp_cost_reference.cpp")
+    target_link_libraries(gjxl_modular_selection_cost_${selection_variant}_test PRIVATE gjxl_codec gjxl_modular_reference)
+    if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+      target_compile_options(gjxl_modular_selection_cost_${selection_variant}_test PRIVATE -fno-sanitize=vptr)
+    endif()
+    if(selection_variant STREQUAL "scalar_reference")
+      target_sources(gjxl_modular_selection_cost_${selection_variant}_test PRIVATE src/codec/modular/selection_cost.cpp)
+      target_compile_definitions(gjxl_modular_selection_cost_${selection_variant}_test PRIVATE GJXL_SELECTION_COST_SCALAR=1)
+    endif()
+    add_test(NAME modular_selection_cost_${selection_variant} COMMAND gjxl_modular_selection_cost_${selection_variant}_test)
+  endforeach()
+endif()
 if(WIN32)
-  set_tests_properties(modular_transform PROPERTIES
+  set_tests_properties(modular_transform modular_ordered_transform modular_prepared_stream_reference modular_reference_palette_oracle modular_reference_channel_palette_oracle PROPERTIES
     ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:${GJXL_MODULAR_ORACLE_BUILD}/tools")
 endif()
 

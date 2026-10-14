@@ -289,8 +289,13 @@ add_library(
   src/codec/modular/weighted_features.cpp
   src/codec/modular/tree_learning.cpp
   src/codec/modular/quantized_tree_learning.cpp
+  src/codec/modular/histogram_tree_learning.cpp
+  src/codec/modular/histogram_sample_preparation.cpp
+  src/codec/modular/selection_cost.cpp
+  src/codec/modular/reference_selection.cpp
   src/codec/modular/transform/transform.cpp
   src/codec/modular/transform/palette.cpp
+  src/codec/modular/transform/reference_palette.cpp
   src/codec/modular/transform/squeeze.cpp
   src/codec/modular/frame.cpp
   src/codec/color_transform.cpp
@@ -357,6 +362,8 @@ add_library(
   src/codestream/modular/tokenization.cpp
   src/codestream/modular/storage_plan.cpp
   src/codestream/modular/frame_encoder.cpp
+  src/codestream/modular/prepared_streams.cpp
+  src/codestream/modular/reference_workflow.cpp
   src/codestream/modular/candidate_cost.cpp
   src/codestream/modular/candidate_screen.cpp
   src/codestream/modular/public.cpp
@@ -2420,6 +2427,42 @@ if(GJXL_BUILD_TESTS)
   target_link_libraries(gjxl_modular_foundation_test PRIVATE gjxl_codestream)
   add_test(NAME modular_foundation COMMAND gjxl_modular_foundation_test)
 
+  add_executable(gjxl_modular_transform_contract_test tests/modular_transform_contract_test.cpp)
+  target_link_libraries(gjxl_modular_transform_contract_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_transform_contract COMMAND gjxl_modular_transform_contract_test)
+  add_executable(gjxl_modular_reference_palette_test tests/modular_reference_palette_test.cpp)
+  target_link_libraries(gjxl_modular_reference_palette_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_reference_palette COMMAND gjxl_modular_reference_palette_test)
+  add_test(NAME modular_reference_channel_palette COMMAND gjxl_modular_reference_palette_test
+    "${CMAKE_CURRENT_BINARY_DIR}/modular-reference-channel-palette-native" wide)
+
+  add_executable(gjxl_modular_prepared_stream_test tests/modular_prepared_stream_test.cpp)
+  target_link_libraries(gjxl_modular_prepared_stream_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_prepared_stream COMMAND gjxl_modular_prepared_stream_test)
+
+  add_executable(gjxl_modular_reference_workflow_test tests/modular_reference_workflow_test.cpp)
+  target_link_libraries(gjxl_modular_reference_workflow_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_reference_workflow COMMAND gjxl_modular_reference_workflow_test
+    "${CMAKE_CURRENT_BINARY_DIR}/modular-reference-workflow")
+  set_tests_properties(modular_reference_workflow PROPERTIES TIMEOUT 600)
+
+  add_executable(gjxl_modular_histogram_learning_test tests/modular_histogram_learning_test.cpp)
+  target_link_libraries(gjxl_modular_histogram_learning_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_histogram_learning COMMAND gjxl_modular_histogram_learning_test)
+  set_tests_properties(modular_histogram_learning PROPERTIES TIMEOUT 60)
+  add_executable(gjxl_modular_histogram_preparation_test tests/modular_histogram_preparation_test.cpp)
+  target_link_libraries(gjxl_modular_histogram_preparation_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_histogram_preparation COMMAND gjxl_modular_histogram_preparation_test)
+
+  add_executable(gjxl_modular_selection_cost_test tests/modular_selection_cost_test.cpp)
+  target_link_libraries(gjxl_modular_selection_cost_test PRIVATE gjxl_codec)
+  add_test(NAME modular_selection_cost COMMAND gjxl_modular_selection_cost_test)
+  add_executable(gjxl_modular_reference_selection_test tests/modular_reference_selection_test.cpp)
+  target_link_libraries(gjxl_modular_reference_selection_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_reference_selection COMMAND gjxl_modular_reference_selection_test
+    "${CMAKE_CURRENT_BINARY_DIR}/modular-reference-selection-native")
+  set_tests_properties(modular_histogram_preparation PROPERTIES TIMEOUT 60)
+
   add_executable(gjxl_ans_selection_test tests/ans_selection_test.cpp)
   target_link_libraries(gjxl_ans_selection_test PRIVATE gjxl_codestream)
   add_test(NAME ans_selection COMMAND gjxl_ans_selection_test)
@@ -2499,10 +2542,26 @@ if(GJXL_BUILD_TESTS)
 
   add_executable(gjxl_modular_workflow_test tests/modular_workflow_test.cpp)
   target_link_libraries(gjxl_modular_workflow_test PRIVATE gjxl_codestream)
-  add_test(NAME modular_workflow COMMAND gjxl_modular_workflow_test)
+  set(GJXL_MODULAR_WORKFLOW_SHARDS "1" CACHE STRING
+    "Disjoint allocation-index shards for the exhaustive Modular workflow test")
+  if(NOT GJXL_MODULAR_WORKFLOW_SHARDS MATCHES "^[1-9][0-9]*$" OR
+     GJXL_MODULAR_WORKFLOW_SHARDS GREATER 64)
+    message(FATAL_ERROR "GJXL_MODULAR_WORKFLOW_SHARDS must be an integer from 1 to 64")
+  endif()
   # Exhaustive allocation injection repeats the bounded context search at every
-  # allocation boundary. Keep full coverage beyond the CI default of 600 s.
-  set_tests_properties(modular_workflow PROPERTIES TIMEOUT 7200)
+  # allocation boundary. Every shard visits all fixtures, and together they
+  # cover every failure index. Keep the default standalone test name/behavior.
+  if(GJXL_MODULAR_WORKFLOW_SHARDS EQUAL 1)
+    add_test(NAME modular_workflow COMMAND gjxl_modular_workflow_test)
+    set_tests_properties(modular_workflow PROPERTIES TIMEOUT 7200)
+  else()
+    math(EXPR modular_workflow_last_shard "${GJXL_MODULAR_WORKFLOW_SHARDS} - 1")
+    foreach(shard RANGE 0 ${modular_workflow_last_shard})
+      add_test(NAME modular_workflow_shard_${shard} COMMAND gjxl_modular_workflow_test
+        --allocation-shard ${shard} ${GJXL_MODULAR_WORKFLOW_SHARDS})
+      set_tests_properties(modular_workflow_shard_${shard} PROPERTIES TIMEOUT 7200)
+    endforeach()
+  endif()
 
   add_executable(gjxl_modular_profile_test tests/modular_profile_test.cpp)
   target_link_libraries(gjxl_modular_profile_test PRIVATE gjxl_codestream)
@@ -3796,7 +3855,9 @@ if(GJXL_BUILD_TESTS)
     GJXL_METALLIB_PATH="${GJXL_METALLIB}")
   add_dependencies(gjxl_metal_resource_budget_test gjxl_metal_shaders)
   add_test(NAME metal_resource_budget COMMAND gjxl_metal_resource_budget_test)
-  set_tests_properties(metal_resource_budget PROPERTIES TIMEOUT 30)
+  # Repeated backend/pipeline creation can take ~30s on the hosted Metal GPU.
+  # Leave startup headroom; the test keeps its own 5s liveness deadlines.
+  set_tests_properties(metal_resource_budget PROPERTIES TIMEOUT 120)
 
   add_executable(gjxl_metal_diagnostic_storage_test tests/metal_diagnostic_storage_test.cpp)
   target_link_libraries(gjxl_metal_diagnostic_storage_test PRIVATE gjxl_codestream gjxl_metal)

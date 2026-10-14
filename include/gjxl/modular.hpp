@@ -16,6 +16,7 @@ enum class ModularPixelFormat : uint8_t { kGray8, kRgb8, kRgba8, kGray16, kRgb16
 enum class ModularByteOrder : uint8_t { kLittleEndian, kBigEndian };
 enum class ModularBackend : uint8_t { kAutomatic, kCpu, kMetal, kCuda };
 enum class ModularEntropy : uint8_t { kPrefix, kAns };
+enum class ModularPolicy : uint8_t { kLearned, kBaseline, kSearch };
 struct ModularImageView {
   std::span<const uint8_t> bytes;
   Extent2D extent;
@@ -27,8 +28,12 @@ struct ModularEncodingOptions {
   ModularBackend backend = ModularBackend::kAutomatic; // Automatic resolves to CPU.
   size_t cpu_thread_count = 0; // 0 automatic, 1 serial oracle, 2..256 upper bound.
   std::shared_ptr<const ExecutionDomain> execution_domain;
-  ModularEntropy entropy = ModularEntropy::kPrefix;
-  bool search = false; // Bounded lossless policy search; never changes samples.
+  ModularEntropy entropy = ModularEntropy::kAns;
+  bool search = false; // Compatibility alias for kSearch; conflicts with kBaseline.
+  // Learned selects transforms once and fits one histogram tree per scope.
+  // Baseline is the legacy identity/gradient policy; Search is its legacy
+  // encoded-size portfolio. All policies preserve the input samples exactly.
+  ModularPolicy policy = ModularPolicy::kLearned;
 };
 struct ModularEncodingSummary {
   Extent2D extent;
@@ -38,6 +43,8 @@ struct ModularEncodingSummary {
 };
 // Atomic output and summary replacement. Input layout and format are validated
 // before admission. GPU requests are unsupported; no float conversion occurs.
+// Learned uses staged, nonblocking memory admission: a busy domain can return
+// Unavailable. It currently executes serially within the requested CPU limit.
 [[nodiscard]] Status EncodeModularImage(ModularImageView input, ModularEncodingOptions options,
                                         std::vector<uint8_t> *output,
                                         ModularEncodingSummary *summary = nullptr);

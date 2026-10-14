@@ -142,6 +142,8 @@ Status ModularEncoderFrame::Prepare(PackedModularImageView input, const ModularC
   ModularInputProfile profile;
   if (auto s = ResolveModularInput(input.extent, input.format, &profile); !s.ok())
     return s;
+  if (auto s = ValidateTransformBitDepth(policy.transforms, profile.metadata.bits); !s.ok())
+    return s;
   std::array<ChannelShape, kMaximumTransforms + 1> shapes;
   if (auto s = PlanTransforms(profile.channels(), 0, policy.transforms, &shapes); !s.ok())
     return s;

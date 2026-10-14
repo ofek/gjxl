@@ -7,6 +7,17 @@
 #include "gpu/ops/modular_tokenization.h"
 
 namespace gjxl::modular_internal {
+// Composition helpers shared by full-image and separately prepared streams.
+// The caller validates tree/layout, channel view, static IDs and WP parameters,
+// provides exact output extents, owns unpublished output, and catches allocation
+// errors. A channel failure may leave its unpublished token span partly written.
+[[nodiscard]] size_t ModularTreeTokenCount(const DecisionTree &tree, const TreeLayout &layout);
+void TokenizeValidatedModularTree(const DecisionTree &tree, const TreeLayout &layout,
+                                  std::span<EntropyToken> tokens);
+[[nodiscard]] Status TokenizeValidatedModularChannel(
+    const ModularChannelView &view, size_t channel, size_t stream_id, const DecisionTree &tree,
+    const TreeLayout &layout, const WeightedPredictorParameters &weighted,
+    std::span<EntropyToken> tokens);
 inline constexpr std::array<EntropyToken, 5> kGradientTreeTokens{
     {{1, 0}, {2, 5}, {3, 0}, {4, 0}, {5, 0}}};
 struct PreparedModularTokens {

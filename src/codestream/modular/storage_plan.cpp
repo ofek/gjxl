@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 Yunho Cho
 #include "codestream/modular/storage_plan.h"
+#include "codec/modular/transform/reference_palette.h"
 #include "codestream/headers_internal.h"
 #include "codestream/modular/tree_codec.h"
 #include "codestream/modular/stream_encoder.h"
@@ -54,6 +55,8 @@ Status ComputeStoragePlan(Extent2D extent, PackedModularFormat format,
     return s;
   ModularInputProfile profile;
   if (auto s = ResolveModularInput(extent, format, &profile); !s.ok())
+    return s;
+  if (auto s = ValidateTransformBitDepth(policy.transforms, profile.metadata.bits); !s.ok())
     return s;
   if (policy.rct && profile.channel_count < 3)
     return Status::InvalidArgument("RCT requires color channels");
@@ -119,6 +122,17 @@ Status ComputeStoragePlan(Extent2D extent, PackedModularFormat format,
       return s;
     if (!image.Add(stage))
       return Overflow();
+    if (i < policy.transforms.size) {
+      const auto &t = policy.transforms.entries[i];
+      if (t.kind == TransformKind::kPalette && t.palette_bit_depth && t.count == 1) {
+        HostStorageBound scratch;
+        if (auto s = ComputeReferenceChannelPaletteScratchBound(
+                shapes[i].descriptors[t.begin].extent, t.colors, &scratch); !s.ok())
+          return s;
+        if (!image.Add(scratch))
+          return Overflow();
+      }
+    }
   }
   if (completed_token_bytes) {
     if (!tokens.Add({completed_token_bytes, completed_token_bytes})) return Overflow();

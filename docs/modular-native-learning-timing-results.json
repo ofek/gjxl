@@ -1,0 +1,823 @@
+{
+  "schema": 1,
+  "cases": 6,
+  "inputs": 3,
+  "repeats": 3,
+  "all_prepared_samples_exact_in_warmup": true,
+  "all_measured_trees_exact": true,
+  "timing_scope": "Same process and identical transformed planes/strides, options and expected tree; one warmup each, then serial pairs with alternating order. Total includes sample preparation, fitting and sample release. Native admission/validation and allocations are included. Image transforms/copies, fixture loading and verification are excluded. No managed-accounting scope. Reference non-fit is total minus fit, not an isolated preparation timer. Uncontrolled desktop.",
+  "ratio_of_summed_case_medians": {
+    "total_cpu": 0.9110268053853422,
+    "total_wall": 0.9052521103950971,
+    "fit_cpu": 0.8973825488355669,
+    "fit_wall": 0.8912127607674492,
+    "non_fit_cpu": 1.023271164680372,
+    "non_fit_wall": 1.0247387524616847
+  },
+  "fit_cpu_gate_1_5_exceeded": [],
+  "results": [
+    {
+      "input": "photo-macan",
+      "variant": "best",
+      "samples": 488592,
+      "distinct": 488592,
+      "nodes": 1013,
+      "predictors": 2,
+      "properties": 16,
+      "preparation_storage_bound_bytes": 17935864,
+      "fitting_storage_bound_bytes": 767152,
+      "native_total_cpu": {
+        "median": 0.691472,
+        "runs": [
+          0.741364,
+          0.651656,
+          0.691472
+        ]
+      },
+      "native_total_wall": {
+        "median": 0.699105167,
+        "runs": [
+          0.745069,
+          0.65591025,
+          0.699105167
+        ]
+      },
+      "native_preparation_cpu": {
+        "median": 0.157031,
+        "runs": [
+          0.159559,
+          0.125828,
+          0.157031
+        ]
+      },
+      "native_preparation_wall": {
+        "median": 0.158786458,
+        "runs": [
+          0.160333417,
+          0.126918792,
+          0.158786458
+        ]
+      },
+      "native_fit_cpu": {
+        "median": 0.534431,
+        "runs": [
+          0.581795,
+          0.525818,
+          0.534431
+        ]
+      },
+      "native_fit_wall": {
+        "median": 0.540307292,
+        "runs": [
+          0.584725917,
+          0.528981334,
+          0.540307292
+        ]
+      },
+      "reference_total_cpu": {
+        "median": 0.723235,
+        "runs": [
+          0.704514,
+          0.736484,
+          0.723235
+        ]
+      },
+      "reference_total_wall": {
+        "median": 0.731149375,
+        "runs": [
+          0.708416625,
+          0.742071417,
+          0.731149375
+        ]
+      },
+      "reference_fit_cpu": {
+        "median": 0.57481,
+        "runs": [
+          0.572958,
+          0.582729,
+          0.57481
+        ]
+      },
+      "reference_fit_wall": {
+        "median": 0.5821475,
+        "runs": [
+          0.576443709,
+          0.586575625,
+          0.5821475
+        ]
+      },
+      "reference_non_fit_cpu": {
+        "median": 0.14842499999999992,
+        "runs": [
+          0.131556,
+          0.15375499999999998,
+          0.14842499999999992
+        ]
+      },
+      "reference_non_fit_wall": {
+        "median": 0.14900187499999995,
+        "runs": [
+          0.13197291600000005,
+          0.15549579199999997,
+          0.14900187499999995
+        ]
+      },
+      "native_non_fit_cpu": {
+        "median": 0.157041,
+        "runs": [
+          0.15956900000000007,
+          0.125838,
+          0.157041
+        ]
+      },
+      "native_non_fit_wall": {
+        "median": 0.15879787499999998,
+        "runs": [
+          0.160343083,
+          0.126928916,
+          0.15879787499999998
+        ]
+      },
+      "total_cpu_ratio": 0.956082048020353,
+      "total_wall_ratio": 0.9561728299364272,
+      "fit_cpu_ratio": 0.9297524399366747,
+      "fit_wall_ratio": 0.9281278232750291,
+      "non_fit_cpu_ratio": 1.058049519959576,
+      "non_fit_wall_ratio": 1.0657441391257663
+    },
+    {
+      "input": "photo-macan",
+      "variant": "all",
+      "samples": 488592,
+      "distinct": 488592,
+      "nodes": 1177,
+      "predictors": 14,
+      "properties": 16,
+      "preparation_storage_bound_bytes": 29662072,
+      "fitting_storage_bound_bytes": 779488,
+      "native_total_cpu": {
+        "median": 3.239105,
+        "runs": [
+          3.239105,
+          3.256778,
+          3.230764
+        ]
+      },
+      "native_total_wall": {
+        "median": 3.259212542,
+        "runs": [
+          3.259212542,
+          3.2704085,
+          3.256451834
+        ]
+      },
+      "native_preparation_cpu": {
+        "median": 0.296396,
+        "runs": [
+          0.296396,
+          0.302385,
+          0.292993
+        ]
+      },
+      "native_preparation_wall": {
+        "median": 0.298148333,
+        "runs": [
+          0.298148333,
+          0.303964792,
+          0.294320458
+        ]
+      },
+      "native_fit_cpu": {
+        "median": 2.942698,
+        "runs": [
+          2.942698,
+          2.954381,
+          2.937759
+        ]
+      },
+      "native_fit_wall": {
+        "median": 2.962119375,
+        "runs": [
+          2.961051458,
+          2.966430334,
+          2.962119375
+        ]
+      },
+      "reference_total_cpu": {
+        "median": 3.616231,
+        "runs": [
+          3.616231,
+          3.629266,
+          3.610096
+        ]
+      },
+      "reference_total_wall": {
+        "median": 3.639510792,
+        "runs": [
+          3.639510792,
+          3.649108,
+          3.63071775
+        ]
+      },
+      "reference_fit_cpu": {
+        "median": 3.306257,
+        "runs": [
+          3.311633,
+          3.306257,
+          3.282879
+        ]
+      },
+      "reference_fit_wall": {
+        "median": 3.323658167,
+        "runs": [
+          3.333274125,
+          3.323658167,
+          3.300997042
+        ]
+      },
+      "reference_non_fit_cpu": {
+        "median": 0.3230089999999999,
+        "runs": [
+          0.3045979999999999,
+          0.3230089999999999,
+          0.3272170000000001
+        ]
+      },
+      "reference_non_fit_wall": {
+        "median": 0.32544983299999997,
+        "runs": [
+          0.30623666699999985,
+          0.32544983299999997,
+          0.329720708
+        ]
+      },
+      "native_non_fit_cpu": {
+        "median": 0.29640699999999987,
+        "runs": [
+          0.29640699999999987,
+          0.302397,
+          0.2930050000000004
+        ]
+      },
+      "native_non_fit_wall": {
+        "median": 0.2981610840000002,
+        "runs": [
+          0.2981610840000002,
+          0.3039781659999998,
+          0.29433245900000005
+        ]
+      },
+      "total_cpu_ratio": 0.8957129674514709,
+      "total_wall_ratio": 0.895508415351884,
+      "fit_cpu_ratio": 0.890039098593969,
+      "fit_wall_ratio": 0.8912226306574926,
+      "non_fit_cpu_ratio": 0.9176431616456506,
+      "non_fit_wall_ratio": 0.9161506744420429
+    },
+    {
+      "input": "alpha-ria",
+      "variant": "all",
+      "samples": 651456,
+      "distinct": 651456,
+      "nodes": 901,
+      "predictors": 14,
+      "properties": 16,
+      "preparation_storage_bound_bytes": 38131004,
+      "fitting_storage_bound_bytes": 779488,
+      "native_total_cpu": {
+        "median": 4.665784,
+        "runs": [
+          4.710727,
+          4.665784,
+          4.644607
+        ]
+      },
+      "native_total_wall": {
+        "median": 4.695050083,
+        "runs": [
+          4.809562916,
+          4.695050083,
+          4.669267833
+        ]
+      },
+      "native_preparation_cpu": {
+        "median": 0.459859,
+        "runs": [
+          0.49568,
+          0.459859,
+          0.432787
+        ]
+      },
+      "native_preparation_wall": {
+        "median": 0.4651475,
+        "runs": [
+          0.497488417,
+          0.4651475,
+          0.434642666
+        ]
+      },
+      "native_fit_cpu": {
+        "median": 4.211808,
+        "runs": [
+          4.215033,
+          4.205909,
+          4.211808
+        ]
+      },
+      "native_fit_wall": {
+        "median": 4.23461225,
+        "runs": [
+          4.312061584,
+          4.229888875,
+          4.23461225
+        ]
+      },
+      "reference_total_cpu": {
+        "median": 5.141972,
+        "runs": [
+          5.354947,
+          5.045404,
+          5.141972
+        ]
+      },
+      "reference_total_wall": {
+        "median": 5.244937792,
+        "runs": [
+          5.460199375,
+          5.082594791,
+          5.244937792
+        ]
+      },
+      "reference_fit_cpu": {
+        "median": 4.748218,
+        "runs": [
+          4.88891,
+          4.646427,
+          4.748218
+        ]
+      },
+      "reference_fit_wall": {
+        "median": 4.849090958,
+        "runs": [
+          4.968762041,
+          4.681761041,
+          4.849090958
+        ]
+      },
+      "reference_non_fit_cpu": {
+        "median": 0.39897700000000036,
+        "runs": [
+          0.46603700000000003,
+          0.39897700000000036,
+          0.3937540000000004
+        ]
+      },
+      "reference_non_fit_wall": {
+        "median": 0.4008337500000003,
+        "runs": [
+          0.49143733400000045,
+          0.4008337500000003,
+          0.3958468340000003
+        ]
+      },
+      "native_non_fit_cpu": {
+        "median": 0.45987500000000026,
+        "runs": [
+          0.4956940000000003,
+          0.45987500000000026,
+          0.43279899999999927
+        ]
+      },
+      "native_non_fit_wall": {
+        "median": 0.4651612079999996,
+        "runs": [
+          0.4975013319999997,
+          0.4651612079999996,
+          0.4346555830000005
+        ]
+      },
+      "total_cpu_ratio": 0.9073919500145081,
+      "total_wall_ratio": 0.8951583925668798,
+      "fit_cpu_ratio": 0.8870291970587705,
+      "fit_wall_ratio": 0.8732796078023166,
+      "non_fit_cpu_ratio": 1.1526353649458485,
+      "non_fit_wall_ratio": 1.1604841358792748
+    },
+    {
+      "input": "alpha-ria",
+      "variant": "best",
+      "samples": 651456,
+      "distinct": 651456,
+      "nodes": 875,
+      "predictors": 2,
+      "properties": 16,
+      "preparation_storage_bound_bytes": 22496060,
+      "fitting_storage_bound_bytes": 767152,
+      "native_total_cpu": {
+        "median": 0.927376,
+        "runs": [
+          0.928377,
+          0.927376,
+          0.923743
+        ]
+      },
+      "native_total_wall": {
+        "median": 0.9322465,
+        "runs": [
+          0.932602625,
+          0.9322465,
+          0.92767425
+        ]
+      },
+      "native_preparation_cpu": {
+        "median": 0.177003,
+        "runs": [
+          0.180702,
+          0.177003,
+          0.174694
+        ]
+      },
+      "native_preparation_wall": {
+        "median": 0.177779042,
+        "runs": [
+          0.18134875,
+          0.177779042,
+          0.175383042
+        ]
+      },
+      "native_fit_cpu": {
+        "median": 0.749039,
+        "runs": [
+          0.747665,
+          0.750362,
+          0.749039
+        ]
+      },
+      "native_fit_wall": {
+        "median": 0.752280584,
+        "runs": [
+          0.751241791,
+          0.754455458,
+          0.752280584
+        ]
+      },
+      "reference_total_cpu": {
+        "median": 0.974495,
+        "runs": [
+          1.011372,
+          0.968327,
+          0.974495
+        ]
+      },
+      "reference_total_wall": {
+        "median": 0.98478075,
+        "runs": [
+          1.036116625,
+          0.974875834,
+          0.98478075
+        ]
+      },
+      "reference_fit_cpu": {
+        "median": 0.789863,
+        "runs": [
+          0.796023,
+          0.783311,
+          0.789863
+        ]
+      },
+      "reference_fit_wall": {
+        "median": 0.798437625,
+        "runs": [
+          0.819696667,
+          0.788966917,
+          0.798437625
+        ]
+      },
+      "reference_non_fit_cpu": {
+        "median": 0.18501600000000007,
+        "runs": [
+          0.2153489999999999,
+          0.18501600000000007,
+          0.18463200000000002
+        ]
+      },
+      "reference_non_fit_wall": {
+        "median": 0.18634312499999994,
+        "runs": [
+          0.21641995800000002,
+          0.185908917,
+          0.18634312499999994
+        ]
+      },
+      "native_non_fit_cpu": {
+        "median": 0.177014,
+        "runs": [
+          0.18071199999999998,
+          0.177014,
+          0.17470399999999997
+        ]
+      },
+      "native_non_fit_wall": {
+        "median": 0.17779104199999995,
+        "runs": [
+          0.18136083400000003,
+          0.17779104199999995,
+          0.17539366600000006
+        ]
+      },
+      "total_cpu_ratio": 0.9516477765406698,
+      "total_wall_ratio": 0.9466538617859863,
+      "fit_cpu_ratio": 0.948315087553158,
+      "fit_wall_ratio": 0.9421907991873504,
+      "non_fit_cpu_ratio": 0.9567496865135985,
+      "non_fit_wall_ratio": 0.9541057229774375
+    },
+    {
+      "input": "gray-patches",
+      "variant": "best",
+      "samples": 182658,
+      "distinct": 182658,
+      "nodes": 821,
+      "predictors": 2,
+      "properties": 16,
+      "preparation_storage_bound_bytes": 7272568,
+      "fitting_storage_bound_bytes": 767152,
+      "native_total_cpu": {
+        "median": 0.249424,
+        "runs": [
+          0.249847,
+          0.249424,
+          0.248087
+        ]
+      },
+      "native_total_wall": {
+        "median": 0.250883959,
+        "runs": [
+          0.251046625,
+          0.250284166,
+          0.250883959
+        ]
+      },
+      "native_preparation_cpu": {
+        "median": 0.049088,
+        "runs": [
+          0.049088,
+          0.049277,
+          0.048508
+        ]
+      },
+      "native_preparation_wall": {
+        "median": 0.049244583,
+        "runs": [
+          0.049244583,
+          0.049469875,
+          0.049072167
+        ]
+      },
+      "native_fit_cpu": {
+        "median": 0.200137,
+        "runs": [
+          0.20075,
+          0.200137,
+          0.19957
+        ]
+      },
+      "native_fit_wall": {
+        "median": 0.201792458,
+        "runs": [
+          0.201792458,
+          0.200803584,
+          0.2018025
+        ]
+      },
+      "reference_total_cpu": {
+        "median": 0.263233,
+        "runs": [
+          0.263233,
+          0.261897,
+          0.268367
+        ]
+      },
+      "reference_total_wall": {
+        "median": 0.265929708,
+        "runs": [
+          0.265929708,
+          0.262838208,
+          0.270201125
+        ]
+      },
+      "reference_fit_cpu": {
+        "median": 0.213761,
+        "runs": [
+          0.213674,
+          0.213761,
+          0.217475
+        ]
+      },
+      "reference_fit_wall": {
+        "median": 0.214566583,
+        "runs": [
+          0.214566583,
+          0.214455084,
+          0.218888125
+        ]
+      },
+      "reference_non_fit_cpu": {
+        "median": 0.04955899999999999,
+        "runs": [
+          0.04955899999999999,
+          0.048135999999999984,
+          0.05089200000000002
+        ]
+      },
+      "reference_non_fit_wall": {
+        "median": 0.051313,
+        "runs": [
+          0.05136312499999998,
+          0.04838312400000003,
+          0.051313
+        ]
+      },
+      "native_non_fit_cpu": {
+        "median": 0.049097,
+        "runs": [
+          0.049097,
+          0.049287,
+          0.048517000000000005
+        ]
+      },
+      "native_non_fit_wall": {
+        "median": 0.049254167000000015,
+        "runs": [
+          0.049254167000000015,
+          0.04948058199999997,
+          0.049081458999999994
+        ]
+      },
+      "total_cpu_ratio": 0.9475407718637101,
+      "total_wall_ratio": 0.9434220828009182,
+      "fit_cpu_ratio": 0.936265268220115,
+      "fit_wall_ratio": 0.9404654498319527,
+      "non_fit_cpu_ratio": 0.9906777780019776,
+      "non_fit_wall_ratio": 0.9598769707481538
+    },
+    {
+      "input": "gray-patches",
+      "variant": "all",
+      "samples": 182658,
+      "distinct": 182658,
+      "nodes": 883,
+      "predictors": 14,
+      "properties": 16,
+      "preparation_storage_bound_bytes": 11656360,
+      "fitting_storage_bound_bytes": 779488,
+      "native_total_cpu": {
+        "median": 1.137286,
+        "runs": [
+          1.13984,
+          1.137286,
+          1.136015
+        ]
+      },
+      "native_total_wall": {
+        "median": 1.142847708,
+        "runs": [
+          1.145746083,
+          1.142196834,
+          1.142847708
+        ]
+      },
+      "native_preparation_cpu": {
+        "median": 0.100731,
+        "runs": [
+          0.1009,
+          0.100731,
+          0.097663
+        ]
+      },
+      "native_preparation_wall": {
+        "median": 0.101374666,
+        "runs": [
+          0.101960916,
+          0.101374666,
+          0.09834175
+        ]
+      },
+      "native_fit_cpu": {
+        "median": 1.038337,
+        "runs": [
+          1.038927,
+          1.036544,
+          1.038337
+        ]
+      },
+      "native_fit_wall": {
+        "median": 1.0437725,
+        "runs": [
+          1.0437725,
+          1.040809166,
+          1.044492416
+        ]
+      },
+      "reference_total_cpu": {
+        "median": 1.256823,
+        "runs": [
+          1.255694,
+          1.256823,
+          1.266182
+        ]
+      },
+      "reference_total_wall": {
+        "median": 1.262186875,
+        "runs": [
+          1.261563292,
+          1.262186875,
+          1.272101292
+        ]
+      },
+      "reference_fit_cpu": {
+        "median": 1.150062,
+        "runs": [
+          1.148708,
+          1.150946,
+          1.150062
+        ]
+      },
+      "reference_fit_wall": {
+        "median": 1.155287083,
+        "runs": [
+          1.154142084,
+          1.155893458,
+          1.155287083
+        ]
+      },
+      "reference_non_fit_cpu": {
+        "median": 0.10698600000000003,
+        "runs": [
+          0.10698600000000003,
+          0.105877,
+          0.11612
+        ]
+      },
+      "reference_non_fit_wall": {
+        "median": 0.10742120799999988,
+        "runs": [
+          0.10742120799999988,
+          0.10629341700000006,
+          0.11681420900000017
+        ]
+      },
+      "native_non_fit_cpu": {
+        "median": 0.10074200000000011,
+        "runs": [
+          0.10091300000000003,
+          0.10074200000000011,
+          0.09767799999999993
+        ]
+      },
+      "native_non_fit_wall": {
+        "median": 0.10138766799999988,
+        "runs": [
+          0.10197358299999992,
+          0.10138766799999988,
+          0.09835529199999993
+        ]
+      },
+      "total_cpu_ratio": 0.9048895508755012,
+      "total_wall_ratio": 0.9054504769747347,
+      "fit_cpu_ratio": 0.902853063573964,
+      "fit_wall_ratio": 0.9034745695326016,
+      "non_fit_cpu_ratio": 0.9416372235619622,
+      "non_fit_wall_ratio": 0.9438328788855176
+    }
+  ],
+  "limits": [
+    "Matched global learning on frozen native transforms and default WP; not stock e9 search or whole-encoder speed.",
+    "No transforms, encoding or decoding performed inside either learning timer.",
+    "Non-fit is computed within each run before taking medians; includes sample release and call overhead.",
+    "Reference fit hooks add small timing/event-recording overhead to its total.",
+    "Storage values are admission bounds, not new measured peaks; no accounting scope inside timings.",
+    "Warmups compare every native prepared field against the captured fixture; every measured call checks its tree.",
+    "Release AArch64 NEON, serial same-process pairs on an uncontrolled desktop."
+  ],
+  "artifacts": {
+    "/Users/yunhocho/GitHub/gjxl-modular-learning-cost/build/reference-learning/native-learning-pilot/manifest.json": "443f61a67b369eea4d20b43242a5cb992f37a75aa3b79ecd7e82fb90bc2eafbd",
+    "/Users/yunhocho/GitHub/gjxl-modular-learning-cost/build/reference-learning/native-learning-pilot/results.jsonl": "0d4313181339c1cfc07175494d9a9f67c5033c8abc00721998d2b9822319b739",
+    "/Users/yunhocho/GitHub/gjxl-modular-learning-cost/build/reference-learning/corpus/manifest.json": "a96fc280adf8c96b9fd7a75c19c0a36cd2109648ab2b05637a1f3b4b64a10ccf",
+    "/Users/yunhocho/GitHub/gjxl-modular-learning-cost/build/reference-learning/corpus/results.jsonl": "1972c3e6b45b183178e6c9548c5d9a6d92d5d731181f55bf8a783fbfaa20eb2e"
+  },
+  "analyzer_sha256": "062d1028d5b339378f8e8ef49d20fbc144d59a751aa638531e00d47f02bbedd4",
+  "build_validation": {
+    "release_asan_suites_passed": true,
+    "tests_per_suite": 7,
+    "sanitizer_paired_controls_exact": [
+      "photo-macan/best",
+      "alpha16-ramp/all"
+    ],
+    "release_binary_identical_to_timed": true,
+    "scope": "New paired harness plus native and generated reference units; linked archives uninstrumented, vptr checks excluded. Sanitizer paired calls are correctness controls, not timing qualification.",
+    "artifacts": {
+      "/Users/yunhocho/GitHub/gjxl-modular-learning-cost/build/reference-learning/native-learning-validation/manifest.json": "f732f48e7009f102ff2a6e1cff760610ac5a3cfbd2f5963c868d1bbeeda2322d"
+    }
+  }
+}

@@ -42,8 +42,9 @@ Status ComputeGlobalTreeStoragePlan(size_t maximum_tokens,
   return Status::Ok();
 }
 
-Status WriteGlobalTreeInTransaction(std::span<const EntropyToken> tokens,
-                                    BitWriter* writer) {
+namespace {
+Status WriteTreeInTransaction(std::span<const EntropyToken> tokens,
+                               bool global, BitWriter* writer) {
   if (writer == nullptr || tokens.empty()) {
     return Status::InvalidArgument("Modular global-tree inputs are invalid");
   }
@@ -53,11 +54,19 @@ Status WriteGlobalTreeInTransaction(std::span<const EntropyToken> tokens,
           streams, {.context_count = kTreeContextCount}, &code); !status.ok()) {
     return status;
   }
-  // Global tree present, followed by the tree entropy stream's no-LZ77 flag.
-  if (Status status = writer->WriteBits(1, 1); !status.ok()) return status;
+  // Optional global-tree-present flag, then the tree stream's no-LZ77 flag.
+  if (global)
+    if (Status status = writer->WriteBits(1, 1); !status.ok()) return status;
   if (Status status = writer->WriteBits(1, 0); !status.ok()) return status;
   if (Status status = WriteEntropyCode(code, writer); !status.ok()) return status;
   return WriteTokenStream(tokens, code, writer);
+}
+} // namespace
+Status WriteGlobalTreeInTransaction(std::span<const EntropyToken> tokens, BitWriter* writer) {
+  return WriteTreeInTransaction(tokens, true, writer);
+}
+Status WriteLocalTreeInTransaction(std::span<const EntropyToken> tokens, BitWriter* writer) {
+  return WriteTreeInTransaction(tokens, false, writer);
 }
 
 }  // namespace gjxl::modular_internal

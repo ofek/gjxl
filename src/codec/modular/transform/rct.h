@@ -6,8 +6,10 @@
 #include <cstdint>
 
 namespace gjxl::modular_internal {
-// Arithmetic kernels require a validated type and 8/16-bit source-derived samples.
-[[nodiscard]] inline std::array<int32_t, 3> ForwardRct(std::array<int32_t, 3> rgb, uint8_t type) {
+// Wide results allow composed transforms to reject overflow before plane storage.
+// All kernels require a validated type in [0, 42).
+[[nodiscard]] inline std::array<int64_t, 3> ForwardRctWide(std::array<int32_t, 3> rgb,
+                                                         uint8_t type) {
   const unsigned permutation = type / 7, transform = type % 7;
   int64_t a = rgb[permutation % 3];
   int64_t b = rgb[(permutation + 1 + permutation / 3) % 3];
@@ -25,10 +27,10 @@ namespace gjxl::modular_internal {
     if (transform & 1)
       c -= a;
   }
-  return {static_cast<int32_t>(a), static_cast<int32_t>(b), static_cast<int32_t>(c)};
+  return {a, b, c};
 }
-[[nodiscard]] inline std::array<int32_t, 3> InverseRct(std::array<int32_t, 3> transformed,
-                                                       uint8_t type) {
+[[nodiscard]] inline std::array<int64_t, 3> InverseRctWide(std::array<int32_t, 3> transformed,
+                                                         uint8_t type) {
   const unsigned permutation = type / 7, transform = type % 7;
   int64_t a = transformed[0], b = transformed[1], c = transformed[2];
   if (transform == 6) {
@@ -44,10 +46,20 @@ namespace gjxl::modular_internal {
     if (transform / 2 == 2)
       b += (a + c) >> 1;
   }
-  std::array<int32_t, 3> rgb;
-  rgb[permutation % 3] = static_cast<int32_t>(a);
-  rgb[(permutation + 1 + permutation / 3) % 3] = static_cast<int32_t>(b);
-  rgb[(permutation + 2 - permutation / 3) % 3] = static_cast<int32_t>(c);
+  std::array<int64_t, 3> rgb;
+  rgb[permutation % 3] = a;
+  rgb[(permutation + 1 + permutation / 3) % 3] = b;
+  rgb[(permutation + 2 - permutation / 3) % 3] = c;
   return rgb;
+}
+// Existing unpack/ranking kernels operate on bounded 8/16-bit source samples.
+[[nodiscard]] inline std::array<int32_t, 3> ForwardRct(std::array<int32_t, 3> rgb, uint8_t type) {
+  const auto v = ForwardRctWide(rgb, type);
+  return {static_cast<int32_t>(v[0]), static_cast<int32_t>(v[1]), static_cast<int32_t>(v[2])};
+}
+[[nodiscard]] inline std::array<int32_t, 3> InverseRct(std::array<int32_t, 3> transformed,
+                                                     uint8_t type) {
+  const auto v = InverseRctWide(transformed, type);
+  return {static_cast<int32_t>(v[0]), static_cast<int32_t>(v[1]), static_cast<int32_t>(v[2])};
 }
 } // namespace gjxl::modular_internal

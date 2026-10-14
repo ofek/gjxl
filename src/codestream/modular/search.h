@@ -7,6 +7,8 @@ namespace gjxl { class GpuBackend; }
 namespace gjxl::modular_internal {
 inline constexpr size_t kMaximumRctSamples = 2048;
 inline constexpr size_t kMaximumAdditionalRcts = 3;
+// Preserve the qualified search portfolio independently of prescribed syntax.
+inline constexpr size_t kMaximumSearchPaletteColors = 256;
 struct RctRanking {
   // Q12 estimates for all 42 RCTs; no serialized-size or optimality guarantee.
   std::array<int64_t, 42> costs{};

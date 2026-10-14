@@ -1,0 +1,161 @@
+# Reference Modular search and training scope
+
+The native workflow now reproduces the reference's **choice of what to learn**
+on the supported profile, after qualifying preparation and fitting. The
+[integrated study](modular-reference-workflow-timing.md) measures complete
+learning at 0.8983× e9 CPU on 15 matched original-input problems. Search-loss,
+held-out and per-image qualification remain separate from that performance
+result.
+
+This began as a source audit and a plan for the next controls.
+The pristine reference checkout was verified at
+`e8ff09762481785938d8e4e01333ed3917571161`. The saved 16-input capture ledger
+corroborates its fit counts. The subsequent
+[50-encode buffering ablation](modular-reference-policy-ablation.md) now captures
+actual stream pixels/options and quantifies the global/local workflow tradeoff.
+It confirms that per-stream WP/RCT settings matter even with a global tree, and
+that larger palettes are required on the structured cases. The immediate native
+preparation gap is now closed by
+[per-stream WP preparation and actual-stream replay](modular-native-stream-preparation.md).
+The [per-stream coding contract](modular-prepared-streams.md) now reproduces
+captured e9 tree/sample tokens and exact decodes with local/shared model scopes.
+The [downstream ablations](modular-entropy-ablation.md) now isolate its large
+automatic-cohort rate gap to data-context grouping. Reference groups plus
+unchanged native coding reach the stock total on that captured-decision
+cohort. [Native direct ANS with estimated selection](modular-prepared-entropy.md)
+is now integrated and qualified at the private prepared-stream boundary,
+preserving the standalone controls and closing that conditional aggregate gap.
+The [fixed-gradient selection estimator](modular-selection-cost.md) now
+matches pinned SIMD costs and RCT candidate ordering on generated and captured
+planes. The [five-preset WP estimator](modular-weighted-cost.md) now also matches
+reference costs, history/residual overflow behavior and rankings.
+[Reference palette construction](modular-reference-palette.md) now also matches
+the pinned builder, including implicit colors, ordering, empty dictionaries
+and widths up to 1,213, with exact global/local file decoding. Construction of
+[larger single-channel dictionaries](modular-channel-palette.md) is also
+qualified: its reference
+limit is independent of the 1,024-color multichannel cap.
+The [native palette/RCT/WP selector](modular-reference-selection.md) now matches
+the reference decision sequence and transformed planes on generated inputs,
+with complete-file controls. The [private workflow](modular-reference-workflow.md)
+now connects that selector to automatic stream scope and one native fit per
+scope. The high-depth LZ77 and auxiliary patch-frame exceptions remain open.
+A blanket global-tree replacement is not justified.
+
+## Selection happens before expensive tree fitting
+
+In pinned [enc_modular.cc](https://github.com/libjxl/libjxl/blob/e8ff09762481785938d8e4e01333ed3917571161/lib/jxl/enc_modular.cc),
+`try_palettes` / `maybe_do_transform` evaluate palette proposals with
+`EstimateCost` at e9 and undo a successful transform if its estimate is worse.
+The proposals include all-channel palettes, RGB palettes with separate alpha,
+and single-channel compaction, subject to color-count heuristics.
+
+`PrepareStreamParams` also tries local palettes. For eligible lossless color
+streams, e9 ranks **19 RCTs** with `EstimateCost`, applies the selected RCT, then
+tries **five weighted-predictor modes** with `EstimateWPCost`. Neither decision
+requires a learned MA tree for every transform candidate. RCT and WP winners
+use strict improvement in the defined candidate order.
+
+The [fixed-predictor estimator](https://github.com/libjxl/libjxl/blob/e8ff09762481785938d8e4e01333ed3917571161/lib/jxl/enc_modular_simd.cc)
+uses clamped-gradient residuals and contextual token histograms, with entropy
+plus extra-bit cost. `EstimateWPCost` uses WP residuals and 34 contexts derived
+from its predictor property. These use the default 4/2/0 HybridUint proxy,
+separately from the 4/1/2 training proxy. The native fixed-gradient estimator is
+now qualified directly against pinned SIMD values, including rounding and
+ties. The separate WP estimator and the composed stage selector are also
+qualified and integrated into the automatic frame/group workflow.
+
+GJXL's current `RankModularRcts` uses bounded samples and Gradient/Left/Top
+profiles; it is not the reference estimator. Its existing ranking should not
+be treated as validated for the new learner. The legacy search's repeated full
+fits remain a separate source of excess work, even with a fast fitting kernel.
+
+## Large images can use local group trees
+
+The pinned [frame encoder](https://github.com/libjxl/libjxl/blob/e8ff09762481785938d8e4e01333ed3917571161/lib/jxl/enc_frame.cc)
+permits streaming for ordinary lossless e9 when there are more than eight
+groups and the other eligibility checks pass. `ComputeEncodingData` skips
+global `ComputeTree` / `ComputeTokens` in streaming mode. With no global tokens,
+`EncodeStream` calls
+[`ModularGenericCompress`](https://github.com/libjxl/libjxl/blob/e8ff09762481785938d8e4e01333ed3917571161/lib/jxl/modular/encoding/enc_encoding.cc),
+which learns a tree for that individual stream. Ordinary nonstreaming lossless
+e9 instead takes the global-tree path. Metadata and other special learning
+events must still be counted separately.
+
+The existing stock-reference captures agree with this scope difference:
+
+| Input | Dimensions | 256-pixel groups | Captured reference fits |
+|---|---:|---:|---:|
+| photo-macan | 500×500 | 4 | 1 |
+| photo-flower | 2268×1512 | 54 | 54 |
+| alpha-flower | 2268×1512 | 54 | 54 |
+| chessboard | 1024×1024 | 16 | 16 |
+| splines | 2048×2048 | 64 | 64 |
+
+By comparison, the earlier bridge combined the native canonical stream images
+into one global learning call. The reference large-image controls therefore
+do not fit the same learning problem as those bridge cases. More fit events
+can still mean less expensive learning when each problem is much smaller.
+These observations establish a policy difference, not its isolated rate or
+speed effect.
+
+The established whole-image path emits global-tree stream headers. The new
+private prepared-stream path also supports local trees/models and ordered
+per-stream transform/WP headers, qualified against actual captures. The
+subsequent [private workflow](modular-reference-workflow.md) connects automatic
+policy selection and qualifies original-input decisions, learning scopes, and
+raw trees. The public default still uses its established path. Splitting a
+global fit into smaller fits and merging the trees would not reproduce local
+tree/entropy coding.
+
+## Next controls and implementation order
+
+1. Capture actual e9 stream transforms, WP settings and global/local tree
+   scope, alongside samples, fit counts, bytes and preparation/fitting times.
+   Keep the current frozen-native-transform control as a separate experiment.
+   An automatic-streaming versus forced-buffered e9 comparison is a useful
+   workflow ablation, but changes beyond tree scope must be recorded rather
+   than attributing its entire result to learning.
+2. On identical reference-transformed streams, compare global and local
+   learning/coding, retaining each stream's predictor parameters. Measure rate
+   as complete files, total preparation plus all fits, tree/header cost and
+   memory. Preserve exact reconstruction and distinguish a pure scope change
+   from per-group palette/RCT/WP changes. Use the reference implementation first.
+3. Port the supported selection/scope behavior that those controls qualify.
+   Match reference estimator values, ranking/ties, selected transforms and
+   custom-WP samples before evaluating any native approximation. Retain Best
+   and all-predictor controls. The original all-predictor bridge was within 1%
+   aggregate e9 bytes while its Best control was not. The subsequent integrated
+   automatic Best path is now within 1%, with per-image regressions still
+   requiring review.
+4. Compare the resulting candidate policy against exhaustive search with the
+   **new** learner. Count one fit per selected coding scope, including local
+   groups and auxiliary events; separately count repeated candidate fits.
+   Report per-image rate losses, shortlist recall if a shortlist is used,
+   complete learning/encode CPU and wall time, and peak storage. A hidden legacy
+   fallback must not mask the candidate's cost or rate.
+5. Apply the existing rate/resource/held-out gates before default promotion,
+   then profile the resulting pipeline to choose the first GPU learning task.
+
+The proposed targets remain: ≤1.5× reference CPU per identical fit, ≤+0.2%
+aggregate and ≤+1% per-image bytes for a search approximation versus exhaustive
+new-learner search, a whole-learning-stage aim of ≤2× stock e9, and eventual
+aggregate rate within +1% of e9 without regressing the qualified native total.
+These are separate gates. Core learner parity does not satisfy the search,
+whole-stage, held-out or rate gates by itself.
+
+The [integrated workflow timing study](modular-reference-workflow-timing.md)
+now measures Best at 0.8983× e9 learning CPU on 15 matched original-input
+problems. The 16-input complete-file rate is +0.3905% versus e9 and improves
+the qualified native aggregate, but individual regressions remain. This meets
+the current-corpus whole-learning aim; exhaustive new-learner, held-out and
+per-image/default-promotion gates remain open.
+
+The subsequent [conditional WP sweep](modular-reference-wp-sweep.md) now
+disproves the strict search-loss bounds for a domain containing the selected
+WP vector and all five uniform-preset vectors: selected Best is 0.3773% larger
+in aggregate, with four per-image failures. This is not exhaustive search;
+its limited candidate set already suffices to establish failure. The 16-bit
+alpha ramp accounts for 93.86% of the measured savings. Validate that
+opportunity on held-out high-depth content before designing a bounded extra
+candidate or promoting any changed policy.
