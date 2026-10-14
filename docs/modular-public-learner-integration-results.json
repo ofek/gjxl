@@ -1,0 +1,970 @@
+{
+  "source_commit": "cff30958a3f7f618a66da34ffa5a1520506d1542",
+  "parents": [
+    "4d43c777f298046f1a640f0d9b8b111b08ac9fdd",
+    "2520a7f269ddb609c358aefb365f02c972f61b41"
+  ],
+  "scope": "Selected correctness qualification; final outcomes include targeted reruns after fixing the palette limit. No performance claim.",
+  "tests": {
+    "cpu": {
+      "passed": 58,
+      "failed": 0,
+      "runs": [
+        {
+          "raw_report": "build/public-default/build/pr48-cpu-tests.xml",
+          "timestamp": "2026-10-13T22:28:00",
+          "cases": [
+            {
+              "name": "ans_bit_emission",
+              "status": "passed",
+              "seconds": 0.579182
+            },
+            {
+              "name": "ans_reverse_bits",
+              "status": "passed",
+              "seconds": 1.28321
+            },
+            {
+              "name": "entropy_storage_plan",
+              "status": "passed",
+              "seconds": 2.91563
+            },
+            {
+              "name": "c_api",
+              "status": "passed",
+              "seconds": 0.170499
+            },
+            {
+              "name": "c_api_cpp",
+              "status": "passed",
+              "seconds": 0.0801907
+            },
+            {
+              "name": "entropy_readiness",
+              "status": "passed",
+              "seconds": 0.06423
+            },
+            {
+              "name": "entropy_readiness_contract",
+              "status": "passed",
+              "seconds": 1.23268
+            },
+            {
+              "name": "modular_stream",
+              "status": "passed",
+              "seconds": 0.0589589
+            },
+            {
+              "name": "modular_foundation",
+              "status": "passed",
+              "seconds": 0.0539627
+            },
+            {
+              "name": "modular_transform_contract",
+              "status": "passed",
+              "seconds": 0.0565056
+            },
+            {
+              "name": "modular_reference_palette",
+              "status": "passed",
+              "seconds": 0.0726442
+            },
+            {
+              "name": "modular_reference_channel_palette",
+              "status": "passed",
+              "seconds": 0.0166883
+            },
+            {
+              "name": "modular_prepared_stream",
+              "status": "passed",
+              "seconds": 0.569167
+            },
+            {
+              "name": "modular_reference_workflow",
+              "status": "passed",
+              "seconds": 9.3149
+            },
+            {
+              "name": "modular_histogram_learning",
+              "status": "passed",
+              "seconds": 0.06462
+            },
+            {
+              "name": "modular_histogram_preparation",
+              "status": "passed",
+              "seconds": 0.0647444
+            },
+            {
+              "name": "modular_selection_cost",
+              "status": "passed",
+              "seconds": 0.0606488
+            },
+            {
+              "name": "modular_reference_selection",
+              "status": "passed",
+              "seconds": 0.408573
+            },
+            {
+              "name": "ans_selection",
+              "status": "passed",
+              "seconds": 0.662115
+            },
+            {
+              "name": "ans_selection_faults",
+              "status": "passed",
+              "seconds": 9.29199
+            },
+            {
+              "name": "entropy_population",
+              "status": "failed",
+              "seconds": 0.0725009
+            },
+            {
+              "name": "modular_candidate_cost",
+              "status": "passed",
+              "seconds": 0.385596
+            },
+            {
+              "name": "modular_candidate_search",
+              "status": "passed",
+              "seconds": 14.1822
+            },
+            {
+              "name": "modular_training_budget",
+              "status": "passed",
+              "seconds": 11.2792
+            },
+            {
+              "name": "modular_training_budget_faults",
+              "status": "passed",
+              "seconds": 40.3499
+            },
+            {
+              "name": "modular_training_checkpoints",
+              "status": "passed",
+              "seconds": 33.4549
+            },
+            {
+              "name": "modular_training_checkpoint_faults",
+              "status": "passed",
+              "seconds": 63.565
+            },
+            {
+              "name": "modular_training_coverage",
+              "status": "passed",
+              "seconds": 3.41195
+            },
+            {
+              "name": "modular_training_coverage_faults",
+              "status": "passed",
+              "seconds": 28.0673
+            },
+            {
+              "name": "modular_gpu_input",
+              "status": "passed",
+              "seconds": 0.104855
+            },
+            {
+              "name": "modular_gpu_token_plan",
+              "status": "passed",
+              "seconds": 0.100541
+            },
+            {
+              "name": "modular_adaptive_token_plan",
+              "status": "passed",
+              "seconds": 0.0488063
+            },
+            {
+              "name": "ans_token_cost_plan",
+              "status": "passed",
+              "seconds": 0.0555804
+            },
+            {
+              "name": "modular_tree_statistics_plan",
+              "status": "passed",
+              "seconds": 0.11725
+            },
+            {
+              "name": "modular_gpu_token_handoff",
+              "status": "passed",
+              "seconds": 0.46531
+            },
+            {
+              "name": "modular_gpu_preparation",
+              "status": "passed",
+              "seconds": 0.052935
+            },
+            {
+              "name": "modular_gpu_workflow",
+              "status": "passed",
+              "seconds": 0.079528
+            },
+            {
+              "name": "modular_profile",
+              "status": "passed",
+              "seconds": 1.01027
+            },
+            {
+              "name": "modular_weighted_features",
+              "status": "passed",
+              "seconds": 0.104672
+            },
+            {
+              "name": "modular_weighted_feature_batch",
+              "status": "passed",
+              "seconds": 0.100732
+            },
+            {
+              "name": "modular_weighted_wavefront",
+              "status": "passed",
+              "seconds": 0.418147
+            },
+            {
+              "name": "modular_frozen_oracle",
+              "status": "passed",
+              "seconds": 0.685321
+            },
+            {
+              "name": "modular_reference_wp_sweep",
+              "status": "passed",
+              "seconds": 0.63711
+            },
+            {
+              "name": "modular_oracle",
+              "status": "passed",
+              "seconds": 0.116776
+            },
+            {
+              "name": "modular_conformance",
+              "status": "passed",
+              "seconds": 23.6814
+            },
+            {
+              "name": "modular_policy",
+              "status": "passed",
+              "seconds": 32.2627
+            },
+            {
+              "name": "modular_transform",
+              "status": "passed",
+              "seconds": 12.9009
+            },
+            {
+              "name": "modular_ordered_transform",
+              "status": "passed",
+              "seconds": 0.549031
+            },
+            {
+              "name": "modular_reference_palette_oracle",
+              "status": "passed",
+              "seconds": 0.575126
+            },
+            {
+              "name": "modular_reference_channel_palette_oracle",
+              "status": "passed",
+              "seconds": 2.05447
+            },
+            {
+              "name": "modular_prepared_stream_reference",
+              "status": "passed",
+              "seconds": 8.6238
+            },
+            {
+              "name": "modular_reference_selection_oracle",
+              "status": "passed",
+              "seconds": 1.57598
+            },
+            {
+              "name": "modular_selection_cost_reference",
+              "status": "passed",
+              "seconds": 5.91962
+            },
+            {
+              "name": "modular_selection_cost_scalar_reference",
+              "status": "passed",
+              "seconds": 5.83547
+            },
+            {
+              "name": "modular_api",
+              "status": "passed",
+              "seconds": 20.387
+            },
+            {
+              "name": "modular_cli",
+              "status": "passed",
+              "seconds": 2.74149
+            },
+            {
+              "name": "modular_frozen_reference",
+              "status": "passed",
+              "seconds": 0.841599
+            },
+            {
+              "name": "workflow_admission_cpu",
+              "status": "passed",
+              "seconds": 0.324066
+            }
+          ]
+        },
+        {
+          "raw_report": "build/public-default/build/pr48-cpu-fixed-tests.xml",
+          "timestamp": "2026-10-13T22:30:23",
+          "cases": [
+            {
+              "name": "entropy_population",
+              "status": "passed",
+              "seconds": 0.184552
+            }
+          ]
+        }
+      ]
+    },
+    "metal": {
+      "passed": 72,
+      "failed": 0,
+      "runs": [
+        {
+          "raw_report": "build/pr48-metal/build/pr48-metal-tests.xml",
+          "timestamp": "2026-10-13T22:28:44",
+          "cases": [
+            {
+              "name": "ans_bit_emission",
+              "status": "passed",
+              "seconds": 0.905406
+            },
+            {
+              "name": "ans_reverse_bits",
+              "status": "passed",
+              "seconds": 1.83362
+            },
+            {
+              "name": "entropy_storage_plan",
+              "status": "passed",
+              "seconds": 4.01107
+            },
+            {
+              "name": "c_api",
+              "status": "passed",
+              "seconds": 0.32825
+            },
+            {
+              "name": "c_api_cpp",
+              "status": "passed",
+              "seconds": 0.135894
+            },
+            {
+              "name": "entropy_readiness",
+              "status": "passed",
+              "seconds": 0.0535357
+            },
+            {
+              "name": "entropy_readiness_contract",
+              "status": "passed",
+              "seconds": 1.97116
+            },
+            {
+              "name": "modular_stream",
+              "status": "passed",
+              "seconds": 0.0746002
+            },
+            {
+              "name": "modular_foundation",
+              "status": "passed",
+              "seconds": 0.069898
+            },
+            {
+              "name": "modular_transform_contract",
+              "status": "passed",
+              "seconds": 0.0632417
+            },
+            {
+              "name": "modular_reference_palette",
+              "status": "passed",
+              "seconds": 0.108007
+            },
+            {
+              "name": "modular_reference_channel_palette",
+              "status": "passed",
+              "seconds": 0.0288104
+            },
+            {
+              "name": "modular_prepared_stream",
+              "status": "passed",
+              "seconds": 0.842456
+            },
+            {
+              "name": "modular_reference_workflow",
+              "status": "passed",
+              "seconds": 11.0438
+            },
+            {
+              "name": "modular_histogram_learning",
+              "status": "passed",
+              "seconds": 0.0587623
+            },
+            {
+              "name": "modular_histogram_preparation",
+              "status": "passed",
+              "seconds": 0.065077
+            },
+            {
+              "name": "modular_selection_cost",
+              "status": "passed",
+              "seconds": 0.0491201
+            },
+            {
+              "name": "modular_reference_selection",
+              "status": "passed",
+              "seconds": 0.636591
+            },
+            {
+              "name": "ans_selection",
+              "status": "passed",
+              "seconds": 1.07879
+            },
+            {
+              "name": "ans_selection_faults",
+              "status": "passed",
+              "seconds": 14.836
+            },
+            {
+              "name": "entropy_population",
+              "status": "failed",
+              "seconds": 0.0703789
+            },
+            {
+              "name": "modular_candidate_cost",
+              "status": "passed",
+              "seconds": 0.669825
+            },
+            {
+              "name": "modular_candidate_search",
+              "status": "failed",
+              "seconds": 21.0477
+            },
+            {
+              "name": "modular_training_budget",
+              "status": "passed",
+              "seconds": 14.6855
+            },
+            {
+              "name": "modular_training_budget_faults",
+              "status": "passed",
+              "seconds": 27.6766
+            },
+            {
+              "name": "modular_training_checkpoints",
+              "status": "passed",
+              "seconds": 22.6941
+            },
+            {
+              "name": "modular_training_checkpoint_faults",
+              "status": "passed",
+              "seconds": 67.1918
+            },
+            {
+              "name": "modular_training_coverage",
+              "status": "passed",
+              "seconds": 2.29046
+            },
+            {
+              "name": "modular_training_coverage_faults",
+              "status": "passed",
+              "seconds": 34.5962
+            },
+            {
+              "name": "modular_gpu_input",
+              "status": "passed",
+              "seconds": 0.0543775
+            },
+            {
+              "name": "modular_gpu_token_plan",
+              "status": "passed",
+              "seconds": 0.0936575
+            },
+            {
+              "name": "modular_adaptive_token_plan",
+              "status": "passed",
+              "seconds": 0.0452182
+            },
+            {
+              "name": "ans_token_cost_plan",
+              "status": "passed",
+              "seconds": 0.0577837
+            },
+            {
+              "name": "modular_tree_statistics_plan",
+              "status": "passed",
+              "seconds": 0.123591
+            },
+            {
+              "name": "modular_gpu_token_handoff",
+              "status": "passed",
+              "seconds": 0.563055
+            },
+            {
+              "name": "modular_gpu_preparation",
+              "status": "passed",
+              "seconds": 0.0555282
+            },
+            {
+              "name": "modular_gpu_workflow",
+              "status": "passed",
+              "seconds": 0.130799
+            },
+            {
+              "name": "modular_profile",
+              "status": "passed",
+              "seconds": 1.24653
+            },
+            {
+              "name": "modular_weighted_features",
+              "status": "passed",
+              "seconds": 0.081561
+            },
+            {
+              "name": "modular_weighted_feature_batch",
+              "status": "passed",
+              "seconds": 0.084067
+            },
+            {
+              "name": "modular_weighted_wavefront",
+              "status": "passed",
+              "seconds": 0.534465
+            },
+            {
+              "name": "modular_frozen_oracle",
+              "status": "passed",
+              "seconds": 0.785222
+            },
+            {
+              "name": "modular_reference_wp_sweep",
+              "status": "passed",
+              "seconds": 0.755727
+            },
+            {
+              "name": "modular_oracle",
+              "status": "passed",
+              "seconds": 0.125247
+            },
+            {
+              "name": "modular_conformance",
+              "status": "passed",
+              "seconds": 22.5456
+            },
+            {
+              "name": "modular_policy",
+              "status": "passed",
+              "seconds": 26.2064
+            },
+            {
+              "name": "modular_transform",
+              "status": "passed",
+              "seconds": 10.5638
+            },
+            {
+              "name": "modular_ordered_transform",
+              "status": "passed",
+              "seconds": 0.438103
+            },
+            {
+              "name": "modular_reference_palette_oracle",
+              "status": "passed",
+              "seconds": 0.473011
+            },
+            {
+              "name": "modular_reference_channel_palette_oracle",
+              "status": "passed",
+              "seconds": 1.69435
+            },
+            {
+              "name": "modular_prepared_stream_reference",
+              "status": "passed",
+              "seconds": 7.04628
+            },
+            {
+              "name": "modular_reference_selection_oracle",
+              "status": "passed",
+              "seconds": 1.37319
+            },
+            {
+              "name": "modular_selection_cost_reference",
+              "status": "passed",
+              "seconds": 4.81151
+            },
+            {
+              "name": "modular_selection_cost_scalar_reference",
+              "status": "passed",
+              "seconds": 4.92109
+            },
+            {
+              "name": "modular_api",
+              "status": "passed",
+              "seconds": 17.976
+            },
+            {
+              "name": "modular_cli",
+              "status": "passed",
+              "seconds": 3.14414
+            },
+            {
+              "name": "modular_frozen_reference",
+              "status": "passed",
+              "seconds": 0.686275
+            },
+            {
+              "name": "metal_modular_input",
+              "status": "passed",
+              "seconds": 0.524194
+            },
+            {
+              "name": "metal_modular_tokens",
+              "status": "passed",
+              "seconds": 2.28847
+            },
+            {
+              "name": "metal_modular_tokens_composed",
+              "status": "passed",
+              "seconds": 2.27463
+            },
+            {
+              "name": "metal_modular_population",
+              "status": "passed",
+              "seconds": 4.31014
+            },
+            {
+              "name": "metal_ans_token_cost",
+              "status": "passed",
+              "seconds": 0.973822
+            },
+            {
+              "name": "metal_modular_tree_statistics",
+              "status": "passed",
+              "seconds": 0.784659
+            },
+            {
+              "name": "metal_modular_adaptive",
+              "status": "passed",
+              "seconds": 2.28794
+            },
+            {
+              "name": "metal_modular_weighted_features",
+              "status": "passed",
+              "seconds": 2.13718
+            },
+            {
+              "name": "metal_modular_adaptive_workflow",
+              "status": "passed",
+              "seconds": 76.5683
+            },
+            {
+              "name": "metal_modular_weighted_workflow",
+              "status": "passed",
+              "seconds": 76.6436
+            },
+            {
+              "name": "metal_modular_shared_features",
+              "status": "passed",
+              "seconds": 8.12339
+            },
+            {
+              "name": "metal_modular_workflow",
+              "status": "passed",
+              "seconds": 2.03608
+            },
+            {
+              "name": "metal_modular_token_workflow",
+              "status": "passed",
+              "seconds": 2.18514
+            },
+            {
+              "name": "entropy_readiness_workflow",
+              "status": "passed",
+              "seconds": 4.16364
+            },
+            {
+              "name": "workflow_admission_cpu",
+              "status": "passed",
+              "seconds": 0.349654
+            }
+          ]
+        },
+        {
+          "raw_report": "build/pr48-metal/build/pr48-metal-fixed-tests.xml",
+          "timestamp": "2026-10-13T22:30:23",
+          "cases": [
+            {
+              "name": "entropy_population",
+              "status": "passed",
+              "seconds": 0.192963
+            }
+          ]
+        },
+        {
+          "raw_report": "build/pr48-metal/build/pr48-metal-search-fixed-tests.xml",
+          "timestamp": "2026-10-13T22:31:48",
+          "cases": [
+            {
+              "name": "modular_candidate_search",
+              "status": "passed",
+              "seconds": 17.5975
+            }
+          ]
+        }
+      ]
+    },
+    "asan_ubsan": {
+      "passed": 7,
+      "failed": 0,
+      "runs": [
+        {
+          "raw_report": "build/public-default-asan/build/pr48-asan-tests.xml",
+          "timestamp": "2026-10-13T22:29:55",
+          "cases": [
+            {
+              "name": "entropy_storage_plan",
+              "status": "passed",
+              "seconds": 18.2839
+            },
+            {
+              "name": "modular_reference_workflow",
+              "status": "passed",
+              "seconds": 55.7395
+            },
+            {
+              "name": "ans_selection",
+              "status": "passed",
+              "seconds": 2.6867
+            },
+            {
+              "name": "modular_profile",
+              "status": "passed",
+              "seconds": 4.32029
+            },
+            {
+              "name": "modular_api",
+              "status": "passed",
+              "seconds": 105.73
+            },
+            {
+              "name": "modular_cli",
+              "status": "passed",
+              "seconds": 13.1734
+            }
+          ]
+        },
+        {
+          "raw_report": "build/public-default-asan/build/pr48-asan-population-tests.xml",
+          "timestamp": "2026-10-13T22:32:47",
+          "cases": [
+            {
+              "name": "entropy_population",
+              "status": "passed",
+              "seconds": 0.758024
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "byte_parity": {
+    "baseline_commit": "4d43c777f298046f1a640f0d9b8b111b08ac9fdd",
+    "sha256": {
+      "modular-cli/3-8-False.search.ans.jxl": "a85ea0f9d9f2c1037eaf065a9b6345d500023e00b6d4c59ffb23cfc9c5c3472c",
+      "modular-cli/4-16-True.search.prefix.jxl": "eab9ea3db370c5587560301b02279213647e4db0b0b481196f1f15bda9c0c676",
+      "modular-cli/3-16-False.default.jxl": "d2af8208f8496104dc616e3896767b773b93306adb7cf79c2282bcad27fc3920",
+      "modular-cli/1-8-True.search.prefix.jxl": "564169a32dcb94d71349ad883b5262d35e9ebaf31e3004d5629490254bea43c4",
+      "modular-cli/3-8-False.baseline.prefix.jxl": "e04d80cbcd95903abb1a48b44c3d1ab103171e704c10bb139d0909b1e714f084",
+      "modular-cli/1-8-True.learned.ans.jxl": "a6b5817fcb6821f97f5bc2b240109787f301d0c2c731aa9bc396bedd6dea236d",
+      "modular-cli/4-8-True.default.jxl": "4185502e1b661b2f8d2cce7268825c4390606bc44b5e22396b05619ad1726248",
+      "modular-cli/4-16-True.default.jxl": "8c237e2f34db048baa53866d0e81cefff8404e4149efb7998e5b13fdc11447e9",
+      "modular-cli/4-8-True.baseline.ans.jxl": "7b335afd2d030c769971dc29cb0b610084d5f94b8473ca9c85e370824983319d",
+      "modular-cli/atomic.jxl": "b81f82bb29de88054cf2a74d7d22e4d62ea991d75d930d4ad6d385042ccf607f",
+      "modular-cli/3-8-False.default.jxl": "02b968d08225aae5884c7b513e53c03fdb9a3c0d971207da29fb03b7268b074a",
+      "modular-cli/1-16-True.search.ans.jxl": "bc988a3c1ccadfda466d4fcca3a855ae61d7685fc0236b072748dc64bdf80f65",
+      "modular-cli/1-16-False.search.prefix.jxl": "a4167daad8854dec2070c61e8484899e7741767bf7212260d87bd3a1003d8834",
+      "modular-cli/3-16-True.default.jxl": "d2af8208f8496104dc616e3896767b773b93306adb7cf79c2282bcad27fc3920",
+      "modular-cli/1-8-False.learned.ans.jxl": "a6b5817fcb6821f97f5bc2b240109787f301d0c2c731aa9bc396bedd6dea236d",
+      "modular-cli/1-8-False.default.jxl": "a6b5817fcb6821f97f5bc2b240109787f301d0c2c731aa9bc396bedd6dea236d",
+      "modular-cli/1-16-False.search.ans.jxl": "bc988a3c1ccadfda466d4fcca3a855ae61d7685fc0236b072748dc64bdf80f65",
+      "modular-cli/3-16-False.learned.ans.jxl": "d2af8208f8496104dc616e3896767b773b93306adb7cf79c2282bcad27fc3920",
+      "modular-cli/3-16-True.search.prefix.jxl": "6f3e27ee9fcf031ca4fa8696cee3f885f3635cd866e9293d2048096d2ec570a4",
+      "modular-cli/1-16-True.default.jxl": "93737cdd8172c0f3380035be55c13e03394675335a5a6b04b06d393304dbcb6d",
+      "modular-cli/4-16-True.baseline.ans.jxl": "4270fc16bb21071b4060f3e29146d632647cbe6c2ea8d8a77d0dec6d43991185",
+      "modular-cli/3-8-True.baseline.ans.jxl": "de9481830323c9d04a51b5ad5aebc83ca2e9e5dd643f23fe0f6defa2ce4b41e1",
+      "modular-cli/3-16-False.learned.prefix.jxl": "722f7c984aecab18d1af8e21619a01400dee037440f58f47d1f6a66e10729f8c",
+      "modular-cli/3-8-True.learned.ans.jxl": "02b968d08225aae5884c7b513e53c03fdb9a3c0d971207da29fb03b7268b074a",
+      "modular-cli/3-16-True.baseline.prefix.jxl": "bdca81c9d38038c476c2241397354dd6b8d04ea61ed2d925ee418a25a86e0345",
+      "modular-cli/3-8-False.baseline.ans.jxl": "de9481830323c9d04a51b5ad5aebc83ca2e9e5dd643f23fe0f6defa2ce4b41e1",
+      "modular-cli/1-8-False.search.ans.jxl": "b81f82bb29de88054cf2a74d7d22e4d62ea991d75d930d4ad6d385042ccf607f",
+      "modular-cli/4-8-True.learned.ans.jxl": "4185502e1b661b2f8d2cce7268825c4390606bc44b5e22396b05619ad1726248",
+      "modular-cli/1-16-True.baseline.ans.jxl": "300852c040e4dcc6fc7625e8d83bb394da6662a8db7527ce47fc98ad387abbf5",
+      "modular-cli/1-8-True.default.jxl": "a6b5817fcb6821f97f5bc2b240109787f301d0c2c731aa9bc396bedd6dea236d",
+      "modular-cli/4-8-True.search.ans.jxl": "0cd46decc821cfd781fdf855296ff89bb584f3f9d9d50e356e5b937206df11a6",
+      "modular-cli/1-16-False.baseline.prefix.jxl": "d431302c7da6a7d52af26d1d434772e6b65b5902ce406c7e0a8339ac9090826d",
+      "modular-cli/3-16-True.search.ans.jxl": "9a66b460914ae5f84547006deeef6c1c63155b668e3c26a50b1b8112c0a0c2b2",
+      "modular-cli/4-8-True.search.prefix.jxl": "07a8c6c78033074ffd58a5b7959ee33a68957fb39d0f4872d813b1af32f4fd09",
+      "modular-cli/1-16-True.learned.prefix.jxl": "c24d50bb38ac3735bb62a7f7d522fd56d737c578df475c093f333c2a70d71ec6",
+      "modular-cli/1-16-True.learned.ans.jxl": "93737cdd8172c0f3380035be55c13e03394675335a5a6b04b06d393304dbcb6d",
+      "modular-cli/1-16-True.search.prefix.jxl": "a4167daad8854dec2070c61e8484899e7741767bf7212260d87bd3a1003d8834",
+      "modular-cli/4-16-True.search.ans.jxl": "09f48e0bdbf273e85dec25d28037aff1529680d179e4e3432436ce078bde02e3",
+      "modular-cli/1-8-False.learned.prefix.jxl": "fc643d9b387836ca247ea1f3d2c8a5b75561a36aeabf1e8fd14aeeea1fcf7c06",
+      "modular-cli/1-8-True.baseline.prefix.jxl": "9ec63f56ebf02967fab372852bd1b2a8858bb5a0179952117c5cffbdc5655b1d",
+      "modular-cli/3-16-True.baseline.ans.jxl": "4fc361f7f9034650a2b6eb33b3ef282f498a6e12f5518eb18a77b95c9dbf4f64",
+      "modular-cli/3-8-True.search.ans.jxl": "a85ea0f9d9f2c1037eaf065a9b6345d500023e00b6d4c59ffb23cfc9c5c3472c",
+      "modular-cli/4-16-True.learned.prefix.jxl": "1c13423da89d4bba05ffe8e599ec47301bf25f2858cb9beb309849ef670c1653",
+      "modular-cli/4-8-True.baseline.prefix.jxl": "753a01c22928bd95b876d5c7277504278f4842a2453fc0d4178ba14353d1ff6f",
+      "modular-cli/3-8-True.default.jxl": "02b968d08225aae5884c7b513e53c03fdb9a3c0d971207da29fb03b7268b074a",
+      "modular-cli/3-8-False.search.prefix.jxl": "452f39a92c99422a1cef3dbf79dfaa8c520ca403777a907bcfbc69ab0e1d7c04",
+      "modular-cli/1-8-True.baseline.ans.jxl": "6ad92d7576e42356c9f71692339c326cac743eb5ece20e4d49d9810cb83ded4b",
+      "modular-cli/1-8-False.baseline.ans.jxl": "6ad92d7576e42356c9f71692339c326cac743eb5ece20e4d49d9810cb83ded4b",
+      "modular-cli/1-8-True.learned.prefix.jxl": "fc643d9b387836ca247ea1f3d2c8a5b75561a36aeabf1e8fd14aeeea1fcf7c06",
+      "modular-cli/3-16-False.baseline.ans.jxl": "4fc361f7f9034650a2b6eb33b3ef282f498a6e12f5518eb18a77b95c9dbf4f64",
+      "modular-cli/1-8-False.baseline.prefix.jxl": "9ec63f56ebf02967fab372852bd1b2a8858bb5a0179952117c5cffbdc5655b1d",
+      "modular-cli/1-16-False.default.jxl": "93737cdd8172c0f3380035be55c13e03394675335a5a6b04b06d393304dbcb6d",
+      "modular-cli/1-8-True.search.ans.jxl": "b81f82bb29de88054cf2a74d7d22e4d62ea991d75d930d4ad6d385042ccf607f",
+      "modular-cli/3-16-False.baseline.prefix.jxl": "bdca81c9d38038c476c2241397354dd6b8d04ea61ed2d925ee418a25a86e0345",
+      "modular-cli/3-8-False.learned.prefix.jxl": "501f3bb3addae0147ba687d5005a946414daf727957e5825de3ac2d602af6be5",
+      "modular-cli/3-8-True.baseline.prefix.jxl": "e04d80cbcd95903abb1a48b44c3d1ab103171e704c10bb139d0909b1e714f084",
+      "modular-cli/3-16-True.learned.ans.jxl": "d2af8208f8496104dc616e3896767b773b93306adb7cf79c2282bcad27fc3920",
+      "modular-cli/3-16-True.learned.prefix.jxl": "722f7c984aecab18d1af8e21619a01400dee037440f58f47d1f6a66e10729f8c",
+      "modular-cli/1-8-False.search.prefix.jxl": "564169a32dcb94d71349ad883b5262d35e9ebaf31e3004d5629490254bea43c4",
+      "modular-cli/3-8-True.learned.prefix.jxl": "501f3bb3addae0147ba687d5005a946414daf727957e5825de3ac2d602af6be5",
+      "modular-cli/3-8-True.search.prefix.jxl": "452f39a92c99422a1cef3dbf79dfaa8c520ca403777a907bcfbc69ab0e1d7c04",
+      "modular-cli/1-16-False.baseline.ans.jxl": "300852c040e4dcc6fc7625e8d83bb394da6662a8db7527ce47fc98ad387abbf5",
+      "modular-cli/3-16-False.search.prefix.jxl": "6f3e27ee9fcf031ca4fa8696cee3f885f3635cd866e9293d2048096d2ec570a4",
+      "modular-cli/4-16-True.learned.ans.jxl": "8c237e2f34db048baa53866d0e81cefff8404e4149efb7998e5b13fdc11447e9",
+      "modular-cli/1-16-True.baseline.prefix.jxl": "d431302c7da6a7d52af26d1d434772e6b65b5902ce406c7e0a8339ac9090826d",
+      "modular-cli/1-16-False.learned.ans.jxl": "93737cdd8172c0f3380035be55c13e03394675335a5a6b04b06d393304dbcb6d",
+      "modular-cli/1-16-False.learned.prefix.jxl": "c24d50bb38ac3735bb62a7f7d522fd56d737c578df475c093f333c2a70d71ec6",
+      "modular-cli/4-8-True.learned.prefix.jxl": "aa495b791b8b4f4ce5aed80ff40917601dcdf5a29bcd1f7a4918f5fe8e21cf0d",
+      "modular-cli/4-16-True.baseline.prefix.jxl": "516933f83f2dfbd995c80640345f921327eb5cf99c74b7a687642d027110f0e1",
+      "modular-cli/3-16-False.search.ans.jxl": "9a66b460914ae5f84547006deeef6c1c63155b668e3c26a50b1b8112c0a0c2b2",
+      "modular-cli/3-8-False.learned.ans.jxl": "02b968d08225aae5884c7b513e53c03fdb9a3c0d971207da29fb03b7268b074a",
+      "modular-reference-workflow/workflow-22.jxl": "2aefe9ae3b4eb4dc82bc23b3e1d46e406ee8d5712ab5499edf66774cdc9f75b8",
+      "modular-reference-workflow/workflow-36.jxl": "fe0ab30597619cad56e3f1ff1d5554d2d63da683e079d56c0b8b95a1d5008f28",
+      "modular-reference-workflow/workflow-37.jxl": "8b91ee2c24793b167387cdfd8a05f6f3bd029a66be5e0463abe50b16cdeee090",
+      "modular-reference-workflow/workflow-23.jxl": "2aefe9ae3b4eb4dc82bc23b3e1d46e406ee8d5712ab5499edf66774cdc9f75b8",
+      "modular-reference-workflow/workflow-35.jxl": "f8d24726225323b7519f7ffb609cb734868abc67c0c2f2db4c198a4cb5bdcc39",
+      "modular-reference-workflow/workflow-21.jxl": "2aefe9ae3b4eb4dc82bc23b3e1d46e406ee8d5712ab5499edf66774cdc9f75b8",
+      "modular-reference-workflow/workflow-20.jxl": "2aefe9ae3b4eb4dc82bc23b3e1d46e406ee8d5712ab5499edf66774cdc9f75b8",
+      "modular-reference-workflow/workflow-34.jxl": "f8d24726225323b7519f7ffb609cb734868abc67c0c2f2db4c198a4cb5bdcc39",
+      "modular-reference-workflow/workflow-18.jxl": "d0c5f16f5887dea0a2aab01457f07250de92fdea1b7272c100016f56d981cc00",
+      "modular-reference-workflow/workflow-30.jxl": "e4b2d30b970e73a14088488ff1bbf209106e5675cd4ad8d9ff497ba5d933e6fc",
+      "modular-reference-workflow/workflow-24.jxl": "c8e0fd7d34f4c82a5aab46dfa1b2e8fcf5faf1a57686f29c6a6f2886999f62db",
+      "modular-reference-workflow/workflow-25.jxl": "c8e0fd7d34f4c82a5aab46dfa1b2e8fcf5faf1a57686f29c6a6f2886999f62db",
+      "modular-reference-workflow/workflow-31.jxl": "2e069c996f677c95cefc4d13f328c8474b80f016629e8152f10d339512f458f9",
+      "modular-reference-workflow/workflow-19.jxl": "d0c5f16f5887dea0a2aab01457f07250de92fdea1b7272c100016f56d981cc00",
+      "modular-reference-workflow/workflow-27.jxl": "c8e0fd7d34f4c82a5aab46dfa1b2e8fcf5faf1a57686f29c6a6f2886999f62db",
+      "modular-reference-workflow/workflow-33.jxl": "f8d24726225323b7519f7ffb609cb734868abc67c0c2f2db4c198a4cb5bdcc39",
+      "modular-reference-workflow/workflow-32.jxl": "f8d24726225323b7519f7ffb609cb734868abc67c0c2f2db4c198a4cb5bdcc39",
+      "modular-reference-workflow/workflow-26.jxl": "c8e0fd7d34f4c82a5aab46dfa1b2e8fcf5faf1a57686f29c6a6f2886999f62db",
+      "modular-reference-workflow/workflow-41.jxl": "88d5eb1a0184804c8ec076fa932ac316f97e5f0814b6c28a45afba3023430679",
+      "modular-reference-workflow/workflow-55.jxl": "0e95fb02c1c87991b4bf040b7f9c606e8334eb66636f6095862e4e0c132187d7",
+      "modular-reference-workflow/workflow-69.jxl": "d99d15ef4f69244bb24f169ebe2d5cdf46473b0ef6ad1ec22d5e808f7d224b4a",
+      "modular-reference-workflow/workflow-82.jxl": "2bc90fb985b1a27df0074c8d7bf6e386971289669e329779036cbb9512b7473c",
+      "modular-reference-workflow/workflow-96.jxl": "c4da5249a7549d42667d616bd7e2299d97b2343070d6321e44d4f9b69e7f373a",
+      "modular-reference-workflow/workflow-9.jxl": "29fcf717bd54035e0ae8f85543a4a75a7c952cf0aecd37a1dde166b7a443aba7",
+      "modular-reference-workflow/workflow-8.jxl": "7f08ac303d6e594c578ce1efab35eed4a6757f1c672d31f0b6a9cf978676e33f",
+      "modular-reference-workflow/workflow-97.jxl": "dc5a0977ada7dd0e0e0422f053e86db788768f1fd0ba6fc34add391b9197f92b",
+      "modular-reference-workflow/workflow-83.jxl": "2bc90fb985b1a27df0074c8d7bf6e386971289669e329779036cbb9512b7473c",
+      "modular-reference-workflow/workflow-68.jxl": "f0f3a2137b6baddd65bf7d290f4c6e1d5881b538c9acb892fff4a1fa6052f4e5",
+      "modular-reference-workflow/workflow-54.jxl": "a9c43e4395c8252ceaab7148bab8acbe7286fd90d9ce63a316f02bfb0b81f785",
+      "modular-reference-workflow/workflow-40.jxl": "f70ab33e5a65fdc263906143252ac736fe4e3c93396c098497a13bdbea94051a",
+      "modular-reference-workflow/workflow-56.jxl": "152a765d1e5956358504fb00556a63f306fcb2fd9d08bf6930e99a481506b7a4",
+      "modular-reference-workflow/workflow-42.jxl": "f70ab33e5a65fdc263906143252ac736fe4e3c93396c098497a13bdbea94051a",
+      "modular-reference-workflow/workflow-95.jxl": "37519d6cce961da8a1f1b53db32f0f130f57c72287861ddcc7d89434f9076573",
+      "modular-reference-workflow/workflow-81.jxl": "2bc90fb985b1a27df0074c8d7bf6e386971289669e329779036cbb9512b7473c",
+      "modular-reference-workflow/workflow-80.jxl": "2bc90fb985b1a27df0074c8d7bf6e386971289669e329779036cbb9512b7473c",
+      "modular-reference-workflow/workflow-94.jxl": "0aee146e468286ac5b30b78a0e204842a45543011d1c94ab7458b807639e86b6",
+      "modular-reference-workflow/workflow-43.jxl": "88d5eb1a0184804c8ec076fa932ac316f97e5f0814b6c28a45afba3023430679",
+      "modular-reference-workflow/workflow-57.jxl": "152a765d1e5956358504fb00556a63f306fcb2fd9d08bf6930e99a481506b7a4",
+      "modular-reference-workflow/workflow-53.jxl": "0e95fb02c1c87991b4bf040b7f9c606e8334eb66636f6095862e4e0c132187d7",
+      "modular-reference-workflow/workflow-47.jxl": "4d88313fc64739d48f820a2c684f7543d64d1f97443ab99fc0fd7ba1c6363815",
+      "modular-reference-workflow/workflow-90.jxl": "45a8fafd2208193d8392e30e816cbcfa7bf77ca4e3f5b5b7e37a93538e561a27",
+      "modular-reference-workflow/workflow-84.jxl": "753492977dab00fbf1af9ce7ca73ac86ea9fa34bb3ebc0145d0cc2e8041c5847",
+      "modular-reference-workflow/workflow-85.jxl": "de0a0763f60853b6c20a7a3cc1df46d770650a2d5611e367c81178ee5e419fb4",
+      "modular-reference-workflow/workflow-91.jxl": "4a616be6d3039f6ffc04722f05f008445001873ff52e1489c1f1b0991c8dee23",
+      "modular-reference-workflow/workflow-46.jxl": "41d3e0fe96d1c328aa6c7eddc2341ec4350f226360c45346bce79589a18bc51e",
+      "modular-reference-workflow/workflow-52.jxl": "a9c43e4395c8252ceaab7148bab8acbe7286fd90d9ce63a316f02bfb0b81f785",
+      "modular-reference-workflow/workflow-78.jxl": "073a5ba7adcc846c464be66bb47e650b0ffcc5a22c9fbfee4a0f37243a3a169a",
+      "modular-reference-workflow/workflow-44.jxl": "5e1d415f6d6caf525cd04d592a84503c74edb03be27281b28bb26e6c5612b5f8",
+      "modular-reference-workflow/workflow-50.jxl": "6793afd72eb23ee1ef449792031bf2eb2b0d7550204f09776e72ba24612088ca",
+      "modular-reference-workflow/workflow-87.jxl": "de0a0763f60853b6c20a7a3cc1df46d770650a2d5611e367c81178ee5e419fb4",
+      "modular-reference-workflow/workflow-93.jxl": "1e726e85c4e4e766a492e8b6d96d3c73738a84ef4543ff1b8607b48c9f690abf",
+      "modular-reference-workflow/workflow-92.jxl": "067590e500daa8211a823caead0b14bb7d50da10c06e6d18af464f892e23e2e5",
+      "modular-reference-workflow/workflow-86.jxl": "753492977dab00fbf1af9ce7ca73ac86ea9fa34bb3ebc0145d0cc2e8041c5847",
+      "modular-reference-workflow/workflow-51.jxl": "6793afd72eb23ee1ef449792031bf2eb2b0d7550204f09776e72ba24612088ca",
+      "modular-reference-workflow/workflow-45.jxl": "4967ca75d7d153722db641c66a2ce4d27d3727ddd85f9a7025402f26e4055d51",
+      "modular-reference-workflow/workflow-79.jxl": "ba57e4c5e537dd67159924d8a35afb89f1004504d137fa214efe13f320fae659",
+      "modular-reference-workflow/workflow-60.jxl": "5735fbe4945af2d24db039f012cec3e54db73855311e9b699641aef9dc914d3d",
+      "modular-reference-workflow/workflow-74.jxl": "0a0ab1eec5835b5c3c37371788688a6ffceecb5de7b74ab52acfb239a7c6775b",
+      "modular-reference-workflow/workflow-48.jxl": "6793afd72eb23ee1ef449792031bf2eb2b0d7550204f09776e72ba24612088ca",
+      "modular-reference-workflow/workflow-0.jxl": "a3ebfc7a2215d0fb3c24762e255a05e5266e6ca51f4544ce4c6cd2a69a66e324",
+      "modular-reference-workflow/workflow-1.jxl": "a3ebfc7a2215d0fb3c24762e255a05e5266e6ca51f4544ce4c6cd2a69a66e324",
+      "modular-reference-workflow/workflow-49.jxl": "6793afd72eb23ee1ef449792031bf2eb2b0d7550204f09776e72ba24612088ca",
+      "modular-reference-workflow/workflow-75.jxl": "5604933e3839c8f3c99db2dfeb74821bf4b9e5825dc3782d945d35a4c9c10bbb",
+      "modular-reference-workflow/workflow-61.jxl": "134543521616b4a7330c2d0169702146edf411a81df3ff7f15de0d1f62e7e626",
+      "modular-reference-workflow/workflow-77.jxl": "e608326a82610cb28a3665b7416f4feff7ce8f535b17cba76ebae06f6dfec90e",
+      "modular-reference-workflow/workflow-63.jxl": "59181fbd677decd0ea0f5966a4f4adcc7d819819d86645921311aaa9301278b4",
+      "modular-reference-workflow/workflow-3.jxl": "a3ebfc7a2215d0fb3c24762e255a05e5266e6ca51f4544ce4c6cd2a69a66e324",
+      "modular-reference-workflow/workflow-88.jxl": "45a8fafd2208193d8392e30e816cbcfa7bf77ca4e3f5b5b7e37a93538e561a27",
+      "modular-reference-workflow/workflow-89.jxl": "4a616be6d3039f6ffc04722f05f008445001873ff52e1489c1f1b0991c8dee23",
+      "modular-reference-workflow/workflow-2.jxl": "a3ebfc7a2215d0fb3c24762e255a05e5266e6ca51f4544ce4c6cd2a69a66e324",
+      "modular-reference-workflow/workflow-62.jxl": "78c76060a04e5f364f8c8e825d3ed3f28582f4eb22088376dc07d499e5c36703",
+      "modular-reference-workflow/workflow-76.jxl": "87b7f4f23b5a4209180f4bf73d731b8da33a373108c1e24e8af21217a70b949b",
+      "modular-reference-workflow/workflow-72.jxl": "0a0ab1eec5835b5c3c37371788688a6ffceecb5de7b74ab52acfb239a7c6775b",
+      "modular-reference-workflow/workflow-66.jxl": "eb3072163f3bf4dd419f203c79681b88e7b28e08463ee81cc9ae819babb5471c",
+      "modular-reference-workflow/workflow-6.jxl": "9977c7dab83e8ca3f637c15cfe89c8bd30e121c3603bbc4afccc1f076cae1a7d",
+      "modular-reference-workflow/workflow-7.jxl": "9977c7dab83e8ca3f637c15cfe89c8bd30e121c3603bbc4afccc1f076cae1a7d",
+      "modular-reference-workflow/workflow-67.jxl": "eb3072163f3bf4dd419f203c79681b88e7b28e08463ee81cc9ae819babb5471c",
+      "modular-reference-workflow/workflow-73.jxl": "5604933e3839c8f3c99db2dfeb74821bf4b9e5825dc3782d945d35a4c9c10bbb",
+      "modular-reference-workflow/workflow-59.jxl": "152a765d1e5956358504fb00556a63f306fcb2fd9d08bf6930e99a481506b7a4",
+      "modular-reference-workflow/workflow-65.jxl": "eb3072163f3bf4dd419f203c79681b88e7b28e08463ee81cc9ae819babb5471c",
+      "modular-reference-workflow/workflow-71.jxl": "d99d15ef4f69244bb24f169ebe2d5cdf46473b0ef6ad1ec22d5e808f7d224b4a",
+      "modular-reference-workflow/workflow-5.jxl": "9977c7dab83e8ca3f637c15cfe89c8bd30e121c3603bbc4afccc1f076cae1a7d",
+      "modular-reference-workflow/workflow-4.jxl": "9977c7dab83e8ca3f637c15cfe89c8bd30e121c3603bbc4afccc1f076cae1a7d",
+      "modular-reference-workflow/workflow-70.jxl": "f0f3a2137b6baddd65bf7d290f4c6e1d5881b538c9acb892fff4a1fa6052f4e5",
+      "modular-reference-workflow/workflow-64.jxl": "eb3072163f3bf4dd419f203c79681b88e7b28e08463ee81cc9ae819babb5471c",
+      "modular-reference-workflow/workflow-58.jxl": "152a765d1e5956358504fb00556a63f306fcb2fd9d08bf6930e99a481506b7a4",
+      "modular-reference-workflow/workflow-17.jxl": "d0c5f16f5887dea0a2aab01457f07250de92fdea1b7272c100016f56d981cc00",
+      "modular-reference-workflow/workflow-16.jxl": "d0c5f16f5887dea0a2aab01457f07250de92fdea1b7272c100016f56d981cc00",
+      "modular-reference-workflow/workflow-14.jxl": "e0e07a716cd694a29932627789625b32fef0f34eb9482bc0a0916641f70d6c49",
+      "modular-reference-workflow/workflow-28.jxl": "cc9f7769f899286eca31068418acaec365f108fdeabd33450ce498f58a34103b",
+      "modular-reference-workflow/workflow-29.jxl": "bc47113a2ff7943de7a3d266658441cad734616badeaad4ae2d16df99d17620c",
+      "modular-reference-workflow/workflow-15.jxl": "ed9da5f56e8e2d00f93affa2ed050ac67a5035879ccff3aa416b2e02478b1562",
+      "modular-reference-workflow/workflow-39.jxl": "8b91ee2c24793b167387cdfd8a05f6f3bd029a66be5e0463abe50b16cdeee090",
+      "modular-reference-workflow/workflow-11.jxl": "29fcf717bd54035e0ae8f85543a4a75a7c952cf0aecd37a1dde166b7a443aba7",
+      "modular-reference-workflow/workflow-10.jxl": "7f08ac303d6e594c578ce1efab35eed4a6757f1c672d31f0b6a9cf978676e33f",
+      "modular-reference-workflow/workflow-38.jxl": "fe0ab30597619cad56e3f1ff1d5554d2d63da683e079d56c0b8b95a1d5008f28",
+      "modular-reference-workflow/workflow-12.jxl": "72fa9ddaf9ce89f59d7650efea861dbe9c573e3c18ae3bf5bfaaae568717f5f4",
+      "modular-reference-workflow/workflow-13.jxl": "547f8a2d67dd0044e4bd53f7f4c0e13584215aa32283135d3b9a27e7d836b4d5"
+    },
+    "builds": {
+      "cpu": {
+        "matched": 169,
+        "different": 0,
+        "missing": 0
+      },
+      "metal": {
+        "matched": 169,
+        "different": 0,
+        "missing": 0
+      },
+      "asan_ubsan": {
+        "matched": 169,
+        "different": 0,
+        "missing": 0
+      }
+    }
+  },
+  "excluded_tests": [
+    "modular_workflow"
+  ],
+  "notes": [
+    "Initial CPU failure: entropy_population; initial Metal failures: entropy_population and modular_candidate_search. These used the pre-fix GPU search palette limit. All passed after the one-line planner correction.",
+    "The remaining Metal GPU workflows started after the corrected executables were rebuilt.",
+    "The general legacy workflow allocation sweep is excluded because of its previously documented runtime. Dedicated allocation-failure tests remain included.",
+    "ASan/UBSan: macOS LeakSanitizer disabled; the independently linked libjxl decoder is uninstrumented."
+  ]
+}

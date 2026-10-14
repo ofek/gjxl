@@ -9,6 +9,9 @@ eight 256-pixel groups and local trees above eight. This is the implementation
 qualified in [the reference workflow](modular-reference-workflow.md) and
 [its timing study](modular-reference-workflow-timing.md).
 
+[The integration report](modular-public-learner-integration.md) qualifies this
+default together with the CPU/Metal performance line on `feat/modular`.
+
 This change promotes that implementation; it adds no further fitting/search,
 WP fallback, LZ77, patches, or GPU dispatch. Rate and timing measurements in those
 studies retain their original corpus and revision boundaries. In particular,
