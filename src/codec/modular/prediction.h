@@ -89,6 +89,12 @@ public:
     Reset();
     return true;
   }
+  bool ResetForWidth(size_t width, const WeightedPredictorParameters &parameters) {
+    if (!parameters.valid() || !ResetForWidth(width))
+      return false;
+    parameters_ = parameters;
+    return true;
+  }
   std::pair<int64_t, int64_t> Predict(size_t x, size_t y, int64_t n, int64_t w, int64_t ne,
                                       int64_t nw, int64_t nn) {
     const size_t current = (y & 1) ? 0 : width_ + 2;

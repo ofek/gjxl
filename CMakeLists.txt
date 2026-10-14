@@ -610,6 +610,7 @@ add_library(
   src/gpu/ops/modular_input_storage_plan.cpp
   src/gpu/ops/modular_token_storage_plan.cpp
   src/gpu/ops/modular_adaptive_token_storage_plan.cpp
+  src/gpu/ops/modular_stream_token_storage_plan.cpp
   src/gpu/ops/modular_adaptive_layout.cpp
   src/gpu/ops/modular_input.cpp
   src/gpu/ops/profile_storage_plan.cpp
@@ -2458,6 +2459,18 @@ if(GJXL_BUILD_TESTS)
   target_link_libraries(gjxl_modular_shared_feature_consumers_test PRIVATE gjxl_codestream)
   add_test(NAME modular_shared_feature_consumers COMMAND gjxl_modular_shared_feature_consumers_test)
   set_tests_properties(modular_shared_feature_consumers PROPERTIES TIMEOUT 60)
+
+  add_executable(gjxl_modular_stream_batch_test tests/modular_stream_batch_test.cpp)
+  target_link_libraries(gjxl_modular_stream_batch_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_stream_batch COMMAND gjxl_modular_stream_batch_test)
+  set_tests_properties(modular_stream_batch PROPERTIES TIMEOUT 60)
+  if(TARGET gjxl_metal)
+    target_link_libraries(gjxl_modular_stream_batch_test PRIVATE gjxl_metal)
+    target_compile_definitions(gjxl_modular_stream_batch_test PRIVATE
+      GJXL_STREAM_BATCH_METAL=1 GJXL_METALLIB_PATH="${GJXL_METALLIB}")
+    add_test(NAME metal_modular_stream_batch COMMAND gjxl_modular_stream_batch_test --metal)
+    set_tests_properties(metal_modular_stream_batch PROPERTIES TIMEOUT 120 SKIP_RETURN_CODE 77)
+  endif()
 
   add_executable(gjxl_modular_selection_cost_test tests/modular_selection_cost_test.cpp)
   target_link_libraries(gjxl_modular_selection_cost_test PRIVATE gjxl_codec)

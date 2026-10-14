@@ -128,4 +128,12 @@ struct WeightedFeatureBatchStoragePlan {
     std::span<const WeightedFeatureSlice> slices, const WeightedPredictorParameters &parameters,
     std::span<WeightedPredictorFeature> output, size_t maximum_participants,
     FeaturePreparationProfile *profile = nullptr);
+// Same execution/storage contract; parameters has either one shared entry or
+// one entry per slice. Every header is validated before any work. Worker scratch
+// is reused with both width and parameters reset at each independent slice.
+[[nodiscard]] Status PrepareWeightedPredictorFeatureBatchWithParameters(
+    std::span<const WeightedFeatureSlice> slices,
+    std::span<const WeightedPredictorParameters> parameters,
+    std::span<WeightedPredictorFeature> output, size_t maximum_participants,
+    FeaturePreparationProfile *profile = nullptr);
 } // namespace gjxl::modular_internal

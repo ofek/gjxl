@@ -1,6 +1,6 @@
 # Shared weighted features for the histogram learner
 
-Status: Step 1 complete; batch/workflow integration and qualification remain.
+Status: Steps 1–2 complete; workflow integration and qualification remain.
 Work is on `feat/parallel-weighted-feature-prep`,
 starting from `81467ca` (the public learner integration). The earlier
 [weighted-feature effort](parallel-weighted-feature-preparation.md) is complete
@@ -92,6 +92,26 @@ Avoid retaining a full large-image map merely because the old whole-frame GPU
 owner did so. Retained tokens may outlive their feature maps and retain stream
 boundaries for the unchanged CPU entropy continuation.
 
+`GpuModularStreamProcessing` now accepts up to 1,024 nonempty independent
+channel slices, with explicit original stream/channel IDs and per-slice WP
+parameters. Its pixel-read-free storage planner validates backing, headers,
+checked sizes and backend limits. One packed plane arena, one immutable feature
+arena and the original-source feature views survive preparation. Temporary
+dispatch/CPU worker backing is released before publication. The CPU producer
+resets both width and parameters on reused worker scratch.
+
+Token generation takes a complete ordered partition of the slices into tree
+bindings. The Metal dispatch packs those trees once per binding and keeps child
+indices and entropy contexts local to each tree. The caller still validates
+image-dependent decoder bounds and local/shared model scopes. The resulting
+split value/context arena owns its charge independently of feature maps.
+
+Both preparation and generation expose fresh-storage plans that exclude old
+output and borrowed source/tree backing. Callers reserve each stage alongside
+all live retained backing. Mixed or oversized wavefront shapes choose the CPU
+feature producer before work; the workflow should separate those small streams
+from ordinary GPU batches. Errors after execution begins remain terminal.
+
 ## Qualification gates
 
 - Compare scalar and shared-map preparation with mixed WP headers, strided
@@ -127,4 +147,21 @@ gjxl_modular_weighted_features_test gjxl_modular_reference_workflow_test`, follo
 by CTest restricted to the four named checks. The exhaustive legacy
 `modular_workflow` allocation sweep was not run.
 
-No new GPU workflow or performance result is claimed at this stage.
+Step 2, Release CPU-only and Metal builds:
+
+- CPU: `modular_stream_batch`, `modular_shared_feature_consumers`, and
+  `modular_weighted_feature_batch` passed.
+- Metal: `modular_stream_batch`, `metal_modular_stream_batch`,
+  `modular_weighted_feature_batch`, `metal_modular_adaptive`, and
+  `metal_modular_weighted_features` passed.
+- New coverage includes mixed headers with 1/2/4 CPU participants; six Metal
+  batch cases comparing 999,744 feature/token entries in total; a confirmed GPU
+  wavefront batch; larger metadata and small automatic CPU routes; independent
+  trees using all predictors and coding IDs; allocation/submission/completion
+  failure publication; undersized admission; arithmetic failures; and rejection
+  of an owner from another backend instance. Existing adaptive/wavefront tests
+  cover legacy ABI compatibility after the shared kernel changes.
+- CTest logs are retained locally under
+  `build/histogram-gpu-integration/step2-{cpu,metal}-ctest.log`.
+
+No new complete GPU workflow or performance result is claimed at this stage.
