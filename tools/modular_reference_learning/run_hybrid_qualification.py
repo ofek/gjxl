@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 import platform
+import re
 import shutil
 import statistics
 import subprocess
@@ -29,6 +30,34 @@ def digest(path):
 
 def command(args):
     return subprocess.check_output(args, text=True).strip()
+
+
+def mac_dependencies(binary):
+    """Resolve direct install names using the frozen executable's load commands."""
+    require(not any(k.startswith("DYLD_") for k in os.environ),
+            "Run qualification without DYLD environment overrides")
+    listing = command(["otool", "-L", str(binary)])
+    commands = command(["otool", "-l", str(binary)])
+
+    def expand(path):
+        for prefix in ["@loader_path", "@executable_path"]:
+            if path.startswith(prefix + "/"):
+                return binary.parent / path[len(prefix) + 1:]
+        return Path(path)
+
+    runpaths = [expand(p) for p in re.findall(
+        r"\bcmd LC_RPATH\n\s+cmdsize \d+\n\s+path (.*?) \(offset \d+\)", commands)]
+    hashes = {}
+    for line in listing.splitlines()[1:]:
+        name = line.strip().split(" (", 1)[0]
+        if name.startswith(("/usr/lib/", "/System/")):
+            continue
+        candidates = ([p / name[len("@rpath/"):] for p in runpaths]
+                      if name.startswith("@rpath/") else [expand(name)])
+        path = next((p.resolve() for p in candidates if p.is_file()), None)
+        require(path is not None, "Cannot resolve linked dependency: " + name)
+        hashes[str(path)] = digest(path)
+    return listing, hashes
 
 
 def environment():
@@ -83,12 +112,7 @@ def main():
                  "detail is nested within training; GPU-token detail is nested within tokens.",
     }
     if platform.system() == "Darwin":
-        manifest["linked_libraries"] = command(["otool", "-L", str(frozen)])
-        manifest["dependency_sha256"] = {}
-        for line in manifest["linked_libraries"].splitlines()[1:]:
-            path = Path(line.strip().split(" (", 1)[0])
-            if path.is_absolute() and path.is_file() and not str(path).startswith(("/usr/lib/", "/System/")):
-                manifest["dependency_sha256"][str(path)] = digest(path)
+        manifest["linked_libraries"], manifest["dependency_sha256"] = mac_dependencies(frozen)
     for name in ["CMakeCache.txt", "compile_commands.json"]:
         source = binary.parent / name
         if source.is_file():
