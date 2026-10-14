@@ -128,6 +128,19 @@ sweep, with separate JUnit reports. Their test selections were verified to be
 disjoint and collectively exhaustive. This follow-up changes test setup only;
 Windows qualification remains pending on the updated PR revision.
 
+### Hosted Metal test timing
+
+The Windows fixes in `3141887` passed the regular Modular and remaining suites
+on both Windows language standards. One macOS C++20 job then timed out in the
+unchanged `metal_resource_budget` test at 30.04 seconds. The same production
+code and test had passed at 29.94 seconds in the previous C++20 run and at
+21.69 seconds in C++23. The test repeatedly creates Metal backends/pipelines;
+its overall CTest limit is now 120 seconds to allow hosted startup variability.
+Its internal five-second liveness deadlines and all resource assertions are
+unchanged. This does not change a codec limit or skip a check. The diagnostic
+is [the macOS C++20 job](https://github.com/yunho-c/gjxl/actions/runs/38518973614/job/115704054480),
+retained locally at `build/pr48-macos-cxx20-follow-up-tests.log`.
+
 ## Reproduction and evidence
 
 Configure with tests and benchmarks enabled, CUDA disabled, and

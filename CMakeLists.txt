@@ -3855,7 +3855,9 @@ if(GJXL_BUILD_TESTS)
     GJXL_METALLIB_PATH="${GJXL_METALLIB}")
   add_dependencies(gjxl_metal_resource_budget_test gjxl_metal_shaders)
   add_test(NAME metal_resource_budget COMMAND gjxl_metal_resource_budget_test)
-  set_tests_properties(metal_resource_budget PROPERTIES TIMEOUT 30)
+  # Repeated backend/pipeline creation can take ~30s on the hosted Metal GPU.
+  # Leave startup headroom; the test keeps its own 5s liveness deadlines.
+  set_tests_properties(metal_resource_budget PROPERTIES TIMEOUT 120)
 
   add_executable(gjxl_metal_diagnostic_storage_test tests/metal_diagnostic_storage_test.cpp)
   target_link_libraries(gjxl_metal_diagnostic_storage_test PRIVATE gjxl_codestream gjxl_metal)

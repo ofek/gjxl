@@ -1063,5 +1063,19 @@
     "shard_timeout_seconds": 7200,
     "ci_test_partitions_disjoint_and_complete": true,
     "windows_status": "Pending hosted validation of the follow-up revision."
+  },
+  "hosted_metal_timeout_follow_up": {
+    "production_and_test_source_unchanged": true,
+    "test": "metal_resource_budget",
+    "previous_passing_seconds": [
+      29.94,
+      21.69
+    ],
+    "timed_out_seconds": 30.04,
+    "old_ctest_timeout_seconds": 30,
+    "new_ctest_timeout_seconds": 120,
+    "internal_liveness_timeout_seconds": 5,
+    "job": "https://github.com/yunho-c/gjxl/actions/runs/38518973614/job/115704054480",
+    "windows_regular_suites_passed_on": "31418870d03d559c379d55f5a871143403ece8b8"
   }
 }
