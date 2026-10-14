@@ -8,6 +8,26 @@ mode. `entropy_efficiency.py` captures and audits the original three full-resolu
 images with exact/estimated GPU pairs and independent CPU estimated controls.
 See the plan for reproduction commands and qualification status.
 
+The [parallel weighted-feature preparation report](../../docs/parallel-weighted-feature-preparation.md)
+documents bounded CPU preparation and the Metal wavefront producer. On a Metal
+benchmark build, `gjxl_modular_feature_profile INPUT REPETITIONS raw|rct|squeeze|palette`
+compares one/two/four CPU participants and GPU preparation of the same prepared
+frame. It emits one warm-up plus the requested measured rounds, reversing order
+between rounds, and checks every feature against the serial reference. Input
+reading/transforms, backend setup and the retained reference are outside its
+operation timer; allocation, copies, scheduling/dispatch, completion and publication
+are inside. Its reservation covers one operation; the source and reference are
+additional live memory outside that reservation.
+
+For complete encoder comparisons, `gjxl_modular_search_profile` accepts
+`--cpu-features`, `--gpu-features` or `--auto-features` with a Metal route. Auto is
+the workflow default and selects the producer before execution using the
+qualified size/shape gate. `adaptive_gpu.feature_preparation` records actual CPU
+participants, GPU work and pre-dispatch CPU fallbacks. `--gpu-features` bypasses
+the size gate but still respects device and shape eligibility. Errors after work
+begins propagate without retry. These switches do not change learner policy or
+feature sharing, and they do not select GPU feature work in CPU-only encoding.
+
 This opt-in CPU study measures complete raw lossless Modular files, including
 transform/tree/model headers and padding. It does not modify public defaults.
 Use a clean pinned libjxl source/build for independent sample-exact decoding.

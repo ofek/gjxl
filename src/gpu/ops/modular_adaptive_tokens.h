@@ -3,6 +3,7 @@
 #pragma once
 #include "core/host_storage_bound.h"
 #include "gpu/ops/modular_tokenization.h"
+#include "codec/modular/weighted_features.h"
 
 namespace gjxl::modular_gpu_internal {
 // Separate ABI from the original RCT-only token producer. Every neighborhood
@@ -15,6 +16,22 @@ struct AdaptiveModularTokenSlice {
   bool operator==(const AdaptiveModularTokenSlice &) const = default;
 };
 using AdaptiveModularWeightedFeature = modular_internal::WeightedPredictorFeature;
+// Shape-only GPU feature eligibility, after canonical descriptor validation.
+// Kept separate so future larger metadata/global slices fail before dispatch.
+[[nodiscard]] inline bool GpuWeightedFeatureSlicesSupported(
+    std::span<const AdaptiveModularTokenSlice> slices) {
+  if (slices.empty()) return false;
+  for (const auto &s : slices)
+    if (!s.width || !s.height || s.width > 256 || s.height > 256) return false;
+  return true;
+}
+// Conservative automatic crossover qualified against four CPU participants on
+// M4 Pro, including complete allocation/copy/dispatch/wait/publication costs.
+// Small or mostly narrow slices keep the bounded CPU route. Shape and device
+// eligibility must still be checked separately before any execution begins.
+[[nodiscard]] constexpr bool PreferGpuWeightedFeatures(size_t samples, size_t slices) {
+  return slices && samples >= 4 * 1024 * 1024 && samples / slices >= 16384;
+}
 struct AdaptiveModularTreeEligibility {
   size_t node_count = 0, context_count = 0;
   bool weighted = false;
@@ -32,10 +49,11 @@ struct AdaptiveModularTokenStoragePlan {
   size_t plane_bytes = 0, weighted_bytes = 0;
   size_t values_bytes = 0, contexts_offset = 0, output_bytes = 0;
   size_t slices_bytes = 0, nodes_offset = 0, status_offset = 0, dispatch_bytes = 0;
+  size_t feature_dispatch_bytes = 0;
   // Completed features own plane/weighted arenas and one host slice copy.
   resource_budget_internal::HostStorageBound features;
-  // Includes the borrowed managed CPU frame, weighted staging and five two-row
-  // arrays per participant. Original packed input and old output are separate.
+  // Includes the borrowed CPU frame, weighted staging, borrowed-job descriptors,
+  // per-participant predictor rows and scheduler backing. Old output is separate.
   size_t bridge_peak_bytes = 0;
   // Features + output + device dispatch + fresh exact host dispatch staging.
   size_t generation_peak_bytes = 0;
@@ -74,8 +92,8 @@ public:
 protected:
   PreparedGpuAdaptiveModularFeatures() = default;
 };
-// Optional private capability. The CPU bridge generates weighted history before
-// publication; token evaluation consumes it without dependence between pixels.
+// Optional private capability. A bounded CPU or GPU producer completes weighted
+// history before publication; token evaluation consumes the same immutable map.
 // Both calls consume an admitted ambient reservation, preserve old output on
 // failure, drain pending work, and never silently retry on CPU.
 class GpuAdaptiveModularTokenGeneration {
@@ -87,7 +105,10 @@ public:
                                  std::span<const AdaptiveModularTokenSlice> slices,
                                  const modular_internal::WeightedPredictorParameters &parameters,
                                  bool weighted,
-                                 std::unique_ptr<PreparedGpuAdaptiveModularFeatures> *out) = 0;
+                                 std::unique_ptr<PreparedGpuAdaptiveModularFeatures> *out,
+                                 size_t maximum_cpu_participants = 1,
+                                 modular_internal::WeightedFeatureBackend feature_backend =
+                                     modular_internal::WeightedFeatureBackend::kCpu) = 0;
   [[nodiscard]] virtual Status
   GenerateAdaptiveModularTokens(const PreparedGpuAdaptiveModularFeatures &features,
                                 const modular_internal::DecisionTree &tree,

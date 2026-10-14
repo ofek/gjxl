@@ -73,11 +73,21 @@ public:
       errors.resize((width + 2) * 2);
   }
   void Reset() {
-    std::fill(error_.begin(), error_.end(), 0);
+    const size_t rows = (width_ + 2) * 2;
+    std::fill_n(error_.begin(), rows, 0);
     for (auto &errors : prediction_errors_)
-      std::fill(errors.begin(), errors.end(), 0);
+      std::fill_n(errors.begin(), rows, 0);
     predictions_ = {};
     prediction_ = 0;
+  }
+  // Reuse admitted backing without allocation. Logical row offsets and edge
+  // clamping must use this slice's width, not the maximum backing width.
+  bool ResetForWidth(size_t width) {
+    if (!width || error_.size() < 4 || width > error_.size() / 2 - 2)
+      return false;
+    width_ = width;
+    Reset();
+    return true;
   }
   std::pair<int64_t, int64_t> Predict(size_t x, size_t y, int64_t n, int64_t w, int64_t ne,
                                       int64_t nw, int64_t nn) {

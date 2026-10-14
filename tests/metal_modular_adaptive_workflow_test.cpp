@@ -5,6 +5,7 @@
 #include "codestream/workflow_admission_scope.h"
 #include "codestream/workflow_admission_test.h"
 #include "core/cpu_execution.h"
+#include "core/worker_launch_internal.h"
 #include "gpu/metal/metal_backend.h"
 #include "gpu/ops/modular_tree_statistics.h"
 #if GJXL_MODULAR_ADAPTIVE_REFERENCE
@@ -23,6 +24,7 @@ using namespace gjxl::resource_budget_internal;
 size_t cases = 0, decoded_samples = 0, fault_checks = 0;
 std::filesystem::path artifacts;
 std::string context;
+WeightedFeatureBackend workflow_feature_backend = WeightedFeatureBackend::kCpu;
 void Check(bool value, const char *message) {
   if (!value)
     throw std::runtime_error(message);
@@ -99,6 +101,7 @@ void Case(GpuBackend &gpu, const Fixture &f, ModularEncodingOptions options, boo
           bool require_gpu_statistics = false) {
   options.adaptive_ans_cost = ans_cost;
   options.adaptive_tree_statistics = tree_statistics;
+  options.weighted_feature_backend = workflow_feature_backend;
   const bool shared = options.adaptive_shared_features;
   options.adaptive_gpu = &gpu;
   const auto plan = Plan(f, options);
@@ -133,7 +136,8 @@ void Case(GpuBackend &gpu, const Fixture &f, ModularEncodingOptions options, boo
             actual.adaptive_gpu.encoded_candidates == actual.encoded_candidates &&
             actual.adaptive_gpu.cpu_fallback_candidates == 0 &&
             gpu.stats().committed_submissions - before.committed_submissions ==
-                actual.encoded_candidates + actual.adaptive_gpu.ans_gpu_groups + actual.adaptive_gpu.tree_gpu_groups,
+                actual.encoded_candidates + actual.adaptive_gpu.ans_gpu_groups + actual.adaptive_gpu.tree_gpu_groups +
+                    actual.adaptive_gpu.feature_preparation.gpu_calls,
         "Hybrid search changed bytes, selected policy, candidate count, or silently fell back");
   const auto &g = actual.adaptive_gpu;
   if (options.entropy == EntropyCodingMode::kAns) {
@@ -191,10 +195,14 @@ void Case(GpuBackend &gpu, const Fixture &f, ModularEncodingOptions options, boo
   const auto &detail = g.feature_preparation;
   const double preparation = detail.allocation_seconds + detail.copy_seconds + detail.scratch_seconds +
                              detail.prediction_seconds + detail.publication_seconds;
-  Check(detail.allocation_seconds > 0 && detail.copy_seconds > 0 && detail.publication_seconds > 0 &&
-            detail.scratch_seconds > 0 && detail.prediction_seconds > 0 &&
+  // A short publication can fit within one steady-clock tick.
+  Check(detail.allocation_seconds > 0 && detail.copy_seconds > 0 && detail.publication_seconds >= 0 &&
+            detail.scratch_seconds >= 0 && detail.prediction_seconds > 0 &&
             preparation <= g.feature_seconds + 1e-6,
         "Feature preparation details are missing or overlap their parent");
+  Check(detail.slice_jobs >= g.feature_preparations, "Weighted job count omitted a feature preparation");
+  Check((detail.peak_participants > 0 || detail.gpu_calls > 0) && detail.peak_participants <= plan.cpu.participants,
+        "Weighted participants exceeded whole-workflow admission");
   if (options.search) {
     const auto &a = actual.training_work, &b = baseline.training_work;
     Check(g.feature_reuses > 0 && a.learning_calls == b.learning_calls &&
@@ -288,14 +296,17 @@ public:
   Status PrepareAdaptiveModularFeatures(
       const ModularEncoderFrame &frame, std::span<const AdaptiveModularTokenSlice> slices,
       const WeightedPredictorParameters &parameters, bool weighted,
-      std::unique_ptr<PreparedGpuAdaptiveModularFeatures> *out) override {
+      std::unique_ptr<PreparedGpuAdaptiveModularFeatures> *out,
+      size_t maximum_cpu_participants = 1,
+      WeightedFeatureBackend feature_backend = WeightedFeatureBackend::kCpu) override {
     Check(CurrentResourceContext().reservation && thread_budget_internal::HasCpuParticipation(),
           "Adaptive feature work started without admission");
     if (++preparations == fail_preparation)
       return unsupported_after_preflight
                  ? Status::Unsupported("Injected numeric feature failure")
                  : Status::DeviceError("Injected replacement feature failure");
-    if (auto s = native.PrepareAdaptiveModularFeatures(frame, slices, parameters, weighted, out); !s.ok())
+    if (auto s = native.PrepareAdaptiveModularFeatures(frame, slices, parameters, weighted, out,
+                                                      maximum_cpu_participants, feature_backend); !s.ok())
       return s;
     if (borrow_failure) *out = std::make_unique<BorrowFault>(std::move(*out), borrow_failure);
     return Status::Ok();
@@ -764,12 +775,42 @@ void SharedFeatureAdmission(GpuBackend &gpu) {
     ++fault_checks;
   }
 }
+void ParallelFeatureFailures(GpuBackend &gpu) {
+  using namespace thread_budget_internal;
+  Fixture f(PackedModularFormat::kRgb16, {257, 17});
+  ModularEncodingOptions options;
+  options.adaptive_gpu = &gpu;
+  options.cpu_thread_count = 4;
+  options.coding.tree.nodes[0].predictor = Predictor::kWeighted;
+  const auto plan = Plan(f, options);
+  for (auto kind : {WorkerLaunchFailureKind::kSystemError, WorkerLaunchFailureKind::kBadAlloc})
+    for (size_t before : {size_t{0}, size_t{1}, size_t{2}}) {
+      Ok(ExecutionDomain::Create({plan.peak_bytes, 4}, &options.execution_domain));
+      std::vector<uint8_t> output{7, 8, 9};
+      const auto original = output;
+      WorkerLaunchFaultForTesting fault{WorkerLaunchSite::kModularWeightedFeatures, before, kind};
+      Status status;
+      {
+        WorkerLaunchFaultScopeForTesting inject(&fault);
+        status = EncodeModularImage(f.view, options, &output);
+      }
+      Check(fault.triggered && fault.launched_in_group == before && output == original &&
+                status.code() == (kind == WorkerLaunchFailureKind::kBadAlloc
+                                    ? StatusCode::kOutOfMemory : StatusCode::kInternal),
+            "Feature worker launch failure published output or retried encoding");
+      Empty(*options.execution_domain);
+      ++fault_checks;
+    }
+}
 } // namespace
 int main(int argc, char **argv) try {
   artifacts = argc > 1 ? argv[1] : "metal-modular-adaptive-workflow";
   std::filesystem::create_directories(artifacts);
+  if (argc > 2 && std::string_view(argv[2]) == "--gpu-features")
+    workflow_feature_backend = WeightedFeatureBackend::kGpu;
   std::unique_ptr<GpuBackend> gpu;
   Ok(CreateEmbeddedMetalBackend({}, &gpu));
+  ParallelFeatureFailures(*gpu);
   if (argc > 2 && std::string_view(argv[2]) == "--shared-features") {
     SharedFeatureAdmission(*gpu);
     for (auto format : {PackedModularFormat::kGray8, PackedModularFormat::kRgb8,

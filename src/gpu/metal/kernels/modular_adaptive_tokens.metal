@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: BSD-3-Clause
 // General transformed-plane arithmetic follows the pinned scalar predictor.
 #include "modular_adaptive_params.h"
+#include "../../../codec/modular/weighted_feature_math.h"
 #include <metal_stdlib>
 using namespace metal;
 using namespace gjxl_modular_adaptive;
@@ -172,4 +173,43 @@ kernel void gjxl_modular_adaptive_diagnostic(device const int *planes [[buffer(0
                                              device Diagnostic *trace [[buffer(5)]],
                                              uint2 id [[thread_position_in_grid]]) {
   tokenize<true>(planes, features, output, dispatch, p, id, trace);
+}
+
+// One independent slice per group. All lanes reach every barrier, including
+// inactive rows and lanes downstream of a numerical failure. Four banks retain
+// dependencies at t-1, t-2 and t-3 for t=x+2*y; no whole-image error map is needed.
+kernel void gjxl_modular_weighted_features(
+    device const int *planes [[buffer(0)]], device WeightedFeature *features [[buffer(1)]],
+    device const Slice *slices [[buffer(2)]], device atomic_uint *status [[buffer(3)]],
+    constant gjxl_weighted_features::Parameters &parameters [[buffer(4)]],
+    uint group [[threadgroup_position_in_grid]], uint lane [[thread_index_in_threadgroup]]) {
+  using namespace gjxl_weighted_features;
+  threadgroup State frontier[4 * 256];
+  const Slice s = slices[group];
+  device const int *plane = planes + s.plane_offset_elements;
+  for (uint step = 0; step < s.width + 2 * s.height - 2; ++step) {
+    for (uint y = lane; y < s.height; y += 128) {
+      if (step < 2 * y)
+        continue;
+      const uint x = step - 2 * y;
+      if (x >= s.width)
+        continue;
+      const State west = x ? frontier[((step - 1) & 3) * 256 + y] : State{};
+      const State westwest = x > 1 ? frontier[((step - 2) & 3) * 256 + y] : State{};
+      const State north = y ? frontier[((step - 2) & 3) * 256 + y - 1] : State{};
+      const State northeast =
+          y ? (x + 1 < s.width ? frontier[((step - 1) & 3) * 256 + y - 1] : north) : State{};
+      const State northwest = y ? (x ? frontier[((step - 3) & 3) * 256 + y - 1] : north) : State{};
+      const auto n = neighbors(plane, s.plane_stride_elements, s.width, x, y);
+      const auto result =
+          PredictAndUpdate(x, s.width, {n.top, n.left, n.top_right, n.top_left, n.top_top},
+                           plane[ulong(y) * s.plane_stride_elements + x], parameters, west,
+                           westwest, north, northeast, northwest);
+      features[s.token_offset + ulong(y) * s.width + x] = {result.prediction, result.property15};
+      frontier[(step & 3) * 256 + y] = result.state;
+      if (!result.valid)
+        atomic_store_explicit(status, 1u, memory_order_relaxed);
+    }
+    threadgroup_barrier(mem_flags::mem_threadgroup);
+  }
 }

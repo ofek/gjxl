@@ -3,6 +3,7 @@
 #include "gpu/metal/metal_backend_internal.h"
 #include "gpu/ops/modular_adaptive_layout.h"
 #include "codec/modular/profile.h"
+#include "codec/modular/weighted_feature_math.h"
 #include <cstring>
 
 namespace gjxl::metal_internal {
@@ -19,6 +20,9 @@ static_assert(sizeof(Params) == 40 && alignof(Params) == 8);
 static_assert(sizeof(Slice) == sizeof(AdaptiveModularTokenSlice) && alignof(Slice) == 8);
 static_assert(sizeof(Feature) == sizeof(AdaptiveModularWeightedFeature) && alignof(Feature) == 8);
 static_assert(sizeof(Node) == sizeof(ModularTokenNode));
+static_assert(sizeof(gjxl_weighted_features::Parameters) == 44 &&
+              alignof(gjxl_weighted_features::Parameters) == 4);
+static_assert(sizeof(gjxl_weighted_features::State) == 20);
 static_assert(sizeof(AdaptiveModularDiagnostic) == 272 &&
               offsetof(AdaptiveModularDiagnostic, leaf) == 248);
 #define OFFSET(A, B, f) static_assert(offsetof(A, f) == offsetof(B, f))
@@ -119,6 +123,23 @@ void Encode(MetalBackend &, MTL::ComputeCommandEncoder *encoder, const void *opa
   DispatchMetalThreads(encoder, MTL::Size(c.maximum_slice_tokens, c.params.slice_count, 1),
                        MTL::Size(64, 1, 1));
 }
+struct WeightedContext {
+  MTL::Buffer *planes, *features, *dispatch;
+  MTL::ComputePipelineState *pipeline;
+  gjxl_weighted_features::Parameters parameters;
+  size_t slices, status_offset;
+};
+void EncodeWeighted(MetalBackend &, MTL::ComputeCommandEncoder *encoder, const void *opaque) {
+  const auto &c = *static_cast<const WeightedContext *>(opaque);
+  encoder->setComputePipelineState(c.pipeline);
+  RecordMetalComputePipelineState(c.pipeline);
+  encoder->setBuffer(c.planes, 0, 0);
+  encoder->setBuffer(c.features, 0, 1);
+  encoder->setBuffer(c.dispatch, 0, 2);
+  encoder->setBuffer(c.dispatch, c.status_offset, 3);
+  encoder->setBytes(&c.parameters, sizeof(c.parameters), 4);
+  DispatchMetalThreadgroups(encoder, MTL::Size(c.slices, 1, 1), MTL::Size(128, 1, 1));
+}
 } // namespace
 ModularTokenDeviceLimits MetalBackend::adaptive_modular_limits() const noexcept {
   return {size_t(PTRDIFF_MAX) / sizeof(uint32_t), UINT32_MAX,
@@ -127,27 +148,38 @@ ModularTokenDeviceLimits MetalBackend::adaptive_modular_limits() const noexcept 
 Status MetalBackend::PrepareAdaptiveModularFeatures(
     const ModularEncoderFrame &frame, std::span<const AdaptiveModularTokenSlice> slices,
     const WeightedPredictorParameters &parameters, bool weighted,
-    std::unique_ptr<PreparedGpuAdaptiveModularFeatures> *out) try {
-  if (!out || !parameters.valid())
+    std::unique_ptr<PreparedGpuAdaptiveModularFeatures> *out, size_t maximum_cpu_participants,
+    WeightedFeatureBackend feature_backend) try {
+  if (!out || !parameters.valid() ||
+      (feature_backend != WeightedFeatureBackend::kCpu &&
+       feature_backend != WeightedFeatureBackend::kGpu &&
+       feature_backend != WeightedFeatureBackend::kAuto))
     return Status::InvalidArgument("Invalid adaptive Modular feature output/parameters");
   AdaptiveModularLayout layout;
   if (auto s = ComputeAdaptiveModularLayout(frame, &layout); !s.ok())
     return s;
   if (auto s = ValidateAdaptiveModularSlices(layout, slices); !s.ok())
     return s;
+  const bool gpu_eligible =
+      modular_token_pipelines_[5] && GpuWeightedFeatureSlicesSupported(slices);
+  const bool use_gpu = weighted && gpu_eligible &&
+                       (feature_backend == WeightedFeatureBackend::kGpu ||
+                        (feature_backend == WeightedFeatureBackend::kAuto &&
+                         PreferGpuWeightedFeatures(layout.tokens, slices.size())));
   AdaptiveModularTokenStoragePlan storage;
   const auto limits = adaptive_modular_limits();
-  if (auto s =
-          ComputeAdaptiveModularTokenStoragePlan(layout.shape.channels(), layout.shape.metadata,
-                                                 slices.size(), 1, weighted, 1, &storage, &limits);
+  if (auto s = ComputeAdaptiveModularTokenStoragePlan(
+          layout.shape.channels(), layout.shape.metadata, slices.size(), 1, weighted,
+          maximum_cpu_participants, &storage, &limits);
       !s.ok())
     return s;
   const ManagedHostScope resources(ResourceClass::kPreparation);
-  auto *profile = active_modular_profile ? &active_modular_profile->adaptive_gpu.feature_preparation
-                                       : nullptr;
+  auto *profile =
+      active_modular_profile ? &active_modular_profile->adaptive_gpu.feature_preparation : nullptr;
   std::unique_ptr<CompletedFeatures> candidate;
   {
-    const FeaturePreparationScope allocation(profile, &FeaturePreparationProfile::allocation_seconds);
+    const FeaturePreparationScope allocation(profile,
+                                             &FeaturePreparationProfile::allocation_seconds);
     candidate = std::make_unique<CompletedFeatures>();
     candidate->backend = id();
     candidate->source = frame.metadata();
@@ -171,28 +203,90 @@ Status MetalBackend::PrepareAdaptiveModularFeatures(
       std::memcpy(planes + layout.plane_offsets[c], source.backing.data(), bytes);
     }
   }
-  if (weighted) {
+  if (use_gpu) {
+    WeightedContext context{AsMetalBuffer(*candidate->planes)->handle(),
+                            AsMetalBuffer(*candidate->weighted)->handle(),
+                            nullptr,
+                            modular_token_pipelines_[5].get(),
+                            {},
+                            slices.size(),
+                            storage.nodes_offset};
+    for (size_t i = 0; i < 7; ++i)
+      context.parameters.coefficients[i] = parameters.coefficients[i];
+    for (size_t i = 0; i < 4; ++i)
+      context.parameters.weights[i] = parameters.weights[i];
+    std::unique_ptr<DeviceBuffer> dispatch;
+    Pending pending;
+    {
+      const FeaturePreparationScope allocation(profile,
+                                               &FeaturePreparationProfile::allocation_seconds);
+      if (auto s = Allocate(storage.feature_dispatch_bytes, &dispatch); !s.ok())
+        return s;
+    }
+    auto *bytes = static_cast<std::byte *>(AsMetalBuffer(*dispatch)->contents());
+    {
+      const FeaturePreparationScope copy(profile, &FeaturePreparationProfile::copy_seconds);
+      std::memcpy(bytes, slices.data(), storage.slices_bytes);
+      std::memset(bytes + storage.nodes_offset, 0, sizeof(uint32_t));
+    }
+    context.dispatch = AsMetalBuffer(*dispatch)->handle();
+    if (profile) {
+      ++profile->gpu_calls;
+      profile->gpu_samples += storage.token_count;
+      profile->slice_jobs += slices.size();
+    }
+    {
+      const FeaturePreparationScope computation(profile,
+                                                &FeaturePreparationProfile::prediction_seconds);
+      if (auto s = SubmitCompute("modular.weighted_features", EncodeWeighted, &context,
+                                 &pending.submission);
+          !s.ok())
+        return s;
+      if (!pending.submission)
+        return Status::Internal("Weighted features returned no submission");
+      if (auto s = pending.Wait(); !s.ok())
+        return s;
+      uint32_t status;
+      std::memcpy(&status, bytes + storage.nodes_offset, sizeof(status));
+      if (status & ~uint32_t{1})
+        return Status::DeviceError("Invalid weighted feature status");
+      if (status)
+        return Status::Unsupported("Adaptive Modular weighted state exceeds supported range");
+    }
+  } else if (weighted) {
+    if (profile && feature_backend != WeightedFeatureBackend::kCpu)
+      ++profile->cpu_fallback_calls;
     // Shared storage is initialized directly: no full-image feature staging or
     // hidden tokenization. Each scalar weighted recurrence resets at its slice.
     auto *features = static_cast<AdaptiveModularWeightedFeature *>(
         AsMetalBuffer(*candidate->weighted)->contents());
-    if (auto s = VisitAdaptiveModularSlices(
-            layout,
-            [&](const auto &slice, size_t c, ModularRect rect) {
-              auto view = frame.image().view(c);
-              view.backing = view.backing.subspan(rect.y * view.stride + rect.x);
-              view.descriptor.extent = rect.extent;
-              return PrepareWeightedPredictorFeatures(
-                  view, parameters,
-                  std::span(features, storage.token_count)
-                      .subspan(slice.token_offset, size_t{slice.width} * slice.height),
-                  profile);
-            });
+    ManagedVector<WeightedFeatureSlice> jobs;
+    {
+      const FeaturePreparationScope allocation(profile,
+                                               &FeaturePreparationProfile::allocation_seconds);
+      jobs.resize(slices.size());
+      size_t index = 0;
+      if (auto s = VisitAdaptiveModularSlices(
+              layout,
+              [&](const auto &slice, size_t c, ModularRect rect) {
+                auto view = frame.image().view(c);
+                view.backing = view.backing.subspan(rect.y * view.stride + rect.x);
+                view.descriptor.extent = rect.extent;
+                jobs[index++] = {view, static_cast<size_t>(slice.token_offset)};
+                return Status::Ok();
+              });
+          !s.ok())
+        return s;
+    }
+    if (auto s = PrepareWeightedPredictorFeatureBatch(jobs, parameters,
+                                                      std::span(features, storage.token_count),
+                                                      maximum_cpu_participants, profile);
         !s.ok())
       return s;
   }
   {
-    const FeaturePreparationScope publication(profile, &FeaturePreparationProfile::publication_seconds);
+    const FeaturePreparationScope publication(profile,
+                                              &FeaturePreparationProfile::publication_seconds);
     if (weighted) {
       std::span<const std::byte> bytes;
       if (auto s = BorrowCompletedReadOnly(*candidate->weighted, storage.weighted_bytes, 0, &bytes);

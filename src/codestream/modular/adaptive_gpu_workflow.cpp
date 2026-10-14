@@ -17,7 +17,8 @@ using namespace modular_gpu_internal;
 using namespace resource_budget_internal;
 namespace {
 Status AdditionalBound(const ModularInputProfile &source, const ModularFrameGeometry &geometry,
-                       const TransformSequence &transforms, size_t nodes, bool ans_cost, size_t *out, size_t *samples) {
+                       const TransformSequence &transforms, size_t nodes, bool ans_cost,
+                       size_t participants, size_t *out, size_t *samples) {
   std::array<ChannelShape, kMaximumTransforms + 1> shapes;
   if (auto s = PlanTransforms(source.channels(), 0, transforms, &shapes); !s.ok())
     return s;
@@ -38,7 +39,7 @@ Status AdditionalBound(const ModularInputProfile &source, const ModularFrameGeom
   const size_t slices = std::min(total, layout.maximum_slices);
   AdaptiveModularTokenStoragePlan tokens;
   if (auto s = ComputeAdaptiveModularTokenStoragePlan(shape.channels(), shape.metadata, slices,
-                                                      nodes, true, 1, &tokens);
+                                                      nodes, true, participants, &tokens);
       !s.ok())
     return s;
   HostStorageBound additional = layout.owned;
@@ -117,7 +118,7 @@ Status ComputeAdaptiveModularWorkflowStoragePlan(Extent2D extent, PackedModularF
                         (options.ans_selection == AnsSelectionMode::kExact ||
                          options.search_evaluation != ModularSearchEvaluation::kEncodeAll);
   if (auto s = AdditionalBound(source, result.cpu.geometry, options.coding.transforms, nodes,
-                               ans_cost, &result.additional_peak_bytes, &maximum_samples);
+                               ans_cost, result.cpu.participants, &result.additional_peak_bytes, &maximum_samples);
       !s.ok())
     return s;
   if (options.search) {
@@ -130,7 +131,8 @@ Status ComputeAdaptiveModularWorkflowStoragePlan(Extent2D extent, PackedModularF
     for (size_t i = 0; i < count; ++i) {
       size_t bound, samples;
       if (auto s =
-              AdditionalBound(source, result.cpu.geometry, candidates[i].transforms, nodes, ans_cost, &bound, &samples);
+              AdditionalBound(source, result.cpu.geometry, candidates[i].transforms, nodes, ans_cost,
+                              result.cpu.participants, &bound, &samples);
           !s.ok())
         return s;
       result.additional_peak_bytes = std::max(result.additional_peak_bytes, bound);
@@ -205,7 +207,7 @@ Status AdaptiveModularTokenCache::Prepare(const ModularCodingPolicy &policy, boo
       weighted_ == policy.weighted && (features_->has_weighted_features() || !weighted)) {
     const auto status = ComputeAdaptiveModularTokenStoragePlan(
         shape_.channels(), shape_.metadata, features_->slices().size(), nodes,
-        features_->has_weighted_features(), 1, &plan, &limits);
+        features_->has_weighted_features(), feature_participants_, &plan, &limits);
     if (status.code() == StatusCode::kUnsupported)
       return ModularEncoderFrame::Prepare(input_, policy, frame);
     if (!status.ok())
@@ -226,7 +228,7 @@ Status AdaptiveModularTokenCache::Prepare(const ModularCodingPolicy &policy, boo
     return s;
   const auto status = ComputeAdaptiveModularTokenStoragePlan(
       adaptive.shape.channels(), adaptive.shape.metadata, adaptive.slices, nodes,
-      weighted, 1, &plan, &limits);
+      weighted, feature_participants_, &plan, &limits);
   if (status.code() == StatusCode::kUnsupported) {
     return Status::Ok();
   }
@@ -249,7 +251,7 @@ Status AdaptiveModularTokenCache::Prepare(const ModularCodingPolicy &policy, boo
     // Any failure after this preflight (including Unsupported from weighted
     // range validation) is terminal, never a silent CPU retry.
     if (auto s = operation_->PrepareAdaptiveModularFeatures(*frame, slices, policy.weighted,
-                                                            weighted, &features);
+                                                            weighted, &features, feature_participants_, feature_backend_);
         !s.ok())
       return s;
   }

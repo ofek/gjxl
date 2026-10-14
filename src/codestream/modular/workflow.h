@@ -3,6 +3,7 @@
 #pragma once
 #include "codec/modular/frame.h"
 #include "codec/modular/tree_learning.h"
+#include "codec/modular/weighted_features.h"
 #include "codestream/entropy.h"
 #include "codestream/modular/candidate_cost.h"
 #include "core/execution_domain.h"
@@ -32,6 +33,10 @@ struct ModularEncodingOptions {
   // Applies only to adaptive_gpu search; false retains the scalar learning
   // gather as a paired control. CPU-only and prescribed routes ignore it.
   bool adaptive_shared_features = true;
+  // Private weighted-feature producer selection, qualified independently of
+  // GPU token generation. Auto selects Metal only for qualified large layouts;
+  // smaller/unsupported layouts use the admitted CPU participants.
+  WeightedFeatureBackend weighted_feature_backend = WeightedFeatureBackend::kAuto;
   // Private exact population producer. Wide/small/unsupported inputs retain the
   // complete CPU producer; device errors propagate without a hidden retry.
   bool adaptive_populations = false;

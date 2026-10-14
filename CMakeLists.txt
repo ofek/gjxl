@@ -1117,6 +1117,7 @@ add_custom_command(OUTPUT "${GJXL_MODULAR_ADAPTIVE_METAL_IR}"
     ${GJXL_METAL_PROFILING_FLAGS} -c "${GJXL_MODULAR_ADAPTIVE_METAL_SOURCE}" -o "${GJXL_MODULAR_ADAPTIVE_METAL_IR}"
   DEPENDS "${GJXL_MODULAR_ADAPTIVE_METAL_SOURCE}"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/metal/kernels/modular_adaptive_params.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/codec/modular/weighted_feature_math.h"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/gpu/metal/kernels/modular_token_params.h"
   COMMENT "Compiling adaptive Metal Modular token generation" VERBATIM)
 
@@ -2513,6 +2514,16 @@ if(GJXL_BUILD_TESTS)
   add_test(NAME modular_weighted_features COMMAND gjxl_modular_weighted_features_test)
   set_tests_properties(modular_weighted_features PROPERTIES TIMEOUT 30)
 
+  add_executable(gjxl_modular_weighted_feature_batch_test tests/modular_weighted_feature_batch_test.cpp)
+  target_link_libraries(gjxl_modular_weighted_feature_batch_test PRIVATE gjxl_codec)
+  add_test(NAME modular_weighted_feature_batch COMMAND gjxl_modular_weighted_feature_batch_test)
+  set_tests_properties(modular_weighted_feature_batch PROPERTIES TIMEOUT 30)
+
+  add_executable(gjxl_modular_weighted_wavefront_test tests/modular_weighted_wavefront_test.cpp)
+  target_link_libraries(gjxl_modular_weighted_wavefront_test PRIVATE gjxl_codec)
+  add_test(NAME modular_weighted_wavefront COMMAND gjxl_modular_weighted_wavefront_test)
+  set_tests_properties(modular_weighted_wavefront PROPERTIES TIMEOUT 60)
+
   add_executable(gjxl_modular_capture tools/modular_oracle/capture.cpp src/io/pnm.cpp)
   target_link_libraries(gjxl_modular_capture PRIVATE gjxl_codestream)
   find_package(Python3 COMPONENTS Interpreter QUIET)
@@ -3735,6 +3746,9 @@ if(GJXL_BUILD_TESTS)
   add_test(NAME metal_modular_adaptive COMMAND gjxl_metal_modular_adaptive_test
     "${CMAKE_CURRENT_BINARY_DIR}/metal-modular-adaptive")
   set_tests_properties(metal_modular_adaptive PROPERTIES TIMEOUT 600)
+  add_test(NAME metal_modular_weighted_features COMMAND gjxl_metal_modular_adaptive_test
+    "${CMAKE_CURRENT_BINARY_DIR}/metal-modular-weighted-features" --gpu-features)
+  set_tests_properties(metal_modular_weighted_features PROPERTIES TIMEOUT 600 SKIP_RETURN_CODE 77)
 
   add_executable(gjxl_metal_modular_adaptive_workflow_test tests/metal_modular_adaptive_workflow_test.cpp)
   target_link_libraries(gjxl_metal_modular_adaptive_workflow_test PRIVATE gjxl_codestream gjxl_metal)
@@ -3745,6 +3759,9 @@ if(GJXL_BUILD_TESTS)
   add_test(NAME metal_modular_adaptive_workflow COMMAND gjxl_metal_modular_adaptive_workflow_test
     "${CMAKE_CURRENT_BINARY_DIR}/metal-modular-adaptive-workflow")
   set_tests_properties(metal_modular_adaptive_workflow PROPERTIES TIMEOUT 600)
+  add_test(NAME metal_modular_weighted_workflow COMMAND gjxl_metal_modular_adaptive_workflow_test
+    "${CMAKE_CURRENT_BINARY_DIR}/metal-modular-weighted-workflow" --gpu-features)
+  set_tests_properties(metal_modular_weighted_workflow PROPERTIES TIMEOUT 600)
   add_test(NAME metal_modular_shared_features COMMAND gjxl_metal_modular_adaptive_workflow_test
     "${CMAKE_CURRENT_BINARY_DIR}/metal-modular-shared-features" --shared-features)
   set_tests_properties(metal_modular_shared_features PROPERTIES TIMEOUT 300)
@@ -3938,6 +3955,10 @@ if(GJXL_BUILD_TESTS)
 endif()
 
 if(GJXL_BUILD_BENCHMARKS)
+  if(TARGET gjxl_metal)
+    add_executable(gjxl_modular_feature_profile tools/modular_training_study/weighted_features.cpp src/io/pnm.cpp)
+    target_link_libraries(gjxl_modular_feature_profile PRIVATE gjxl_codestream gjxl_metal)
+  endif()
 
   if(GJXL_ENABLE_METAL)
     add_executable(gjxl_modular_tree_statistics_benchmark

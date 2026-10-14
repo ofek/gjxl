@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 Yunho Cho
 #include "codestream/modular/frame_encoder.h"
+#include "codec/modular/weighted_features.h"
+#include "codec/modular/profile.h"
 #include "codestream/modular/gpu_token_handoff.h"
 #include "core/cpu_execution.h"
 #include "core/thread_budget.h"
@@ -22,6 +24,8 @@ using namespace gjxl::modular_gpu_internal;
 using namespace gjxl::resource_budget_internal;
 size_t cases = 0, checked_tokens = 0, checked_features = 0, checked_diagnostics = 0;
 size_t checked_files = 0, decoded_samples = 0, different_ordinals = 0;
+size_t gpu_feature_preparations = 0;
+WeightedFeatureBackend feature_backend = WeightedFeatureBackend::kCpu;
 std::filesystem::path artifacts;
 void Check(bool value, const char *message) {
   if (!value)
@@ -131,10 +135,17 @@ struct Prepared {
     Ok(ModularEncoderFrame::Prepare(f.view(), p, &frame));
     Plan();
     const auto submissions = gpu.stats().committed_submissions;
-    Ok(Operation(gpu).PrepareAdaptiveModularFeatures(frame, slices, p.weighted, weighted,
-                                                     &features));
-    Check(gpu.stats().committed_submissions == submissions,
-          "CPU feature bridge unexpectedly submitted GPU work");
+    ModularProfile profile;
+    {
+      ProfileSession session(&profile);
+      Ok(Operation(gpu).PrepareAdaptiveModularFeatures(frame, slices, p.weighted, weighted,
+                                                       &features, 1, feature_backend));
+    }
+    const auto calls = profile.adaptive_gpu.feature_preparation.gpu_calls;
+    gpu_feature_preparations += calls;
+    Check(gpu.stats().committed_submissions == submissions + calls &&
+              (feature_backend != WeightedFeatureBackend::kCpu || calls == 0),
+          "Feature submission count disagrees with the selected route");
   }
 };
 ModularCodingPolicy Split(unsigned property) {
@@ -524,7 +535,8 @@ void LifetimeAndAdmission(GpuBackend &gpu) {
   for (const auto &slice : f.slices)
     maximum_width = std::max(maximum_width, size_t{slice.width});
   const size_t bridge_exact =
-      plan.features.retained_bytes + (maximum_width + 2) * 2 * 5 * sizeof(uint32_t);
+      plan.features.retained_bytes + (maximum_width + 2) * 2 * 5 * sizeof(uint32_t) +
+      f.slices.size() * sizeof(WeightedFeatureSlice);
   for (size_t available : {bridge_exact - 1, bridge_exact}) {
     ResourceBudget b(available);
     ResourceReservation r;
@@ -743,9 +755,98 @@ void Failures(GpuBackend &gpu, GpuBackend &foreign) {
   Check(handoff_failures >= 3 && !backing && output.gpu_backing.get() == backing_identity,
         "Adaptive handoff allocation sweep did not complete");
 }
+void GpuFeatureFailures(GpuBackend &gpu) {
+  Fixture source(PackedModularFormat::kRgb16, {257, 19});
+  auto policy = Split(15);
+  Prepared f(gpu, source, policy);
+  const auto *original = f.features.get();
+  const auto retained = DefaultResourceBudget().snapshot().total.live_capacity_bytes;
+  auto &op = Operation(gpu);
+  for (unsigned fault = 0; fault < 4; ++fault) {
+    if (fault == 0)
+      ArmNextManagedHostAllocationFailureForTest();
+    if (fault == 1)
+      Ok(ArmNextMetalAllocationFailureForTest(gpu));
+    if (fault >= 2)
+      Ok(ArmNextMetalSubmissionFailureForTest(gpu, fault == 2, fault == 3));
+    const auto status = op.PrepareAdaptiveModularFeatures(
+        f.frame, f.slices, policy.weighted, true, &f.features, 4, WeightedFeatureBackend::kGpu);
+    DisarmManagedHostAllocationFailureForTest();
+    Check(status.code() == (fault < 2    ? StatusCode::kOutOfMemory
+                            : fault == 2 ? StatusCode::kSubmissionFailed
+                                         : StatusCode::kDeviceError) &&
+              f.features.get() == original &&
+              DefaultResourceBudget().snapshot().total.live_capacity_bytes == retained,
+          "GPU feature failure retried or replaced the previous owner");
+  }
+  AdaptiveModularTokenStoragePlan plan;
+  Ok(ComputeAdaptiveModularTokenStoragePlan(f.shape.channels(), f.shape.metadata, f.slices.size(),
+                                            policy.tree.size, true, 4, &plan));
+  const size_t exact = plan.features.retained_bytes + plan.feature_dispatch_bytes;
+  // Reject separately at the plane, feature and dispatch allocation boundaries.
+  for (size_t available : {plan.slices_bytes + plan.plane_bytes - 1,
+                           plan.features.retained_bytes - 1, exact - 1, exact}) {
+    ResourceBudget budget(available);
+    ResourceReservation reservation;
+    Ok(budget.TryReserve(available, &reservation));
+    ResourceContextScope scope({&reservation, ResourceClass::kPreparation});
+    std::unique_ptr<PreparedGpuAdaptiveModularFeatures> completed;
+    const auto submissions = gpu.stats().committed_submissions;
+    const auto status = op.PrepareAdaptiveModularFeatures(
+        f.frame, f.slices, policy.weighted, true, available == exact ? &completed : &f.features, 4,
+        WeightedFeatureBackend::kGpu);
+    Check(available == exact ? status.ok() : status.resource_plan_exceeded(),
+          "GPU weighted feature admission boundary differs");
+    Check(f.features.get() == original &&
+              gpu.stats().committed_submissions == submissions + (available == exact),
+          "GPU weighted allocation failure published or submitted work");
+    completed.reset();
+    Check(!budget.snapshot().total.live_capacity_bytes && !budget.snapshot().total.pending_count,
+          "GPU weighted feature admission leaked storage");
+  }
+  ModularImage image;
+  Ok(ModularImage::Create(Rgb8Channels({1, 1}), 0, &image));
+  image.samples(0)[0] = INT32_MAX; // Inject an unsupported recurrence state.
+  ModularEncoderFrame invalid;
+  Ok(ModularEncoderFrame::AdoptPreparedRct({1, 1}, PackedModularFormat::kRgb8, 0, std::move(image),
+                                           &invalid));
+  ManagedVector<AdaptiveModularTokenSlice> slices;
+  Ok(BuildAdaptiveModularSlices(invalid, &slices));
+  Check(op.PrepareAdaptiveModularFeatures(invalid, slices, {}, true, &f.features, 1,
+                                          WeightedFeatureBackend::kGpu)
+                    .code() == StatusCode::kUnsupported &&
+            f.features.get() == original,
+        "GPU weighted numerical failure published or retried");
+  const auto before = gpu.stats().committed_submissions;
+  std::unique_ptr<PreparedGpuAdaptiveModularFeatures> fallback;
+  Ok(op.PrepareAdaptiveModularFeatures(f.frame, f.slices, policy.weighted, true, &fallback, 1,
+                                       WeightedFeatureBackend::kAuto));
+  std::span<const AdaptiveModularWeightedFeature> expected, actual;
+  Ok(f.features->BorrowWeightedHostView(&expected));
+  Ok(fallback->BorrowWeightedHostView(&actual));
+  Check(gpu.stats().committed_submissions == before && std::ranges::equal(expected, actual),
+        "Small auto preparation did not choose equivalent CPU features before dispatch");
+  Fixture large_source(PackedModularFormat::kGray8, {2048, 2048});
+  Prepared large(gpu, large_source, policy);
+  ModularProfile profile;
+  {
+    ProfileSession session(&profile);
+    Ok(op.PrepareAdaptiveModularFeatures(large.frame, large.slices, policy.weighted, true,
+                                         &fallback, 4, WeightedFeatureBackend::kAuto));
+  }
+  Ok(large.features->BorrowWeightedHostView(&expected));
+  Ok(fallback->BorrowWeightedHostView(&actual));
+  Check(profile.adaptive_gpu.feature_preparation.gpu_calls == 1 &&
+            profile.adaptive_gpu.feature_preparation.cpu_fallback_calls == 0 &&
+            std::ranges::equal(expected, actual),
+        "Large automatic feature preparation did not select identical GPU work");
+}
 } // namespace
 int main(int argc, char **argv) try {
   artifacts = argc > 1 ? argv[1] : "metal-modular-adaptive";
+  const bool gpu_features = argc > 2 && std::string_view(argv[2]) == "--gpu-features";
+  if (gpu_features)
+    feature_backend = WeightedFeatureBackend::kGpu;
   std::filesystem::create_directories(artifacts);
   {
     std::unique_ptr<GpuBackend> gpu, embedded;
@@ -753,6 +854,13 @@ int main(int argc, char **argv) try {
     Ok(CreateEmbeddedMetalBackend({}, &embedded));
     std::cout << "Adaptive Modular device: " << gpu->name() << std::endl;
     Matrix(*gpu);
+    if (gpu_features) {
+      if (!gpu_feature_preparations) {
+        std::cout << "GPU weighted features unavailable on this device\n";
+        return 77;
+      }
+      GpuFeatureFailures(*gpu);
+    }
     LargeTrees(*gpu);
     WideArithmetic(*gpu);
     Participation(*gpu);
@@ -769,6 +877,7 @@ int main(int argc, char **argv) try {
   std::cout << cases << " cases, " << checked_tokens << " exact tokens, " << checked_features
             << " weighted features, " << checked_diagnostics << " diagnostics, " << checked_files
             << " identical files, " << decoded_samples << " independently decoded samples\n";
+  if (gpu_features) std::cout << gpu_feature_preparations << " GPU feature preparations\n";
   return 0;
 } catch (const std::exception &error) {
   DisarmManagedHostAllocationFailureForTest();

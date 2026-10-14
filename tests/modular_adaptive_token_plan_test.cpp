@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 Yunho Cho
 #include "gpu/ops/modular_adaptive_tokens.h"
+#include "codec/modular/weighted_features.h"
+#include <thread>
 #include <iostream>
 #include <stdexcept>
 
@@ -39,6 +41,23 @@ void Trees() {
   DisarmManagedHostAllocationFailureForTest();
 }
 void Layouts() {
+  Check(PreferGpuWeightedFeatures(4194304, 256) &&
+            !PreferGpuWeightedFeatures(4194303, 255) &&
+            !PreferGpuWeightedFeatures(4194304, 257) &&
+            !PreferGpuWeightedFeatures(4194304, 0) &&
+            PreferGpuWeightedFeatures(SIZE_MAX, 1),
+        "Automatic weighted feature crossover or overflow handling changed");
+  AdaptiveModularTokenSlice tile;
+  tile.width = tile.height = 256;
+  Check(GpuWeightedFeatureSlicesSupported({&tile,1}), "Common GPU feature shape rejected");
+  tile.width = 257;
+  Check(!GpuWeightedFeatureSlicesSupported({&tile,1}), "Wide GPU feature shape accepted");
+  tile.width = 256;
+  tile.height = 257;
+  Check(!GpuWeightedFeatureSlicesSupported({&tile,1}), "Tall GPU feature shape accepted");
+  tile.height = 0;
+  Check(!GpuWeightedFeatureSlicesSupported({&tile,1}) && !GpuWeightedFeatureSlicesSupported({}),
+        "Empty GPU feature shape accepted");
   const std::array<ChannelDescriptor, 3> channels{{{{3, 5}}, {{3, 5}}, {{3, 5}}}};
   AdaptiveModularTokenStoragePlan weighted, plain;
   ArmNextManagedHostAllocationFailureForTest();
@@ -53,13 +72,16 @@ void Layouts() {
         "Plane alignment, dynamic nodes, or compact output ABI changed");
   Check(plain.weighted_bytes == 0 &&
             plain.features.retained_bytes + 720 == weighted.features.retained_bytes &&
-            weighted.bridge_peak_bytes == plain.bridge_peak_bytes + 1440 + 5 * 2 * 5 * 4 &&
+            weighted.bridge_peak_bytes == plain.bridge_peak_bytes + 1440 + 5 * 2 * 5 * 4 +
+                                              3 * sizeof(WeightedFeatureSlice) &&
             weighted.retained_bytes == weighted.features.retained_bytes + weighted.output_bytes &&
             weighted.generation_peak_bytes == weighted.retained_bytes + 2 * weighted.dispatch_bytes,
         "Bridge, retained features, or dispatch overlap omitted");
   AdaptiveModularTokenStoragePlan parallel;
   Ok(ComputeAdaptiveModularTokenStoragePlan(channels, 0, 3, 511, true, 4, &parallel));
-  Check(parallel.bridge_peak_bytes == weighted.bridge_peak_bytes + 3 * 5 * 2 * 5 * 4 &&
+  Check(parallel.bridge_peak_bytes == weighted.bridge_peak_bytes + 2 * 5 * 2 * 5 * 4 +
+              3 * sizeof(WeightedPredictor<ResourceClass::kPreparation>) + 3 * sizeof(Status) +
+              2 * sizeof(std::thread) &&
             parallel.features == weighted.features &&
             parallel.generation_peak_bytes == weighted.generation_peak_bytes,
         "Shared scratch planning changed storage beyond the additional CPU participants");

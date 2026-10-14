@@ -390,7 +390,7 @@ public:
     AcStrategyPipelines ac_strategy_pipelines,
     PrimitivePipelines primitive_pipelines,
     NS::SharedPtr<MTL::ComputePipelineState> modular_input_pipeline,
-    std::array<NS::SharedPtr<MTL::ComputePipelineState>, 5> modular_token_pipelines,
+    std::array<NS::SharedPtr<MTL::ComputePipelineState>, 6> modular_token_pipelines,
     NS::SharedPtr<MTL::ComputePipelineState> ans_token_cost_pipeline,
     std::array<NS::SharedPtr<MTL::ComputePipelineState>, 2> tree_statistics_pipelines,
     std::array<NS::SharedPtr<MTL::ComputePipelineState>, 2> modular_population_pipelines,
@@ -560,7 +560,10 @@ public:
     const modular_internal::ModularEncoderFrame& frame,
     std::span<const modular_gpu_internal::AdaptiveModularTokenSlice> slices,
     const modular_internal::WeightedPredictorParameters& parameters, bool weighted,
-    std::unique_ptr<modular_gpu_internal::PreparedGpuAdaptiveModularFeatures>* out) override;
+    std::unique_ptr<modular_gpu_internal::PreparedGpuAdaptiveModularFeatures>* out,
+    size_t maximum_cpu_participants = 1,
+    modular_internal::WeightedFeatureBackend feature_backend =
+        modular_internal::WeightedFeatureBackend::kCpu) override;
   Status GenerateAdaptiveModularTokens(
     const modular_gpu_internal::PreparedGpuAdaptiveModularFeatures& features,
     const modular_internal::DecisionTree& tree,
@@ -897,7 +900,7 @@ private:
   AcStrategyPipelines ac_strategy_pipelines_;
   PrimitivePipelines primitive_pipelines_;
   NS::SharedPtr<MTL::ComputePipelineState> modular_input_pipeline_;
-  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 5> modular_token_pipelines_;
+  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 6> modular_token_pipelines_;
   std::array<NS::SharedPtr<MTL::ComputePipelineState>, 2> modular_population_pipelines_;
   NS::SharedPtr<MTL::ComputePipelineState> ans_token_cost_pipeline_;
   std::array<NS::SharedPtr<MTL::ComputePipelineState>, 2> tree_statistics_pipelines_;

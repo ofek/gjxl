@@ -699,7 +699,7 @@ MetalBackend::MetalBackend(
   AcStrategyPipelines ac_strategy_pipelines,
   PrimitivePipelines primitive_pipelines,
   NS::SharedPtr<MTL::ComputePipelineState> modular_input_pipeline,
-  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 5> modular_token_pipelines,
+  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 6> modular_token_pipelines,
   NS::SharedPtr<MTL::ComputePipelineState> ans_token_cost_pipeline,
   std::array<NS::SharedPtr<MTL::ComputePipelineState>, 2> tree_statistics_pipelines,
   std::array<NS::SharedPtr<MTL::ComputePipelineState>, 2> modular_population_pipelines,
@@ -1790,15 +1790,26 @@ Status CreateMetalBackendImpl(
       maximum_threads.width < 8 || maximum_threads.height < 8)
     return Status::Unavailable("Metal cannot launch Modular input threadgroups");
 
-  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 5> modular_token_pipelines;
+  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 6> modular_token_pipelines;
   const char* token_kernels[] = {"gjxl_modular_tokens_gradient", "gjxl_modular_tokens_tree",
                                  "gjxl_modular_tokens_diagnostic", "gjxl_modular_adaptive_tokens",
                                  "gjxl_modular_adaptive_diagnostic"};
-  for (size_t i = 0; i < modular_token_pipelines.size(); ++i) {
+  for (size_t i = 0; i < 5; ++i) {
     status = CreatePipeline(device.get(), library.get(), token_kernels[i], &modular_token_pipelines[i]);
     if (!status.ok()) return status;
     if (modular_token_pipelines[i]->maxTotalThreadsPerThreadgroup() < 64 || maximum_threads.width < 64)
       return Status::Unavailable("Metal cannot launch Modular token threadgroups");
+  }
+
+  // Feature preparation is an optional capability; smaller devices retain the
+  // bounded CPU producer selected before dispatch.
+  if (device->maxThreadgroupMemoryLength() >= 20480 && maximum_threads.width >= 128) {
+    status = CreatePipeline(device.get(), library.get(), "gjxl_modular_weighted_features",
+                            &modular_token_pipelines[5]);
+    if (!status.ok()) return status;
+    if (modular_token_pipelines[5]->maxTotalThreadsPerThreadgroup() < 128 ||
+        modular_token_pipelines[5]->staticThreadgroupMemoryLength() > device->maxThreadgroupMemoryLength())
+      modular_token_pipelines[5].reset();
   }
 
   NS::SharedPtr<MTL::ComputePipelineState> ans_token_cost_pipeline;

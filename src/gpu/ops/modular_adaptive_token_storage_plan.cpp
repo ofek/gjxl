@@ -83,6 +83,7 @@ Status ComputeAdaptiveModularTokenStoragePlan(std::span<const ChannelDescriptor>
   if (!Add(nodes * sizeof(ModularTokenNode), &nodes_end) || !Align(nodes_end, &p.status_offset))
     return Overflow();
   p.dispatch_bytes = p.status_offset;
+  p.feature_dispatch_bytes = weighted ? p.nodes_offset + sizeof(uint32_t) : 0;
   if (!Add(sizeof(uint32_t), &p.dispatch_bytes) || p.plane_bytes > PTRDIFF_MAX ||
       p.output_bytes > PTRDIFF_MAX || p.dispatch_bytes > PTRDIFF_MAX)
     return Overflow();
@@ -102,16 +103,20 @@ Status ComputeAdaptiveModularTokenStoragePlan(std::span<const ChannelDescriptor>
   if (!bridge.Add(image))
     return Overflow();
   if (weighted) {
-    HostStorageBound scratch;
-    if (auto s = ComputeWeightedPredictorScratchBound(maximum_width, cpu_participants, &scratch);
+    WeightedFeatureBatchStoragePlan batch;
+    if (auto s = ComputeWeightedFeatureBatchStoragePlan(slices, maximum_width, cpu_participants, &batch);
         !s.ok())
       return s;
     if (!bridge.AddVector<AdaptiveModularWeightedFeature>(p.token_count,
                                                           VectorCapacityPolicy::kFreshExact) ||
-        !bridge.Add(scratch))
+        !bridge.Add(batch.jobs) || !bridge.Add(batch.execution))
       return Overflow();
   }
-  p.bridge_peak_bytes = bridge.peak_bytes;
+  HostStorageBound gpu_bridge = p.features;
+  if (!gpu_bridge.Add(image) ||
+      !gpu_bridge.Add({p.feature_dispatch_bytes, p.feature_dispatch_bytes}))
+    return Overflow();
+  p.bridge_peak_bytes = std::max(bridge.peak_bytes, gpu_bridge.peak_bytes);
   HostStorageBound generation = p.features;
   if (!generation.Add({p.output_bytes, p.output_bytes}))
     return Overflow();

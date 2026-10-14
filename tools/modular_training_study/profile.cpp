@@ -90,12 +90,13 @@ void Stages(const std::array<const char *, N> &names, const std::array<double, N
 } // namespace
 
 int main(int argc, char **argv) try {
-  if (argc < 6 || argc > 14)
+  if (argc < 6 || argc > 15)
     throw std::runtime_error(
-        "gjxl_modular_search_profile INPUT OUTPUT SAMPLES LEAVES THREADS [--metal|--metal-ans|--metal-learn] [--estimated-ans] [--measure-all|--shortlist] [--candidate-ledger] [--metal-populations] [--shared-features|--no-shared-features] [--no-profile]");
+        "gjxl_modular_search_profile INPUT OUTPUT SAMPLES LEAVES THREADS [--metal|--metal-ans|--metal-learn] [--estimated-ans] [--measure-all|--shortlist] [--candidate-ledger] [--metal-populations] [--shared-features|--no-shared-features] [--cpu-features|--gpu-features|--auto-features] [--no-profile]");
   bool profiling = true, metal = false, metal_ans = false, metal_learn = false, estimated = false;
   bool measure = false, shortlist = false, ledger = false, populations = false;
   bool shared_features_set = false;
+  bool feature_backend_set = false;
   gjxl::modular_internal::ModularEncodingOptions options;
   CandidateLedger candidates;
   for (int i = 6; i < argc; ++i) {
@@ -104,6 +105,12 @@ int main(int argc, char **argv) try {
     else if (argument == "--metal" && !metal) metal = true;
     else if (argument == "--metal-ans" && !metal) { metal = true; metal_ans = true; }
     else if (argument == "--metal-learn" && !metal) { metal = true; metal_ans = true; metal_learn = true; }
+    else if ((argument == "--cpu-features" || argument == "--gpu-features" || argument == "--auto-features") &&
+             !feature_backend_set) {
+      options.weighted_feature_backend = argument == "--cpu-features" ? WeightedFeatureBackend::kCpu
+          : argument == "--gpu-features" ? WeightedFeatureBackend::kGpu : WeightedFeatureBackend::kAuto;
+      feature_backend_set = true;
+    }
     else if (argument == "--estimated-ans" && !estimated) estimated = true;
     else if (argument == "--measure-all" && !measure && !shortlist) measure = true;
     else if (argument == "--shortlist" && !measure && !shortlist) shortlist = true;
@@ -117,6 +124,7 @@ int main(int argc, char **argv) try {
     else throw std::runtime_error("Unknown or duplicate profiling option");
   }
   if (populations && !metal) throw std::runtime_error("--metal-populations requires a Metal route");
+  if (feature_backend_set && !metal) throw std::runtime_error("Feature producer selection requires a Metal route");
   if (shared_features_set && options.adaptive_shared_features && !metal)
     throw std::runtime_error("--shared-features requires a Metal route");
   std::unique_ptr<GpuBackend> gpu;
@@ -205,6 +213,8 @@ int main(int argc, char **argv) try {
             << ",\"search_evaluation\":\"" << (shortlist ? "shortlist" : measure ? "measure-all" : "encode-all") << '"'
             << ",\"adaptive_populations\":" << (populations ? "true" : "false")
             << ",\"shared_features\":" << (metal && options.adaptive_shared_features ? "true" : "false")
+            << ",\"weighted_feature_backend\":\"" << (options.weighted_feature_backend == WeightedFeatureBackend::kCpu
+                ? "cpu" : options.weighted_feature_backend == WeightedFeatureBackend::kGpu ? "gpu" : "auto") << '"'
             << ",\"candidate_ledger_enabled\":" << (ledger ? "true" : "false")
             << ",\"candidate_emissions\":" << profile.candidate_emissions
             << ",\"screened_candidates\":" << profile.screened_candidates
@@ -234,7 +244,13 @@ int main(int argc, char **argv) try {
             << ",\"copy_seconds\":" << g.feature_preparation.copy_seconds
             << ",\"scratch_seconds\":" << g.feature_preparation.scratch_seconds
             << ",\"prediction_seconds\":" << g.feature_preparation.prediction_seconds
-            << ",\"publication_seconds\":" << g.feature_preparation.publication_seconds << '}'
+            << ",\"publication_seconds\":" << g.feature_preparation.publication_seconds
+            << ",\"slice_jobs\":" << g.feature_preparation.slice_jobs
+            << ",\"parallel_calls\":" << g.feature_preparation.parallel_calls
+            << ",\"peak_participants\":" << g.feature_preparation.peak_participants
+            << ",\"gpu_calls\":" << g.feature_preparation.gpu_calls
+            << ",\"gpu_samples\":" << g.feature_preparation.gpu_samples
+            << ",\"cpu_fallback_calls\":" << g.feature_preparation.cpu_fallback_calls << '}'
             << ",\"token_seconds\":" << g.token_seconds
             << ",\"feature_preparations\":" << g.feature_preparations
             << ",\"feature_reuses\":" << g.feature_reuses << ",\"evictions\":" << g.evictions
