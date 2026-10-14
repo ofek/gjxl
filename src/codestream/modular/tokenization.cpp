@@ -41,14 +41,15 @@ Status TokenizeValidatedModularChannel(const ModularChannelView &view, size_t ch
                                        size_t stream_id, const DecisionTree &tree,
                                        const TreeLayout &layout,
                                        const WeightedPredictorParameters &parameters,
-                                       std::span<EntropyToken> tokens) {
+                                       std::span<EntropyToken> tokens,
+                                       std::span<const WeightedPredictorFeature> features) {
   const auto [w, h] = view.descriptor.extent;
-  if (tokens.size() != w * h)
+  if (tokens.size() != w * h || (!features.empty() && features.size() != tokens.size()))
     return Status::InvalidArgument("Invalid Modular channel token extent");
   if (!w || !h)
     return Status::Ok();
   std::optional<WeightedPredictor<resource_budget_internal::ResourceClass::kPreparation>> wp;
-  if (layout.weighted)
+  if (layout.weighted && features.empty())
     wp.emplace(w, parameters);
   size_t next = 0;
   for (size_t y = 0; y < h; ++y) {
@@ -59,6 +60,8 @@ Status TokenizeValidatedModularChannel(const ModularChannelView &view, size_t ch
       if (wp)
         weighted = wp->Predict(x, y, neighbors.top, neighbors.left, neighbors.top_right,
                                neighbors.top_left, neighbors.top_top);
+      else if (layout.weighted && !features.empty())
+        weighted = {features[next].prediction, features[next].property15};
       const auto properties = Properties(neighbors, channel, stream_id, x, y,
                                          previous_gradient, weighted.second);
       previous_gradient = properties[9];

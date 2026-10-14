@@ -103,7 +103,9 @@ Status DescribeFrame(const PreparedModularStreamsView &input, FrameInfo *out) {
 Status DescribeStream(const PreparedModularStreamsView &input, const FrameInfo &frame, size_t index,
                       StreamInfo *out, TreeLayout *local_layout = nullptr) {
   const auto &stream = input.streams[index];
-  if (!stream.weighted.valid() || stream.rct >= 42)
+  if (!stream.weighted.valid() || stream.rct >= 42 ||
+      (!stream.weighted_features.empty() &&
+       stream.weighted_features.size() != stream.channels.size()))
     return Invalid();
   if (auto s = ValidateTransformBitDepth(stream.transforms, frame.profile.metadata.bits); !s.ok())
     return s;
@@ -173,7 +175,13 @@ Status DescribeStream(const PreparedModularStreamsView &input, const FrameInfo &
     size_t area;
     if (!view.descriptor.extent.try_area(&area) || !Add(area, &p.tokens))
       return Overflow();
-    p.width = std::max(p.width, view.descriptor.extent.width);
+    if (!stream.weighted_features.empty())
+      if (auto s = ValidateWeightedFeatureView(stream.weighted_features[c], view,
+                                               stream.weighted);
+          !s.ok())
+        return s;
+    if (stream.weighted_features.empty() || stream.weighted_features[c].values.empty())
+      p.width = std::max(p.width, view.descriptor.extent.width);
   }
   TreeLayout local;
   const TreeLayout *layout = &frame.global_tree;
@@ -448,7 +456,10 @@ Status Tokenize(const PreparedModularStreamsView &input, const FrameInfo &frame,
         continue; // Preserve channel IDs without dereferencing an absent tree.
       if (auto s =
               TokenizeValidatedModularChannel(channel, c, info.id, *tree, layout, stream.weighted,
-                                              std::span(result.tokens).subspan(next, count));
+                                              std::span(result.tokens).subspan(next, count),
+                                              stream.weighted_features.empty()
+                                                  ? std::span<const WeightedPredictorFeature>{}
+                                                  : stream.weighted_features[c].values);
           !s.ok())
         return s;
       next += count;

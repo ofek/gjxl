@@ -7,6 +7,7 @@
 
 #include <cmath>
 #include <numeric>
+#include <optional>
 
 namespace gjxl::modular_internal {
 namespace {
@@ -122,8 +123,15 @@ Status Preflight(std::span<const HistogramTrainingImage> images,
     if (image.channels.size() > 65535 ||
         image.metadata_channels > image.channels.size() ||
         !image.weighted.valid() ||
+        (!image.weighted_features.empty() &&
+         image.weighted_features.size() != image.channels.size()) ||
         (image.extent.empty() && !image.channels.empty()))
       return Status::InvalidArgument("Invalid histogram training image");
+    for (size_t c = 0; c < image.weighted_features.size(); ++c)
+      if (auto s = ValidateWeightedFeatureView(image.weighted_features[c],
+                                               image.channels[c], image.weighted);
+          !s.ok())
+        return s;
     plan.maximum_channels =
         std::max(plan.maximum_channels, image.channels.size());
     for (size_t c = 0; c < image.channels.size() && Included(image, c, options);
@@ -146,7 +154,8 @@ Status Preflight(std::span<const HistogramTrainingImage> images,
       if (i == 0)
         initial_population += area;
       ++plan.stats.channels;
-      plan.maximum_width = std::max<size_t>(plan.maximum_width, w);
+      if (image.weighted_features.empty() || image.weighted_features[c].values.empty())
+        plan.maximum_width = std::max<size_t>(plan.maximum_width, w);
       if (area != previous_area) {
         previous_area = area;
         previous_selected = CountSelected(area, options.sampling_fraction);
@@ -485,14 +494,20 @@ struct HistogramSampleBuilder {
         Random rng;
         const auto threshold = SamplingThreshold(
             PixelFraction(size_t{w} * h, options.sampling_fraction));
-        WeightedPredictor<resource_budget_internal::ResourceClass::kPreparation>
-            wp(w, image.weighted);
+        const auto features = image.weighted_features.empty()
+                                  ? std::span<const WeightedPredictorFeature>{}
+                                  : image.weighted_features[c].values;
+        std::optional<WeightedPredictor<resource_budget_internal::ResourceClass::kPreparation>> wp;
+        if (features.empty())
+          wp.emplace(w, image.weighted);
         for (size_t y = 0; y < h; ++y) {
           int64_t previous_gradient = 0;
           for (size_t x = 0; x < w; ++x) {
             const auto n = Neighbors(view, x, y);
-            const auto weighted = wp.Predict(x, y, n.top, n.left, n.top_right,
-                                             n.top_left, n.top_top);
+            const auto weighted = wp ? wp->Predict(x, y, n.top, n.left, n.top_right,
+                                                   n.top_left, n.top_top)
+                                     : std::pair{features[y * w + x].prediction,
+                                                 features[y * w + x].property15};
             const auto properties =
                 Properties(n, c, options.first_group + i, x, y,
                            previous_gradient, weighted.second);
@@ -511,7 +526,7 @@ struct HistogramSampleBuilder {
               if (auto status = Add(properties, tokens); !status.ok())
                 return status;
             }
-            if (!wp.Update(view.Row(y)[x], x, y))
+            if (wp && !wp->Update(view.Row(y)[x], x, y))
               return Status::Unsupported(
                   "Histogram training weighted state exceeds supported range");
           }
@@ -556,8 +571,9 @@ Status ComputeHistogramSamplePreparationStorageBound(
                                 VectorCapacityPolicy::kFreshExact, 2) ||
       !bound.AddVector<HistogramMultiplierRange>(
           options.multipliers.size(), VectorCapacityPolicy::kFreshExact) ||
-      !bound.AddVector<uint32_t>((plan.maximum_width + 2) * 2,
-                                 VectorCapacityPolicy::kFreshExact, 5))
+      (plan.maximum_width &&
+       !bound.AddVector<uint32_t>((plan.maximum_width + 2) * 2,
+                                  VectorCapacityPolicy::kFreshExact, 5)))
     return Status::InvalidArgument("Histogram preparation storage overflow");
   for (size_t p = 0; p < options.property_count; ++p)
     if (!bound.AddVector<int32_t>(CutCapacity(options, p),

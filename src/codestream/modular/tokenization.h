@@ -11,13 +11,16 @@ namespace gjxl::modular_internal {
 // The caller validates tree/layout, channel view, static IDs and WP parameters,
 // provides exact output extents, owns unpublished output, and catches allocation
 // errors. A channel failure may leave its unpublished token span partly written.
+// Optional features must be a completed map validated against this channel and
+// these WP parameters; the caller keeps its owner alive until return.
 [[nodiscard]] size_t ModularTreeTokenCount(const DecisionTree &tree, const TreeLayout &layout);
 void TokenizeValidatedModularTree(const DecisionTree &tree, const TreeLayout &layout,
                                   std::span<EntropyToken> tokens);
 [[nodiscard]] Status TokenizeValidatedModularChannel(
     const ModularChannelView &view, size_t channel, size_t stream_id, const DecisionTree &tree,
     const TreeLayout &layout, const WeightedPredictorParameters &weighted,
-    std::span<EntropyToken> tokens);
+    std::span<EntropyToken> tokens,
+    std::span<const WeightedPredictorFeature> features = {});
 inline constexpr std::array<EntropyToken, 5> kGradientTreeTokens{
     {{1, 0}, {2, 5}, {3, 0}, {4, 0}, {5, 0}}};
 struct PreparedModularTokens {

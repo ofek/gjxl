@@ -2454,6 +2454,11 @@ if(GJXL_BUILD_TESTS)
   target_link_libraries(gjxl_modular_histogram_preparation_test PRIVATE gjxl_codestream)
   add_test(NAME modular_histogram_preparation COMMAND gjxl_modular_histogram_preparation_test)
 
+  add_executable(gjxl_modular_shared_feature_consumers_test tests/modular_shared_feature_consumers_test.cpp)
+  target_link_libraries(gjxl_modular_shared_feature_consumers_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_shared_feature_consumers COMMAND gjxl_modular_shared_feature_consumers_test)
+  set_tests_properties(modular_shared_feature_consumers PROPERTIES TIMEOUT 60)
+
   add_executable(gjxl_modular_selection_cost_test tests/modular_selection_cost_test.cpp)
   target_link_libraries(gjxl_modular_selection_cost_test PRIVATE gjxl_codec)
   add_test(NAME modular_selection_cost COMMAND gjxl_modular_selection_cost_test)

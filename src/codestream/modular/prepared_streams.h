@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Yunho Cho
 #pragma once
 #include "codestream/modular/storage_plan.h"
+#include "codec/modular/weighted_features.h"
 
 namespace gjxl::modular_internal {
 struct PreparedModularStreamView {
@@ -14,6 +15,10 @@ struct PreparedModularStreamView {
   // Null selects the frame's shared tree AND entropy model. A non-null tree
   // selects a local tree AND a model built from this stream's tokens alone.
   const DecisionTree *local_tree = nullptr;
+  // Optional parallel array of completed channel-local maps; see
+  // WeightedFeatureView. Owners remain live through tokenization, separately
+  // charged by the caller. Empty entries retain scalar WP for those channels.
+  std::span<const WeightedFeatureView> weighted_features;
 };
 struct PreparedModularStreamsView {
   Extent2D source;

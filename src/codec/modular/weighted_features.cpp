@@ -31,6 +31,25 @@ Status ProduceSlice(ModularChannelView slice, PredictorState &predictor,
 }
 } // namespace
 
+Status ValidateWeightedFeatureView(const WeightedFeatureView &features,
+                                   const ModularChannelView &source,
+                                   const WeightedPredictorParameters &parameters) {
+  if (features.values.empty())
+    return Status::Ok();
+  size_t count;
+  if (!parameters.valid() || features.parameters != parameters ||
+      features.source.backing.data() != source.backing.data() ||
+      features.source.descriptor != source.descriptor ||
+      features.source.stride != source.stride ||
+      !source.descriptor.extent.try_area(&count) ||
+      count > size_t(PTRDIFF_MAX) / sizeof(WeightedPredictorFeature) ||
+      features.values.size() != count || !features.values.data())
+    return Status::InvalidArgument("Mismatched completed weighted feature view");
+  if (auto s = source.Validate(); !s.ok())
+    return s;
+  return features.source.Validate();
+}
+
 Status ComputeWeightedPredictorScratchBound(size_t maximum_width, size_t participants,
                                             HostStorageBound *out) {
   if (!out || !maximum_width || !participants || participants > 256 ||
