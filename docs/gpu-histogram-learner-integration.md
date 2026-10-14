@@ -1,6 +1,7 @@
 # Shared weighted features for the histogram learner
 
-Status: Steps 1–2 complete; workflow integration and qualification remain.
+Status: Steps 1–3 complete; targeted correctness qualification passed,
+with repeated performance qualification remaining.
 Work is on `feat/parallel-weighted-feature-prep`,
 starting from `81467ca` (the public learner integration). The earlier
 [weighted-feature effort](parallel-weighted-feature-preparation.md) is complete
@@ -112,6 +113,34 @@ all live retained backing. Mixed or oversized wavefront shapes choose the CPU
 feature producer before work; the workflow should separate those small streams
 from ordinary GPU batches. Errors after execution begins remain terminal.
 
+## Integrated workflow
+
+`ReferenceWorkflowOptions::gpu` enables the private hybrid route. Null keeps
+the ordinary CPU control. The same selection and fitting functions serve both
+routes. Public `ModularBackend::kMetal` is still unsupported; this change does
+not promote automatic GPU use in the public encoder.
+
+After selection, the workflow batches whole streams, up to 8,388,608 transformed
+channel samples and 1,024 nonempty slices. It separates oversized metadata from
+ordinary wavefront shapes. Each local batch prepares maps, fits its local trees
+once, generates GPU tokens using those same maps, and releases its feature owner
+before preparing the next batch. Shared/global learning retains all batches in
+its scope through the one fit, then tokenizes/releases them. Explicit buffered
+mode can therefore retain more than one batch; every live batch is charged.
+
+`PreparedModularStreamTokenView` binds completed token backing to its immutable
+source channels, selected WP parameters, coding ID and tree identity. The
+prepared-stream planner checks those identities and token shape before
+allocation. The unchanged CPU entropy continuation borrows tokens directly;
+it still generates tree-header tokens and fresh tokens for uncovered streams.
+The frame owns GPU tokens and stable source/tree allocations. Moves preserve
+their addresses, and no feature map survives frame preparation.
+
+Counters report actual CPU/GPU producers, generated tokens, reused/scalar
+learning features and the live feature peak. Nested wall intervals separate
+feature preparation, native sample preparation, fitting and GPU tokens. The
+enclosing profile retains complete training/token stage attribution.
+
 ## Qualification gates
 
 - Compare scalar and shared-map preparation with mixed WP headers, strided
@@ -164,4 +193,32 @@ Step 2, Release CPU-only and Metal builds:
 - CTest logs are retained locally under
   `build/histogram-gpu-integration/step2-{cpu,metal}-ctest.log`.
 
-No new complete GPU workflow or performance result is claimed at this stage.
+Step 3, Release CPU-only and Metal builds with the pinned decoder oracle:
+
+- `modular_reference_hybrid`: 54 CPU/hybrid identical files, 21,686,132
+  independently decoded samples, 25 actual GPU feature batches and 159 injected
+  failures. Covers gray/RGB/RGBA, 8/16-bit inputs, both byte orders, invisible
+  alpha, shared/local trees at eight/nine groups, all predictors, forced and
+  automatic producer routes, multiple local batches, frame moves, detached
+  packed input, direct ANS and prefix coding. Completed in 87.51 seconds.
+- `modular_reference_hybrid_palette`: two additional identical files and
+  1,580,550 decoded samples. A selected 600-color palette exercises CPU feature
+  preparation for metadata wider than 256 alongside GPU pixel-group preparation.
+- `modular_shared_feature_consumers`: additional completed-token borrowing
+  checks prove no copy or double charge, exact complete bytes, malformed
+  identity rejection before allocation, and unchanged prior outputs on failure.
+- CPU `modular_prepared_stream` and `modular_reference_workflow` and Metal
+  `metal_modular_stream_batch` passed. The CPU workflow retains its 98 exact
+  decoded files and small-fixture allocation coverage. The exhaustive legacy
+  `modular_workflow` sweep was not run.
+- Logs are retained under `build/histogram-gpu-integration/step3-*`.
+- AddressSanitizer/UndefinedBehaviorSanitizer CPU build: the shared-feature and
+  completed-token consumer checks, stream batch checks, and reference workflow
+  passed (43.35 seconds total; `UBSAN_OPTIONS=halt_on_error=1`, ASan leak
+  detection disabled). This supplements the Metal runtime failure/lifetime
+  tests; it does not instrument GPU shader execution.
+
+The matched complete-call driver and freezing runner are documented in
+[the tool README](../tools/modular_reference_learning/README.md#cpu-hybrid-histogram-qualification).
+No performance conclusion is claimed from correctness tests or development
+pilots.

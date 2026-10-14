@@ -55,6 +55,7 @@ public:
   virtual ~PreparedGpuModularStreamFeatures() = default;
   [[nodiscard]] virtual BackendId backend_id() const noexcept = 0;
   [[nodiscard]] virtual size_t sample_count() const noexcept = 0;
+  [[nodiscard]] virtual modular_internal::WeightedFeatureBackend producer() const noexcept = 0;
   // Exact original source identities, in the requested batch order. Every map
   // is complete, immutable and host-readable. The backend outlives this owner;
   // original pixels outlive CPU consumers of these borrowed views.

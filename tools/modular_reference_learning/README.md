@@ -1,11 +1,62 @@
 # Reference Modular learner bridge
 
-Research-only first milestone of the
+Research and qualification tools for the
 [learner replacement plan](../../docs/modular-tree-learning-cost.md#recommended-implementation-order).
-Encoder defaults remain unchanged. The native histogram fitter is a private
-implementation under differential qualification. The reference is libjxl
+The native one-fit histogram workflow is now the public learned CPU policy;
+older archives below describe their recorded revisions, not current defaults.
+The reference is libjxl
 `e8ff09762481785938d8e4e01333ed3917571161`; qualified native archives come from
 `f27a797` (`perf/modular-ans-estimates`).
+
+## CPU-hybrid histogram qualification
+
+The root-CMake target `gjxl_modular_hybrid_profile` requires tests enabled and
+`GJXL_MODULAR_ORACLE_BUILD` pointing to the pinned libjxl build. Enable Metal
+for hybrid routes. The driver encodes original packed pixels with the same
+native histogram workflow, independently decodes the result, checks resource
+release, and writes `output.jxl` and `result.json` to a fresh directory.
+
+```sh
+cmake --build build/release --target gjxl_modular_hybrid_profile
+build/release/gjxl_modular_hybrid_profile INPUT.pam OUT auto auto best
+python3 tools/modular_reference_learning/run_hybrid_qualification.py \
+  --binary build/release/gjxl_modular_hybrid_profile \
+  --input INPUT.pam --out build/histogram-hybrid-qualification \
+  --routes cpu auto --warmups 1 --repeats 3
+```
+
+Driver arguments are `INPUT OUT ROUTE BUFFERING PREDICTORS`:
+
+- `cpu`: ordinary scalar workflow, with no Metal backend.
+- `shared-cpu`: bounded CPU feature preparation shared by learning and Metal
+  token generation.
+- `hybrid`: requests GPU features for supported shapes, plus Metal tokens;
+  oversized metadata or unavailable optional feature pipelines select CPU
+  preparation before execution.
+- `auto`: chooses the feature producer using the existing batch crossover,
+  plus Metal tokens. This is a private route, not public automatic GPU routing.
+
+Buffering is `auto|buffered`; predictors are `best|all`. The repeated runner
+holds these at `auto best`, uses the same four-participant CPU ceiling and
+estimated direct ANS/64-cluster policy for every route, and rotates serial
+fresh-process route order. One warmup per route/input precedes measured calls.
+The ordinary CPU workflow remains serial. Use repeated `--input` arguments for
+multiple images. With no `--routes`, all four controls run; check the projected
+runtime before launching a large corpus.
+
+Commit implementation changes before running the harness: it requires a clean
+worktree, freezes the executable, records revision/build/dependency/input
+hashes and start/end power conditions, saves raw results and output hashes,
+and rejects changed bytes or learning-work counts across routes/repetitions.
+Each run needs a fresh output directory. The complete API timer includes
+selection, feature/sample preparation, fitting, tokens, entropy, admission,
+output copy and prepared-frame teardown. It excludes input/output I/O, backend
+initialization, reference source unpacking and independent decoding. Feature,
+sample-preparation and fitting details are nested within training; GPU token
+details are nested within tokens. Managed memory excludes caller input and
+reference-decode buffers, stack, allocator bookkeeping and backend initialization.
+Use the [integration plan](../../docs/gpu-histogram-learner-integration.md)
+for ownership, admission, routing and validation boundaries.
 
 ## Conditional native WP search
 

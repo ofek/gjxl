@@ -4,6 +4,7 @@
 #include "codec/modular/histogram_sample_preparation.h"
 #include "codec/modular/reference_selection.h"
 #include "codestream/modular/prepared_streams.h"
+#include "gpu/ops/modular_stream_tokens.h"
 
 namespace gjxl::modular_internal {
 enum class ReferenceBuffering : uint8_t { kAutomatic, kBuffered };
@@ -15,6 +16,11 @@ struct ReferenceWorkflowOptions {
   PreparedModularEntropyOptions entropy{
       PreparedModularEntropyPolicy::kDirectRateAns,
       AnsSelectionMode::kEstimated, 64};
+  // Optional private hybrid route. Null preserves the scalar CPU control.
+  // Backend outlives a prepared frame and its completed token owners.
+  GpuBackend *gpu = nullptr;
+  WeightedFeatureBackend feature_producer = WeightedFeatureBackend::kAuto;
+  size_t feature_cpu_participants = 4;
 };
 struct ReferenceLearningStats {
   size_t first_group = 0, stop_group = 0;
@@ -30,6 +36,15 @@ struct ReferenceWorkflowStats {
   // Largest individual stage reservation, excluding backing retained by other
   // stages. The caller's ResourceBudget observes the complete managed peak.
   size_t maximum_stage_bytes = 0;
+  size_t feature_batches = 0, feature_samples = 0, gpu_feature_batches = 0,
+         gpu_feature_samples = 0, cpu_feature_batches = 0;
+  size_t token_batches = 0, token_samples = 0;
+  size_t peak_feature_samples = 0, peak_feature_bytes = 0;
+  // Caller wall intervals. Preparation includes sample-admission planning;
+  // fitting includes fit planning/compaction. Feature time includes its stage
+  // planning/admission and publication. GPU token time includes handoff.
+  double sample_preparation_seconds = 0, fitting_seconds = 0,
+         feature_seconds = 0, token_seconds = 0;
 };
 // A lossless source has at most four normal planes. One reference palette pass
 // adds at most four metadata planes; local passes start without global meta.
@@ -45,7 +60,9 @@ struct ReferenceModularStream {
     return std::span(channels).first(channel_count);
   }
 };
-// Owns all samples/trees behind view(). Channel spans and local-tree pointers
+// Owns all samples/trees and optional GPU token backing behind view(). A GPU
+// backend must outlive this frame. No feature maps survive preparation.
+// Channel spans and local-tree pointers
 // point into fixed managed allocations, so moves preserve their addresses.
 // The global learning image retains excluded descriptors, while view() exposes
 // only the coded global prefix. Empty canonical stream-ID slots are preserved
@@ -73,6 +90,8 @@ private:
   Extent2D extent_;
   PackedModularFormat format_ = PackedModularFormat::kRgb8;
   resource_budget_internal::ManagedVector<ReferenceModularStream> records_;
+  resource_budget_internal::ManagedVector<
+      std::unique_ptr<modular_gpu_internal::PreparedGpuModularTokens>> gpu_tokens_;
   resource_budget_internal::ManagedVector<PreparedModularStreamView> streams_;
   ReferenceWorkflowStats stats_;
 };

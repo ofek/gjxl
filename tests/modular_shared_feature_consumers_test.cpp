@@ -242,6 +242,52 @@ void StreamParity() {
       Check(std::ranges::equal(scalar.view(), cached.view()) &&
                 budget.snapshot().peak_backing_bytes <= plan.working.peak_bytes,
             "Shared features changed complete bytes or exceeded stream bound");
+      PreparedModularStreamTokens completed, borrowed;
+      Ok(TokenizePreparedModularStreams(input, &completed));
+      streams[0].completed_tokens =
+          PreparedModularStreamTokenView{completed.streams[0], channels, &tree, parameters, 0};
+      ModularWorkflowStoragePlan borrowed_plan;
+      Ok(ComputePreparedModularStreamsStoragePlan(input, options, &borrowed_plan));
+      Ok(TokenizePreparedModularStreams(input, &borrowed));
+      Check(borrowed.tokens.empty() &&
+                borrowed.streams[0].tokens.data() == completed.tokens.data() &&
+                borrowed_plan.preparation.peak_bytes + pixels.size() * sizeof(EntropyToken) ==
+                    plan.preparation.peak_bytes,
+            "Completed tokens were copied or charged twice");
+      Ok(EncodePreparedModularStreams(input, options, &cached));
+      Check(std::ranges::equal(scalar.view(), cached.view()),
+            "Completed token continuation changed bytes");
+      const auto ready = *streams[0].completed_tokens;
+      for (size_t fault = 0; fault < 5; ++fault) {
+        auto bad = ready;
+        DecisionTree other_tree;
+        auto other_channels = channels;
+        if (fault == 0)
+          bad.tokens.tokens = bad.tokens.tokens.first(1);
+        if (fault == 1)
+          bad.tree = &other_tree;
+        if (fault == 2)
+          bad.weighted.weights[0] ^= 1;
+        if (fault == 3)
+          ++bad.stream_id;
+        if (fault == 4) {
+          ++other_channels[0].stride;
+          bad.channels = other_channels;
+        }
+        streams[0].completed_tokens = bad;
+        const auto prior = borrowed_plan;
+        ArmNextManagedHostAllocationFailureForTest();
+        const auto planned =
+            ComputePreparedModularStreamsStoragePlan(input, options, &borrowed_plan);
+        const auto encoded = EncodePreparedModularStreams(input, options, &cached);
+        const bool pending = ManagedHostAllocationFailurePendingForTest();
+        DisarmManagedHostAllocationFailureForTest();
+        Check(planned.code() == StatusCode::kInvalidArgument && encoded.code() == planned.code() &&
+                  pending && borrowed_plan == prior &&
+                  std::ranges::equal(scalar.view(), cached.view()),
+              "Invalid completed token borrow allocated or published");
+      }
+      streams[0].completed_tokens.reset();
       features[0].parameters.weights[0] ^= 1;
       const auto saved_plan = plan;
       ArmNextManagedHostAllocationFailureForTest();

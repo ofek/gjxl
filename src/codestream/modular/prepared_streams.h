@@ -3,8 +3,20 @@
 #pragma once
 #include "codestream/modular/storage_plan.h"
 #include "codec/modular/weighted_features.h"
+#include <optional>
 
 namespace gjxl::modular_internal {
+// Borrowed result from a completed, checked token producer for exactly these
+// immutable channels, parameters, coding ID and tree. Owner/backend and all
+// identities remain live until the last consumer finishes. Contents are trusted
+// producer results; validation checks identities/shape without rescanning tokens.
+struct PreparedModularStreamTokenView {
+  EntropyTokenStreamView tokens;
+  std::span<const ModularChannelView> channels;
+  const DecisionTree *tree = nullptr;
+  WeightedPredictorParameters weighted;
+  size_t stream_id = 0;
+};
 struct PreparedModularStreamView {
   // Already transformed, in coding order. Global stream 0 includes only its
   // coded prefix; excluded full-image channels need no pixel backing here.
@@ -19,6 +31,9 @@ struct PreparedModularStreamView {
   // WeightedFeatureView. Owners remain live through tokenization, separately
   // charged by the caller. Empty entries retain scalar WP for those channels.
   std::span<const WeightedFeatureView> weighted_features;
+  // Skips sample tokenization and borrows the completed backing without copying
+  // or charging it again. CPU tree-header tokenization and entropy stay intact.
+  std::optional<PreparedModularStreamTokenView> completed_tokens;
 };
 struct PreparedModularStreamsView {
   Extent2D source;
@@ -57,7 +72,8 @@ struct PreparedModularEntropyOptions {
 [[nodiscard]] Status ValidatePreparedModularEntropyOptions(const PreparedModularEntropyOptions &options);
 // Allocation-free validation/planning. Borrowed samples, views, trees, prior
 // outputs and their lifetimes remain the caller's responsibility. Managed
-// bounds cover fresh tokenization, serial modeling/emission, assembly and
+// bounds exclude borrowed completed tokens and cover fresh tokenization,
+// serial modeling/emission, assembly and
 // publication. Global transforms define full-image shape before grouping; group
 // transforms define each tile's shape after grouping. All provided descriptors
 // must match.

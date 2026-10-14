@@ -4,6 +4,7 @@
 // Sampling, quantization and deduplication adapted from pinned libjxl
 // e8ff0976 enc_ma.cc, enc_encoding.cc and base/random.h.
 #include "codec/modular/histogram_sample_preparation.h"
+#include "codec/modular/profile.h"
 
 #include <cmath>
 #include <numeric>
@@ -500,6 +501,11 @@ struct HistogramSampleBuilder {
         std::optional<WeightedPredictor<resource_budget_internal::ResourceClass::kPreparation>> wp;
         if (features.empty())
           wp.emplace(w, image.weighted);
+        if (active_modular_profile) {
+          auto &work = active_modular_profile->training_work;
+          (features.empty() ? work.weighted_prediction_samples : work.reused_prediction_samples) +=
+              size_t{w} * h;
+        }
         for (size_t y = 0; y < h; ++y) {
           int64_t previous_gradient = 0;
           for (size_t x = 0; x < w; ++x) {

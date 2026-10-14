@@ -364,6 +364,7 @@ add_library(
   src/codestream/modular/frame_encoder.cpp
   src/codestream/modular/prepared_streams.cpp
   src/codestream/modular/reference_workflow.cpp
+  src/codestream/modular/reference_learning_workflow.cpp
   src/codestream/modular/candidate_cost.cpp
   src/codestream/modular/candidate_screen.cpp
   src/codestream/modular/public.cpp
@@ -2470,6 +2471,13 @@ if(GJXL_BUILD_TESTS)
       GJXL_STREAM_BATCH_METAL=1 GJXL_METALLIB_PATH="${GJXL_METALLIB}")
     add_test(NAME metal_modular_stream_batch COMMAND gjxl_modular_stream_batch_test --metal)
     set_tests_properties(metal_modular_stream_batch PROPERTIES TIMEOUT 120 SKIP_RETURN_CODE 77)
+    add_executable(gjxl_modular_reference_hybrid_test tests/modular_reference_hybrid_test.cpp)
+    target_link_libraries(gjxl_modular_reference_hybrid_test PRIVATE gjxl_codestream gjxl_metal)
+    target_compile_definitions(gjxl_modular_reference_hybrid_test PRIVATE GJXL_METALLIB_PATH="${GJXL_METALLIB}")
+    add_test(NAME modular_reference_hybrid COMMAND gjxl_modular_reference_hybrid_test)
+    set_tests_properties(modular_reference_hybrid PROPERTIES TIMEOUT 180)
+    add_test(NAME modular_reference_hybrid_palette COMMAND gjxl_modular_reference_hybrid_test --palette)
+    set_tests_properties(modular_reference_hybrid_palette PROPERTIES TIMEOUT 120)
   endif()
 
   add_executable(gjxl_modular_selection_cost_test tests/modular_selection_cost_test.cpp)

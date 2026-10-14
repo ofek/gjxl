@@ -94,9 +94,11 @@ class CompletedStreamFeatures final : public PreparedGpuModularStreamFeatures {
 public:
   BackendId backend_id() const noexcept override { return backend; }
   size_t sample_count() const noexcept override { return plan.samples; }
+  WeightedFeatureBackend producer() const noexcept override { return selected_producer; }
   std::span<const WeightedFeatureView> weighted_views() const noexcept override { return views; }
   BackendId backend;
   const MetalBackend *owner = nullptr;
+  WeightedFeatureBackend selected_producer = WeightedFeatureBackend::kCpu;
   ModularStreamFeatureStoragePlan plan;
   ManagedVector<AdaptiveModularTokenSlice> slices;
   ManagedVector<WeightedFeatureView> views;
@@ -191,6 +193,7 @@ MetalBackend::PrepareModularStreamFeatures(std::span<const ModularStreamFeatureS
   auto candidate = std::make_unique<CompletedStreamFeatures>();
   candidate->backend = id();
   candidate->owner = this;
+  candidate->selected_producer = use_gpu ? WeightedFeatureBackend::kGpu : WeightedFeatureBackend::kCpu;
   candidate->plan = plan;
   {
     const FeaturePreparationScope allocation(profile,

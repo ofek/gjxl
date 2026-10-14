@@ -144,7 +144,8 @@ Status DescribeStream(const PreparedModularStreamsView &input, const FrameInfo &
         original.descriptors[original.count++] = ch;
     }
     if (original.count == 0) {
-      if (!stream.channels.empty() || stream.transforms.size || stream.rct || stream.local_tree)
+      if (!stream.channels.empty() || stream.transforms.size || stream.rct || stream.local_tree ||
+          stream.completed_tokens)
         return Invalid();
       *out = p;
       return Status::Ok();
@@ -203,6 +204,21 @@ Status DescribeStream(const PreparedModularStreamsView &input, const FrameInfo &
     p.weighted = layout->weighted;
     if (p.tokens && stream.local_tree)
       p.tree_tokens = ModularTreeTokenCount(*tree, *layout);
+  }
+  if (stream.completed_tokens) {
+    const auto &ready = *stream.completed_tokens;
+    if (!ready.tokens.valid() || ready.tokens.size() != p.tokens || ready.tree != tree ||
+        ready.weighted != stream.weighted || ready.stream_id != p.id ||
+        ready.channels.size() != stream.channels.size() ||
+        (p.tokens && (ready.tokens.split ? !ready.tokens.values.data() || !ready.tokens.contexts.data()
+                                         : !ready.tokens.tokens.data())))
+      return Invalid();
+    for (size_t c = 0; c < ready.channels.size(); ++c) {
+      const auto &a = ready.channels[c], &b = stream.channels[c];
+      if (a.backing.data() != b.backing.data() || a.descriptor != b.descriptor || a.stride != b.stride)
+        return Invalid();
+      if (auto s = a.Validate(); !s.ok()) return s;
+    }
   }
   *out = p;
   return Status::Ok();
@@ -296,7 +312,7 @@ Status Plan(const PreparedModularStreamsView &input, const PreparedModularEntrop
   p.streams = input.streams.size();
   size_t tree_tokens =
       input.global_tree ? ModularTreeTokenCount(*input.global_tree, frame.global_tree) : 0;
-  size_t global_tokens = 0, weighted_width = 0, section_bits = 0;
+  size_t global_tokens = 0, generated_tokens = 0, weighted_width = 0, section_bits = 0;
   HostStorageBound sections, scratch;
   if (!sections.AddVector<BitWriter>(p.geometry.section_count(), VectorCapacityPolicy::kFreshExact))
     return Overflow();
@@ -308,11 +324,13 @@ Status Plan(const PreparedModularStreamsView &input, const PreparedModularEntrop
     if (!Add(info.tokens, &p.tokens) || !Add(info.tree_tokens, &tree_tokens) ||
         (!input.streams[i].local_tree && !Add(info.tokens, &global_tokens)))
       return Overflow();
-    if (info.weighted)
+    if (!input.streams[i].completed_tokens && !Add(info.tokens, &generated_tokens))
+      return Overflow();
+    if (info.weighted && !input.streams[i].completed_tokens)
       weighted_width = std::max(weighted_width, info.width);
   }
   HostStorageBound owned;
-  if (!owned.AddVector<EntropyToken>(p.tokens, VectorCapacityPolicy::kFreshExact) ||
+  if (!owned.AddVector<EntropyToken>(generated_tokens, VectorCapacityPolicy::kFreshExact) ||
       !owned.AddVector<EntropyToken>(tree_tokens, VectorCapacityPolicy::kFreshExact) ||
       !owned.AddVector<EntropyTokenStreamView>(p.streams, VectorCapacityPolicy::kFreshExact) ||
       !owned.AddVector<std::span<const EntropyToken>>(p.streams, VectorCapacityPolicy::kFreshExact))
@@ -419,7 +437,8 @@ Status Tokenize(const PreparedModularStreamsView &input, const FrameInfo &frame,
     StreamInfo info;
     if (auto s = DescribeStream(input, frame, i, &info); !s.ok())
       return s;
-    if (!Add(info.tokens, &total) || !Add(info.tree_tokens, &total_tree))
+    if ((!input.streams[i].completed_tokens && !Add(info.tokens, &total)) ||
+        !Add(info.tree_tokens, &total_tree))
       return Overflow();
   }
   PreparedModularStreamTokens result;
@@ -448,6 +467,10 @@ Status Tokenize(const PreparedModularStreamsView &input, const FrameInfo &frame,
       TokenizeValidatedModularTree(*tree, layout, span);
       result.local_tree_tokens[i] = span;
       next_tree += info.tree_tokens;
+    }
+    if (stream.completed_tokens) {
+      result.streams[i] = stream.completed_tokens->tokens;
+      continue;
     }
     for (size_t c = 0; c < stream.channels.size(); ++c) {
       const auto &channel = stream.channels[c];
