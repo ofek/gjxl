@@ -1,0 +1,383 @@
+{
+  "schema": 1,
+  "base_revision": "81467caea4fdd6e6d709e9f3d7018b2897c5f1b4",
+  "recorded_at_utc": "2026-10-14T15:26:57.906999+00:00",
+  "platform": "Apple M4 Pro",
+  "compiler": "Apple clang version 21.0.0 (clang-2100.3.34.2)",
+  "build_type": "Release",
+  "cpu_participants_per_encode": 1,
+  "matched_diagnostic": {
+    "fixtures": [
+      {
+        "entropy": "prefix",
+        "width": 17,
+        "height": 19,
+        "legacy_failures": 27392,
+        "learned_failures": 2065
+      },
+      {
+        "entropy": "prefix",
+        "width": 257,
+        "height": 3,
+        "legacy_failures": 27827,
+        "learned_failures": 2015
+      },
+      {
+        "entropy": "ANS",
+        "width": 17,
+        "height": 19,
+        "legacy_failures": 44391,
+        "learned_failures": 1484
+      },
+      {
+        "entropy": "ANS",
+        "width": 257,
+        "height": 3,
+        "legacy_failures": 50397,
+        "learned_failures": 1657
+      }
+    ],
+    "legacy_search_total": 150007,
+    "learned_total": 7221,
+    "learned_exhaustive_seconds": 18.33557,
+    "other_legacy_failures": 18094,
+    "other_legacy_seconds": 6.545793417026289,
+    "historical_ci_url": "https://github.com/yunho-c/gjxl/actions/runs/38522028697",
+    "historical_macos_artifact_id": 11879192069
+  },
+  "release_tests": [
+    {
+      "name": "modular_workflow",
+      "seconds": 9.9277,
+      "status": "passed"
+    },
+    {
+      "name": "modular_public_allocations",
+      "seconds": 18.4839,
+      "status": "passed"
+    }
+  ],
+  "regular_report_summary": {
+    "summary": true,
+    "exhaustive_fixtures": 40,
+    "probe_fixtures": 4,
+    "injected_failures": 18126,
+    "passed": true
+  },
+  "regular_search_probes": [
+    {
+      "fixture": 29,
+      "policy": "search",
+      "coverage": "probes",
+      "format": 5,
+      "width": 17,
+      "height": 19,
+      "entropy": "prefix",
+      "injected_failures": 8,
+      "first_successful_index": 27392,
+      "shard": 0,
+      "shards": 1,
+      "probe_positions": [
+        0,
+        3913,
+        7826,
+        11739,
+        15652,
+        19565,
+        23478,
+        27391
+      ],
+      "seconds": 0.538998,
+      "passed": true
+    },
+    {
+      "fixture": 30,
+      "policy": "search",
+      "coverage": "probes",
+      "format": 5,
+      "width": 257,
+      "height": 3,
+      "entropy": "prefix",
+      "injected_failures": 8,
+      "first_successful_index": 27827,
+      "shard": 0,
+      "shards": 1,
+      "probe_positions": [
+        0,
+        3975,
+        7950,
+        11925,
+        15900,
+        19875,
+        23850,
+        27826
+      ],
+      "seconds": 1.07228,
+      "passed": true
+    },
+    {
+      "fixture": 33,
+      "policy": "search",
+      "coverage": "probes",
+      "format": 5,
+      "width": 17,
+      "height": 19,
+      "entropy": "ANS",
+      "injected_failures": 8,
+      "first_successful_index": 44391,
+      "shard": 0,
+      "shards": 1,
+      "probe_positions": [
+        0,
+        6341,
+        12682,
+        19024,
+        25365,
+        31707,
+        38048,
+        44390
+      ],
+      "seconds": 0.642948,
+      "passed": true
+    },
+    {
+      "fixture": 34,
+      "policy": "search",
+      "coverage": "probes",
+      "format": 5,
+      "width": 257,
+      "height": 3,
+      "entropy": "ANS",
+      "injected_failures": 8,
+      "first_successful_index": 50397,
+      "shard": 0,
+      "shards": 1,
+      "probe_positions": [
+        0,
+        7199,
+        14398,
+        21598,
+        28797,
+        35997,
+        43196,
+        50396
+      ],
+      "seconds": 1.21005,
+      "passed": true
+    }
+  ],
+  "public_reports": [
+    {
+      "policy": "learned",
+      "coverage": "exhaustive",
+      "format": "rgba16be",
+      "width": 17,
+      "height": 19,
+      "entropy": "prefix",
+      "allocation_count": 2065,
+      "injected_failures": 2065,
+      "seconds": 4.88513,
+      "exact_decode": true,
+      "passed": true
+    },
+    {
+      "policy": "learned",
+      "coverage": "exhaustive",
+      "format": "rgba16be",
+      "width": 257,
+      "height": 3,
+      "entropy": "prefix",
+      "allocation_count": 2015,
+      "injected_failures": 2015,
+      "seconds": 4.81626,
+      "exact_decode": true,
+      "passed": true
+    },
+    {
+      "policy": "learned",
+      "coverage": "exhaustive",
+      "format": "rgba16be",
+      "width": 17,
+      "height": 19,
+      "entropy": "ANS",
+      "allocation_count": 1484,
+      "injected_failures": 1484,
+      "seconds": 3.74239,
+      "exact_decode": true,
+      "passed": true
+    },
+    {
+      "policy": "learned",
+      "coverage": "exhaustive",
+      "format": "rgba16be",
+      "width": 257,
+      "height": 3,
+      "entropy": "ANS",
+      "allocation_count": 1657,
+      "injected_failures": 1657,
+      "seconds": 4.82736,
+      "exact_decode": true,
+      "passed": true
+    }
+  ],
+  "registration": {
+    "default_excludes_exhaustive": true,
+    "explicit_configurations": [
+      {
+        "shards": 1,
+        "registered": 1,
+        "only_search": true,
+        "unique_reports": true,
+        "timeout": 7200
+      },
+      {
+        "shards": 4,
+        "registered": 4,
+        "only_search": true,
+        "unique_reports": true,
+        "timeout": 7200
+      },
+      {
+        "shards": 16,
+        "registered": 16,
+        "only_search": true,
+        "unique_reports": true,
+        "timeout": 7200
+      }
+    ]
+  },
+  "invalid_cli_cases_rejected": 6,
+  "asan_ubsan": {
+    "status": "passed",
+    "tests": [
+      {
+        "name": "modular_workflow",
+        "seconds": 53.5064,
+        "status": "passed"
+      },
+      {
+        "name": "modular_public_allocations",
+        "seconds": 97.3669,
+        "status": "passed"
+      }
+    ],
+    "asan_options": "detect_leaks=0",
+    "ubsan_options": "halt_on_error=1",
+    "limitations": [
+      "macOS LeakSanitizer unavailable; explicit managed resource-release checks passed.",
+      "The linked pinned reference decoder is uninstrumented."
+    ]
+  },
+  "exhaustive_search_smoke": {
+    "status": "passed",
+    "command": [
+      "build/public-default/gjxl_modular_workflow_test",
+      "--legacy-search-faults",
+      "--allocation-shard",
+      "0",
+      "64",
+      "--report",
+      "build/allocation-validation/search-shard0-of64.jsonl"
+    ],
+    "seconds": 177.36433816701174,
+    "fixtures": 4,
+    "shard": 0,
+    "shards": 64,
+    "injected_failures": 2345,
+    "matches_historical_shard_counts": true,
+    "full_exhaustive_coverage": false,
+    "reports": [
+      {
+        "fixture": 1,
+        "policy": "search",
+        "coverage": "exhaustive",
+        "format": 5,
+        "width": 17,
+        "height": 19,
+        "entropy": "prefix",
+        "injected_failures": 428,
+        "first_successful_index": 27392,
+        "shard": 0,
+        "shards": 64,
+        "probe_positions": [],
+        "seconds": 18.6715,
+        "passed": true
+      },
+      {
+        "fixture": 2,
+        "policy": "search",
+        "coverage": "exhaustive",
+        "format": 5,
+        "width": 257,
+        "height": 3,
+        "entropy": "prefix",
+        "injected_failures": 435,
+        "first_successful_index": 27840,
+        "shard": 0,
+        "shards": 64,
+        "probe_positions": [],
+        "seconds": 38.5804,
+        "passed": true
+      },
+      {
+        "fixture": 3,
+        "policy": "search",
+        "coverage": "exhaustive",
+        "format": 5,
+        "width": 17,
+        "height": 19,
+        "entropy": "ANS",
+        "injected_failures": 694,
+        "first_successful_index": 44416,
+        "shard": 0,
+        "shards": 64,
+        "probe_positions": [],
+        "seconds": 36.0425,
+        "passed": true
+      },
+      {
+        "fixture": 4,
+        "policy": "search",
+        "coverage": "exhaustive",
+        "format": 5,
+        "width": 257,
+        "height": 3,
+        "entropy": "ANS",
+        "injected_failures": 788,
+        "first_successful_index": 50432,
+        "shard": 0,
+        "shards": 64,
+        "probe_positions": [],
+        "seconds": 81.681,
+        "passed": true
+      },
+      {
+        "summary": true,
+        "exhaustive_fixtures": 4,
+        "probe_fixtures": 0,
+        "injected_failures": 2345,
+        "passed": true
+      }
+    ],
+    "timing_note": "A bounded correctness check; overlapped the regular ASan/UBSan rerun, not a performance comparison."
+  },
+  "hosted_qualification": {
+    "status": "not_run",
+    "reason": "Implementation is local; new hosted workflow has not been dispatched."
+  },
+  "limitations": [
+    "The matched timings are local diagnostic measurements, not a hosted CI speedup factor.",
+    "The full historical CI run predates the test split. No new complete exhaustive matrix is claimed.",
+    "The two regular targets do not include the unchanged API, component and training allocation tests.",
+    "Allocation counts vary across compiler and platform."
+  ],
+  "test_commit": "0efc7bb95feb02b441b12ee46a0aa5106a6c67cf",
+  "source_sha256": {
+    "CMakeLists.txt": "37203ce0ee6548819751c7049078592e1f69074de3990a1c613bccd063d0f306",
+    "cmake/ModularOracle.cmake": "1b21fab9113dbb95a817ffbd2ad6480da30db239864ef43d3e8967701e9c2cf2",
+    "tests/modular_workflow_test.cpp": "122884d9e954fb813ee3351793d0c9972aecf68a63a2b74f4c2647eb5677372a",
+    "tests/modular_allocation_test_util.h": "8638f5f0b669539ffcecdaad7670b879c0d8fed950c08fd93e3c3f2623d16724",
+    "tests/modular_public_allocation_test.cpp": "4d011042210ddf1c3b319f9c87811a437ebe7eb7c05d77d075f9dcc6bbdc18b4"
+  },
+  "actionlint": "passed"
+}
