@@ -1,12 +1,14 @@
 # GPU-resident prescribed prediction and token generation
 
-Status: steps 1–2 (private contract and CPU consumer/ownership boundary) are
-implemented; steps 3–6 remain planned. This follows the
-[unpack/RCT performance qualification](modular-gpu-performance.md). No backend
-implements token generation yet. The scalar encoder remains the active path;
-the new private handoff is qualified with a CPU-backed completed-token owner.
+Status: steps 1–6 are complete, including the private Metal workflow,
+correctness/resource gates and [paired performance qualification](modular-gpu-token-performance.md).
+The aggregate pilot performance gate passes; public routing remains unchanged
+pending an independent quiet-session repeat and scoped dispatch design. This follows the
+[unpack/RCT performance qualification](modular-gpu-performance.md). The private
+complete encoder composes both GPU operations with full-call admission and one
+completion wait. Public encoder routing is unchanged.
 
-The next slice should consume unpacked/RCT planes directly on the GPU and hand
+This slice consumes unpacked/RCT planes directly on the GPU and hands
 completed token buffers to the existing CPU entropy encoder. Completed shared
 token buffers and explicit ownership are part of the initial design: copying a
 larger token representation back to CPU could consume the savings.
@@ -30,7 +32,7 @@ flowchart LR
 
 ## Scope
 
-The completed slice should support all six existing packed input formats and
+The slice supports all six existing packed input formats and
 their prescribed RCTs, all 13 nonweighted predictors, and prescribed trees using
 properties 0–14. Keep the current 31-node/16-leaf limits and exact leaf
 offset/multiplier semantics. Both prefix and ANS use the same resulting tokens.
@@ -87,7 +89,7 @@ policy out of the GPU operations layer:
 | `BuildGpuModularTokenPlan` | Fresh managed host metadata only; canonical CPU streams/slices plus GPU slice descriptors and per-stream token ranges |
 | Generation peak | Packed upload + resident planes + token arena + dispatch arena + dispatch staging + host layout |
 | Retained backing | Token arena + host layout; no upload, planes, dispatch arena or staging |
-| CPU continuation | Future full-call admission must add modeling/emission work to retained backing exactly once, then compare with generation/assembly/publication phases |
+| CPU continuation | Step 4 adds modeling/emission work to retained backing exactly once, then compares with generation/assembly/publication phases |
 
 These are preparation/retention bounds, not a complete encoder reservation or
 process RSS. Shape planning and metadata construction preserve old outputs on
@@ -139,7 +141,7 @@ successful device completion/status validation remain the producer's contract.
 vector only. Add it to the already-live plan and token arena; the arena keeps
 its original charge, and old output remains separately charged during replacement.
 Step 1's preparation/retention bounds exclude this new view vector. Complete
-GPU-call admission, including CPU modeling/emission, remains step 4 work; the
+GPU-call admission, including CPU modeling/emission, is defined in step 4; the
 scalar workflow reservation is not a GPU continuation reservation.
 
 The existing [`EncodeModularFrame`](../src/codestream/modular/frame_encoder.cpp)
@@ -173,9 +175,10 @@ claim follows from these consumer checks.
 
 ## 3. Implement and qualify the Metal token kernel
 
-Start with the prescribed gradient leaf, then extend to the full nonweighted
-scope. Assign independent sample work to threads and write directly into
-predetermined token ranges. The current
+The [Metal kernels](../src/gpu/metal/kernels/modular_tokens.metal) implement a
+specialized prescribed gradient leaf and the full nonweighted prescribed-tree
+scope. A two-dimensional grid assigns one sample per thread and one slice per
+grid row, writing directly into predetermined compact token ranges. The current
 [scalar tokenization](../src/codestream/modular/tokenization.cpp),
 [predictor arithmetic](../src/codec/modular/scalar_prediction.h) and
 [tree properties](../src/codec/modular/tree.h) remain the oracle.
@@ -193,69 +196,163 @@ The main correctness details are:
 - Use sufficiently wide arithmetic for offsets and residuals. Check exact
   divisibility and signed range before applying the existing signed packing.
 
-Data-dependent failures should set a checked device status and prevent
-publication. Complete or drain submitted work before releasing any backing or
-resource ticket on failure. A specialized gradient-leaf path may avoid generic
-tree work while preserving exactly the same output contract.
+The kernels use bounded 32-bit neighborhood arithmetic and signed 64-bit leaf
+adjustment/division. Nonintegral or out-of-range residuals atomically set the
+device error word. The specialized gradient path has no tree traversal or leaf
+division; its bounded residuals preserve the same output contract.
+
+The [Metal producer](../src/gpu/metal/metal_modular_tokens.cpp) checks native
+ownership, metadata/RCT, dense input plane ranges, nonaliasing and canonical
+clipped slices before allocating or submitting. Host/shader ABI assertions check
+every descriptor field. It initializes descriptors, compiled nodes and status
+directly in shared dispatch storage, avoiding the conservative staging allowance.
+The operation uses the ambient reservation, two fresh device allocations, one
+submission and one completion wait. It publishes the owner only after successful
+completion and status validation; failures drain work before releasing storage
+and preserve the previous owner. The completed owner retains only the token
+arena and its original charge. Repeated host borrowing allocates and copies
+nothing. CPU participation is suspended during the GPU wait.
+
+The `metal_modular_tokens` CTest target exercises file-loaded and embedded
+libraries, all six formats, both byte orders, every eligible RCT and all 13
+predictors. Split trees cover properties 0–14, permuted child indices,
+breadth-first contexts and the 31-node/16-leaf limit. Cases include odd offsets
+and strides, transparent colors, signed leaf extrema, exact/nonintegral
+division, narrow images, clipped 255/256/257 boundaries and canonical stream ID
+changes across DC groups. Allocation/submission/completion faults, rejected
+foreign or malformed inputs, retained-owner replacement pressure, tight memory
+caps, immutable sources, CPU participation and four concurrent calls are checked.
+
+Selected cases pass real device tokens through step 2's handoff and the existing
+frame encoder under prefix/ANS and one/four CPU participants. This is a test
+harness with separate preparation and token-generation submissions, not step 4's
+composed production workflow or full-call reservation. Complete file bytes are
+compared with scalar output; configuring `GJXL_MODULAR_ORACLE_BUILD` additionally
+requires independent decoding to the original integer samples.
+
+Local qualification on 2026-10-10 used an isolated snapshot of `fa4d9f3` plus
+the eight step-3 code/build files, on Apple M4 Pro. The new target passed 5,195
+cases comparing 49,630,564 tokens, with 68 byte-identical complete files and
+2,295,440 independently decoded samples using pinned libjxl `e8ff097`. The same
+matrix passed with Metal API and GPU validation enabled. Eight focused C++20
+Release tests passed with Metal enabled, including existing unpack/RCT and
+workflow tests; five focused CPU-only tests also passed.
+
+C++23 ASan/UBSan passed the two CPU contract/handoff tests without vendor
+suppressions and the native Metal token matrix with only
+`null:*/third_party/metal-cpp/*Foundation/NSObject.hpp` suppressed. Leak detection
+was disabled. The unsuppressed Metal run stops at the existing vendor nil-call
+idiom; its log is retained. Linking the unsanitized pinned libjxl archive into
+the sanitizer executable also produced a container-annotation failure inside
+the oracle, so independent decoding remains a separate Release gate. All 68
+native sanitizer output hashes match the independently decoded Release files;
+no container-overflow check was disabled. These are scoped host sanitizer and
+device validation results, not an unsuppressed sanitizer-clean claim.
+
+Source, binary, library and codestream hashes, the patch, build/test logs and
+qualification metadata are retained locally in
+`build/modular-token-kernel-qualification/`. Step 5 below adds intermediate
+prediction/property diagnostics and qualification of the composed workflow.
+No complete-call performance or dispatch-policy claim follows from these
+kernel results.
 
 ## 4. Compose preparation and tokenization into the complete encoder
 
-Feed tokens directly into `EncodeModularFrame`, bypassing host plane
-reconstruction and CPU tokenization. Keep CPU tree serialization, metadata,
-model decisions, stream headers and final publication identical for the same
-prescribed policy.
+The private [complete token workflow](../src/codestream/modular/gpu_token_workflow.h)
+provides owned-buffer and vector publication routes. `PrepareModularTokens`
+records unpack/RCT, an explicit sample-buffer memory barrier and token generation
+into one compute command buffer, with four device allocations and one completion
+wait. Upload, resident planes and dispatch scratch are released before returning
+the completed token owner. Standalone preparation and resident-plane token
+generation retain their separate contracts.
 
-For the performance path, encode unpack/RCT and token generation into one command
-buffer with explicit GPU dependencies and one completion wait. Keep them as
-separate kernels initially. Release upload and sample planes after completion;
-retain only token backing and required host metadata through CPU consumption.
-Preserve the existing standalone preparation contract.
+The workflow builds canonical metadata, invokes this composed producer, adopts
+the compact token backing and feeds it directly into `EncodeModularFrame`.
+It releases GPU descriptors/ranges before CPU modeling, retaining only canonical
+layout and token views/backing. CPU tree serialization, modeling, headers,
+entropy coding and publication are shared with the prescribed scalar path.
+There is no host plane reconstruction, CPU tokenization or fallback. A separate
+`gpu_input_tokens` profile interval covers the combined preparation/handoff
+boundary; it is not a kernel timing.
 
-Compose full-call admission with the new lifetimes, preserve atomic output
-replacement and return explicit failures without an unplanned CPU retry.
+`ComputeGpuModularTokenWorkflowStoragePlan` admits the maximum of generation,
+handoff and CPU continuation. Generation includes overlapping upload, planes,
+tokens, dispatch and layout. Handoff adds fresh stream views to retained token
+and plan storage. `ComputeModularTokenConsumerStoragePlan` constructs CPU phase
+bounds with compact backing counted once; it omits scalar sample/token work.
+GPU descriptors/ranges are absent from subsequent phases. This derives bounds
+from actual retained representations without subtracting unrelated phase maxima.
+Old output remains separately charged. Admission precedes metadata allocation
+and CPU participation, reuses a same-domain outer reservation, and preserves
+previous output on every failure.
 
 ## 5. Qualify correctness, resources and failures
 
-Compare intermediate predictions, properties and leaf selections, then every
-token against CPU. Require complete byte equality and independent decoding to
-the original integer samples.
+The [diagnostic hook](../src/gpu/metal/metal_modular_tokens.h) uses a specialization
+of the same kernel arithmetic to expose all 13 nonweighted predictions, all
+15 supported properties, the selected leaf/context and residual/token. Its
+guarded trace arena and token padding/trailing guards are checked after
+completion. Diagnostic buffers are excluded from production calls and their
+storage/performance bounds.
 
-Cover all supported predictors/properties/RCTs, signed extrema, leaf offsets and
-multipliers, transparent colors, narrow images, 255/256/257 boundaries,
-DC-group ID changes and empty streams. Include both byte orders, odd input
-offsets/strides, clipped groups, both entropy coders and serial/parallel CPU
-continuations.
+The device matrix checks 1,004,674 intermediate sample traces against scalar
+neighborhood arithmetic and lookup. Both standalone and composed producers
+separately pass 5,195 cases and 49,630,564 exact token comparisons. Coverage
+includes all supported format/RCT/predictor combinations, properties 0–14,
+signed leaf extrema/divisibility, transparent colors, odd offsets/strides, narrow
+and 255/256/257 boundaries, clipped groups and DC-group IDs. Each producer also
+passes 68 complete-file comparisons and independent decoding.
 
-Extend allocation/submission/completion fault injection, owner replacement,
-concurrent calls, memory caps and CPU-participant checks. Include CPU-only
-builds, Metal validation and sanitizer gates. Preserve prior output on failure,
-join all consumers before releasing token backing, and verify charges return to
-their expected state.
+`metal_modular_token_workflow` checks 795 complete files against scalar bytes and
+6,732,696 original integer samples with pinned libjxl, under prefix/ANS and
+one/four CPU participants. Its 786 injected failures cover managed allocations
+through final publication, all four device allocation boundaries, submission,
+completion and partial CPU worker launch. It checks retained-output replacement,
+cross-thread destruction, four concurrent calls under one-call capacity, nested
+domain admission, explicit errors and recovery. Existing preparation/workflow
+tests remain enabled. The CPU-only workflow target additionally verifies
+allocation-free composed planning and admission/rejection before device work.
+
+Local qualification uses an isolated `fa4d9f3` snapshot with the step-3–5 overlay
+on Apple M4 Pro. All six focused Metal/workflow tests passed with Metal API/GPU
+validation. Eight CPU-only Release tests passed, plus scalar workflow allocation
+shard 0/64; this does not claim the full scalar search fault sweep. C++23
+ASan/UBSan passed two CPU tests without vendor suppressions and three native
+Metal tests with the same narrowly scoped vendor null-call suppression described
+above, with leak detection disabled. All 931 retained native sanitizer files
+match the independently decoded Release outputs by SHA-256. Source hashes,
+logs and qualification metadata are in `build/modular-token-workflow-qualification/`.
 
 ## 6. Run paired end-to-end performance qualification
 
-Compare CPU, the existing GPU-preparation path and the new GPU-token path using
-identical prescribed decisions. Test one/four CPU participants and four-call
-workloads under matching resource caps. Retain ordinary complete-call timings
-separately from stage diagnostics, following the
-[existing paired measurement protocol](../tools/modular_oracle/GPU_PERFORMANCE.md).
+The [performance report](modular-gpu-token-performance.md) compares CPU, the
+existing GPU-preparation path and the composed token path from one frozen
+`fa4d9f3` plus overlay snapshot. All three use identical prescribed decisions
+and complete bytes. The 56-case matrix adds three original 12 MP photographs
+and prescribed split trees, with one/four CPU participants and four-call
+workloads under matching caps. Timing includes admission, allocation, upload,
+synchronization, handoff, CPU continuation and publication. Setup and stage
+diagnostics remain separate.
 
-Add larger natural photographs and prescribed split trees to the existing
-matrix. Include allocation, upload, synchronization, token handoff, CPU
-continuation and publication. Record setup separately, preserve byte/resource
-checks, and retain source, input, binary and raw measurement provenance.
+The [token protocol](../tools/modular_oracle/GPU_TOKENS_PERFORMANCE.md) and
+`acceptance.json` fixed the cases and thresholds before timing. All six
+four-participant primary photo cases pass the aggregate 5% median speedup bar
+with intervals excluding parity against both controls: 1.068–1.231× versus CPU
+and 1.081–1.251× versus preparation. All five four-call cases pass the 2%
+regression tolerance. Every warmup, ordinary and profile call passes exact
+bytes/resource checks; 6,549 complete encodes were checked overall.
 
-As a proposed promotion bar, require a repeatable complete-call gain of at least
-5%, intervals excluding parity, and no material concurrency regression within
-the claimed eligibility range. Define the acceptance cases and regression
-tolerance before collecting the qualification results. Compare against the
-relevant four-participant CPU path as well as the serial oracle. A kernel
-speedup alone does not qualify dispatch.
+The route remains private. Tiny inputs regress, large-photo ANS gains are small
+or inconclusive, and one primary CPU comparison has a cohort median below 5%.
+Other codec tests overlapped the beginning of the first cohort, with normal
+desktop activity throughout. An independent quiet-session repeat is still
+required before promotion. The report retains all cohorts and documents these
+limits; the pilot does not establish a general dispatch threshold.
 
-The saved performance baseline is revision `155e60e`; the planning checkout was
-at `2cdb74c`, which adds CPU context learning. Freeze a new common revision for
-all comparison paths when qualifying this slice, and preserve the older results
-as evidence for their original revision.
+Source/binary/library/input/output/raw-result hashes and logs are retained in
+`build/modular-token-performance-build/` and
+`build/modular-token-performance-20261010/`. The earlier unpack/RCT results
+remain evidence for their original `155e60e` revision, not this run's control.
 
 Histogram generation can follow as a separate slice once these measurements
 show whether modeling deserves GPU work. It is not required to establish this

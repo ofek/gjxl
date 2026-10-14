@@ -53,6 +53,17 @@ double EstimatedBits(std::span<const EntropyTokenStreamView> streams, const Entr
         bits += counts[c][s] * (12.0 - std::log2(code.ans_histograms[c].frequencies[s]));
   return bits;
 }
+struct CostProbe final : AnsTokenCostEvaluator {
+  size_t calls = 0, candidates = 0;
+  Status TryMeasure(std::span<const EntropyTokenStreamView>,
+                    std::span<const EntropyCode *const> codes,
+                    std::span<const uint64_t>, std::span<EntropyCodeCost>, bool *handled) override {
+    ++calls;
+    candidates += codes.size();
+    *handled = false;
+    return Status::Ok();
+  }
+};
 void Models(bool direct) {
   for (uint32_t fixture = 0; fixture < 5; ++fixture) {
     std::vector<std::vector<EntropyToken>> input(4);
@@ -87,6 +98,14 @@ void Models(bool direct) {
                           code, cost, profile, selection)
                     : OptimizeAnsEntropyCode(views, prefix, code, cost, profile, selection);
     };
+    EntropyCode prefix_without_cost;
+    PreparedEntropyClusters retained;
+    EntropyWorkProfile retain_profile;
+    Ok(OptimizeEntropyCodeAndPrepareClusters(streams, {.context_count = 3}, &prefix_without_cost,
+                                             nullptr, &retained, &retain_profile));
+    Check(prefix_without_cost == prefix && retained == populations &&
+              retain_profile.prefix_section_measurement_count == 0,
+          "Population-only retention changed values/model or measured prefix sections");
     EntropyWorkProfile estimate_profile, exact_profile;
     Ok(optimize(streams, &estimated, nullptr, &estimate_profile, kEstimated));
     Check(estimate_profile.ans_token_cost_nanoseconds == 0 &&
@@ -127,6 +146,39 @@ void Models(bool direct) {
     }
     Check(total == cost.token_bits && header.bits_written() == cost.model_bits,
           "Exact cost totals changed");
+    // The optional evaluator consumes a prefix partition; direct ANS learns its
+    // own partition and need not select the same model.
+    if (!direct) {
+      CostProbe evaluator;
+      EntropyCode evaluated;
+      EntropyWorkProfile evaluator_profile;
+      Ok(OptimizeAnsEntropyCodeWithCostEvaluator(streams, prefix, evaluator, &evaluated, nullptr,
+                                                  &evaluator_profile, kEstimated));
+      Check(evaluated == estimated && evaluator.calls == 0 &&
+                evaluator_profile.ans_token_cost_candidate_count == 0,
+            "Estimated selector invoked its exact-cost provider without a cost request");
+      EntropyCodeCost evaluated_cost;
+      Ok(OptimizeAnsEntropyCodeWithCostEvaluator(streams, prefix, evaluator, &evaluated,
+                                                  &evaluated_cost, &evaluator_profile, kEstimated));
+      Check(evaluated == estimated && evaluator.calls == 1 && evaluator.candidates == 1 &&
+                evaluator_profile.ans_token_cost_candidate_count == 1 && evaluated_cost == cost,
+            "Estimated selector did not measure exactly the requested selected model");
+      for (auto selection : {AnsSelectionMode::kExact, AnsSelectionMode::kEstimated}) {
+        EntropyCode unprepared_model, reused_model;
+        EntropyCodeCost unprepared_cost, reused_cost;
+        EntropyWorkProfile reuse_profile;
+        CostProbe probe;
+        Ok(OptimizeAnsEntropyCode(streams, prefix, &unprepared_model, &unprepared_cost, nullptr,
+                                   selection));
+        Ok(OptimizeAnsEntropyCodeWithPreparedClusters(streams, prefix, retained, &reused_model,
+            &reused_cost, &reuse_profile, selection, &probe));
+        Check(reused_model == unprepared_model && reused_cost == unprepared_cost && probe.calls > 0 &&
+                  reuse_profile.ans_token_cost_candidate_count == probe.candidates &&
+                  reuse_profile.ans_value_collection_nanoseconds == 0 &&
+                  reuse_profile.ans_value_aggregation_nanoseconds == 0,
+              "Prepared provider changed model/cost, miscounted candidates or recollected populations");
+      }
+    }
     PreparedAnsEntropyCode candidates;
     if (direct)
       Ok(PrepareRateOptimizedAnsEntropyCode(streams, {.context_count = 3}, &candidates));

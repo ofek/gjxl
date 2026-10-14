@@ -1,0 +1,1241 @@
+{
+  "schema": 2,
+  "raw": {
+    "schema": 1,
+    "revision": "cd9d1aa931d8fe9fd0c651018c8409e0f3abdcc5",
+    "binary": {
+      "path": "/Users/yunhocho/GitHub/gjxl-modular-adaptive-gpu/build/entropy-estimated-qualified-20261011/bin/gjxl_modular_search_profile",
+      "sha256": "b66d5b4f7257071cebdef5104e9067b9185559712342667813be5f66387d8648"
+    },
+    "artifact_root": "/Users/yunhocho/GitHub/gjxl-modular-adaptive-gpu/build/entropy-estimated-qualified-20261011",
+    "artifacts_verified": 62,
+    "complete_calls": 15,
+    "images": [
+      {
+        "image": "1029",
+        "routes": {
+          "exact": {
+            "bytes": 10821744,
+            "seconds": {
+              "median": 140.579029229,
+              "minimum": 139.75216725,
+              "maximum": 141.405891208,
+              "values": [
+                139.75216725,
+                141.405891208
+              ]
+            },
+            "stages": {
+              "input": {
+                "median": 0.6482615015000001,
+                "minimum": 0.509749624,
+                "maximum": 0.7867733790000001,
+                "values": [
+                  0.509749624,
+                  0.7867733790000001
+                ]
+              },
+              "transforms": {
+                "median": 4.11404423,
+                "minimum": 4.085765503,
+                "maximum": 4.142322957,
+                "values": [
+                  4.085765503,
+                  4.142322957
+                ]
+              },
+              "training": {
+                "median": 46.477440479500004,
+                "minimum": 46.426485291000006,
+                "maximum": 46.528395668,
+                "values": [
+                  46.426485291000006,
+                  46.528395668
+                ]
+              },
+              "tokens": {
+                "median": 20.84624827149999,
+                "minimum": 20.731234453999996,
+                "maximum": 20.961262088999987,
+                "values": [
+                  20.961262088999987,
+                  20.731234453999996
+                ]
+              },
+              "model": {
+                "median": 44.606762082,
+                "minimum": 43.81092845799999,
+                "maximum": 45.40259570600001,
+                "values": [
+                  43.81092845799999,
+                  45.40259570600001
+                ]
+              },
+              "emission": {
+                "median": 23.779382626999997,
+                "minimum": 23.701555336999995,
+                "maximum": 23.857209916999995,
+                "values": [
+                  23.857209916999995,
+                  23.701555336999995
+                ]
+              },
+              "assembly": {
+                "median": 0.09987146150000001,
+                "minimum": 0.09278196300000001,
+                "maximum": 0.10696096000000001,
+                "values": [
+                  0.09278196300000001,
+                  0.10696096000000001
+                ]
+              },
+              "gpu_input_tokens": {
+                "median": 0.0,
+                "minimum": 0,
+                "maximum": 0,
+                "values": [
+                  0,
+                  0
+                ]
+              }
+            },
+            "peak_backing": 1370775407,
+            "planned_capacity": 6730159807
+          },
+          "estimated": {
+            "bytes": 10821744,
+            "seconds": {
+              "median": 128.66597416599998,
+              "minimum": 127.933734041,
+              "maximum": 129.398214291,
+              "values": [
+                127.933734041,
+                129.398214291
+              ]
+            },
+            "stages": {
+              "input": {
+                "median": 0.5759271635,
+                "minimum": 0.5154696249999999,
+                "maximum": 0.636384702,
+                "values": [
+                  0.5154696249999999,
+                  0.636384702
+                ]
+              },
+              "transforms": {
+                "median": 4.149355649,
+                "minimum": 4.141979962,
+                "maximum": 4.156731336000001,
+                "values": [
+                  4.141979962,
+                  4.156731336000001
+                ]
+              },
+              "training": {
+                "median": 46.426261417999996,
+                "minimum": 46.400372336,
+                "maximum": 46.4521505,
+                "values": [
+                  46.4521505,
+                  46.400372336
+                ]
+              },
+              "tokens": {
+                "median": 20.800122899,
+                "minimum": 20.726513883000006,
+                "maximum": 20.873731914999997,
+                "values": [
+                  20.873731914999997,
+                  20.726513883000006
+                ]
+              },
+              "model": {
+                "median": 33.2659872695,
+                "minimum": 32.683229129,
+                "maximum": 33.84874541000001,
+                "values": [
+                  32.683229129,
+                  33.84874541000001
+                ]
+              },
+              "emission": {
+                "median": 23.351836709499995,
+                "minimum": 23.176305289,
+                "maximum": 23.527368129999992,
+                "values": [
+                  23.176305289,
+                  23.527368129999992
+                ]
+              },
+              "assembly": {
+                "median": 0.09049053950000001,
+                "minimum": 0.08478299400000004,
+                "maximum": 0.09619808499999997,
+                "values": [
+                  0.08478299400000004,
+                  0.09619808499999997
+                ]
+              },
+              "gpu_input_tokens": {
+                "median": 0.0,
+                "minimum": 0,
+                "maximum": 0,
+                "values": [
+                  0,
+                  0
+                ]
+              }
+            },
+            "peak_backing": 1370775407,
+            "planned_capacity": 6724216103
+          }
+        },
+        "extra_bytes": 0,
+        "ratio": 1.0925890091783725,
+        "same_policy": true
+      },
+      {
+        "image": "1039",
+        "routes": {
+          "exact": {
+            "bytes": 7230909,
+            "seconds": {
+              "median": 134.7562511245,
+              "minimum": 133.419747208,
+              "maximum": 136.092755041,
+              "values": [
+                136.092755041,
+                133.419747208
+              ]
+            },
+            "stages": {
+              "input": {
+                "median": 0.577640941,
+                "minimum": 0.45896466799999996,
+                "maximum": 0.696317214,
+                "values": [
+                  0.696317214,
+                  0.45896466799999996
+                ]
+              },
+              "transforms": {
+                "median": 4.109827227499999,
+                "minimum": 4.029624414999999,
+                "maximum": 4.19003004,
+                "values": [
+                  4.19003004,
+                  4.029624414999999
+                ]
+              },
+              "training": {
+                "median": 44.252710311499996,
+                "minimum": 44.227890499999994,
+                "maximum": 44.277530123000005,
+                "values": [
+                  44.277530123000005,
+                  44.227890499999994
+                ]
+              },
+              "tokens": {
+                "median": 20.646239644999994,
+                "minimum": 20.273619839000002,
+                "maximum": 21.018859450999983,
+                "values": [
+                  21.018859450999983,
+                  20.273619839000002
+                ]
+              },
+              "model": {
+                "median": 45.309740417,
+                "minimum": 44.562387537999996,
+                "maximum": 46.057093296000005,
+                "values": [
+                  46.057093296000005,
+                  44.562387537999996
+                ]
+              },
+              "emission": {
+                "median": 19.782439544000002,
+                "minimum": 19.770857044000003,
+                "maximum": 19.794022044000002,
+                "values": [
+                  19.770857044000003,
+                  19.794022044000002
+                ]
+              },
+              "assembly": {
+                "median": 0.071770607,
+                "minimum": 0.06742029799999999,
+                "maximum": 0.07612091600000001,
+                "values": [
+                  0.07612091600000001,
+                  0.06742029799999999
+                ]
+              },
+              "gpu_input_tokens": {
+                "median": 0.0,
+                "minimum": 0,
+                "maximum": 0,
+                "values": [
+                  0,
+                  0
+                ]
+              }
+            },
+            "peak_backing": 1356513009,
+            "planned_capacity": 6730159807
+          },
+          "estimated": {
+            "bytes": 7230909,
+            "seconds": {
+              "median": 158.964867458,
+              "minimum": 124.736865541,
+              "maximum": 193.192869375,
+              "values": [
+                124.736865541,
+                193.192869375
+              ]
+            },
+            "stages": {
+              "input": {
+                "median": 0.643903562,
+                "minimum": 0.6419928329999999,
+                "maximum": 0.6458142910000002,
+                "values": [
+                  0.6419928329999999,
+                  0.6458142910000002
+                ]
+              },
+              "transforms": {
+                "median": 4.226858664,
+                "minimum": 4.193823205999999,
+                "maximum": 4.259894122,
+                "values": [
+                  4.193823205999999,
+                  4.259894122
+                ]
+              },
+              "training": {
+                "median": 44.982952229000006,
+                "minimum": 44.431636,
+                "maximum": 45.53426845800001,
+                "values": [
+                  44.431636,
+                  45.53426845800001
+                ]
+              },
+              "tokens": {
+                "median": 20.583378110500014,
+                "minimum": 20.408793885,
+                "maximum": 20.757962336000027,
+                "values": [
+                  20.757962336000027,
+                  20.408793885
+                ]
+              },
+              "model": {
+                "median": 34.88746912399999,
+                "minimum": 34.75151895999999,
+                "maximum": 35.02341928799999,
+                "values": [
+                  35.02341928799999,
+                  34.75151895999999
+                ]
+              },
+              "emission": {
+                "median": 53.55661633550001,
+                "minimum": 19.608419168999994,
+                "maximum": 87.50481350200002,
+                "values": [
+                  19.608419168999994,
+                  87.50481350200002
+                ]
+              },
+              "assembly": {
+                "median": 0.0721875405,
+                "minimum": 0.071002123,
+                "maximum": 0.07337295799999999,
+                "values": [
+                  0.07337295799999999,
+                  0.071002123
+                ]
+              },
+              "gpu_input_tokens": {
+                "median": 0.0,
+                "minimum": 0,
+                "maximum": 0,
+                "values": [
+                  0,
+                  0
+                ]
+              }
+            },
+            "peak_backing": 1356513009,
+            "planned_capacity": 6724216103
+          }
+        },
+        "extra_bytes": 0,
+        "ratio": 0.8477109016563291,
+        "same_policy": true
+      },
+      {
+        "image": "1049",
+        "routes": {
+          "exact": {
+            "bytes": 7336102,
+            "seconds": {
+              "median": 133.969766521,
+              "minimum": 133.876834167,
+              "maximum": 134.062698875,
+              "values": [
+                133.876834167,
+                134.062698875
+              ]
+            },
+            "stages": {
+              "input": {
+                "median": 0.6606816684999999,
+                "minimum": 0.6373229149999999,
+                "maximum": 0.6840404219999999,
+                "values": [
+                  0.6840404219999999,
+                  0.6373229149999999
+                ]
+              },
+              "transforms": {
+                "median": 4.186972959499999,
+                "minimum": 4.168493128000001,
+                "maximum": 4.205452790999998,
+                "values": [
+                  4.205452790999998,
+                  4.168493128000001
+                ]
+              },
+              "training": {
+                "median": 44.6907898315,
+                "minimum": 44.630492579999995,
+                "maximum": 44.751087083,
+                "values": [
+                  44.630492579999995,
+                  44.751087083
+                ]
+              },
+              "tokens": {
+                "median": 20.17079441650001,
+                "minimum": 19.985622747000022,
+                "maximum": 20.355966086,
+                "values": [
+                  20.355966086,
+                  19.985622747000022
+                ]
+              },
+              "model": {
+                "median": 44.74046296,
+                "minimum": 44.590150668000014,
+                "maximum": 44.89077525199999,
+                "values": [
+                  44.590150668000014,
+                  44.89077525199999
+                ]
+              },
+              "emission": {
+                "median": 19.446341205000003,
+                "minimum": 19.336200626000004,
+                "maximum": 19.556481784000002,
+                "values": [
+                  19.336200626000004,
+                  19.556481784000002
+                ]
+              },
+              "assembly": {
+                "median": 0.06779598049999999,
+                "minimum": 0.0670055,
+                "maximum": 0.068586461,
+                "values": [
+                  0.068586461,
+                  0.0670055
+                ]
+              },
+              "gpu_input_tokens": {
+                "median": 0.0,
+                "minimum": 0,
+                "maximum": 0,
+                "values": [
+                  0,
+                  0
+                ]
+              }
+            },
+            "peak_backing": 1355708723,
+            "planned_capacity": 6730159807
+          },
+          "estimated": {
+            "bytes": 7336102,
+            "seconds": {
+              "median": 122.77117293750001,
+              "minimum": 121.15468375,
+              "maximum": 124.387662125,
+              "values": [
+                121.15468375,
+                124.387662125
+              ]
+            },
+            "stages": {
+              "input": {
+                "median": 0.6081818154999998,
+                "minimum": 0.459121255,
+                "maximum": 0.7572423759999998,
+                "values": [
+                  0.459121255,
+                  0.7572423759999998
+                ]
+              },
+              "transforms": {
+                "median": 4.134481062000001,
+                "minimum": 4.064178165,
+                "maximum": 4.204783959,
+                "values": [
+                  4.064178165,
+                  4.204783959
+                ]
+              },
+              "training": {
+                "median": 44.623536124500006,
+                "minimum": 44.392368250000004,
+                "maximum": 44.854703999,
+                "values": [
+                  44.392368250000004,
+                  44.854703999
+                ]
+              },
+              "tokens": {
+                "median": 20.546259352999993,
+                "minimum": 20.454629750000006,
+                "maximum": 20.63788895599998,
+                "values": [
+                  20.454629750000006,
+                  20.63788895599998
+                ]
+              },
+              "model": {
+                "median": 33.4176366035,
+                "minimum": 32.491333042,
+                "maximum": 34.34394016499999,
+                "values": [
+                  32.491333042,
+                  34.34394016499999
+                ]
+              },
+              "emission": {
+                "median": 19.372715353999993,
+                "minimum": 19.230291912,
+                "maximum": 19.515138795999988,
+                "values": [
+                  19.230291912,
+                  19.515138795999988
+                ]
+              },
+              "assembly": {
+                "median": 0.06222471350000001,
+                "minimum": 0.05666471100000002,
+                "maximum": 0.067784716,
+                "values": [
+                  0.05666471100000002,
+                  0.067784716
+                ]
+              },
+              "gpu_input_tokens": {
+                "median": 0.0,
+                "minimum": 0,
+                "maximum": 0,
+                "values": [
+                  0,
+                  0
+                ]
+              }
+            },
+            "peak_backing": 1355708723,
+            "planned_capacity": 6724216103
+          }
+        },
+        "extra_bytes": 0,
+        "ratio": 1.0912151714083642,
+        "same_policy": true
+      }
+    ],
+    "totals": {
+      "exact": {
+        "seconds": 409.3050468745,
+        "bytes": 25388755
+      },
+      "estimated": {
+        "seconds": 410.4020145615,
+        "bytes": 25388755
+      }
+    },
+    "ratio": 0.9973270899067783,
+    "extra_bytes": 0
+  },
+  "recheck": {
+    "path": "/Users/yunhocho/GitHub/gjxl-modular-adaptive-gpu/build/entropy-estimated-sleep-recheck-20261011",
+    "manifest_sha256": "fe6b368efffc45b51458fe24c535276f9337d358702079f89f4ccd3b3daa3f98",
+    "reason": "The original 1039-r2-estimated run intersected macOS Idle Sleep and Maintenance Sleep at 10:03:14 and 10:04:06 EDT; its activity log has a 72.438887-second sampling gap. Repeat both members; retain original raw timings.",
+    "excluded_pair": [
+      "1039-r2-exact",
+      "1039-r2-estimated"
+    ],
+    "evidence": {
+      "path": "/Users/yunhocho/GitHub/gjxl-modular-adaptive-gpu/build/entropy-estimated-sleep-events-20261011.log",
+      "sha256": "2ff7c84319bc3bd77c6fa76cca96c38a75b3a7ae3ae15ddfcf7564eb133e2964",
+      "overlapping_events": [
+        "2026-10-11 10:03:14 -0400 Sleep               \tEntering Sleep state due to 'Idle Sleep':TCPKeepAlive=active Using Batt (Charge:80%) 7 secs    ",
+        "2026-10-11 10:04:06 -0400 Sleep               \tEntering Sleep state due to 'Maintenance Sleep':TCPKeepAlive=active Using Batt (Charge:80%) 74 secs   "
+      ]
+    },
+    "selection": "Replace the entire externally interrupted pair; preserve original raw matrix; no subtraction or fastest-run selection."
+  },
+  "qualification": {
+    "images": [
+      {
+        "image": "1029",
+        "routes": {
+          "exact": {
+            "samples": [
+              "/Users/yunhocho/GitHub/gjxl-modular-adaptive-gpu/build/entropy-estimated-qualified-20261011/1029-r1-exact.stdout",
+              "/Users/yunhocho/GitHub/gjxl-modular-adaptive-gpu/build/entropy-estimated-qualified-20261011/1029-r2-exact.stdout"
+            ],
+            "bytes": 10821744,
+            "seconds": {
+              "median": 140.579029229,
+              "minimum": 139.75216725,
+              "maximum": 141.405891208,
+              "values": [
+                139.75216725,
+                141.405891208
+              ]
+            },
+            "stages": {
+              "input": {
+                "median": 0.6482615015000001,
+                "minimum": 0.509749624,
+                "maximum": 0.7867733790000001,
+                "values": [
+                  0.509749624,
+                  0.7867733790000001
+                ]
+              },
+              "transforms": {
+                "median": 4.11404423,
+                "minimum": 4.085765503,
+                "maximum": 4.142322957,
+                "values": [
+                  4.085765503,
+                  4.142322957
+                ]
+              },
+              "training": {
+                "median": 46.477440479500004,
+                "minimum": 46.426485291000006,
+                "maximum": 46.528395668,
+                "values": [
+                  46.426485291000006,
+                  46.528395668
+                ]
+              },
+              "tokens": {
+                "median": 20.84624827149999,
+                "minimum": 20.731234453999996,
+                "maximum": 20.961262088999987,
+                "values": [
+                  20.961262088999987,
+                  20.731234453999996
+                ]
+              },
+              "model": {
+                "median": 44.606762082,
+                "minimum": 43.81092845799999,
+                "maximum": 45.40259570600001,
+                "values": [
+                  43.81092845799999,
+                  45.40259570600001
+                ]
+              },
+              "emission": {
+                "median": 23.779382626999997,
+                "minimum": 23.701555336999995,
+                "maximum": 23.857209916999995,
+                "values": [
+                  23.857209916999995,
+                  23.701555336999995
+                ]
+              },
+              "assembly": {
+                "median": 0.09987146150000001,
+                "minimum": 0.09278196300000001,
+                "maximum": 0.10696096000000001,
+                "values": [
+                  0.09278196300000001,
+                  0.10696096000000001
+                ]
+              },
+              "gpu_input_tokens": {
+                "median": 0.0,
+                "minimum": 0,
+                "maximum": 0,
+                "values": [
+                  0,
+                  0
+                ]
+              }
+            },
+            "ans_cost_seconds": {
+              "median": 11.1007244155,
+              "minimum": 11.08548829,
+              "maximum": 11.115960541,
+              "values": [
+                11.08548829,
+                11.115960541
+              ]
+            },
+            "peak_backing": 1370775407,
+            "planned_capacity": 6730159807
+          },
+          "estimated": {
+            "samples": [
+              "/Users/yunhocho/GitHub/gjxl-modular-adaptive-gpu/build/entropy-estimated-qualified-20261011/1029-r1-estimated.stdout",
+              "/Users/yunhocho/GitHub/gjxl-modular-adaptive-gpu/build/entropy-estimated-qualified-20261011/1029-r2-estimated.stdout"
+            ],
+            "bytes": 10821744,
+            "seconds": {
+              "median": 128.66597416599998,
+              "minimum": 127.933734041,
+              "maximum": 129.398214291,
+              "values": [
+                127.933734041,
+                129.398214291
+              ]
+            },
+            "stages": {
+              "input": {
+                "median": 0.5759271635,
+                "minimum": 0.5154696249999999,
+                "maximum": 0.636384702,
+                "values": [
+                  0.5154696249999999,
+                  0.636384702
+                ]
+              },
+              "transforms": {
+                "median": 4.149355649,
+                "minimum": 4.141979962,
+                "maximum": 4.156731336000001,
+                "values": [
+                  4.141979962,
+                  4.156731336000001
+                ]
+              },
+              "training": {
+                "median": 46.426261417999996,
+                "minimum": 46.400372336,
+                "maximum": 46.4521505,
+                "values": [
+                  46.4521505,
+                  46.400372336
+                ]
+              },
+              "tokens": {
+                "median": 20.800122899,
+                "minimum": 20.726513883000006,
+                "maximum": 20.873731914999997,
+                "values": [
+                  20.873731914999997,
+                  20.726513883000006
+                ]
+              },
+              "model": {
+                "median": 33.2659872695,
+                "minimum": 32.683229129,
+                "maximum": 33.84874541000001,
+                "values": [
+                  32.683229129,
+                  33.84874541000001
+                ]
+              },
+              "emission": {
+                "median": 23.351836709499995,
+                "minimum": 23.176305289,
+                "maximum": 23.527368129999992,
+                "values": [
+                  23.176305289,
+                  23.527368129999992
+                ]
+              },
+              "assembly": {
+                "median": 0.09049053950000001,
+                "minimum": 0.08478299400000004,
+                "maximum": 0.09619808499999997,
+                "values": [
+                  0.08478299400000004,
+                  0.09619808499999997
+                ]
+              },
+              "gpu_input_tokens": {
+                "median": 0.0,
+                "minimum": 0,
+                "maximum": 0,
+                "values": [
+                  0,
+                  0
+                ]
+              }
+            },
+            "ans_cost_seconds": {
+              "median": 0.0,
+              "minimum": 0.0,
+              "maximum": 0.0,
+              "values": [
+                0.0,
+                0.0
+              ]
+            },
+            "peak_backing": 1370775407,
+            "planned_capacity": 6724216103
+          }
+        },
+        "ratio": 1.0925890091783725,
+        "extra_bytes": 0
+      },
+      {
+        "image": "1039",
+        "routes": {
+          "exact": {
+            "samples": [
+              "/Users/yunhocho/GitHub/gjxl-modular-adaptive-gpu/build/entropy-estimated-qualified-20261011/1039-r1-exact.stdout",
+              "/Users/yunhocho/GitHub/gjxl-modular-adaptive-gpu/build/entropy-estimated-sleep-recheck-20261011/exact.stdout"
+            ],
+            "bytes": 7230909,
+            "seconds": {
+              "median": 136.280259229,
+              "minimum": 136.092755041,
+              "maximum": 136.467763417,
+              "values": [
+                136.092755041,
+                136.467763417
+              ]
+            },
+            "stages": {
+              "input": {
+                "median": 0.726277649,
+                "minimum": 0.696317214,
+                "maximum": 0.756238084,
+                "values": [
+                  0.696317214,
+                  0.756238084
+                ]
+              },
+              "transforms": {
+                "median": 4.2208589565,
+                "minimum": 4.19003004,
+                "maximum": 4.251687873,
+                "values": [
+                  4.19003004,
+                  4.251687873
+                ]
+              },
+              "training": {
+                "median": 44.309364082,
+                "minimum": 44.277530123000005,
+                "maximum": 44.341198041,
+                "values": [
+                  44.277530123000005,
+                  44.341198041
+                ]
+              },
+              "tokens": {
+                "median": 20.910427245499996,
+                "minimum": 20.801995040000005,
+                "maximum": 21.018859450999983,
+                "values": [
+                  21.018859450999983,
+                  20.801995040000005
+                ]
+              },
+              "model": {
+                "median": 46.07548102300001,
+                "minimum": 46.057093296000005,
+                "maximum": 46.09386875000002,
+                "values": [
+                  46.057093296000005,
+                  46.09386875000002
+                ]
+              },
+              "emission": {
+                "median": 19.955980813500002,
+                "minimum": 19.770857044000003,
+                "maximum": 20.141104583,
+                "values": [
+                  19.770857044000003,
+                  20.141104583
+                ]
+              },
+              "assembly": {
+                "median": 0.07574377100000002,
+                "minimum": 0.07536662600000002,
+                "maximum": 0.07612091600000001,
+                "values": [
+                  0.07612091600000001,
+                  0.07536662600000002
+                ]
+              },
+              "gpu_input_tokens": {
+                "median": 0.0,
+                "minimum": 0,
+                "maximum": 0,
+                "values": [
+                  0,
+                  0
+                ]
+              }
+            },
+            "ans_cost_seconds": {
+              "median": 10.7551538725,
+              "minimum": 10.737610373,
+              "maximum": 10.772697372,
+              "values": [
+                10.737610373,
+                10.772697372
+              ]
+            },
+            "peak_backing": 1356513009,
+            "planned_capacity": 6730159807
+          },
+          "estimated": {
+            "samples": [
+              "/Users/yunhocho/GitHub/gjxl-modular-adaptive-gpu/build/entropy-estimated-qualified-20261011/1039-r1-estimated.stdout",
+              "/Users/yunhocho/GitHub/gjxl-modular-adaptive-gpu/build/entropy-estimated-sleep-recheck-20261011/estimated.stdout"
+            ],
+            "bytes": 7230909,
+            "seconds": {
+              "median": 124.7104588745,
+              "minimum": 124.684052208,
+              "maximum": 124.736865541,
+              "values": [
+                124.736865541,
+                124.684052208
+              ]
+            },
+            "stages": {
+              "input": {
+                "median": 0.694432228,
+                "minimum": 0.6419928329999999,
+                "maximum": 0.7468716230000002,
+                "values": [
+                  0.6419928329999999,
+                  0.7468716230000002
+                ]
+              },
+              "transforms": {
+                "median": 4.1950901875,
+                "minimum": 4.193823205999999,
+                "maximum": 4.196357169,
+                "values": [
+                  4.193823205999999,
+                  4.196357169
+                ]
+              },
+              "training": {
+                "median": 44.3267537705,
+                "minimum": 44.221871541,
+                "maximum": 44.431636,
+                "values": [
+                  44.431636,
+                  44.221871541
+                ]
+              },
+              "tokens": {
+                "median": 20.679142960000007,
+                "minimum": 20.600323583999987,
+                "maximum": 20.757962336000027,
+                "values": [
+                  20.757962336000027,
+                  20.600323583999987
+                ]
+              },
+              "model": {
+                "median": 35.13987422849999,
+                "minimum": 35.02341928799999,
+                "maximum": 35.256329169,
+                "values": [
+                  35.02341928799999,
+                  35.256329169
+                ]
+              },
+              "emission": {
+                "median": 19.590876795499995,
+                "minimum": 19.573334422,
+                "maximum": 19.608419168999994,
+                "values": [
+                  19.608419168999994,
+                  19.573334422
+                ]
+              },
+              "assembly": {
+                "median": 0.07781372850000001,
+                "minimum": 0.07337295799999999,
+                "maximum": 0.08225449900000002,
+                "values": [
+                  0.07337295799999999,
+                  0.08225449900000002
+                ]
+              },
+              "gpu_input_tokens": {
+                "median": 0.0,
+                "minimum": 0,
+                "maximum": 0,
+                "values": [
+                  0,
+                  0
+                ]
+              }
+            },
+            "ans_cost_seconds": {
+              "median": 0.0,
+              "minimum": 0.0,
+              "maximum": 0.0,
+              "values": [
+                0.0,
+                0.0
+              ]
+            },
+            "peak_backing": 1356513009,
+            "planned_capacity": 6724216103
+          }
+        },
+        "ratio": 1.0927732963130465,
+        "extra_bytes": 0
+      },
+      {
+        "image": "1049",
+        "routes": {
+          "exact": {
+            "samples": [
+              "/Users/yunhocho/GitHub/gjxl-modular-adaptive-gpu/build/entropy-estimated-qualified-20261011/1049-r1-exact.stdout",
+              "/Users/yunhocho/GitHub/gjxl-modular-adaptive-gpu/build/entropy-estimated-qualified-20261011/1049-r2-exact.stdout"
+            ],
+            "bytes": 7336102,
+            "seconds": {
+              "median": 133.969766521,
+              "minimum": 133.876834167,
+              "maximum": 134.062698875,
+              "values": [
+                133.876834167,
+                134.062698875
+              ]
+            },
+            "stages": {
+              "input": {
+                "median": 0.6606816684999999,
+                "minimum": 0.6373229149999999,
+                "maximum": 0.6840404219999999,
+                "values": [
+                  0.6840404219999999,
+                  0.6373229149999999
+                ]
+              },
+              "transforms": {
+                "median": 4.186972959499999,
+                "minimum": 4.168493128000001,
+                "maximum": 4.205452790999998,
+                "values": [
+                  4.205452790999998,
+                  4.168493128000001
+                ]
+              },
+              "training": {
+                "median": 44.6907898315,
+                "minimum": 44.630492579999995,
+                "maximum": 44.751087083,
+                "values": [
+                  44.630492579999995,
+                  44.751087083
+                ]
+              },
+              "tokens": {
+                "median": 20.17079441650001,
+                "minimum": 19.985622747000022,
+                "maximum": 20.355966086,
+                "values": [
+                  20.355966086,
+                  19.985622747000022
+                ]
+              },
+              "model": {
+                "median": 44.74046296,
+                "minimum": 44.590150668000014,
+                "maximum": 44.89077525199999,
+                "values": [
+                  44.590150668000014,
+                  44.89077525199999
+                ]
+              },
+              "emission": {
+                "median": 19.446341205000003,
+                "minimum": 19.336200626000004,
+                "maximum": 19.556481784000002,
+                "values": [
+                  19.336200626000004,
+                  19.556481784000002
+                ]
+              },
+              "assembly": {
+                "median": 0.06779598049999999,
+                "minimum": 0.0670055,
+                "maximum": 0.068586461,
+                "values": [
+                  0.068586461,
+                  0.0670055
+                ]
+              },
+              "gpu_input_tokens": {
+                "median": 0.0,
+                "minimum": 0,
+                "maximum": 0,
+                "values": [
+                  0,
+                  0
+                ]
+              }
+            },
+            "ans_cost_seconds": {
+              "median": 10.643738768999999,
+              "minimum": 10.546226713,
+              "maximum": 10.741250825,
+              "values": [
+                10.546226713,
+                10.741250825
+              ]
+            },
+            "peak_backing": 1355708723,
+            "planned_capacity": 6730159807
+          },
+          "estimated": {
+            "samples": [
+              "/Users/yunhocho/GitHub/gjxl-modular-adaptive-gpu/build/entropy-estimated-qualified-20261011/1049-r1-estimated.stdout",
+              "/Users/yunhocho/GitHub/gjxl-modular-adaptive-gpu/build/entropy-estimated-qualified-20261011/1049-r2-estimated.stdout"
+            ],
+            "bytes": 7336102,
+            "seconds": {
+              "median": 122.77117293750001,
+              "minimum": 121.15468375,
+              "maximum": 124.387662125,
+              "values": [
+                121.15468375,
+                124.387662125
+              ]
+            },
+            "stages": {
+              "input": {
+                "median": 0.6081818154999998,
+                "minimum": 0.459121255,
+                "maximum": 0.7572423759999998,
+                "values": [
+                  0.459121255,
+                  0.7572423759999998
+                ]
+              },
+              "transforms": {
+                "median": 4.134481062000001,
+                "minimum": 4.064178165,
+                "maximum": 4.204783959,
+                "values": [
+                  4.064178165,
+                  4.204783959
+                ]
+              },
+              "training": {
+                "median": 44.623536124500006,
+                "minimum": 44.392368250000004,
+                "maximum": 44.854703999,
+                "values": [
+                  44.392368250000004,
+                  44.854703999
+                ]
+              },
+              "tokens": {
+                "median": 20.546259352999993,
+                "minimum": 20.454629750000006,
+                "maximum": 20.63788895599998,
+                "values": [
+                  20.454629750000006,
+                  20.63788895599998
+                ]
+              },
+              "model": {
+                "median": 33.4176366035,
+                "minimum": 32.491333042,
+                "maximum": 34.34394016499999,
+                "values": [
+                  32.491333042,
+                  34.34394016499999
+                ]
+              },
+              "emission": {
+                "median": 19.372715353999993,
+                "minimum": 19.230291912,
+                "maximum": 19.515138795999988,
+                "values": [
+                  19.230291912,
+                  19.515138795999988
+                ]
+              },
+              "assembly": {
+                "median": 0.06222471350000001,
+                "minimum": 0.05666471100000002,
+                "maximum": 0.067784716,
+                "values": [
+                  0.05666471100000002,
+                  0.067784716
+                ]
+              },
+              "gpu_input_tokens": {
+                "median": 0.0,
+                "minimum": 0,
+                "maximum": 0,
+                "values": [
+                  0,
+                  0
+                ]
+              }
+            },
+            "ans_cost_seconds": {
+              "median": 0.0,
+              "minimum": 0.0,
+              "maximum": 0.0,
+              "values": [
+                0.0,
+                0.0
+              ]
+            },
+            "peak_backing": 1355708723,
+            "planned_capacity": 6724216103
+          }
+        },
+        "ratio": 1.0912151714083642,
+        "extra_bytes": 0
+      }
+    ],
+    "totals": {
+      "exact": {
+        "seconds": 410.82905497900003,
+        "bytes": 25388755
+      },
+      "estimated": {
+        "seconds": 376.147605978,
+        "bytes": 25388755
+      }
+    },
+    "ratio": 1.0922017007414597,
+    "extra_bytes": 0
+  }
+}

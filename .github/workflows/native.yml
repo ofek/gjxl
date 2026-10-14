@@ -61,24 +61,13 @@ jobs:
             reference_build=build/ci/pinned-libjxl-clang
           fi
           cmake -S . -B build/ci "-DGJXL_MODULAR_ORACLE_BUILD:PATH=$PWD/$reference_build"
-      - name: Build Modular qualification targets
-        run: >-
-          cmake --build build/ci --parallel 4 --target
-          gjxl_modular_stream_test gjxl_modular_foundation_test
-          gjxl_modular_gpu_input_test
-          gjxl_modular_gpu_token_plan_test
-          gjxl_modular_gpu_token_handoff_test
-          gjxl_modular_gpu_preparation_test
-          gjxl_modular_gpu_workflow_test
-          gjxl_modular_workflow_test gjxl_modular_capture
-          gjxl_modular_oracle_test gjxl_modular_conformance_test
-          gjxl_modular_policy_test gjxl_modular_transform_test
-          gjxl_modular_api_test gjxl_modular_reference_capture gjxl_encode
+      - name: Build
+        # Build all registered tests before qualification, including the learned
+        # workflow and oracle variants added alongside the legacy GPU path.
+        run: cmake --build build/ci --parallel 4
       - name: Qualify Modular encoding
         working-directory: build/ci
         run: ctest --output-on-failure --parallel 2 --timeout 600 --no-tests=error -R "^modular_" --output-junit modular-tests.xml
-      - name: Build
-        run: cmake --build build/ci --parallel 4
       - name: Test
         run: ctest --test-dir build/ci --output-on-failure --parallel 2 -E "^modular_"
       - name: Diagnose Metal baseline on failure

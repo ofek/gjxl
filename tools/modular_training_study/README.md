@@ -1,5 +1,33 @@
 # Native Modular training coverage study
 
+The current [entropy efficiency plan](../../docs/modular-entropy-efficiency.md)
+tracks estimated ANS selection, exact population reuse, candidate evaluation,
+GPU statistics, and the controlled entropy-rate study. `gjxl_modular_search_profile`
+accepts `--estimated-ans` with any CPU/Metal route; the JSON records its selection
+mode. `entropy_efficiency.py` captures and audits the original three full-resolution
+images with exact/estimated GPU pairs and independent CPU estimated controls.
+See the plan for reproduction commands and qualification status.
+
+The [parallel weighted-feature preparation report](../../docs/parallel-weighted-feature-preparation.md)
+documents bounded CPU preparation and the Metal wavefront producer. On a Metal
+benchmark build, `gjxl_modular_feature_profile INPUT REPETITIONS raw|rct|squeeze|palette`
+compares one/two/four CPU participants and GPU preparation of the same prepared
+frame. It emits one warm-up plus the requested measured rounds, reversing order
+between rounds, and checks every feature against the serial reference. Input
+reading/transforms, backend setup and the retained reference are outside its
+operation timer; allocation, copies, scheduling/dispatch, completion and publication
+are inside. Its reservation covers one operation; the source and reference are
+additional live memory outside that reservation.
+
+For complete encoder comparisons, `gjxl_modular_search_profile` accepts
+`--cpu-features`, `--gpu-features` or `--auto-features` with a Metal route. Auto is
+the workflow default and selects the producer before execution using the
+qualified size/shape gate. `adaptive_gpu.feature_preparation` records actual CPU
+participants, GPU work and pre-dispatch CPU fallbacks. `--gpu-features` bypasses
+the size gate but still respects device and shape eligibility. Errors after work
+begins propagate without retry. These switches do not change learner policy or
+feature sharing, and they do not select GPU feature work in CPU-only encoding.
+
 This opt-in CPU study measures complete raw lossless Modular files, including
 transform/tree/model headers and padding. It does not modify public defaults.
 Use a clean pinned libjxl source/build for independent sample-exact decoding.
@@ -131,3 +159,169 @@ exact instrumentation and build provenance.
 The analysis separates actual fixed-cap files, selection among measured
 checkpoint files, and actual normal-search outputs. It never substitutes a
 selection envelope for a newly measured full-search configuration.
+# Complete-search profiling
+
+With `GJXL_BUILD_BENCHMARKS=ON` and a pinned `GJXL_MODULAR_ORACLE_BUILD`, the main
+build provides `gjxl_modular_search_profile`. It runs one complete CPU ANS search
+with the original learner, the requested sample/leaf budgets, retained baseline
+candidates, and checkpoint selection:
+
+```sh
+build/release/gjxl_modular_search_profile input.pam output.jxl 262144 256 4 > result.json
+```
+
+The wall timer brackets `EncodeModularImage`, including all learning and candidate
+encodes. PNM input, pinned decoder validation, and output-file writing are outside
+that timer. Successful output requires exact decoded samples and released workflow
+resources. The JSON records the full winning tree/transform policy, encoded size,
+candidate count, resource peaks, top-level phases, detailed training attribution,
+and entropy diagnostics.
+
+`training.stages` contains disjoint nested intervals inside `stages.training`;
+do not add both levels into an end-to-end total. Sample gathering includes quota
+preparation and retained training samples. It also includes the complete weighted
+predictor scan when completed features are not shared with learning. The
+split-scanning interval includes histogram updates and candidate
+threshold scoring. Tree control excludes the separately attributed preparation,
+histogram, sorting, and scanning intervals. Entropy diagnostics retain their
+existing nesting: prefix value aggregation is inside prefix configuration search.
+
+Append `--no-profile` for an ordinary control call. Its profile counters are zero
+and its policy is null; encoded bytes and decode validation remain available.
+Compare complete files to a profiled call before interpreting the attribution.
+Retain binary/input/output hashes, build revision and flags, exact commands, and
+machine activity alongside captures. One capture on a busy desktop is diagnostic,
+not a qualified throughput comparison.
+
+In a Metal-enabled build, append `--metal` to measure the complete hybrid search:
+
+```sh
+build/release/gjxl_modular_search_profile input.pam output.jxl 262144 256 4 --metal > result.json
+```
+
+The backend is initialized before the timer and its setup duration is recorded
+separately. CPU transforms and weighted-feature preparation, call-local cache
+creation/replacement, GPU token evaluation, CPU entropy processing and output
+publication all remain inside the encoder-call timer. Search policy and candidate
+order are identical to the CPU control. `--metal --no-profile` is supported too;
+actual `gpu_submissions` and `gpu_allocations` remain recorded with profiling off.
+
+The JSON route is `hybrid-complete-search`. The `adaptive_gpu` object contains
+feature preparation/reuse/eviction counts and GPU/fallback candidate counts.
+`feature_seconds` spans both learning and token consumers; its
+`learning_feature_seconds` subset is inside `stages.training`, and the remainder
+plus `token_seconds` is inside `stages.tokens`. These are not additional phases
+or device-only timestamps. The older `gpu_input_tokens` stage
+belongs to the separate prescribed unpack/RCT/token route and stays zero here.
+The CPU-only build rejects `--metal` explicitly. Compare complete bytes and the
+entire winning policy, including weighted parameters, before interpreting paired
+CPU/hybrid timings.
+
+Every Metal search route lets learning borrow the same completed weighted
+prediction map as token generation by default. Append `--no-shared-features` for
+the unshared comparison control; `--shared-features` remains an explicit enable
+switch. Sharing does not change the learner, candidates or entropy policy.
+The cache retains one transformed configuration per encoder call. See
+[`gpu-modular-shared-features.md`](../../docs/gpu-modular-shared-features.md) for its
+ownership contract, validation and paired measurements.
+
+With sharing enabled, `feature_seconds` includes preparation requested by either
+consumer. `learning_feature_seconds` is the subset within `stages.training`;
+subtract it from `feature_seconds` before combining the remainder with
+`token_seconds` under `stages.tokens`. It is separate from the nested training
+stages, including `sample_gathering`. `feature_preparations + feature_reuses`
+equals GPU token requests plus `learning_feature_uses`. The learner reports full
+population counts in `weighted_prediction_samples` and `reused_prediction_samples`;
+their sum is `population`. In the search route every prepared map is weighted,
+so `adaptive_gpu.feature_samples + training.weighted_prediction_samples` counts
+the weighted predictor evaluations actually performed by both producers.
+
+The older frozen-study tools retain their original route assumptions; use them
+with their recorded binaries and revisions. Use `shared_features.py` for new
+off/on paired captures:
+
+```sh
+python3 tools/modular_training_study/shared_features.py capture build/shared-features-pilot \
+  --binary build/release/gjxl_modular_search_profile \
+  --inputs-manifest /path/to/entropy-pipeline-qualified/manifest.json
+python3 tools/modular_training_study/shared_features.py audit build/shared-features-pilot \
+  --output build/shared-features-results.json
+```
+
+This runs three small image pairs and two pairs per original 12 MP image, using
+one frozen binary with explicit `--no-shared-features` and `--shared-features`
+arms. New manifests use schema 2; auditing still accepts the original schema 1
+pilot, whose frozen binary defaulted to unshared features. It retains the exact
+source patch relative to HEAD, build configuration, input and output hashes,
+complete candidate ledgers, and power/thermal/process observations. The audit
+checks byte identity, every candidate decision/cost, training work, eliminated
+prediction evaluations, timing nesting and unchanged admission bounds.
+
+The frozen one-pair pilot and validation command are documented in
+[`gpu-adaptive-modular-hybrid.md`](../../docs/gpu-adaptive-modular-hybrid.md).
+`analyze_adaptive_hybrid.py` verifies the saved hashes, routes, complete-file and
+policy parity, training work counters and cache accounting before regenerating
+the report. It reports timings as diagnostic observations, alongside exact
+ANS attribution and the increased managed backing/admission requirement.
+
+`--metal-ans` enables the resident-token hybrid route plus exact GPU ANS cost
+evaluation; use it instead of `--metal`. It preserves the CPU model search,
+candidate pruning and ties. Its route is `hybrid-ans-complete-search`.
+`adaptive_gpu.ans_gpu_groups` counts successful cost submissions,
+`ans_gpu_states` counts section/candidate states, and
+`ans_cpu_fallback_groups` counts explicit pre-dispatch scalar fallback. The
+existing `entropy_work.ans_token_cost_ns` includes model upload, GPU wait and
+conversion inside `stages.model`. Actual `gpu_submissions` is token-generation
+submissions plus cost-group submissions. `--metal-ans --no-profile` also works;
+backend counts remain enabled while optional attribution counters are zero.
+
+
+The repeated CPU/exact-ANS hybrid qualification and regeneration command are in
+[`gpu-adaptive-modular-ans.md`](../../docs/gpu-adaptive-modular-ans.md).
+`analyze_adaptive_ans.py` verifies all 100 retained artifacts, the 21-capture
+matrix and pair order, complete-file/policy/training parity, routes and resources
+before reporting per-image medians/ranges and actual paired ratios. It rejects
+incomplete captures and corrupted checksums. The small-section CPU crossover is
+reported by `ans_cpu_small_groups`, a subset of `ans_cpu_fallback_groups`.
+
+
+`--metal-learn` adds exact original-learner split statistics to `--metal-ans`.
+Its route is `hybrid-learning-complete-search`. CPU property sorting, threshold
+selection, greedy growth, checkpoints and quantized learning remain on the CPU.
+The `tree_prepare_seconds` and `tree_evaluate_seconds` counters are nested within
+training/split scanning; do not add them to total training time. Preparation
+copies immutable residual codes and count costs once per eligible learning call;
+it does not submit device work. Each `tree_gpu_groups` count is one submission
+containing histogram and cost dispatches. Total submissions therefore equal GPU
+token candidates plus ANS groups plus learner groups. Small-leaf properties are
+an explicit subset of `tree_cpu_fallback_properties`, and quantized learning calls
+are reported separately by `tree_cpu_unsupported_learning_calls`.
+An eligible property with no valid threshold submits no GPU work and needs no
+scalar histogram scan. It remains in the semantic `sorted_properties` count, so
+GPU groups plus scalar-fallback properties need not equal all sorted properties.
+
+The operation, validation scope and performance qualification requirements are in
+[`gpu-modular-learner-statistics.md`](../../docs/gpu-modular-learner-statistics.md).
+The opt-in `gjxl_modular_tree_statistics_benchmark root|tree REPETITIONS` runs
+production-learner crossover probes with exact tree/checkpoint comparisons. Its
+synthetic timings are diagnostic, not complete-image throughput measurements.
+
+
+The completed [three-route learner qualification](../../docs/gpu-adaptive-modular-learning.md)
+uses frozen revision `34586ea`, two CPU/token-ANS/learner triplets per original
+full-resolution image, and three smoke captures. Regenerate it with:
+
+```sh
+python3 tools/modular_training_study/analyze_adaptive_learning.py \
+  --capture build/adaptive-learning-qualified-20261011 \
+  --baseline build/adaptive-baseline-20261011 \
+  --json docs/gpu-adaptive-modular-learning-results.json \
+  --markdown docs/gpu-adaptive-modular-learning.md
+```
+
+The analyzer checks all 89 artifact hashes, the 21-capture matrix and route order,
+input/output identity, complete policies and semantic training work, native
+submission accounting and resource bounds. It also verifies the saved smoke CPU
+files and default libjxl reference sizes. Incomplete captures and same-size
+corrupted outputs are rejected. Performance statistics use only this frozen
+three-route capture; earlier ANS and synthetic crossover runs remain separate.

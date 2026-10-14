@@ -25,4 +25,16 @@ ComputeGpuModularTokenHandoffStorageBound(size_t streams,
 [[nodiscard]] Status AdoptGpuModularTokens(const GpuModularTokenPlan &plan,
                                            std::unique_ptr<PreparedGpuModularTokens> &&backing,
                                            modular_internal::PreparedModularTokens *out);
+
+// Adaptive counterpart: layout is the unmodified canonical CPU stream plan for
+// the feature owner, and policy is the exact tree/weighted/transform policy
+// used by its producer. Empty streams remain present. The same completion,
+// lifetime, admission and failure-atomic rules above apply; dynamic
+// header/policy backing must also be included by the caller's workflow storage
+// plan.
+[[nodiscard]] Status AdoptAdaptiveGpuModularTokens(
+    const modular_internal::ModularStreamPlan &layout,
+    const modular_internal::ModularCodingPolicy &policy,
+    std::unique_ptr<PreparedGpuModularTokens> &&backing,
+    modular_internal::PreparedModularTokens *out);
 } // namespace gjxl::modular_gpu_internal

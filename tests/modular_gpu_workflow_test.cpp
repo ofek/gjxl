@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 Yunho Cho
+#include "codestream/modular/gpu_token_workflow.h"
 #include "codestream/modular/gpu_workflow.h"
 #include "codestream/modular/prepared_encoder.h"
 #include "codestream/workflow_admission_scope.h"
@@ -21,6 +22,7 @@ void Ok(const Status &s) {
     throw std::runtime_error(std::string(s.message()));
 }
 constexpr ModularInputDeviceLimits limits{{1u << 20, 1u << 20}, SIZE_MAX, 1u << 30};
+constexpr ModularTokenDeviceLimits token_limits{1u << 28, 1u << 20, 1u << 30};
 
 void Planning() {
   for (auto format :
@@ -103,7 +105,9 @@ void Adoption() {
   DisarmManagedHostAllocationFailureForTest();
 }
 
-class RejectingBackend final : public GpuBackend, public GpuModularInputPreparation {
+class RejectingBackend final : public GpuBackend,
+                               public GpuModularInputPreparation,
+                               public GpuModularTokenGeneration {
 public:
   size_t calls = 0;
   BackendKind kind() const noexcept override { return BackendKind::kMetal; }
@@ -115,6 +119,21 @@ public:
           "GPU preparation started before memory/CPU admission");
     ++calls;
     return Status::DeviceError("Preparation failure for workflow test");
+  }
+  ModularTokenDeviceLimits modular_token_limits() const noexcept override { return token_limits; }
+  Status GenerateModularTokens(const PreparedGpuModularInput &, const ModularTokenizationOptions &,
+                               std::span<const ModularTokenSlice>,
+                               std::unique_ptr<PreparedGpuModularTokens> *) override {
+    throw std::runtime_error("Composed workflow used separate token submission");
+  }
+  Status PrepareModularTokens(PackedModularImageView, const ModularTokenizationOptions &,
+                              std::span<const ModularTokenSlice> slices,
+                              std::unique_ptr<PreparedGpuModularTokens> *) override {
+    Check(CurrentResourceContext().reservation && thread_budget_internal::HasCpuParticipation() &&
+              !slices.empty(),
+          "Composed GPU operation started before layout/admission/CPU participation");
+    ++calls;
+    return Status::DeviceError("Composed preparation failure for workflow test");
   }
   Status Allocate(size_t, std::unique_ptr<DeviceBuffer> *) override {
     throw std::runtime_error("Unexpected allocation");
@@ -144,6 +163,35 @@ void AdmissionAndRejection() {
   Ok(ExecutionDomain::Create({plan.peak_bytes - 1, 1}, &small));
   Ok(ExecutionDomain::Create({}, &foreign));
   std::vector<uint8_t> output{7, 8, 9};
+  // Learned CPU trees can now exceed the GPU ceiling. Both planning and the
+  // public-vector/owned entry points must reject them without copying policy
+  // storage, touching the device, or changing an existing result.
+  {
+    ModularEncodingOptions large;
+    large.coding.tree.nodes.resize(127);
+    large.coding.tree.size = 127;
+    for (size_t i = 0; i < 63; ++i)
+      large.coding.tree.nodes[2 * i] = {.property = 3,
+                                        .split = static_cast<int32_t>(i),
+                                        .left = static_cast<TreeIndex>(2 * i + 2),
+                                        .right = static_cast<TreeIndex>(2 * i + 1)};
+    GpuModularTokenWorkflowStoragePlan token_plan, unchanged;
+    codestream_internal::CodestreamBuffer owned;
+    ArmNextManagedHostAllocationFailureForTest();
+    Check(ComputeGpuModularTokenWorkflowStoragePlan(input.extent, input.row_stride, input.format,
+                                                    input.byte_order, large, limits, token_limits,
+                                                    &token_plan)
+                      .code() == StatusCode::kUnsupported &&
+              token_plan == unchanged &&
+              EncodeGpuModularTokensImage(backend, input, large, &output).code() ==
+                  StatusCode::kUnsupported &&
+              EncodeGpuModularTokensImageOwned(backend, input, large, &owned).code() ==
+                  StatusCode::kUnsupported &&
+              ManagedHostAllocationFailurePendingForTest() && backend.calls == 0 &&
+              output == std::vector<uint8_t>({7, 8, 9}) && owned.empty(),
+          "Unsupported large token policy copied before rejection or changed output");
+    DisarmManagedHostAllocationFailureForTest();
+  }
   ArmNextManagedHostAllocationFailureForTest();
   Check(EncodeGpuModularImage(backend, input, {.execution_domain = small}, &output).code() ==
                 StatusCode::kOutOfMemory &&
@@ -152,7 +200,8 @@ void AdmissionAndRejection() {
   Check(!EncodeGpuModularImage(backend, input, {domain, EntropyCodingMode::kPrefix, {}, true},
                                &output)
                 .ok() &&
-            !EncodeGpuModularImage(backend, input, {.execution_domain = domain}, nullptr).ok() && backend.calls == 0,
+            !EncodeGpuModularImage(backend, input, {.execution_domain = domain}, nullptr).ok() &&
+            backend.calls == 0,
         "Unsupported policy/null output reached GPU preparation");
   Check(EncodeGpuModularImage(backend, input, {.execution_domain = domain}, &output).code() ==
                 StatusCode::kDeviceError &&
@@ -163,10 +212,11 @@ void AdmissionAndRejection() {
   {
     codestream_internal::WorkflowAdmission outer;
     Ok(outer.Start(plan.peak_bytes, domain));
-    Check(!EncodeGpuModularImage(backend, input, {.execution_domain = foreign}, &output).ok() && backend.calls == 1,
+    Check(!EncodeGpuModularImage(backend, input, {.execution_domain = foreign}, &output).ok() &&
+              backend.calls == 1,
           "Foreign nested domain accepted");
-    Check(!EncodeGpuModularImage(backend, input, {.execution_domain = domain}, &output).ok() && backend.calls == 2 &&
-              domain->snapshot().active_reservations == 1,
+    Check(!EncodeGpuModularImage(backend, input, {.execution_domain = domain}, &output).ok() &&
+              backend.calls == 2 && domain->snapshot().active_reservations == 1,
           "Nested workflow did not share the outer reservation");
   }
   // Large CPU trees are legal in this GPU-input/CPU-token workflow. Passing
@@ -197,11 +247,109 @@ void AdmissionAndRejection() {
             s.active_reservations == 0 && s.active_cpu_participants == 0,
         "Failed workflow leaked admission/CPU participation");
 }
+void TokenPlanningAndAdmission() {
+  for (auto format :
+       {PackedModularFormat::kGray8, PackedModularFormat::kRgb8, PackedModularFormat::kRgba8,
+        PackedModularFormat::kGray16, PackedModularFormat::kRgb16, PackedModularFormat::kRgba16}) {
+    ModularInputProfile profile;
+    Ok(ResolveModularInput({257, 259}, format, &profile));
+    for (auto mode : {EntropyCodingMode::kPrefix, EntropyCodingMode::kAns})
+      for (size_t threads : {1u, 4u})
+        for (size_t padding : {size_t{1}, size_t{1} << 20}) {
+          const size_t stride = 257 * profile.channel_count * profile.bytes_per_sample + padding;
+          ModularEncodingOptions options{.entropy = mode, .cpu_thread_count = threads};
+          options.coding.rct = profile.channel_count == 1 ? 0 : 6;
+          GpuModularTokenWorkflowStoragePlan plan;
+          ArmNextManagedHostAllocationFailureForTest();
+          Ok(ComputeGpuModularTokenWorkflowStoragePlan({257, 259}, stride, format,
+                                                       SampleByteOrder::kBigEndian, options, limits,
+                                                       token_limits, &plan));
+          const bool pending = ManagedHostAllocationFailurePendingForTest();
+          DisarmManagedHostAllocationFailureForTest();
+          Check(pending && plan.generation.input.host_readback.peak_bytes == 0 &&
+                    plan.peak_bytes >= plan.generation.generation_peak_bytes &&
+                    plan.peak_bytes >= plan.handoff_peak_bytes &&
+                    plan.peak_bytes >= plan.cpu.working.peak_bytes,
+                "Composed planner allocated, added readback or omitted a lifetime phase");
+          if (padding == (size_t{1} << 20))
+            Check(plan.peak_bytes == plan.generation.generation_peak_bytes &&
+                      plan.peak_bytes > plan.generation.input.preparation_peak_bytes +
+                                            plan.generation.tokens.retained_bytes,
+                  "Generation did not include overlapping planes/tokens/dispatch/layout");
+          const auto old = plan;
+          for (unsigned error = 0; error < 7; ++error) {
+            auto bad = options;
+            if (error == 0)
+              bad.search = true;
+            if (error == 1)
+              bad.coding.tree.nodes[0].predictor = Predictor::kWeighted;
+            if (error == 2)
+              bad.coding.transforms.size = 1;
+            if (error == 3)
+              bad.cpu_thread_count = 257;
+            if (error == 4)
+              bad.entropy = static_cast<EntropyCodingMode>(255);
+            const auto status = ComputeGpuModularTokenWorkflowStoragePlan(
+                {257, 259}, error == 5 ? SIZE_MAX : stride, format, SampleByteOrder::kBigEndian,
+                bad, limits, error == 6 ? ModularTokenDeviceLimits{1, 1, 1} : token_limits, &plan);
+            Check(!status.ok() && plan == old, "Composed planning failure changed old output");
+          }
+        }
+  }
+  RejectingBackend backend;
+  std::array<uint8_t, 18> bytes{};
+  PackedModularImageView input{bytes, {3, 2}, 9};
+  GpuModularTokenWorkflowStoragePlan plan;
+  Ok(ComputeGpuModularTokenWorkflowStoragePlan(input.extent, input.row_stride, input.format,
+                                               input.byte_order, {}, limits, token_limits, &plan));
+  std::shared_ptr<const ExecutionDomain> domain, small, foreign;
+  Ok(ExecutionDomain::Create({plan.peak_bytes, 1}, &domain));
+  Ok(ExecutionDomain::Create({plan.peak_bytes - 1, 1}, &small));
+  Ok(ExecutionDomain::Create({}, &foreign));
+  std::vector<uint8_t> output{7, 8, 9};
+  ArmNextManagedHostAllocationFailureForTest();
+  Check(EncodeGpuModularTokensImage(backend, input, {.execution_domain = small}, &output).code() ==
+                StatusCode::kOutOfMemory &&
+            backend.calls == 0 && ManagedHostAllocationFailurePendingForTest(),
+        "Token admission allocated before rejection");
+  DisarmManagedHostAllocationFailureForTest();
+  for (size_t allocation = 0; allocation < 4; ++allocation) {
+    ArmManagedHostAllocationFailureAfterForTest(allocation);
+    const auto status =
+        EncodeGpuModularTokensImage(backend, input, {.execution_domain = domain}, &output);
+    const bool pending = ManagedHostAllocationFailurePendingForTest();
+    DisarmManagedHostAllocationFailureForTest();
+    Check(status.code() == StatusCode::kOutOfMemory && !pending && backend.calls == 0,
+          "Failed canonical layout reached device or escaped reservation");
+  }
+  Check(EncodeGpuModularTokensImage(backend, input, {.execution_domain = domain}, &output).code() ==
+                StatusCode::kDeviceError &&
+            backend.calls == 1 && output == std::vector<uint8_t>({7, 8, 9}),
+        "Composed device failure changed output or selected another path");
+  {
+    codestream_internal::WorkflowAdmission outer;
+    Ok(outer.Start(plan.peak_bytes, domain));
+    Check(
+        !EncodeGpuModularTokensImage(backend, input, {.execution_domain = foreign}, &output).ok() &&
+            backend.calls == 1,
+        "Composed workflow accepted a foreign nested domain");
+    Check(
+        !EncodeGpuModularTokensImage(backend, input, {.execution_domain = domain}, &output).ok() &&
+            backend.calls == 2 && domain->snapshot().active_reservations == 1,
+        "Composed workflow did not reuse outer admission");
+  }
+  const auto after = domain->snapshot();
+  Check(after.live_capacity_bytes == 0 && after.active_reservations == 0 &&
+            after.active_cpu_participants == 0,
+        "Composed failure leaked memory/CPU admission");
+}
+
 } // namespace
 int main() try {
   Planning();
   Adoption();
   AdmissionAndRejection();
+  TokenPlanningAndAdmission();
   std::cout << "GPU Modular workflow planning, adoption and admission passed\n";
 } catch (const std::exception &e) {
   std::cerr << e.what() << '\n';

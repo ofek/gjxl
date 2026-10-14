@@ -31,6 +31,26 @@ inline constexpr size_t kAnsAlphabetWidthCount = 4;
 // Shared by the rate-search dispatcher and its managed-storage bound.
 inline constexpr size_t kMaximumAnsConfigWorkers = 8;
 
+// Optional exact-cost provider. A successful unhandled response requests the
+// unchanged scalar measurement, before any asynchronous provider work. Errors
+// are terminal: Unsupported after dispatch must never silently retry on CPU.
+// The provider borrows all inputs synchronously and preserves costs on failure.
+class AnsTokenCostEvaluator {
+public:
+  virtual ~AnsTokenCostEvaluator() = default;
+  [[nodiscard]] virtual Status TryMeasure(
+    std::span<const EntropyTokenStreamView> sections,
+    std::span<const EntropyCode* const> codes,
+    std::span<const uint64_t> model_bits,
+    std::span<EntropyCodeCost> costs, bool* handled) = 0;
+};
+[[nodiscard]] Status OptimizeAnsEntropyCodeWithCostEvaluator(
+  std::span<const EntropyTokenStreamView> section_tokens,
+  const EntropyCode& prefix_partition, AnsTokenCostEvaluator& evaluator,
+  EntropyCode* code, EntropyCodeCost* cost = nullptr,
+  EntropyWorkProfile* profile = nullptr,
+  AnsSelectionMode selection = AnsSelectionMode::kExact);
+
 /// Integer lower bound on sum(count * log2(total/count)), without libm rounding.
 /// Unsupported large populations return false so normal validation still runs.
 [[nodiscard]] inline bool AnsShannonLowerBound(
@@ -197,7 +217,8 @@ DirectAnsHistogramPrecisionShifts(DirectAnsEntropyMode mode) noexcept;
 [[nodiscard]] Status OptimizeAnsEntropyCodeWithPreparedClusters(
     std::span<const EntropyTokenStreamView> section_tokens, const EntropyCode &prefix_partition,
     const PreparedEntropyClusters &prepared, EntropyCode *code, EntropyCodeCost *cost = nullptr,
-    EntropyWorkProfile *profile = nullptr, AnsSelectionMode selection = AnsSelectionMode::kExact);
+    EntropyWorkProfile *profile = nullptr, AnsSelectionMode selection = AnsSelectionMode::kExact,
+    AnsTokenCostEvaluator *evaluator = nullptr);
 
 [[nodiscard]] Status WriteAnsEntropyCodeModel(
   const EntropyCode& code,

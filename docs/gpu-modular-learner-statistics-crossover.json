@@ -1,0 +1,298 @@
+{
+  "manifest_sha256": "affced4ceafe5b46f93c280e83d6524e332b6041b9ce0d2e92c08df971004d6e",
+  "provenance": {
+    "schema": 1,
+    "source_revision": "61ddb15294741d55f3c533795ce3afda3a06775f",
+    "binary": "benchmark",
+    "note": "Diagnostic production-learner synthetic probes on the same Apple M4 Pro; binary built before source commit, from the implementation now frozen in source_revision. First preparation, CPU sorting/control, upload and completion included. No competing task-owned builds or encodes during either probe. Desktop not isolated; no machine-activity log captured. Not encoder throughput.",
+    "commands": [
+      {
+        "argv": [
+          "benchmark",
+          "root",
+          "5"
+        ],
+        "returncode": 0,
+        "rows": 80
+      },
+      {
+        "argv": [
+          "benchmark",
+          "tree",
+          "3"
+        ],
+        "returncode": 0,
+        "rows": 36
+      }
+    ],
+    "environment": "hw.memsize: 51539607552\nhw.ncpu: 14\nmachdep.cpu.brand_string: Apple M4 Pro\n",
+    "selected_minimum_leaf": 16384,
+    "artifacts": {
+      "benchmark": "feb0c7ba8111ca22ce348e8bbdef9845d7ceacefc18b11442afc091d756ae417",
+      "tracked.patch": "2a1419e506f6e79af6ab1c4a38fc3ad103686754921e9e0196e4c437eae23c81",
+      "root.jsonl": "84b0ca8044b427fc924e96ae60d57006ae70168c30101d0f69f0276150edcaba",
+      "binary.sha256": "b01541945857a889c58281d0a031062d56fb9dc24582a6bacbd3ded5ae896bd3",
+      "tree.jsonl": "e345eb7ecd9c12426d7c6122b7fa514ef3d12bffd0680ed0c086f2ce081ac0eb",
+      "tree.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "root.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "summary": {
+    "root": [
+      {
+        "samples": 256,
+        "minimum_gpu_leaf": 0,
+        "runs": 5,
+        "median_seconds": 0.000181292,
+        "min_seconds": 0.0001425,
+        "max_seconds": 0.000208791,
+        "median_scanning": 0.00011329
+      },
+      {
+        "samples": 256,
+        "minimum_gpu_leaf": 16,
+        "runs": 5,
+        "median_seconds": 0.004215042,
+        "min_seconds": 0.004142666,
+        "max_seconds": 0.014393875,
+        "median_scanning": 0.004115667
+      },
+      {
+        "samples": 1024,
+        "minimum_gpu_leaf": 0,
+        "runs": 5,
+        "median_seconds": 0.000787417,
+        "min_seconds": 0.000702666,
+        "max_seconds": 0.000842583,
+        "median_scanning": 0.000387586
+      },
+      {
+        "samples": 1024,
+        "minimum_gpu_leaf": 16,
+        "runs": 5,
+        "median_seconds": 0.004657959,
+        "min_seconds": 0.004272125,
+        "max_seconds": 0.0052595,
+        "median_scanning": 0.00412196
+      },
+      {
+        "samples": 2048,
+        "minimum_gpu_leaf": 0,
+        "runs": 5,
+        "median_seconds": 0.00183475,
+        "min_seconds": 0.001733292,
+        "max_seconds": 0.001929833,
+        "median_scanning": 0.000785373
+      },
+      {
+        "samples": 2048,
+        "minimum_gpu_leaf": 16,
+        "runs": 5,
+        "median_seconds": 0.005223666,
+        "min_seconds": 0.004794833,
+        "max_seconds": 0.005306625,
+        "median_scanning": 0.004197
+      },
+      {
+        "samples": 4096,
+        "minimum_gpu_leaf": 0,
+        "runs": 5,
+        "median_seconds": 0.003791541,
+        "min_seconds": 0.003740459,
+        "max_seconds": 0.003993459,
+        "median_scanning": 0.00160704
+      },
+      {
+        "samples": 4096,
+        "minimum_gpu_leaf": 16,
+        "runs": 5,
+        "median_seconds": 0.006514458,
+        "min_seconds": 0.006261666,
+        "max_seconds": 0.006798125,
+        "median_scanning": 0.004310875
+      },
+      {
+        "samples": 8192,
+        "minimum_gpu_leaf": 0,
+        "runs": 5,
+        "median_seconds": 0.0075245,
+        "min_seconds": 0.007458917,
+        "max_seconds": 0.007657125,
+        "median_scanning": 0.003411249
+      },
+      {
+        "samples": 8192,
+        "minimum_gpu_leaf": 16,
+        "runs": 5,
+        "median_seconds": 0.009196792,
+        "min_seconds": 0.008229125,
+        "max_seconds": 0.009994417,
+        "median_scanning": 0.004958253
+      },
+      {
+        "samples": 16384,
+        "minimum_gpu_leaf": 0,
+        "runs": 5,
+        "median_seconds": 0.015431791,
+        "min_seconds": 0.015217625,
+        "max_seconds": 0.015624625,
+        "median_scanning": 0.007090668
+      },
+      {
+        "samples": 16384,
+        "minimum_gpu_leaf": 16,
+        "runs": 5,
+        "median_seconds": 0.01351625,
+        "min_seconds": 0.012827,
+        "max_seconds": 0.01477575,
+        "median_scanning": 0.005523001
+      },
+      {
+        "samples": 65536,
+        "minimum_gpu_leaf": 0,
+        "runs": 5,
+        "median_seconds": 0.062540333,
+        "min_seconds": 0.06184075,
+        "max_seconds": 0.071815125,
+        "median_scanning": 0.030097667
+      },
+      {
+        "samples": 65536,
+        "minimum_gpu_leaf": 16,
+        "runs": 5,
+        "median_seconds": 0.046634125,
+        "min_seconds": 0.043614958,
+        "max_seconds": 0.060367333,
+        "median_scanning": 0.014605461
+      },
+      {
+        "samples": 262144,
+        "minimum_gpu_leaf": 0,
+        "runs": 5,
+        "median_seconds": 0.335872083,
+        "min_seconds": 0.330828291,
+        "max_seconds": 0.342429458,
+        "median_scanning": 0.177473376
+      },
+      {
+        "samples": 262144,
+        "minimum_gpu_leaf": 16,
+        "runs": 5,
+        "median_seconds": 0.189413625,
+        "min_seconds": 0.186961375,
+        "max_seconds": 0.201256875,
+        "median_scanning": 0.033053041
+      }
+    ],
+    "tree": [
+      {
+        "samples": 16384,
+        "minimum_gpu_leaf": 0,
+        "runs": 3,
+        "median_seconds": 0.566431833,
+        "min_seconds": 0.554500166,
+        "max_seconds": 0.567760667,
+        "median_scanning": 0.239140551
+      },
+      {
+        "samples": 16384,
+        "minimum_gpu_leaf": 1024,
+        "runs": 3,
+        "median_seconds": 0.57514625,
+        "min_seconds": 0.5302635,
+        "max_seconds": 0.583635791,
+        "median_scanning": 0.234371638
+      },
+      {
+        "samples": 16384,
+        "minimum_gpu_leaf": 4096,
+        "runs": 3,
+        "median_seconds": 0.535061625,
+        "min_seconds": 0.527005334,
+        "max_seconds": 0.547382375,
+        "median_scanning": 0.202211196
+      },
+      {
+        "samples": 16384,
+        "minimum_gpu_leaf": 16384,
+        "runs": 3,
+        "median_seconds": 0.575941625,
+        "min_seconds": 0.560490417,
+        "max_seconds": 0.576669667,
+        "median_scanning": 0.241247468
+      },
+      {
+        "samples": 65536,
+        "minimum_gpu_leaf": 0,
+        "runs": 3,
+        "median_seconds": 2.220793583,
+        "min_seconds": 2.218998209,
+        "max_seconds": 2.241064042,
+        "median_scanning": 1.002251928
+      },
+      {
+        "samples": 65536,
+        "minimum_gpu_leaf": 1024,
+        "runs": 3,
+        "median_seconds": 1.838801916,
+        "min_seconds": 1.808612916,
+        "max_seconds": 1.848301834,
+        "median_scanning": 0.612147344
+      },
+      {
+        "samples": 65536,
+        "minimum_gpu_leaf": 4096,
+        "runs": 3,
+        "median_seconds": 1.673104583,
+        "min_seconds": 1.645897333,
+        "max_seconds": 1.695044541,
+        "median_scanning": 0.461446229
+      },
+      {
+        "samples": 65536,
+        "minimum_gpu_leaf": 16384,
+        "runs": 3,
+        "median_seconds": 1.671574166,
+        "min_seconds": 1.670727709,
+        "max_seconds": 1.713866209,
+        "median_scanning": 0.460423354
+      },
+      {
+        "samples": 262144,
+        "minimum_gpu_leaf": 0,
+        "runs": 3,
+        "median_seconds": 10.59809275,
+        "min_seconds": 10.550647917,
+        "max_seconds": 11.042471625,
+        "median_scanning": 5.159369623
+      },
+      {
+        "samples": 262144,
+        "minimum_gpu_leaf": 1024,
+        "runs": 3,
+        "median_seconds": 6.880019125,
+        "min_seconds": 6.816351167,
+        "max_seconds": 7.064410666,
+        "median_scanning": 1.488874782
+      },
+      {
+        "samples": 262144,
+        "minimum_gpu_leaf": 4096,
+        "runs": 3,
+        "median_seconds": 6.972885166,
+        "min_seconds": 6.926943125,
+        "max_seconds": 7.151212125,
+        "median_scanning": 1.484129436
+      },
+      {
+        "samples": 262144,
+        "minimum_gpu_leaf": 16384,
+        "runs": 3,
+        "median_seconds": 6.701555958,
+        "min_seconds": 6.659700459,
+        "max_seconds": 6.990530375,
+        "median_scanning": 1.26714062
+      }
+    ]
+  }
+}

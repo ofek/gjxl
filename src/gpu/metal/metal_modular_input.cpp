@@ -20,15 +20,13 @@ static_assert(sizeof(Params) == 72 && alignof(Params) == 8);
 static_assert(offsetof(Params, output_offset_elements) == 16 && offsetof(Params, width) == 48);
 static_assert(sizeof(size_t) <= sizeof(gjxl_modular_input::Address));
 
-struct EncodeContext {
-  MTL::Buffer *input;
-  MTL::Buffer *output;
-  MTL::ComputePipelineState *pipeline;
-  Params params;
-};
-
 void Encode(MetalBackend &, MTL::ComputeCommandEncoder *encoder, const void *opaque) {
-  const auto &context = *static_cast<const EncodeContext *>(opaque);
+  EncodeMetalModularInput(encoder, *static_cast<const MetalModularInputEncoding *>(opaque));
+}
+} // namespace
+
+void EncodeMetalModularInput(MTL::ComputeCommandEncoder *encoder,
+                             const MetalModularInputEncoding &context) {
   encoder->setComputePipelineState(context.pipeline);
   RecordMetalComputePipelineState(context.pipeline);
   // Bind at zero so a byte-wise source can have any offset, independently of
@@ -39,7 +37,6 @@ void Encode(MetalBackend &, MTL::ComputeCommandEncoder *encoder, const void *opa
   DispatchMetalThreads(encoder, MTL::Size(context.params.width, context.params.height, 1),
                        MTL::Size(8, 8, 1));
 }
-} // namespace
 
 ModularInputDeviceLimits MetalBackend::ModularInputLimits() const noexcept {
   return {{std::numeric_limits<uint32_t>::max(), std::numeric_limits<uint32_t>::max()},
@@ -48,21 +45,18 @@ ModularInputDeviceLimits MetalBackend::ModularInputLimits() const noexcept {
 }
 
 Status MetalBackend::PrepareModularInput(const ModularInputPreparation &preparation,
-                                        std::unique_ptr<PreparedGpuModularInput> *out) {
+                                         std::unique_ptr<PreparedGpuModularInput> *out) {
   const ModularInputKernel kernel{
-      +[](GpuBackend &backend, const ModularInputStorageOptions &options,
-          const DeviceBuffer &input, DeviceBuffer &output,
-          std::unique_ptr<GpuSubmission> *submission) {
+      +[](GpuBackend &backend, const ModularInputStorageOptions &options, const DeviceBuffer &input,
+          DeviceBuffer &output, std::unique_ptr<GpuSubmission> *submission) {
         return SubmitMetalModularInput(backend, {&input, 0, &output, 0, options}, submission);
       },
       DrainMetalSubmission};
   return PrepareModularInputWithKernel(*this, preparation, ModularInputLimits(), kernel, out);
 }
 
-Status MetalBackend::SubmitModularInput(const MetalModularInputDispatch &dispatch,
-                                        std::unique_ptr<GpuSubmission> *submission) {
-  if (!submission || *submission)
-    return Status::InvalidArgument("Metal Modular submission output must be empty");
+Status MetalBackend::ResolveModularInputDispatch(const MetalModularInputDispatch &dispatch,
+                                                 MetalModularInputEncoding *encoding) {
   if (dispatch.layout.include_host_readback ||
       dispatch.output_offset_bytes % kModularInputPlaneAlignment != 0)
     return Status::InvalidArgument("Invalid Metal Modular kernel layout");
@@ -97,8 +91,17 @@ Status MetalBackend::SubmitModularInput(const MetalModularInputDispatch &dispatc
   params.bytes_per_sample = plan.metadata.bits / 8;
   params.big_endian = dispatch.layout.byte_order == modular_internal::SampleByteOrder::kBigEndian;
   params.rct = dispatch.layout.rct;
-  const EncodeContext context{input->handle(), output->handle(), modular_input_pipeline_.get(),
-                              params};
+  *encoding = {input->handle(), output->handle(), modular_input_pipeline_.get(), params};
+  return Status::Ok();
+}
+
+Status MetalBackend::SubmitModularInput(const MetalModularInputDispatch &dispatch,
+                                        std::unique_ptr<GpuSubmission> *submission) {
+  if (!submission || *submission)
+    return Status::InvalidArgument("Metal Modular submission output must be empty");
+  MetalModularInputEncoding context;
+  if (auto s = ResolveModularInputDispatch(dispatch, &context); !s.ok())
+    return s;
   try {
     // SubmitCompute records synchronously and publishes the submission only
     // after commit. Its potentially throwing owner allocation precedes commit.

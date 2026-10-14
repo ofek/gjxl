@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Yunho Cho
 #pragma once
 #include "codec/modular/tree.h"
+#include "codec/modular/tree_learning_cost.h"
 
 namespace gjxl::modular_internal {
 inline constexpr size_t kDefaultTrainingSamples = 4096;
@@ -51,6 +52,13 @@ struct TrainingSample {
 [[nodiscard]] Status LearnEntropyTree(std::span<const TrainingSample> samples, DecisionTree *out,
                                       TreeLearningOptions options = {}, size_t population = 0,
                                       TreeLearningCheckpoints *checkpoints = nullptr);
+// Private original-learner entry point. The provider changes only histogram
+// cost evaluation for the caller-selected thresholds. Provider errors propagate;
+// both tree/checkpoint outputs still publish together only on complete success.
+[[nodiscard]] Status LearnEntropyTreeWithCostEvaluator(
+    std::span<const TrainingSample> samples, DecisionTree *out, TreeSplitCostEvaluator &evaluator,
+    TreeLearningOptions options = {}, size_t population = 0,
+    TreeLearningCheckpoints *checkpoints = nullptr);
 // Allocation-free; bounds fresh learning scratch plus the returned tree. Input
 // samples and any old output are caller-owned and must be admitted separately.
 [[nodiscard]] Status

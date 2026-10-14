@@ -699,6 +699,10 @@ MetalBackend::MetalBackend(
   AcStrategyPipelines ac_strategy_pipelines,
   PrimitivePipelines primitive_pipelines,
   NS::SharedPtr<MTL::ComputePipelineState> modular_input_pipeline,
+  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 6> modular_token_pipelines,
+  NS::SharedPtr<MTL::ComputePipelineState> ans_token_cost_pipeline,
+  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 2> tree_statistics_pipelines,
+  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 2> modular_population_pipelines,
   AqPipelines aq_pipelines,
   ButteraugliPipelines butteraugli_pipelines,
   bool test_fail_submission,
@@ -714,6 +718,10 @@ MetalBackend::MetalBackend(
     ac_strategy_pipelines_(std::move(ac_strategy_pipelines)),
     primitive_pipelines_(std::move(primitive_pipelines)),
     modular_input_pipeline_(std::move(modular_input_pipeline)),
+    modular_token_pipelines_(std::move(modular_token_pipelines)),
+    ans_token_cost_pipeline_(std::move(ans_token_cost_pipeline)),
+    tree_statistics_pipelines_(std::move(tree_statistics_pipelines)),
+    modular_population_pipelines_(std::move(modular_population_pipelines)),
     aq_pipelines_(std::move(aq_pipelines)),
     butteraugli_pipelines_(std::move(butteraugli_pipelines)),
     test_fail_submission_(test_fail_submission),
@@ -1782,6 +1790,56 @@ Status CreateMetalBackendImpl(
       maximum_threads.width < 8 || maximum_threads.height < 8)
     return Status::Unavailable("Metal cannot launch Modular input threadgroups");
 
+  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 6> modular_token_pipelines;
+  const char* token_kernels[] = {"gjxl_modular_tokens_gradient", "gjxl_modular_tokens_tree",
+                                 "gjxl_modular_tokens_diagnostic", "gjxl_modular_adaptive_tokens",
+                                 "gjxl_modular_adaptive_diagnostic"};
+  for (size_t i = 0; i < 5; ++i) {
+    status = CreatePipeline(device.get(), library.get(), token_kernels[i], &modular_token_pipelines[i]);
+    if (!status.ok()) return status;
+    if (modular_token_pipelines[i]->maxTotalThreadsPerThreadgroup() < 64 || maximum_threads.width < 64)
+      return Status::Unavailable("Metal cannot launch Modular token threadgroups");
+  }
+
+  // Feature preparation is an optional capability; smaller devices retain the
+  // bounded CPU producer selected before dispatch.
+  if (device->maxThreadgroupMemoryLength() >= 20480 && maximum_threads.width >= 128) {
+    status = CreatePipeline(device.get(), library.get(), "gjxl_modular_weighted_features",
+                            &modular_token_pipelines[5]);
+    if (!status.ok()) return status;
+    if (modular_token_pipelines[5]->maxTotalThreadsPerThreadgroup() < 128 ||
+        modular_token_pipelines[5]->staticThreadgroupMemoryLength() > device->maxThreadgroupMemoryLength())
+      modular_token_pipelines[5].reset();
+  }
+
+  NS::SharedPtr<MTL::ComputePipelineState> ans_token_cost_pipeline;
+  status = CreatePipeline(device.get(), library.get(), "gjxl_ans_token_cost", &ans_token_cost_pipeline);
+  if (!status.ok()) return status;
+  if (ans_token_cost_pipeline->maxTotalThreadsPerThreadgroup() < 64 || maximum_threads.width < 64 ||
+      ans_token_cost_pipeline->threadExecutionWidth() == 0 ||
+      ans_token_cost_pipeline->threadExecutionWidth() > 64 ||
+      64 % ans_token_cost_pipeline->threadExecutionWidth() != 0)
+    return Status::Unavailable("Metal cannot launch ANS token-cost threadgroups");
+
+  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 2> tree_statistics_pipelines;
+  const char* statistics_kernels[] = {"gjxl_tree_bucket_histograms", "gjxl_tree_split_costs"};
+  for (size_t i = 0; i < tree_statistics_pipelines.size(); ++i) {
+    status = CreatePipeline(device.get(), library.get(), statistics_kernels[i], &tree_statistics_pipelines[i]);
+    if (!status.ok()) return status;
+    if (tree_statistics_pipelines[i]->maxTotalThreadsPerThreadgroup() < 128 || maximum_threads.width < 128 ||
+        tree_statistics_pipelines[i]->staticThreadgroupMemoryLength() > device->maxThreadgroupMemoryLength())
+      return Status::Unavailable("Metal cannot launch Modular tree statistics threadgroups");
+  }
+
+  std::array<NS::SharedPtr<MTL::ComputePipelineState>, 2> modular_population_pipelines;
+  const char* population_kernels[] = {"gjxl_modular_population_count", "gjxl_modular_population_reduce"};
+  for (size_t i = 0; i < modular_population_pipelines.size(); ++i) {
+    status = CreatePipeline(device.get(), library.get(), population_kernels[i], &modular_population_pipelines[i]);
+    if (!status.ok()) return status;
+    if (modular_population_pipelines[i]->maxTotalThreadsPerThreadgroup() < 128 || maximum_threads.width < 128)
+      return Status::Unavailable("Metal cannot launch Modular population threadgroups");
+  }
+
   AqPipelines aq_pipelines;
   status = CreateAqPipelines(device.get(), library.get(), &aq_pipelines);
   if (!status.ok()) {
@@ -1805,6 +1863,10 @@ Status CreateMetalBackendImpl(
       std::move(ac_strategy_pipelines),
       std::move(primitive_pipelines),
       std::move(modular_input_pipeline),
+      std::move(modular_token_pipelines),
+      std::move(ans_token_cost_pipeline),
+      std::move(tree_statistics_pipelines),
+      std::move(modular_population_pipelines),
       std::move(aq_pipelines),
       std::move(butteraugli_pipelines),
       options.test_fail_submission,

@@ -22,8 +22,16 @@ struct EntropyWorkProfile {
   uint64_t prefix_code_build_nanoseconds = 0;
   uint64_t prefix_value_collection_nanoseconds = 0;
   uint64_t prefix_config_search_nanoseconds = 0;
+  /// Nested within prefix_config_search_nanoseconds: raw-value aggregation.
+  /// Subtract this from the parent before forming a disjoint breakdown.
+  uint64_t prefix_value_aggregation_nanoseconds = 0;
   /// Final prefix-model serialization and checked cost assembly.
   uint64_t prefix_exact_measurement_nanoseconds = 0;
+  // Ordered prefix token measurement is requested only for per-section costs.
+  // Model/header serialization also contributes to the preceding timer.
+  size_t prefix_section_measurement_count = 0;
+  uint64_t prefix_population_merge_nanoseconds = 0;
+  size_t prefix_population_model_count = 0, prefix_histogram_token_count = 0;
   uint64_t ans_prefix_validation_nanoseconds = 0;
   uint64_t ans_value_collection_nanoseconds = 0;
   uint64_t ans_value_aggregation_nanoseconds = 0;
@@ -60,8 +68,14 @@ inline void AccumulateEntropyWorkProfile(
     source.prefix_value_collection_nanoseconds;
   destination->prefix_config_search_nanoseconds +=
     source.prefix_config_search_nanoseconds;
+  destination->prefix_value_aggregation_nanoseconds +=
+    source.prefix_value_aggregation_nanoseconds;
   destination->prefix_exact_measurement_nanoseconds +=
     source.prefix_exact_measurement_nanoseconds;
+  destination->prefix_section_measurement_count += source.prefix_section_measurement_count;
+  destination->prefix_population_merge_nanoseconds += source.prefix_population_merge_nanoseconds;
+  destination->prefix_population_model_count += source.prefix_population_model_count;
+  destination->prefix_histogram_token_count += source.prefix_histogram_token_count;
   destination->ans_prefix_validation_nanoseconds +=
     source.ans_prefix_validation_nanoseconds;
   destination->ans_value_collection_nanoseconds +=

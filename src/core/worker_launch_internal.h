@@ -12,7 +12,8 @@ namespace gjxl::thread_budget_internal {
 
 enum class WorkerLaunchSite { kColorRows, kInitialQuantization, kForwardTransforms,
                               kCoefficientOrders, kSerializerSections, kBatchDriver,
-                              kAnsConfigSearch, kModularTokenization, kModularEmission };
+                              kAnsConfigSearch, kModularTokenization, kModularEmission,
+                              kModularWeightedFeatures };
 enum class WorkerLaunchFailureKind { kSystemError, kBadAlloc };
 
 // Deterministic fault at a real thread-construction boundary. The earlier

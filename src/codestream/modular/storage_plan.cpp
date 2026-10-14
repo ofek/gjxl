@@ -8,6 +8,7 @@
 #include "codestream/sections.h"
 #include <algorithm>
 #include "codestream/modular/parallel.h"
+#include "codestream/modular/candidate_screen.h"
 
 namespace gjxl::modular_internal {
 using namespace codestream_internal;
@@ -29,10 +30,12 @@ Status ComputeModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat fo
                                          EntropyCodingMode mode, ModularWorkflowStoragePlan *out) {
   return ComputeModularWorkflowStoragePlan(extent, format, mode, {}, out);
 }
-Status ComputeModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat format,
-                                         EntropyCodingMode mode, const ModularCodingPolicy &policy,
-                                         ModularWorkflowStoragePlan *out, size_t cpu_threads,
-                                         size_t maximum_tree_leaves) {
+namespace {
+Status ComputeStoragePlan(Extent2D extent, PackedModularFormat format,
+                         EntropyCodingMode mode, const ModularCodingPolicy &policy,
+                         ModularWorkflowStoragePlan *out, size_t cpu_threads,
+                         size_t completed_token_bytes, size_t maximum_tree_leaves,
+                         bool candidate_evaluation) {
   if (!out)
     return Status::InvalidArgument("Null Modular workflow plan");
   if (mode != EntropyCodingMode::kPrefix && mode != EntropyCodingMode::kAns)
@@ -131,16 +134,21 @@ Status ComputeModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat fo
       }
     }
   }
-  if (!tokens.AddVector<EntropyToken>(p.tokens, VectorCapacityPolicy::kFreshExact) ||
-      !tokens.AddVector<EntropyTokenStreamView>(p.streams, VectorCapacityPolicy::kFreshExact))
+  if (completed_token_bytes) {
+    if (!tokens.Add({completed_token_bytes, completed_token_bytes})) return Overflow();
+  } else if (!tokens.AddVector<EntropyToken>(p.tokens, VectorCapacityPolicy::kFreshExact)) {
+    return Overflow();
+  }
+  if (!tokens.AddVector<EntropyTokenStreamView>(p.streams, VectorCapacityPolicy::kFreshExact))
     return Overflow();
   p.preparation = tokens;
-  if (!p.preparation.AddVector<size_t>(p.streams + 1, VectorCapacityPolicy::kFreshExact))
+  if (!completed_token_bytes &&
+      !p.preparation.AddVector<size_t>(p.streams + 1, VectorCapacityPolicy::kFreshExact))
     return Overflow();
-  if (!p.preparation.Add(image))
+  if (!completed_token_bytes && !p.preparation.Add(image))
     return Overflow();
 
-  if (tree_layout.weighted) {
+  if (!completed_token_bytes && tree_layout.weighted) {
     const size_t width = maximum_width;
     for (size_t i = 0; i < 5 * p.participants; ++i)
       if (!p.preparation.AddVector<uint32_t>((width + 2) * 2, VectorCapacityPolicy::kFreshExact))
@@ -151,16 +159,22 @@ Status ComputeModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat fo
                                                   .tokens = p.tokens,
                                                   .contexts = contexts,
                                                   .sections = p.streams,
-                                                  .return_cost = false};
+                                                  .return_cost = candidate_evaluation && mode == EntropyCodingMode::kPrefix,
+                                                  .retain_prepared_clusters = mode == EntropyCodingMode::kAns};
   if (auto s = ComputeEntropyOptimizationStoragePlan(options, &prefix); !s.ok())
     return s;
   HostStorageBound model_work = prefix.working;
   if (mode == EntropyCodingMode::kAns) {
     auto ans_options = options;
     ans_options.policy = EntropyStoragePolicy::kAnsFromPrefix;
+    ans_options.retain_prepared_clusters = false;
+    ans_options.borrow_prepared_clusters = true;
+    ans_options.return_cost = candidate_evaluation;
     if (auto s = ComputeEntropyOptimizationStoragePlan(ans_options, &ans); !s.ok())
       return s;
     HostStorageBound concurrent = prefix.output;
+    // prefix.output includes its model and retained populations; the ANS
+    // optimizer borrows both and its own bound intentionally excludes them.
     if (!concurrent.Add(ans.working))
       return Overflow();
     model_work.peak_bytes = std::max(model_work.peak_bytes, concurrent.peak_bytes);
@@ -251,7 +265,7 @@ Status ComputeModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat fo
     HostStorageBound workers;
     if (!workers.AddVector<Status>(p.streams, VectorCapacityPolicy::kFreshExact) ||
         !workers.AddVector<std::thread>(p.participants - 1, VectorCapacityPolicy::kFreshExact) ||
-        !p.preparation.Add(workers) || !p.emission.Add(workers))
+        (!completed_token_bytes && !p.preparation.Add(workers)) || !p.emission.Add(workers))
       return Overflow();
   }
   // Optional resolved-policy profiling copies before publication, after token
@@ -262,7 +276,45 @@ Status ComputeModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat fo
   p.working = p.output;
   for (auto phase : {p.preparation, p.modeling, p.emission, p.assembly, p.publication})
     p.working.peak_bytes = std::max(p.working.peak_bytes, phase.peak_bytes);
+  if (candidate_evaluation) {
+    // Costs live through compact header measurement. The emission ledger can
+    // measure while its complete sections are still live. Screening additionally
+    // retains bounded sampled tokens/views beside the full canonical tokens.
+    HostStorageBound evaluation, header_writer;
+    if (global)
+      if (auto s = ComputeEntropyWriterStorageBound(MaximumCodingStreamHeaderBits({}), &group_writer); !s.ok())
+        return s;
+    if (auto s = ComputeEntropyWriterStorageBound(32 * count + 15 + 384, &header_writer); !s.ok())
+      return s;
+    if (p.streams > SIZE_MAX - kMaximumScreenSamples ||
+        !evaluation.AddVector<uint64_t>(p.streams, VectorCapacityPolicy::kFreshExact) ||
+        !evaluation.AddVector<uint64_t>(count, VectorCapacityPolicy::kFreshExact) ||
+        !evaluation.AddVector<size_t>(count, VectorCapacityPolicy::kFreshExact) ||
+        !evaluation.AddVector<size_t>(p.streams + 1, VectorCapacityPolicy::kFreshExact) ||
+        !evaluation.AddVector<EntropyToken>(std::min(p.tokens, kMaximumScreenSamples + p.streams),
+                                             VectorCapacityPolicy::kFreshExact) ||
+        !evaluation.AddVector<EntropyTokenStreamView>(p.streams, VectorCapacityPolicy::kFreshExact) ||
+        !evaluation.Add(global_writer) || !evaluation.Add(group_writer) ||
+        !evaluation.Add(header_writer) || !evaluation.Add(headers.temporary) ||
+        !evaluation.Add(tree.scratch) || !evaluation.Add(model.write_scratch) ||
+        !p.working.Add(evaluation)) return Overflow();
+  }
   *out = p;
   return Status::Ok();
+}
+} // namespace
+Status ComputeModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat format,
+                                         EntropyCodingMode mode, const ModularCodingPolicy &policy,
+                                         ModularWorkflowStoragePlan *out, size_t cpu_threads,
+                                         size_t maximum_tree_leaves, bool candidate_evaluation) {
+  return ComputeStoragePlan(extent, format, mode, policy, out, cpu_threads, 0,
+                            maximum_tree_leaves, candidate_evaluation);
+}
+Status ComputeModularTokenConsumerStoragePlan(Extent2D extent, PackedModularFormat format,
+    EntropyCodingMode mode, const ModularCodingPolicy &policy, size_t completed_token_bytes,
+    ModularWorkflowStoragePlan *out, size_t cpu_threads) {
+  if (!completed_token_bytes)
+    return Status::InvalidArgument("Empty Modular completed-token backing");
+  return ComputeStoragePlan(extent, format, mode, policy, out, cpu_threads, completed_token_bytes, 0, false);
 }
 } // namespace gjxl::modular_internal

@@ -1,0 +1,670 @@
+{
+  "schema": 1,
+  "complete": true,
+  "date": "2026-10-13",
+  "scope": "Fresh CPU-only and Metal Release builds of the integrated tip; 90 CTest passes, including targeted weighted-workflow failure coverage; three serialized full-resolution hybrid encodes against frozen pre-integration results. The broader general allocation sweep was intentionally stopped and is not passing evidence. Single fresh timings are regression checks, not a repeated speedup experiment.",
+  "integration": {
+    "target_branch": "feat/modular",
+    "target_before": "cbc2d8eda26be311356c66504049fda4e9a576ac",
+    "source_branch": "feat/parallel-weighted-feature-prep",
+    "source_revision": "cfbd7ada020ae4d96b81f143bad4f15779a10bab",
+    "integrated_revision": "cfbd7ada020ae4d96b81f143bad4f15779a10bab",
+    "integrated_tree": "0fb01ff7f3d34e29ee5dc4fe56bfec98cfa1d88d",
+    "integration": "fast-forward",
+    "integrated_commits": 38
+  },
+  "configuration": {
+    "build_type": "Release",
+    "cxx_flags_release": "-O3 -g -DNDEBUG",
+    "generator": "Ninja",
+    "cuda": false,
+    "tests": true,
+    "benchmarks": true,
+    "libjxl_reference": false,
+    "modular_oracle_build": "/Users/yunhocho/GitHub/gjxl/build/pinned-libjxl",
+    "libjxl_revision": "e8ff09762481785938d8e4e01333ed3917571161"
+  },
+  "source_scope": "Binaries were built from the clean integrated revision before concurrent population-fusion edits appeared in the working tree. Those later uncommitted edits are preserved and outside this qualification.",
+  "artifact_directory": "/Users/yunhocho/GitHub/gjxl-modular/build/modular-integration-20261013",
+  "manifest_sha256": "af7557a04ab717d7bbddd7a6f234ca69652175ab9d8fe519d3e4ee2ab7fac1ee",
+  "tests": {
+    "cpu": {
+      "initially_selected": 39,
+      "ctest_passed": 38,
+      "ctest_skipped": 0,
+      "intentionally_interrupted": [
+        "modular_workflow"
+      ],
+      "interrupted_reason": "The overly broad general allocation sweep was stopped for runtime/scope after attempting eight shards per build. Original logs and partial shard results are retained; this sweep is not passing qualification evidence.",
+      "sharded_workflow_passed": false,
+      "qualified_checks": 38,
+      "cases": [
+        {
+          "name": "ans_bit_emission",
+          "seconds": 1.0092,
+          "result": "passed"
+        },
+        {
+          "name": "ans_reverse_bits",
+          "seconds": 1.55637,
+          "result": "passed"
+        },
+        {
+          "name": "entropy_storage_plan",
+          "seconds": 3.25862,
+          "result": "passed"
+        },
+        {
+          "name": "entropy_readiness",
+          "seconds": 0.059317,
+          "result": "passed"
+        },
+        {
+          "name": "entropy_readiness_contract",
+          "seconds": 1.53182,
+          "result": "passed"
+        },
+        {
+          "name": "modular_stream",
+          "seconds": 0.0795735,
+          "result": "passed"
+        },
+        {
+          "name": "modular_foundation",
+          "seconds": 0.0646448,
+          "result": "passed"
+        },
+        {
+          "name": "ans_selection",
+          "seconds": 0.776398,
+          "result": "passed"
+        },
+        {
+          "name": "ans_selection_faults",
+          "seconds": 10.7863,
+          "result": "passed"
+        },
+        {
+          "name": "entropy_population",
+          "seconds": 0.173146,
+          "result": "passed"
+        },
+        {
+          "name": "modular_candidate_cost",
+          "seconds": 0.467207,
+          "result": "passed"
+        },
+        {
+          "name": "modular_candidate_search",
+          "seconds": 14.0884,
+          "result": "passed"
+        },
+        {
+          "name": "modular_training_budget",
+          "seconds": 9.31254,
+          "result": "passed"
+        },
+        {
+          "name": "modular_training_budget_faults",
+          "seconds": 25.3333,
+          "result": "passed"
+        },
+        {
+          "name": "modular_training_checkpoints",
+          "seconds": 21.5932,
+          "result": "passed"
+        },
+        {
+          "name": "modular_training_checkpoint_faults",
+          "seconds": 51.2011,
+          "result": "passed"
+        },
+        {
+          "name": "modular_training_coverage",
+          "seconds": 2.1388,
+          "result": "passed"
+        },
+        {
+          "name": "modular_training_coverage_faults",
+          "seconds": 25.1559,
+          "result": "passed"
+        },
+        {
+          "name": "modular_gpu_input",
+          "seconds": 0.115287,
+          "result": "passed"
+        },
+        {
+          "name": "modular_gpu_token_plan",
+          "seconds": 0.0773991,
+          "result": "passed"
+        },
+        {
+          "name": "modular_adaptive_token_plan",
+          "seconds": 0.0553851,
+          "result": "passed"
+        },
+        {
+          "name": "ans_token_cost_plan",
+          "seconds": 0.0646821,
+          "result": "passed"
+        },
+        {
+          "name": "modular_tree_statistics_plan",
+          "seconds": 0.125913,
+          "result": "passed"
+        },
+        {
+          "name": "modular_gpu_token_handoff",
+          "seconds": 0.470503,
+          "result": "passed"
+        },
+        {
+          "name": "modular_gpu_preparation",
+          "seconds": 0.0615605,
+          "result": "passed"
+        },
+        {
+          "name": "modular_gpu_workflow",
+          "seconds": 0.0946179,
+          "result": "passed"
+        },
+        {
+          "name": "modular_workflow",
+          "seconds": 225.305,
+          "result": "intentionally_stopped_not_qualified"
+        },
+        {
+          "name": "modular_profile",
+          "seconds": 1.02658,
+          "result": "passed"
+        },
+        {
+          "name": "modular_weighted_features",
+          "seconds": 0.0889718,
+          "result": "passed"
+        },
+        {
+          "name": "modular_weighted_feature_batch",
+          "seconds": 0.0773624,
+          "result": "passed"
+        },
+        {
+          "name": "modular_weighted_wavefront",
+          "seconds": 0.416125,
+          "result": "passed"
+        },
+        {
+          "name": "modular_frozen_oracle",
+          "seconds": 0.928968,
+          "result": "passed"
+        },
+        {
+          "name": "modular_oracle",
+          "seconds": 0.15582,
+          "result": "passed"
+        },
+        {
+          "name": "modular_conformance",
+          "seconds": 18.4405,
+          "result": "passed"
+        },
+        {
+          "name": "modular_policy",
+          "seconds": 25.1338,
+          "result": "passed"
+        },
+        {
+          "name": "modular_transform",
+          "seconds": 19.5589,
+          "result": "passed"
+        },
+        {
+          "name": "modular_api",
+          "seconds": 35.1366,
+          "result": "passed"
+        },
+        {
+          "name": "modular_cli",
+          "seconds": 3.8567,
+          "result": "passed"
+        },
+        {
+          "name": "modular_frozen_reference",
+          "seconds": 1.67848,
+          "result": "passed"
+        }
+      ]
+    },
+    "metal": {
+      "initially_selected": 53,
+      "ctest_passed": 52,
+      "ctest_skipped": 0,
+      "intentionally_interrupted": [
+        "modular_workflow"
+      ],
+      "interrupted_reason": "The overly broad general allocation sweep was stopped for runtime/scope after attempting eight shards per build. Original logs and partial shard results are retained; this sweep is not passing qualification evidence.",
+      "sharded_workflow_passed": false,
+      "qualified_checks": 52,
+      "cases": [
+        {
+          "name": "ans_bit_emission",
+          "seconds": 0.59094,
+          "result": "passed"
+        },
+        {
+          "name": "ans_reverse_bits",
+          "seconds": 1.27385,
+          "result": "passed"
+        },
+        {
+          "name": "entropy_storage_plan",
+          "seconds": 2.5123,
+          "result": "passed"
+        },
+        {
+          "name": "entropy_readiness",
+          "seconds": 0.058047,
+          "result": "passed"
+        },
+        {
+          "name": "entropy_readiness_contract",
+          "seconds": 1.25625,
+          "result": "passed"
+        },
+        {
+          "name": "modular_stream",
+          "seconds": 0.0717963,
+          "result": "passed"
+        },
+        {
+          "name": "modular_foundation",
+          "seconds": 0.0619401,
+          "result": "passed"
+        },
+        {
+          "name": "ans_selection",
+          "seconds": 0.680935,
+          "result": "passed"
+        },
+        {
+          "name": "ans_selection_faults",
+          "seconds": 9.06252,
+          "result": "passed"
+        },
+        {
+          "name": "entropy_population",
+          "seconds": 0.162104,
+          "result": "passed"
+        },
+        {
+          "name": "modular_candidate_cost",
+          "seconds": 0.409834,
+          "result": "passed"
+        },
+        {
+          "name": "modular_candidate_search",
+          "seconds": 16.1626,
+          "result": "passed"
+        },
+        {
+          "name": "modular_training_budget",
+          "seconds": 9.28437,
+          "result": "passed"
+        },
+        {
+          "name": "modular_training_budget_faults",
+          "seconds": 25.5079,
+          "result": "passed"
+        },
+        {
+          "name": "modular_training_checkpoints",
+          "seconds": 21.4691,
+          "result": "passed"
+        },
+        {
+          "name": "modular_training_checkpoint_faults",
+          "seconds": 51.1138,
+          "result": "passed"
+        },
+        {
+          "name": "modular_training_coverage",
+          "seconds": 2.12808,
+          "result": "passed"
+        },
+        {
+          "name": "modular_training_coverage_faults",
+          "seconds": 25.3551,
+          "result": "passed"
+        },
+        {
+          "name": "modular_gpu_input",
+          "seconds": 0.0702095,
+          "result": "passed"
+        },
+        {
+          "name": "modular_gpu_token_plan",
+          "seconds": 0.0895298,
+          "result": "passed"
+        },
+        {
+          "name": "modular_adaptive_token_plan",
+          "seconds": 0.0639389,
+          "result": "passed"
+        },
+        {
+          "name": "ans_token_cost_plan",
+          "seconds": 0.06699,
+          "result": "passed"
+        },
+        {
+          "name": "modular_tree_statistics_plan",
+          "seconds": 0.118397,
+          "result": "passed"
+        },
+        {
+          "name": "modular_gpu_token_handoff",
+          "seconds": 0.46376,
+          "result": "passed"
+        },
+        {
+          "name": "modular_gpu_preparation",
+          "seconds": 0.0632196,
+          "result": "passed"
+        },
+        {
+          "name": "modular_gpu_workflow",
+          "seconds": 0.161454,
+          "result": "passed"
+        },
+        {
+          "name": "modular_workflow",
+          "seconds": 204.808,
+          "result": "intentionally_stopped_not_qualified"
+        },
+        {
+          "name": "modular_profile",
+          "seconds": 1.07371,
+          "result": "passed"
+        },
+        {
+          "name": "modular_weighted_features",
+          "seconds": 0.0783265,
+          "result": "passed"
+        },
+        {
+          "name": "modular_weighted_feature_batch",
+          "seconds": 0.0780008,
+          "result": "passed"
+        },
+        {
+          "name": "modular_weighted_wavefront",
+          "seconds": 0.412547,
+          "result": "passed"
+        },
+        {
+          "name": "modular_frozen_oracle",
+          "seconds": 0.998268,
+          "result": "passed"
+        },
+        {
+          "name": "modular_oracle",
+          "seconds": 0.135073,
+          "result": "passed"
+        },
+        {
+          "name": "modular_conformance",
+          "seconds": 18.6355,
+          "result": "passed"
+        },
+        {
+          "name": "modular_policy",
+          "seconds": 25.0951,
+          "result": "passed"
+        },
+        {
+          "name": "modular_transform",
+          "seconds": 20.1126,
+          "result": "passed"
+        },
+        {
+          "name": "modular_api",
+          "seconds": 35.2996,
+          "result": "passed"
+        },
+        {
+          "name": "modular_cli",
+          "seconds": 4.25781,
+          "result": "passed"
+        },
+        {
+          "name": "modular_frozen_reference",
+          "seconds": 1.67114,
+          "result": "passed"
+        },
+        {
+          "name": "metal_modular_input",
+          "seconds": 0.881443,
+          "result": "passed"
+        },
+        {
+          "name": "metal_modular_tokens",
+          "seconds": 4.26388,
+          "result": "passed"
+        },
+        {
+          "name": "metal_modular_tokens_composed",
+          "seconds": 3.86703,
+          "result": "passed"
+        },
+        {
+          "name": "metal_modular_population",
+          "seconds": 10.1263,
+          "result": "passed"
+        },
+        {
+          "name": "metal_ans_token_cost",
+          "seconds": 1.38436,
+          "result": "passed"
+        },
+        {
+          "name": "metal_modular_tree_statistics",
+          "seconds": 1.46386,
+          "result": "passed"
+        },
+        {
+          "name": "metal_modular_adaptive",
+          "seconds": 4.95799,
+          "result": "passed"
+        },
+        {
+          "name": "metal_modular_weighted_features",
+          "seconds": 4.664,
+          "result": "passed"
+        },
+        {
+          "name": "metal_modular_adaptive_workflow",
+          "seconds": 178.385,
+          "result": "passed"
+        },
+        {
+          "name": "metal_modular_weighted_workflow",
+          "seconds": 183.154,
+          "result": "passed"
+        },
+        {
+          "name": "metal_modular_shared_features",
+          "seconds": 18.6159,
+          "result": "passed"
+        },
+        {
+          "name": "metal_modular_workflow",
+          "seconds": 4.32875,
+          "result": "passed"
+        },
+        {
+          "name": "metal_modular_token_workflow",
+          "seconds": 4.74692,
+          "result": "passed"
+        },
+        {
+          "name": "entropy_readiness_workflow",
+          "seconds": 6.73357,
+          "result": "passed"
+        }
+      ]
+    }
+  },
+  "feature_checks": {
+    "modular_weighted_features": "Weighted feature slices preserve scalar results, boundaries and storage failures",
+    "modular_weighted_feature_batch": "Weighted feature batches match the serial oracle at 1/2/4 participants; budgets and failures pass",
+    "modular_weighted_wavefront": "312 cases: 4187195 exact scalar/full/rolling features, 67 matching unsupported-range cases",
+    "metal_modular_weighted_features": "Adaptive Modular device: Metal: Apple M4 Pro\n203 cases, 3778462 exact tokens, 2831887 weighted features, 2831912 diagnostics, 34 identical files, 6198994 independently decoded samples\n30 GPU feature preparations",
+    "metal_modular_adaptive_workflow": "55 complete CPU/hybrid matches, 26119113 independent decoded samples, 7711 failure-atomic checks",
+    "metal_modular_weighted_workflow": "55 complete CPU/hybrid matches, 26119113 independent decoded samples, 7711 failure-atomic checks",
+    "metal_modular_shared_features": "Shared sample fingerprints, learned policies, checkpoints, cache keys and borrow failures match"
+  },
+  "workflow_shards_manifest_sha256": "2e796def9c6a02fc83bd39a94191f11192bc3316804ef45a0e4ed250ab48d402",
+  "encoder_manifest_sha256": "a98d38d9c669d78966a38c609a6d7a64a77c9346448208ef5a463fd6343405c1",
+  "encoder_binary_sha256": "ff5f565a789119905f0c1921878effe70d3ecc047f6e9188c3d263f7fbe6c773",
+  "capture_environment": [
+    {
+      "image": "1029",
+      "power_before": "Now drawing from 'Battery Power'\n -InternalBattery-0 (id=35782755)\t61%; discharging; 2:34 remaining present: true\n",
+      "power_after": "Now drawing from 'Battery Power'\n -InternalBattery-0 (id=35782755)\t61%; discharging; 2:44 remaining present: true\n",
+      "thermal_before": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+      "thermal_after": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n"
+    },
+    {
+      "image": "1039",
+      "power_before": "Now drawing from 'Battery Power'\n -InternalBattery-0 (id=35782755)\t61%; discharging; 2:44 remaining present: true\n",
+      "power_after": "Now drawing from 'Battery Power'\n -InternalBattery-0 (id=35782755)\t61%; discharging; 2:54 remaining present: true\n",
+      "thermal_before": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+      "thermal_after": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n"
+    },
+    {
+      "image": "1049",
+      "power_before": "Now drawing from 'Battery Power'\n -InternalBattery-0 (id=35782755)\t61%; discharging; 2:54 remaining present: true\n",
+      "power_after": "Now drawing from 'Battery Power'\n -InternalBattery-0 (id=35782755)\t61%; discharging; 2:54 remaining present: true\n",
+      "thermal_before": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+      "thermal_after": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n"
+    }
+  ],
+  "reference_encoder_manifest": "/Users/yunhocho/GitHub/gjxl-parallel-weighted-feature-prep/build/weighted-feature-qualification/encodes/manifest.json",
+  "reference_encoder_manifest_sha256": "230ad1cf202d3a067121fb7636e379f7caead710def88f26d5c9a3f29b3f8101",
+  "encoder_rows": [
+    {
+      "image": "1029",
+      "input_sha256": "a1c487b0160d8f3e8cb86753131b919ac3de28e908fde757050ebccdb4407b6d",
+      "encoded_bytes": 10821744,
+      "encoded_sha256": "6fd61f43586a04b1b71dd956cca3bc1a6b27b7653cb34036302fac4bd7525147",
+      "result_sha256": "0c8f8c5db29cbaabad20a6d5ae69fbc56c0c4ff6ab4549fda4f014e0b57e4d5f",
+      "exact": true,
+      "decoded_exact": true,
+      "encode_seconds": 48.940082541,
+      "feature_seconds": 1.176823629,
+      "gpu_feature_calls": 25,
+      "gpu_feature_samples": 900000000,
+      "planned_capacity": 6528717295,
+      "peak_backing": 1161691525,
+      "width": 4000,
+      "height": 3000,
+      "channels": 3,
+      "bits": 8,
+      "previous_auto4_median_seconds": 34.5697343125,
+      "previous_auto4_median_feature_seconds": 1.0919807305,
+      "peak_cpu_participants": 4,
+      "feature_preparation": {
+        "allocation_seconds": 0.0035398799999999996,
+        "copy_seconds": 0.312598747,
+        "scratch_seconds": 0,
+        "prediction_seconds": 0.8597493329999999,
+        "publication_seconds": 1.6415999999999997e-05,
+        "slice_jobs": 21312,
+        "parallel_calls": 0,
+        "peak_participants": 0,
+        "gpu_calls": 25,
+        "gpu_samples": 900000000,
+        "cpu_fallback_calls": 0
+      }
+    },
+    {
+      "image": "1039",
+      "input_sha256": "22f487129343ed6d403346653ef99900e2552728ba2e4f5c63c90d058132f302",
+      "encoded_bytes": 7230909,
+      "encoded_sha256": "dc093d6151a216483b0b8364ca3a1bf5bad9d57bf5e41f5a5032b4701bdec8c0",
+      "result_sha256": "51d980752d5d941c24c80687427c3a85e53c84a434de819b1bdbbbb978c321e9",
+      "exact": true,
+      "decoded_exact": true,
+      "encode_seconds": 46.300872417,
+      "feature_seconds": 1.209890207,
+      "gpu_feature_calls": 25,
+      "gpu_feature_samples": 900000000,
+      "planned_capacity": 6528717295,
+      "peak_backing": 1161656166,
+      "width": 4000,
+      "height": 3000,
+      "channels": 3,
+      "bits": 8,
+      "previous_auto4_median_seconds": 32.9352199795,
+      "previous_auto4_median_feature_seconds": 1.080630292,
+      "peak_cpu_participants": 4,
+      "feature_preparation": {
+        "allocation_seconds": 0.010226463,
+        "copy_seconds": 0.3162390439999999,
+        "scratch_seconds": 0,
+        "prediction_seconds": 0.8823266680000001,
+        "publication_seconds": 1.4833999999999997e-05,
+        "slice_jobs": 21312,
+        "parallel_calls": 0,
+        "peak_participants": 0,
+        "gpu_calls": 25,
+        "gpu_samples": 900000000,
+        "cpu_fallback_calls": 0
+      }
+    },
+    {
+      "image": "1049",
+      "input_sha256": "0b3feae4d3bf1a13f89d5f4c3d976c8ea1e93e49a65548919cb5474c3cd1d62d",
+      "encoded_bytes": 7336102,
+      "encoded_sha256": "7402890450b4a92995c945ee0e6f96e852f38f3a3f0011fb4c73ded918aeb0a1",
+      "result_sha256": "e18cb83166a005df13c2ed55c8930dd03a7ed71ac57dfd9ab8808f55f5f70687",
+      "exact": true,
+      "decoded_exact": true,
+      "encode_seconds": 46.2084395,
+      "feature_seconds": 1.1813712909999998,
+      "gpu_feature_calls": 25,
+      "gpu_feature_samples": 900000000,
+      "planned_capacity": 6528717295,
+      "peak_backing": 1161656968,
+      "width": 4000,
+      "height": 3000,
+      "channels": 3,
+      "bits": 8,
+      "previous_auto4_median_seconds": 33.218277291999996,
+      "previous_auto4_median_feature_seconds": 1.082955146,
+      "peak_cpu_participants": 4,
+      "feature_preparation": {
+        "allocation_seconds": 0.0036138320000000004,
+        "copy_seconds": 0.3065803769999999,
+        "scratch_seconds": 0,
+        "prediction_seconds": 0.8703195380000003,
+        "publication_seconds": 1.2332999999999997e-05,
+        "slice_jobs": 21312,
+        "parallel_calls": 0,
+        "peak_participants": 0,
+        "gpu_calls": 25,
+        "gpu_samples": 900000000,
+        "cpu_fallback_calls": 0
+      }
+    }
+  ],
+  "limitations": [
+    "Selected Modular and entropy tests, not the full repository test suite.",
+    "The general modular_workflow allocation sweep was intentionally stopped after an overly broad initial selection and sharding attempt. Neither interrupted unsharded runs nor partial shards are counted as passing evidence.",
+    "One fresh encoder call per image on battery with active desktop/indexing activity, unlike the earlier AC-powered qualification. Higher elapsed times are not a matched performance regression or speedup measurement; the earlier repeated qualification remains the performance comparison.",
+    "The separate research/modular-learning-cost branch is not integrated.",
+    "Concurrent uncommitted population-fusion edits appeared after the fresh builds; they were preserved and are not covered by qualification of the recorded integrated revision.",
+    "No new Metal shader-validation or sanitizer run in this integration check; the feature report retains the earlier instrumented-pipeline eligibility limitation."
+  ]
+}

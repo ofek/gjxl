@@ -18,28 +18,33 @@ static_assert(sizeof(ModularTokenNode) == 32 && offsetof(ModularTokenNode, offse
 
 Status ResolveModularTokenEligibility(const ModularTokenizationOptions &options,
                                       ModularTokenEligibility *out) {
+  return ResolveModularTokenEligibility(options.format, options.coding, options.search, out);
+}
+
+Status ResolveModularTokenEligibility(PackedModularFormat format, const ModularCodingPolicy &coding,
+                                      bool search, ModularTokenEligibility *out) {
   if (!out)
     return Status::InvalidArgument("Null GPU Modular token eligibility output");
   ModularInputProfile source;
-  if (auto s = ResolveModularInput({1, 1}, options.format, &source); !s.ok())
+  if (auto s = ResolveModularInput({1, 1}, format, &source); !s.ok())
     return s;
-  if (auto s = ValidateCodingPolicy(options.coding); !s.ok())
+  if (auto s = ValidateCodingPolicy(coding); !s.ok())
     return s;
-  if (options.coding.rct && source.channel_count < 3)
+  if (coding.rct && source.channel_count < 3)
     return Status::InvalidArgument("GPU Modular token RCT requires color input");
   TreeLayout tree;
-  if (auto s = ValidateTree(options.coding.tree, &tree); !s.ok())
+  if (auto s = ValidateTree(coding.tree, &tree); !s.ok())
     return s;
-  if (options.coding.tree.size > kMaximumGpuTreeNodes)
+  if (coding.tree.size > kMaximumGpuTreeNodes)
     return Status::Unsupported("GPU Modular tree exceeds backend node capacity");
-  if (options.search || options.coding.transforms.size || tree.weighted)
+  if (search || coding.transforms.size || tree.weighted)
     return Status::Unsupported("GPU Modular tokens require prescribed nonweighted RCT-only policy");
   ModularTokenEligibility result;
   result.channel_count = source.channel_count;
   result.context_count = tree.leaves;
-  result.node_count = options.coding.tree.size;
+  result.node_count = coding.tree.size;
   for (size_t i = 0; i < result.node_count; ++i) {
-    const auto &n = options.coding.tree.nodes[i];
+    const auto &n = coding.tree.nodes[i];
     result.nodes[i] = {
         n.property, n.split,      n.left,         n.right, static_cast<uint32_t>(n.predictor),
         n.offset,   n.multiplier, tree.context[i]};

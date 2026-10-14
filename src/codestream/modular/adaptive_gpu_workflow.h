@@ -1,0 +1,73 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2026 Yunho Cho
+#pragma once
+#include "codestream/modular/storage_plan.h"
+#include "codestream/modular/workflow.h"
+#include "codestream/modular/search.h"
+#include "gpu/ops/modular_adaptive_tokens.h"
+
+namespace gjxl::modular_internal {
+struct ModularCandidateEvaluation;
+struct AdaptiveModularWorkflowStoragePlan {
+  ModularWorkflowStoragePlan cpu;
+  size_t additional_peak_bytes = 0, peak_bytes = 0;
+  bool operator==(const AdaptiveModularWorkflowStoragePlan &) const = default;
+};
+// Checked, allocation-free bound for complete prescribed/search calls. Adds a
+// conservative maximum of feature preparation/generation plus canonical metadata
+// to the existing CPU bound. That sum covers cached features during all training,
+// CPU fallback, modeling, emission and output publication. Old output is separate.
+[[nodiscard]] Status
+ComputeAdaptiveModularWorkflowStoragePlan(Extent2D extent, PackedModularFormat format,
+                                          const ModularEncodingOptions &options,
+                                          AdaptiveModularWorkflowStoragePlan *out);
+
+// One immutable source and one live layout per encoder call. Input backing and
+// backend outlive the cache. Tree and entropy mode are deliberately not keys.
+// Eviction releases the old owner before constructing a different layout.
+// Learning borrows the same completed weighted map as token generation. Its
+// CPU frame is prepared from this cache's source, never a caller-supplied image.
+// This helper does not admit a call: the caller owns the composed reservation,
+// CPU execution scope and failure-atomic public output publication.
+class AdaptiveModularTokenCache {
+public:
+  AdaptiveModularTokenCache(GpuBackend &backend, PackedModularImageView input,
+                            bool anticipate_weighted = true, bool ans_cost = false, bool populations = false,
+                            size_t feature_participants = 1,
+                            WeightedFeatureBackend feature_backend = WeightedFeatureBackend::kCpu)
+      : operation_(modular_gpu_internal::QueryGpuAdaptiveModularTokenGeneration(backend)),
+        input_(input), anticipate_weighted_(anticipate_weighted), ans_backend_(ans_cost ? &backend : nullptr),
+        population_backend_(populations ? &backend : nullptr), feature_participants_(feature_participants),
+        feature_backend_(feature_backend) {}
+  [[nodiscard]] Status Encode(const ModularCodingPolicy &policy, EntropyCodingMode mode,
+                              const ModularWorkflowStoragePlan &storage,
+                              codestream_internal::CodestreamBuffer *out,
+                              AnsSelectionMode selection = AnsSelectionMode::kExact,
+                              ModularCandidateEvaluation *evaluation = nullptr);
+  [[nodiscard]] Status Learn(const ModularCodingPolicy &base, ModularCodingPolicy *single,
+                             ModularCodingPolicy *split, ModularCodingPolicy *entropy = nullptr,
+                             TreeLearningOptions learning = {}, TrainingCoverage *coverage = nullptr,
+                             TreeLearningCheckpoints *checkpoints = nullptr,
+                             GpuBackend *tree_gpu = nullptr);
+
+private:
+  // Learning retains a CPU frame for neighborhoods; encoding releases it before
+  // allocating tokens. !ready is a pre-production capability/shape fallback.
+  [[nodiscard]] Status Prepare(const ModularCodingPolicy &policy, bool learning,
+                               ModularEncoderFrame *frame, bool *ready);
+  void Evict();
+  modular_gpu_internal::GpuAdaptiveModularTokenGeneration *operation_;
+  const PackedModularImageView input_;
+  const bool anticipate_weighted_;
+  GpuBackend *const ans_backend_;
+  GpuBackend *const population_backend_;
+  const size_t feature_participants_;
+  const WeightedFeatureBackend feature_backend_;
+  uint8_t rct_ = 0;
+  TransformSequence transforms_;
+  WeightedPredictorParameters weighted_;
+  ChannelShape shape_;
+  ModularStreamPlan layout_;
+  std::unique_ptr<modular_gpu_internal::PreparedGpuAdaptiveModularFeatures> features_;
+};
+} // namespace gjxl::modular_internal

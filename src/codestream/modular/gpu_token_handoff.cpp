@@ -81,4 +81,78 @@ Status AdoptGpuModularTokens(const GpuModularTokenPlan &plan,
 } catch (const std::length_error &) {
   return Status::InvalidArgument("GPU Modular token handoff storage overflow");
 }
+Status AdoptAdaptiveGpuModularTokens(
+    const ModularStreamPlan &layout, const ModularCodingPolicy &policy,
+    std::unique_ptr<PreparedGpuModularTokens> &&backing,
+    PreparedModularTokens *out) try {
+  if (!out || !backing || &backing == &out->gpu_backing ||
+      layout.streams.empty())
+    return Status::InvalidArgument(
+        "Invalid adaptive GPU Modular token handoff");
+  if (!policy.weighted.valid() || policy.rct >= 42)
+    return Status::InvalidArgument("Invalid adaptive GPU Modular coding policy");
+  if (auto s = ValidateTransforms(policy.transforms); !s.ok())
+    return s;
+  TreeLayout tree;
+  if (auto s = ValidateTree(policy.tree, &tree); !s.ok())
+    return s;
+  if (backing->context_count() != tree.leaves)
+    return Status::InvalidArgument(
+        "Adaptive GPU Modular context count mismatch");
+  size_t total = 0, next_slice = 0;
+  for (const auto &stream : layout.streams) {
+    if (stream.slice_begin != next_slice || next_slice > layout.slices.size() ||
+        stream.slice_count > layout.slices.size() - next_slice)
+      return Status::InvalidArgument(
+          "Invalid adaptive GPU Modular stream slices");
+    for (const auto &slice :
+         std::span(layout.slices).subspan(next_slice, stream.slice_count)) {
+      size_t area;
+      if (!slice.rect.extent.try_area(&area) ||
+          total > backing->token_count() ||
+          area > backing->token_count() - total)
+        return Status::InvalidArgument(
+            "Invalid adaptive GPU Modular slice coverage");
+      total += area;
+    }
+    next_slice += stream.slice_count;
+  }
+  if (next_slice != layout.slices.size() || total != backing->token_count() ||
+      !total)
+    return Status::InvalidArgument(
+        "Incomplete adaptive GPU Modular token coverage");
+  ModularTokenHostView view;
+  if (auto s = backing->BorrowHostView(&view); !s.ok())
+    return s;
+  if (view.values.size() != total || view.contexts.size() != total ||
+      !view.values.data() || !view.contexts.data())
+    return Status::InvalidArgument(
+        "Adaptive GPU Modular token host view mismatch");
+  const ManagedHostScope resources(ResourceClass::kSerializer);
+  auto result = PrepareModularTokenHeader(policy, tree);
+  result.streams.resize(layout.streams.size());
+  size_t next = 0;
+  for (size_t i = 0; i < layout.streams.size(); ++i) {
+    const auto &stream = layout.streams[i];
+    size_t count = 0;
+    for (const auto &slice :
+         std::span(layout.slices)
+             .subspan(stream.slice_begin, stream.slice_count))
+      count += slice.rect.extent.width * slice.rect.extent.height;
+    result.streams[i] = EntropyTokenStreamView::Split(
+        view.values.subspan(next, count), view.contexts.subspan(next, count));
+    next += count;
+  }
+  result.gpu_backing = std::move(backing);
+  *out = std::move(result);
+  return Status::Ok();
+} catch (const ManagedAllocationFailure &e) {
+  return e.status();
+} catch (const std::bad_alloc &) {
+  return Status::OutOfMemory(
+      "Adaptive GPU Modular token handoff allocation failed");
+} catch (const std::length_error &) {
+  return Status::InvalidArgument(
+      "Adaptive GPU Modular token handoff storage overflow");
+}
 } // namespace gjxl::modular_gpu_internal
