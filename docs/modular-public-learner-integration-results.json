@@ -1027,7 +1027,7 @@
       "raw_log": "build/pr48-workflow-shard-smoke.log",
       "scope": "One of 64 disjoint shards; not a new exhaustive qualification."
     },
-    "historical_full_coverage": "docs/modular-palette-context-results.json: qualification.workflow_allocation_sweep",
+    "historical_full_coverage": "docs/modular-palette-context-results.json: validation.workflow_allocation_sweep",
     "hosted_full_coverage": "PR 48 runs all four shards on all six native matrix jobs."
   }
 }
