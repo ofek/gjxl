@@ -6,9 +6,12 @@
 #include "codestream/workflow_admission_scope.h"
 #include "codestream/workflow_admission_test.h"
 #include "core/cpu_execution.h"
+#include "modular_allocation_test_util.h"
 #include <array>
 #include <charconv>
+#include <chrono>
 #include <iostream>
+#include <sstream>
 #include <stdexcept>
 #include <string_view>
 #include <thread>
@@ -17,9 +20,13 @@ namespace {
 using namespace gjxl;
 using namespace gjxl::modular_internal;
 using namespace gjxl::resource_budget_internal;
-// Optional process-level partition of allocation indices. The default still
-// visits every index; the union of shards [0, count) is exactly the same sweep.
+enum class Suite { kRegular, kLegacySearchFaults, kAllFaults };
+Suite suite = Suite::kRegular;
+// Explicit exhaustive modes partition indices; the union of all shards still
+// visits every allocation. Regular mode exhausts only the inexpensive paths.
 size_t allocation_shard = 0, allocation_shards = 1;
+size_t exhaustive_fixtures = 0, probe_fixtures = 0, injected_total = 0;
+gjxl_test::AllocationReport report;
 void Check(bool v, const char *m) {
   if (!v)
     throw std::runtime_error(m);
@@ -316,39 +323,84 @@ void Workflow(Extent2D extent, EntropyCodingMode mode, bool faults,
         "Insufficient admission allocated backing");
   DisarmManagedHostAllocationFailureForTest();
   Empty(*small);
+  std::string fault_report;
   if (faults) {
+    const auto start = std::chrono::steady_clock::now();
     size_t failure_count = allocation_shard, injected = 0;
-    // Transform context search can exceed 50,000 managed allocations. Retain the
-    // exhaustive sweep, including every additional candidate and its winner.
-    for (; failure_count < 75000; failure_count += allocation_shards) {
-      ArmManagedHostAllocationFailureAfterForTest(failure_count);
-      status = EncodeModularImage(view, options, &output);
-      const bool pending = ManagedHostAllocationFailurePendingForTest();
-      DisarmManagedHostAllocationFailureForTest();
+    const bool sampled = search && suite == Suite::kRegular;
+    std::vector<size_t> positions;
+    if (sampled) {
+      std::vector<uint8_t> counted;
+      failure_count = gjxl_test::CountManagedAllocations(
+          [&] { return EncodeModularImage(view, options, &counted); });
+      Check(counted == expected && failure_count > 10 && failure_count < 75000,
+            "Search allocation count or bytes changed");
       Empty(*domain);
-      if (status.ok()) {
-        Check(pending && output == expected, "Fault injection did not cover every allocation");
-        break;
+      positions = gjxl_test::AllocationProbeIndices(failure_count);
+      for (const size_t index : positions) {
+        bool pending;
+        {
+          gjxl_test::ManagedAllocationFailureScope fault(index);
+          status = EncodeModularImage(view, options, &output);
+          pending = fault.pending();
+        }
+        Check(!pending && status.code() == StatusCode::kOutOfMemory &&
+                  output == std::vector<uint8_t>({7, 8, 9}) && bytes == unchanged,
+              "Search allocation probe changed output, input, or status");
+        Empty(*domain);
+        ++injected;
       }
-      Check(!pending && status.code() == StatusCode::kOutOfMemory &&
-                output == std::vector<uint8_t>({7, 8, 9}),
-            "Allocation failure changed output or status");
-      ++injected;
+      {
+        gjxl_test::ManagedAllocationFailureScope fault(failure_count);
+        Ok(EncodeModularImage(view, options, &output));
+        Check(fault.pending() && output == expected, "Search probe recovery changed bytes");
+      }
+      Empty(*domain);
+      ++probe_fixtures;
+    } else {
+      // Preserve the exhaustive legacy sequence and stopping condition. In
+      // qualification mode this still visits every candidate and its winner.
+      for (; failure_count < 75000; failure_count += allocation_shards) {
+        ArmManagedHostAllocationFailureAfterForTest(failure_count);
+        status = EncodeModularImage(view, options, &output);
+        const bool pending = ManagedHostAllocationFailurePendingForTest();
+        DisarmManagedHostAllocationFailureForTest();
+        Empty(*domain);
+        if (status.ok()) {
+          Check(pending && output == expected, "Fault injection did not cover every allocation");
+          break;
+        }
+        Check(!pending && status.code() == StatusCode::kOutOfMemory &&
+                  output == std::vector<uint8_t>({7, 8, 9}) && bytes == unchanged,
+              "Allocation failure changed output, input, or status");
+        ++injected;
+      }
+      ++exhaustive_fixtures;
     }
     Check(failure_count > 10 && failure_count < 75000, "Allocation sweep did not finish");
-    std::cout << "allocation failures " << (mode == EntropyCodingMode::kPrefix ? "prefix " : "ANS ")
-              << "format " << static_cast<int>(format) << ' ' << extent.width << 'x'
-              << extent.height << " policy "
-              << (search                            ? "search"
-                  : coding == ModularCodingPolicy{} ? "baseline"
-                                                    : "prescribed")
-              << ": " << injected << " (shard " << allocation_shard << '/' << allocation_shards
-              << ", first successful index " << failure_count << ")" << std::endl;
+    injected_total += injected;
+    std::ostringstream row;
+    row << "{\"fixture\":" << exhaustive_fixtures + probe_fixtures << ",\"policy\":\""
+        << (search ? "search" : coding == ModularCodingPolicy{} ? "baseline" : "prescribed")
+        << "\",\"coverage\":\"" << (sampled ? "probes" : "exhaustive")
+        << "\",\"format\":" << static_cast<int>(format) << ",\"width\":" << extent.width
+        << ",\"height\":" << extent.height << ",\"entropy\":\""
+        << (mode == EntropyCodingMode::kPrefix ? "prefix" : "ANS")
+        << "\",\"injected_failures\":" << injected
+        << ",\"first_successful_index\":" << failure_count
+        << ",\"shard\":" << allocation_shard << ",\"shards\":" << allocation_shards
+        << ",\"probe_positions\":[";
+    for (size_t i = 0; i < positions.size(); ++i) row << (i ? "," : "") << positions[i];
+    row << "],\"seconds\":"
+        << std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count()
+        << ",\"passed\":true}";
+    fault_report = row.str();
   }
   Ok(EncodeModularImage(view, options, &output));
   Check(output == expected && bytes == unchanged,
         "Recovery, determinism or input immutability failed");
   Empty(*domain);
+  if (!fault_report.empty()) report.Write(fault_report);
 }
 void TransformValidation() {
   ModularInputProfile profile;
@@ -421,17 +473,56 @@ void TransformValidation() {
 }
 } // namespace
 int main(int argc, char **argv) try {
-  if (argc != 1) {
-    Check(argc == 4 && std::string_view(argv[1]) == "--allocation-shard",
-          "Usage: modular_workflow_test [--allocation-shard INDEX COUNT]");
-    auto parse = [](std::string_view text, size_t *out) {
-      const auto result = std::from_chars(text.data(), text.data() + text.size(), *out);
-      return result.ec == std::errc{} && result.ptr == text.data() + text.size();
-    };
-    Check(parse(argv[2], &allocation_shard) && parse(argv[3], &allocation_shards) &&
-              allocation_shards >= 1 && allocation_shards <= 64 &&
-              allocation_shard < allocation_shards,
-          "Invalid allocation shard");
+  bool explicit_suite = false, sharded = false;
+  std::string report_path;
+  auto parse = [](std::string_view text, size_t *out) {
+    const auto result = std::from_chars(text.data(), text.data() + text.size(), *out);
+    return result.ec == std::errc{} && result.ptr == text.data() + text.size();
+  };
+  for (int i = 1; i < argc; ++i) {
+    const std::string_view argument = argv[i];
+    if (argument == "--regular" || argument == "--legacy-search-faults" ||
+        argument == "--all-faults") {
+      Check(!explicit_suite, "Only one allocation suite may be selected");
+      explicit_suite = true;
+      suite = argument == "--regular" ? Suite::kRegular
+              : argument == "--legacy-search-faults" ? Suite::kLegacySearchFaults
+                                                     : Suite::kAllFaults;
+    } else if (argument == "--allocation-shard") {
+      Check(!sharded && i + 2 < argc, "Expected one allocation shard INDEX COUNT");
+      Check(parse(argv[i + 1], &allocation_shard) && parse(argv[i + 2], &allocation_shards) &&
+                allocation_shards >= 1 && allocation_shards <= 64 &&
+                allocation_shard < allocation_shards,
+            "Invalid allocation shard");
+      sharded = true;
+      i += 2;
+    } else if (argument == "--report") {
+      Check(report_path.empty() && i + 1 < argc, "Expected one report path");
+      report_path = argv[++i];
+    } else {
+      Check(false, "Usage: modular_workflow_test [--regular|--legacy-search-faults|--all-faults] "
+                   "[--allocation-shard INDEX COUNT] [--report PATH]");
+    }
+  }
+  // Preserve historical explicit shard commands as the complete 44-fixture
+  // suite. Unqualified invocation and ordinary CTest now use regular coverage.
+  if (sharded && !explicit_suite) suite = Suite::kAllFaults;
+  Check(!sharded || suite != Suite::kRegular, "Regular allocation tests cannot be sharded");
+  if (!report_path.empty()) report.Open(report_path);
+  auto finish = [] {
+    std::ostringstream row;
+    row << "{\"summary\":true,\"exhaustive_fixtures\":" << exhaustive_fixtures
+        << ",\"probe_fixtures\":" << probe_fixtures
+        << ",\"injected_failures\":" << injected_total << ",\"passed\":true}";
+    report.Write(row.str());
+  };
+  if (suite == Suite::kLegacySearchFaults) {
+    for (auto mode : {EntropyCodingMode::kPrefix, EntropyCodingMode::kAns})
+      for (auto extent : {Extent2D{17, 19}, Extent2D{257, 3}})
+        Workflow(extent, mode, true, PackedModularFormat::kRgba16, {}, true);
+    Check(exhaustive_fixtures == 4 && probe_fixtures == 0, "Incomplete search fault suite");
+    finish();
+    return 0;
   }
   Validation();
   FormatValidation();
@@ -479,7 +570,12 @@ int main(int argc, char **argv) try {
     policy.transforms.entries[1] = {TransformKind::kSqueeze, 1, 1, 1, true, false};
     Workflow({17, 19}, mode, true, PackedModularFormat::kRgba16, policy);
   }
+  Check(exhaustive_fixtures == (suite == Suite::kRegular ? 40 : 44) &&
+            probe_fixtures == (suite == Suite::kRegular ? 4 : 0),
+        "Incomplete workflow allocation suite");
+  finish();
   std::cout << "Modular workflow contracts passed\n";
+  return 0;
 } catch (const std::exception &e) {
   std::cerr << e.what() << '\n';
   return 1;
