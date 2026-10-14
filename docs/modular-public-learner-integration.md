@@ -71,8 +71,8 @@ scope. This is selected correctness qualification, not the full repository suite
 or a matched performance benchmark. Hosted CI results are tracked by PR #48.
 
 Hosted CI still runs the exhaustive legacy allocation sweep. It now sets
-`GJXL_MODULAR_WORKFLOW_SHARDS=4` and runs four CTests concurrently. The existing
-`--allocation-shard INDEX COUNT` interface partitions failure indices; all four
+four shards on Linux/macOS and sixteen on Windows, with four CTests concurrent. The existing
+`--allocation-shard INDEX COUNT` interface partitions failure indices; all shard
 indices are registered, so every fixture and every failure position remain in
 scope. This follows the complete four-shard qualification in
 [the palette-context report](modular-palette-context.md#validation-and-evidence).
@@ -82,7 +82,7 @@ existing test across cores; it does not reduce coverage or change codec behavior
 The four generated commands and the unchanged single-test default were checked
 locally. A smoke run of shard 0/64 passed all 44 fault-case fixtures and 2,650
 injected failures; this subset is not a new exhaustive qualification. The full
-four-shard coverage is assigned to hosted CI.
+allocation coverage is assigned to hosted CI.
 
 ### Hosted Windows follow-up
 
@@ -100,6 +100,33 @@ Apple Silicon result is not a Windows qualification. The original diagnostic
 is [the Windows C++20 build log](https://github.com/yunho-c/gjxl/actions/runs/38501488749/job/115649229436),
 with a local copy at `build/pr48-windows-first-build.log`. The follow-up CTest
 report is `build/public-default/build/pr48-portable-tests.xml`.
+
+### Hosted runtime and checkout follow-up
+
+At `f63843c`, both Linux native jobs passed 47 Modular and 120 other CTests;
+both macOS jobs passed 50 Modular and 185 other CTests. CUDA compilation and
+all three Rust checks passed. These results include the complete four-shard
+allocation sweep on Linux and macOS. Logs are in `build/pr48-*-final-tests.log`;
+the [hosted run](https://github.com/yunho-c/gjxl/actions/runs/38506867831)
+retains the platform evidence.
+
+Windows C++20 reported eight CTest entries unable to load reference DLLs,
+two frozen-manifest hash failures, and four allocation-shard timeouts. The
+candidate and training tests now receive the same reference DLL search path
+as the existing oracle tests, along with both ANS selection modes that use the
+same dependency. The exact-byte oracle manifests now explicitly retain LF on
+Windows checkout; `git -c core.autocrlf=true cat-file --filters` reproduced the
+original hash failure and verified the corrected checkout against the unchanged
+expected SHA-256. Capture artifacts already use binary streams.
+
+Each timed-out Windows shard completed 33 of 44 fault fixtures before the
+existing 7,200-second limit. Windows now uses sixteen smaller, disjoint shards
+at concurrency four, keeping every failure index and the timeout unchanged.
+The generated sixteen commands were verified locally. Native CI runs the
+quicker Modular checks and remaining repository tests before the exhaustive
+sweep, with separate JUnit reports. Their test selections were verified to be
+disjoint and collectively exhaustive. This follow-up changes test setup only;
+Windows qualification remains pending on the updated PR revision.
 
 ## Reproduction and evidence
 

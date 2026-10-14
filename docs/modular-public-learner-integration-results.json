@@ -970,7 +970,11 @@
   "ci_sharding_follow_up": {
     "production_source_unchanged": true,
     "default_shards": 1,
-    "ci_shards": 4,
+    "ci_shards": {
+      "linux": 4,
+      "macos": 4,
+      "windows": 16
+    },
     "ci_parallel_tests": 4,
     "registration_verified": [
       {
@@ -1028,6 +1032,36 @@
       "scope": "One of 64 disjoint shards; not a new exhaustive qualification."
     },
     "historical_full_coverage": "docs/modular-palette-context-results.json: validation.workflow_allocation_sweep",
-    "hosted_full_coverage": "PR 48 runs all four shards on all six native matrix jobs."
+    "hosted_full_coverage": "PR 48 runs every shard on all native matrix jobs: four on Linux/macOS, sixteen on Windows, with concurrency four."
+  },
+  "hosted_windows_runtime_follow_up": {
+    "production_source_unchanged": true,
+    "prior_revision": "f63843ca76b1e34b60de3df92082798dc9b2011b",
+    "prior_run": "https://github.com/yunho-c/gjxl/actions/runs/38506867831",
+    "prior_passed_checks": [
+      "CUDA compile",
+      "three Rust wrappers",
+      "Linux C++20",
+      "Linux C++23",
+      "macOS C++20",
+      "macOS C++23"
+    ],
+    "windows_cxx20_failed_tests": {
+      "reference_dll_loading": 8,
+      "frozen_manifest_hash": 2,
+      "allocation_shard_timeout": 4
+    },
+    "completed_fault_fixtures_per_timed_out_shard": 33,
+    "total_fault_fixtures": 44,
+    "manifest_checkout_reproduction": {
+      "core_autocrlf": true,
+      "before_hash_matched": false,
+      "after_hash_matched": true,
+      "expected_hash_unchanged": true
+    },
+    "windows_shard_registration_verified": 16,
+    "shard_timeout_seconds": 7200,
+    "ci_test_partitions_disjoint_and_complete": true,
+    "windows_status": "Pending hosted validation of the follow-up revision."
   }
 }

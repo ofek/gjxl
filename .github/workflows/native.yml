@@ -47,7 +47,7 @@ jobs:
           submodules: recursive
       - uses: ./.github/actions/setup-native-toolchain
       - name: Configure
-        run: cmake -S . -B build/ci -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=${{ matrix.standard }} -DGJXL_ENABLE_CUDA=OFF -DGJXL_BUILD_TESTS=ON -DGJXL_BUILD_BENCHMARKS=ON -DGJXL_ENABLE_LIBJXL_REFERENCE=OFF -DGJXL_MODULAR_WORKFLOW_SHARDS=4
+        run: cmake -S . -B build/ci -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_STANDARD=${{ matrix.standard }} -DGJXL_ENABLE_CUDA=OFF -DGJXL_BUILD_TESTS=ON -DGJXL_BUILD_BENCHMARKS=ON -DGJXL_ENABLE_LIBJXL_REFERENCE=OFF -DGJXL_MODULAR_WORKFLOW_SHARDS=${{ matrix.os == 'windows-2022' && 16 || 4 }}
       - name: Build pinned libjxl for Modular qualification
         env:
           CMAKE_BUILD_PARALLEL_LEVEL: 4
@@ -67,9 +67,14 @@ jobs:
         run: cmake --build build/ci --parallel 4
       - name: Qualify Modular encoding
         working-directory: build/ci
-        run: ctest --output-on-failure --parallel 4 --timeout 600 --no-tests=error -R "^modular_" --output-junit modular-tests.xml
+        run: ctest --output-on-failure --parallel 4 --timeout 600 --no-tests=error -R "^modular_" -E "^modular_workflow(_shard_[0-9]+)?$" --output-junit modular-tests.xml
       - name: Test
         run: ctest --test-dir build/ci --output-on-failure --parallel 2 -E "^modular_"
+      - name: Exhaustive Modular allocation sweep
+        # Run all disjoint shards after the quicker checks. Windows needs
+        # smaller shards to finish within the unchanged per-test timeout.
+        working-directory: build/ci
+        run: ctest --output-on-failure --parallel 4 --no-tests=error -R "^modular_workflow(_shard_[0-9]+)?$" --output-junit modular-allocation-tests.xml
       - name: Diagnose Metal baseline on failure
         if: failure() && runner.os == 'macOS' && matrix.standard == 20 && github.event_name == 'pull_request'
         continue-on-error: true
@@ -103,6 +108,7 @@ jobs:
             build/ci/CMakeCache.txt
             build/ci/pinned-libjxl*/CMakeCache.txt
             build/ci/modular-tests.xml
+            build/ci/modular-allocation-tests.xml
             build/ci/modular-frozen-native/
             build/ci/modular-frozen-reference/
             build/ci/Testing/Temporary/

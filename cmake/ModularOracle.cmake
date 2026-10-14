@@ -68,6 +68,14 @@ target_link_libraries(gjxl_modular_candidate_search_test PRIVATE gjxl_modular_re
 target_compile_definitions(gjxl_modular_candidate_search_test PRIVATE GJXL_CANDIDATE_COST_REFERENCE=1)
 target_link_libraries(gjxl_modular_training_budget_test PRIVATE gjxl_modular_reference)
 target_compile_definitions(gjxl_modular_training_budget_test PRIVATE GJXL_TRAINING_BUDGET_REFERENCE=1)
+if(WIN32)
+  set_tests_properties(ans_selection ans_selection_faults
+    modular_candidate_cost modular_candidate_search
+    modular_training_budget modular_training_budget_faults
+    modular_training_checkpoints modular_training_checkpoint_faults
+    modular_training_coverage modular_training_coverage_faults PROPERTIES
+    ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:${GJXL_MODULAR_ORACLE_BUILD}/tools")
+endif()
 if(GJXL_BUILD_BENCHMARKS)
   add_executable(gjxl_modular_search_profile tools/modular_training_study/profile.cpp src/io/pnm.cpp)
   target_include_directories(gjxl_modular_search_profile PRIVATE tests)
