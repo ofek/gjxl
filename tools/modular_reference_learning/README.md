@@ -57,6 +57,8 @@ details are nested within tokens. Managed memory excludes caller input and
 reference-decode buffers, stack, allocator bookkeeping and backend initialization.
 Use the [integration plan](../../docs/gpu-histogram-learner-integration.md)
 for ownership, admission, routing and validation boundaries.
+The [2026-10-14 qualification](../../docs/gpu-histogram-learner-qualification.md)
+records matched full-resolution and crossover results on Apple M4 Pro.
 
 ## Conditional native WP search
 

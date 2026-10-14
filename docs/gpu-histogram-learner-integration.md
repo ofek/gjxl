@@ -1,7 +1,8 @@
 # Shared weighted features for the histogram learner
 
-Status: Steps 1–3 complete; targeted correctness qualification passed,
-with repeated performance qualification remaining.
+Status: Steps 1–4 complete. Targeted correctness and repeated matched
+performance qualification passed on 2026-10-14; see
+[the qualification report](gpu-histogram-learner-qualification.md).
 Work is on `feat/parallel-weighted-feature-prep`,
 starting from `81467ca` (the public learner integration). The earlier
 [weighted-feature effort](parallel-weighted-feature-preparation.md) is complete
@@ -220,5 +221,20 @@ Step 3, Release CPU-only and Metal builds with the pinned decoder oracle:
 
 The matched complete-call driver and freezing runner are documented in
 [the tool README](../tools/modular_reference_learning/README.md#cpu-hybrid-histogram-qualification).
-No performance conclusion is claimed from correctness tests or development
-pilots.
+Step 4, matched Release CPU/hybrid qualification on Apple M4 Pro:
+
+- Three original 4000×3000 RGB8 photographs, one warmup and three measured
+  encodes per route/image: 24 identical files with exact independent decoding.
+  Median complete-call runtime improves by 5.6–6.7% using the same learned
+  policy and output bytes.
+- Two center-crop controls compare ordinary CPU, shared CPU features with
+  Metal tokens, forced GPU features with Metal tokens, and automatic hybrid
+  routing. All 32 additional files are identical and decode exactly. The
+  existing conservative feature crossover is retained.
+- Feature preparation is 0.11–0.15 seconds on the full-resolution images;
+  most of the observed gain comes from GPU token generation. CPU fitting
+  remains 69–73% of hybrid runtime. Public default routing is unchanged.
+- [Raw measurements and provenance](gpu-histogram-learner-integration-results.json)
+  preserve actual routing, timing boundaries, repeats, exact outputs and
+  memory admission. Development pilots are excluded. These are local battery
+  measurements, separate from earlier AC-powered legacy-search results.

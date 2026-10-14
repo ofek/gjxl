@@ -4,6 +4,10 @@ Status: Steps 1–5 are complete. The hybrid workflow now uses bounded CPU slice
 parallelism or an exact Metal wavefront producer, selected before execution.
 The operation and complete encoder qualification below preserve every feature,
 candidate decision and encoded byte.
+These results cover the legacy candidate-search workflow. The improved
+one-fit histogram learner now shares the same feature producers through
+[the stream integration](gpu-histogram-learner-integration.md), with its own
+[matched CPU/hybrid qualification](gpu-histogram-learner-qualification.md).
 This work starts from shared-feature commit `23cedb1` on
 `feat/parallel-weighted-feature-prep`, independently of the ongoing learner
 improvements on `research/modular-learning-cost`.
