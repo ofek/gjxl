@@ -227,17 +227,27 @@ GJXL_API GJXLResult gjxl_encode(
 
 typedef int32_t GJXLModularEntropy;
 enum { GJXL_MODULAR_ENTROPY_PREFIX = 0, GJXL_MODULAR_ENTROPY_ANS = 1 };
+typedef int32_t GJXLModularPolicy;
+enum {
+  GJXL_MODULAR_POLICY_LEARNED = 0,
+  GJXL_MODULAR_POLICY_BASELINE = 1,
+  GJXL_MODULAR_POLICY_SEARCH = 2
+};
 typedef struct {
   uint32_t struct_size;
-  uint32_t search; // 0 baseline, 1 bounded lossless policy search.
+  uint32_t search; // 1 aliases POLICY_SEARCH; conflicts with POLICY_BASELINE.
   GJXLModularEntropy entropy;
+  GJXLModularPolicy policy;
 } GJXLModularOptions;
-/// Four-byte prefixes are supported; absent fields default to zero.
+/// Four-byte prefixes are supported. Defaults are learned policy, ANS, search=0.
+/// Existing search/entropy field offsets and enum values are unchanged.
 GJXL_API GJXLResult gjxl_modular_options_init(GJXLModularOptions *options,
                                               size_t caller_size) GJXL_NOEXCEPT;
 /// Exact gray/RGB/RGBA 8/16-bit encoding. Alpha is unassociated and preserved.
 /// Null options use defaults. AUTO selects CPU; forced GPU is unsupported.
 /// Uses the existing empty-output ownership contract and gjxl_buffer_free.
+/// Learned policy uses staged, nonblocking memory admission and can return
+/// GJXL_ERROR_UNAVAILABLE when the domain is busy. CPU execution is serial.
 GJXL_API GJXLResult gjxl_encode_modular(GJXLContext *context, const GJXLImageView *image,
                                         const GJXLModularOptions *options,
                                         GJXLBuffer *output) GJXL_NOEXCEPT;

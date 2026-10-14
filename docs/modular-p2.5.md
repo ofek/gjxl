@@ -22,7 +22,6 @@ gjxl::ModularImageView image{rgba_bytes, {width, height}, stride_bytes,
                             gjxl::ModularByteOrder::kBigEndian};
 gjxl::ModularEncodingOptions options;
 options.cpu_thread_count = 4;
-options.search = true;
 gjxl::ModularEncodingSummary summary;
 auto status = gjxl::EncodeModularImage(image, options, &encoded, &summary);
 ```
@@ -31,9 +30,12 @@ All six gray/RGB/RGBA 8/16-bit layouts are supported. Byte order is explicit for
 16-bit input; unaligned buffers, padded byte strides and an unpadded final row
 are allowed. RGB samples use sRGB and gray samples use its transfer function;
 alpha is unassociated at the color depth. Invisible RGB and all alpha samples
-are preserved. No float conversion occurs. Defaults select prefix coding and
-identity/gradient policy. `search=true` enables the bounded P2.3/P2.4 selector;
-`ModularEntropy::kAns` selects ANS independently. There is no distance or quality
+are preserved. No float conversion occurs. Defaults select the improved histogram
+learner and estimated ANS coding. `ModularPolicy::kBaseline` selects the legacy
+identity/gradient policy; `ModularPolicy::kSearch` or `search=true` selects the
+legacy bounded portfolio. `ModularEntropy::kPrefix` requests prefix coding
+independently. See [the public default](modular-public-default.md) for the current
+learning, resource and compatibility contract. There is no distance or quality
 parameter. Output and summary replacement are atomic. The summary reports source
 extent, encoded bytes, resolved CPU backend and whole-call wall seconds,
 including admission waits.
@@ -42,7 +44,8 @@ The C API adds `GJXLModularOptions`, `gjxl_modular_options_init` and
 `gjxl_encode_modular`. It reuses contexts, domain handles, `GJXLImageView`,
 `GJXLBuffer`, thread-local errors and `gjxl_buffer_free`. Null Modular options
 select defaults. Four-byte options prefixes are valid; absent search/entropy
-fields default to zero, and larger future tails are ignored on input. Existing
+fields default to search=0 and ANS. The appended policy field defaults to learned;
+larger future tails are ignored on input. Existing
 pixel enum values 1/2 retain RGB8/RGBA8; values 3..9 add gray8 and explicitly
 little/big-endian gray16/RGB16/RGBA16. Existing VarDCT `gjxl_encode` still rejects
 unsupported formats and nonopaque alpha. Both routes now share the C publication
@@ -54,6 +57,11 @@ Rust bindgen automatically exposes the new C declarations. The safe wrapper adds
 The existing `encode` method retains its VarDCT behavior.
 
 ## Scheduling and resources
+
+The learned default currently runs serially and uses staged, nonblocking managed
+memory admission, including the C publication copy. It respects CPU/domain limits
+but does not promise parallel speedup. The following parallel scheduling and
+whole-workflow bounds describe the explicit legacy baseline/search policies.
 
 The private workflow defaults to one thread and remains callable as the serial
 CPU oracle. Public CPU limits accept zero for automatic or 1..256 as an upper
@@ -84,8 +92,8 @@ no mixed-mode batch API is introduced.
 ## Exact integer CLI
 
 ```sh
-gjxl_encode --modular --input-color-space srgb --search --threads 4 input.pam output.jxl
-gjxl_encode --modular --input-color-space srgb --entropy ans input.ppm output.jxl
+gjxl_encode --modular --input-color-space srgb input.pam output.jxl
+gjxl_encode --modular --input-color-space srgb --policy baseline --entropy prefix input.ppm output.jxl
 ```
 
 The private PNM reader supports binary P5 (gray), P6 (RGB), and P7 PAM with

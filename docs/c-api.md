@@ -690,8 +690,6 @@ unsupported. Old VarDCT distance/quality settings never imply losslessness.
 ```c
 GJXLModularOptions options;
 gjxl_modular_options_init(&options, sizeof(options));
-options.search = 1;
-options.entropy = GJXL_MODULAR_ENTROPY_ANS;
 GJXLBuffer output = {0};
 GJXLResult result = gjxl_encode_modular(context, &image, &options, &output);
 /* Use output on success, then release it. */
@@ -703,6 +701,12 @@ Modular accepts existing RGB8/RGBA8 enum values and `GRAY8_SRGB`, plus
 `RGBA16_LE_SRGB`, and `RGBA16_BE_SRGB` (all prefixed `GJXL_PIXEL_FORMAT_`).
 Strides are in bytes. The view may be unaligned; 16-bit byte order is explicit.
 RGB is source-space sRGB, gray uses its transfer curve, and alpha is unassociated.
-Null options use the baseline/prefix default. Four-byte options prefixes work;
-absent search/entropy fields default to zero. Output must be empty on entry and
-is unchanged on failure. See [P2.5](modular-p2.5.md) for qualification and limits.
+Null options and the initializer select the learned policy with ANS. Four-byte
+options prefixes work; absent fields use those defaults. The appended `policy`
+field selects `GJXL_MODULAR_POLICY_LEARNED`, `BASELINE`, or `SEARCH`. Existing
+search/entropy offsets and enum values are unchanged; `search=1` remains an alias
+for legacy search and conflicts with explicit baseline. An explicitly zero entropy
+field still requests prefix coding. Use the initializer for current defaults.
+Output must be empty on entry and is unchanged on failure. Learned encoding uses
+nonblocking staged admission and can return `GJXL_ERROR_UNAVAILABLE` when the
+shared memory domain is busy. See [the public default](modular-public-default.md).

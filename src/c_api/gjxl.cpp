@@ -20,7 +20,7 @@
 #include <vector>
 
 #include "c_api/image_conversion.h"
-#include "codestream/modular/workflow.h"
+#include "codestream/modular/public.h"
 #include "codestream/modular/search.h"
 #include "codestream/workflow_admission_scope.h"
 #include "codestream/workflow.h"
@@ -637,7 +637,13 @@ GJXLResult gjxl_encode(
 }
 
 GJXLResult gjxl_modular_options_init(GJXLModularOptions *options, size_t caller_size) noexcept {
-  return Guard([&] { return InitializeOptions(options, caller_size, sizeof(uint32_t)); });
+  return Guard([&] {
+    auto result = InitializeOptions(options, caller_size, sizeof(uint32_t));
+    if (result == GJXL_OK && caller_size >=
+        offsetof(GJXLModularOptions, entropy) + sizeof(GJXLModularEntropy))
+      options->entropy = GJXL_MODULAR_ENTROPY_ANS;
+    return result;
+  });
 }
 GJXLResult gjxl_encode_modular(GJXLContext *context, const GJXLImageView *image,
                                const GJXLModularOptions *options, GJXLBuffer *output) noexcept {
@@ -654,7 +660,7 @@ GJXLResult gjxl_encode_modular(GJXLContext *context, const GJXLImageView *image,
     if (context->backend != VarDctBackendPreference::kCpu &&
         context->backend != VarDctBackendPreference::kAutomatic)
       return Fail(GJXL_ERROR_UNSUPPORTED, "Modular GPU encoding is not implemented");
-    m::ModularEncodingOptions resolved;
+    ModularEncodingOptions resolved;
     resolved.execution_domain = context->execution_domain;
     resolved.cpu_thread_count = context->cpu_thread_count;
     if (options &&
@@ -669,9 +675,21 @@ GJXLResult gjxl_encode_modular(GJXLContext *context, const GJXLImageView *image,
           options->entropy != GJXL_MODULAR_ENTROPY_ANS)
         return Fail(GJXL_ERROR_INVALID_ARGUMENT, "Invalid Modular entropy option");
       resolved.entropy = options->entropy == GJXL_MODULAR_ENTROPY_PREFIX
-                             ? EntropyCodingMode::kPrefix
-                             : EntropyCodingMode::kAns;
+                             ? ModularEntropy::kPrefix
+                             : ModularEntropy::kAns;
     }
+    if (options && options->struct_size >=
+                       offsetof(GJXLModularOptions, policy) + sizeof(GJXLModularPolicy)) {
+      switch (options->policy) {
+      case GJXL_MODULAR_POLICY_LEARNED: resolved.policy = ModularPolicy::kLearned; break;
+      case GJXL_MODULAR_POLICY_BASELINE: resolved.policy = ModularPolicy::kBaseline; break;
+      case GJXL_MODULAR_POLICY_SEARCH: resolved.policy = ModularPolicy::kSearch; break;
+      default: return Fail(GJXL_ERROR_INVALID_ARGUMENT, "Invalid Modular policy");
+      }
+    }
+    ModularPolicy policy;
+    if (auto s = m::ResolvePublicModularPolicy(resolved, &policy); !s.ok())
+      return TranslateStatus(s);
     m::PackedModularImageView packed{
         {static_cast<const uint8_t *>(image->pixels), image->pixels_size},
         {image->width, image->height},
@@ -707,12 +725,34 @@ GJXLResult gjxl_encode_modular(GJXLContext *context, const GJXLImageView *image,
       packed.byte_order = m::SampleByteOrder::kBigEndian;
     if (auto status = packed.Validate(); !status.ok())
       return TranslateStatus(status);
+    if (policy == ModularPolicy::kLearned) {
+      if (!resolved.execution_domain)
+        resolved.execution_domain = ExecutionDomain::Default();
+      // Stages never wait for memory while holding earlier backing or a CPU
+      // permit. Keep participation through the final C-owned publication copy.
+      thread_budget_internal::CpuExecutionScope cpu;
+      if (auto s = cpu.Start(resolved.execution_domain, resolved.cpu_thread_count); !s.ok())
+        return TranslateStatus(s);
+      codestream_internal::CodestreamBuffer encoded;
+      if (auto s = m::EncodePublicModularImageOwned(packed, resolved, &encoded); !s.ok())
+        return TranslateStatus(s);
+      resource_budget_internal::ResourceReservation publication;
+      if (auto s = codestream_internal::WorkflowAdmission::Budget(*resolved.execution_domain)
+                       .TryReserve(encoded.size(), &publication); !s.ok())
+        return TranslateStatus(s);
+      resource_budget_internal::ResourceContextScope resources(
+          {&publication, resource_budget_internal::ResourceClass::kRetainedResult,
+           true, resolved.execution_domain.get()});
+      return PublishCodestream(encoded, output);
+    }
+    const auto entropy = resolved.entropy == ModularEntropy::kPrefix ? EntropyCodingMode::kPrefix
+                                                                    : EntropyCodingMode::kAns;
     m::ModularWorkflowStoragePlan plan;
     auto status =
-        resolved.search
-            ? m::ComputeModularSearchStoragePlan(packed.extent, packed.format, resolved.entropy,
+        policy == ModularPolicy::kSearch
+            ? m::ComputeModularSearchStoragePlan(packed.extent, packed.format, entropy,
                                                  &plan, resolved.cpu_thread_count)
-            : m::ComputeModularWorkflowStoragePlan(packed.extent, packed.format, resolved.entropy,
+            : m::ComputeModularWorkflowStoragePlan(packed.extent, packed.format, entropy,
                                                    {}, &plan, resolved.cpu_thread_count);
     if (!status.ok())
       return TranslateStatus(status);
@@ -727,7 +767,7 @@ GJXLResult gjxl_encode_modular(GJXLContext *context, const GJXLImageView *image,
     if (auto s = cpu.Start(resolved.execution_domain, resolved.cpu_thread_count); !s.ok())
       return TranslateStatus(s);
     codestream_internal::CodestreamBuffer encoded;
-    if (auto s = m::EncodeModularImageOwned(packed, resolved, &encoded); !s.ok())
+    if (auto s = m::EncodePublicModularImageOwned(packed, resolved, &encoded); !s.ok())
       return TranslateStatus(s);
     return PublishCodestream(encoded, output);
   });

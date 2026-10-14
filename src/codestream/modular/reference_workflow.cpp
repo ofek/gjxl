@@ -21,7 +21,10 @@ Status Stage(const ResourceBudget &budget, size_t bytes,
       !s.ok())
     return s;
   stats->maximum_stage_bytes = std::max(stats->maximum_stage_bytes, bytes);
-  ResourceContextScope scope({&reservation, ResourceClass::kPreparation});
+  auto context = CurrentResourceContext();
+  context.reservation = &reservation;
+  context.resource_class = ResourceClass::kPreparation;
+  ResourceContextScope scope(context);
   return function();
 }
 Status Fill(const ModularImage &image, ReferenceModularStream *record) {

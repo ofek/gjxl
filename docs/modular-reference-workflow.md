@@ -1,5 +1,9 @@
 # Native reference-style Modular workflow
 
+Current integration: this qualified workflow now backs the public learned default.
+See [public behavior and validation](modular-public-default.md). The results below
+remain the historical qualification of the private workflow.
+
 The private CPU path now accepts original packed integer pixels, selects
 palette/RCT/WP decisions, prepares and fits each selected learning scope once,
 and emits a complete file through direct estimated ANS with a 64-cluster cap.
