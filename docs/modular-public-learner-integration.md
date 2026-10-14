@@ -70,6 +70,23 @@ runtime. Dedicated API, training, ANS and GPU workflow failure tests remain in
 scope. This is selected correctness qualification, not the full repository suite
 or a matched performance benchmark. Hosted CI results are tracked by PR #48.
 
+### Hosted Windows follow-up
+
+The initial hosted Windows builds exposed pre-existing portability errors in
+`earlier_dc_contract_test.cpp` and `entropy_readiness_contract_test.cpp`; both
+files were unchanged from `2520a7f`. Their POSIX `setenv`/`unsetenv` calls do not
+compile with MSVC. A shared test helper now uses `_putenv_s` on Windows and the
+original POSIX operations elsewhere, checking errors on either platform. The
+concurrent test calls also capture an explicitly constructed options object,
+avoiding the brace-initializer expression rejected by MSVC 14.37.
+
+Both scheduling contract tests passed locally after this test-only correction.
+Hosted validation of the Windows branch remains recorded on the PR; the local
+Apple Silicon result is not a Windows qualification. The original diagnostic
+is [the Windows C++20 build log](https://github.com/yunho-c/gjxl/actions/runs/38501488749/job/115649229436),
+with a local copy at `build/pr48-windows-first-build.log`. The follow-up CTest
+report is `build/public-default/build/pr48-portable-tests.xml`.
+
 ## Reproduction and evidence
 
 Configure with tests and benchmarks enabled, CUDA disabled, and
