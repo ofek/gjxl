@@ -966,5 +966,68 @@
     "The remaining Metal GPU workflows started after the corrected executables were rebuilt.",
     "The general legacy workflow allocation sweep is excluded because of its previously documented runtime. Dedicated allocation-failure tests remain included.",
     "ASan/UBSan: macOS LeakSanitizer disabled; the independently linked libjxl decoder is uninstrumented."
-  ]
+  ],
+  "ci_sharding_follow_up": {
+    "production_source_unchanged": true,
+    "default_shards": 1,
+    "ci_shards": 4,
+    "ci_parallel_tests": 4,
+    "registration_verified": [
+      {
+        "name": "modular_workflow_shard_0",
+        "arguments": [
+          "--allocation-shard",
+          "0",
+          "4"
+        ],
+        "timeout_seconds": 7200
+      },
+      {
+        "name": "modular_workflow_shard_1",
+        "arguments": [
+          "--allocation-shard",
+          "1",
+          "4"
+        ],
+        "timeout_seconds": 7200
+      },
+      {
+        "name": "modular_workflow_shard_2",
+        "arguments": [
+          "--allocation-shard",
+          "2",
+          "4"
+        ],
+        "timeout_seconds": 7200
+      },
+      {
+        "name": "modular_workflow_shard_3",
+        "arguments": [
+          "--allocation-shard",
+          "3",
+          "4"
+        ],
+        "timeout_seconds": 7200
+      }
+    ],
+    "default_registration_verified": {
+      "name": "modular_workflow",
+      "arguments": [],
+      "timeout_seconds": 7200
+    },
+    "local_smoke": {
+      "arguments": [
+        "--allocation-shard",
+        "0",
+        "64"
+      ],
+      "passed": true,
+      "fault_cases": 44,
+      "injected_failures": 2650,
+      "raw_log": "build/pr48-workflow-shard-smoke.log",
+      "scope": "One of 64 disjoint shards; not a new exhaustive qualification."
+    },
+    "historical_full_coverage": "docs/modular-palette-context-results.json: qualification.workflow_allocation_sweep",
+    "hosted_full_coverage": "PR 48 runs all four shards on all six native matrix jobs."
+  }
 }

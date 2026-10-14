@@ -70,6 +70,20 @@ runtime. Dedicated API, training, ANS and GPU workflow failure tests remain in
 scope. This is selected correctness qualification, not the full repository suite
 or a matched performance benchmark. Hosted CI results are tracked by PR #48.
 
+Hosted CI still runs the exhaustive legacy allocation sweep. It now sets
+`GJXL_MODULAR_WORKFLOW_SHARDS=4` and runs four CTests concurrently. The existing
+`--allocation-shard INDEX COUNT` interface partitions failure indices; all four
+indices are registered, so every fixture and every failure position remain in
+scope. This follows the complete four-shard qualification in
+[the palette-context report](modular-palette-context.md#validation-and-evidence).
+The default CMake value remains one, preserving the standalone test and its
+name. Each shard retains the existing 7,200-second timeout. This schedules the
+existing test across cores; it does not reduce coverage or change codec behavior.
+The four generated commands and the unchanged single-test default were checked
+locally. A smoke run of shard 0/64 passed all 44 fault-case fixtures and 2,650
+injected failures; this subset is not a new exhaustive qualification. The full
+four-shard coverage is assigned to hosted CI.
+
 ### Hosted Windows follow-up
 
 The initial hosted Windows builds exposed pre-existing portability errors in

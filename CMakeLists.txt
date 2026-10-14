@@ -2542,10 +2542,26 @@ if(GJXL_BUILD_TESTS)
 
   add_executable(gjxl_modular_workflow_test tests/modular_workflow_test.cpp)
   target_link_libraries(gjxl_modular_workflow_test PRIVATE gjxl_codestream)
-  add_test(NAME modular_workflow COMMAND gjxl_modular_workflow_test)
+  set(GJXL_MODULAR_WORKFLOW_SHARDS "1" CACHE STRING
+    "Disjoint allocation-index shards for the exhaustive Modular workflow test")
+  if(NOT GJXL_MODULAR_WORKFLOW_SHARDS MATCHES "^[1-9][0-9]*$" OR
+     GJXL_MODULAR_WORKFLOW_SHARDS GREATER 64)
+    message(FATAL_ERROR "GJXL_MODULAR_WORKFLOW_SHARDS must be an integer from 1 to 64")
+  endif()
   # Exhaustive allocation injection repeats the bounded context search at every
-  # allocation boundary. Keep full coverage beyond the CI default of 600 s.
-  set_tests_properties(modular_workflow PROPERTIES TIMEOUT 7200)
+  # allocation boundary. Every shard visits all fixtures, and together they
+  # cover every failure index. Keep the default standalone test name/behavior.
+  if(GJXL_MODULAR_WORKFLOW_SHARDS EQUAL 1)
+    add_test(NAME modular_workflow COMMAND gjxl_modular_workflow_test)
+    set_tests_properties(modular_workflow PROPERTIES TIMEOUT 7200)
+  else()
+    math(EXPR modular_workflow_last_shard "${GJXL_MODULAR_WORKFLOW_SHARDS} - 1")
+    foreach(shard RANGE 0 ${modular_workflow_last_shard})
+      add_test(NAME modular_workflow_shard_${shard} COMMAND gjxl_modular_workflow_test
+        --allocation-shard ${shard} ${GJXL_MODULAR_WORKFLOW_SHARDS})
+      set_tests_properties(modular_workflow_shard_${shard} PROPERTIES TIMEOUT 7200)
+    endforeach()
+  endif()
 
   add_executable(gjxl_modular_profile_test tests/modular_profile_test.cpp)
   target_link_libraries(gjxl_modular_profile_test PRIVATE gjxl_codestream)
