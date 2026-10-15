@@ -16,6 +16,10 @@ struct HistogramTrainingImage {
   // Applies to this stream's channels; predictor state still resets for each
   // channel. These must be the parameters used when tokenizing the same data.
   WeightedPredictorParameters weighted;
+  // Optional completed features for the included channel prefix, concatenated
+  // in channel/raster order. Same pixels, parameters and channel resets; borrowed
+  // for this call. An empty span retains the scalar producer.
+  std::span<const WeightedPredictorFeature> weighted_features{};
 };
 struct HistogramSamplingOptions {
   float sampling_fraction = 0.5f * 1.3f;

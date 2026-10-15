@@ -141,9 +141,8 @@ Status Learn(std::span<const HistogramTrainingImage> images,
 } // namespace
 
 PreparedModularStreamsView ReferenceModularFrame::view() const {
-  return {extent_, format_,
-          records_.empty() || stats_.local_trees ? nullptr : &records_[0].tree,
-          streams_};
+  return {extent_, format_, records_.empty() || stats_.local_trees ? nullptr : &records_[0].tree,
+          streams_, token_views_};
 }
 Status PrepareReferenceModularFrame(PackedModularImageView input,
                                     const ReferenceWorkflowOptions &options,
@@ -154,9 +153,15 @@ Status PrepareReferenceModularFrame(PackedModularImageView input,
        options.buffering != ReferenceBuffering::kBuffered) ||
       (options.predictors != ReferencePredictors::kBest &&
        options.predictors != ReferencePredictors::kAll) ||
-      !options.maximum_samples ||
-      options.maximum_samples > kHistogramMaximumSamples)
+      !options.maximum_samples || options.maximum_samples > kHistogramMaximumSamples ||
+      (options.weighted_feature_backend != WeightedFeatureBackend::kAuto &&
+       options.weighted_feature_backend != WeightedFeatureBackend::kCpu &&
+       options.weighted_feature_backend != WeightedFeatureBackend::kGpu))
     return Invalid();
+  auto *gpu =
+      options.gpu ? modular_gpu_internal::QueryGpuModularStreamGeneration(*options.gpu) : nullptr;
+  if (options.gpu && !gpu)
+    return Status::Unsupported("Backend lacks Modular stream generation");
   if (auto s = ValidatePreparedModularEntropyOptions(options.entropy); !s.ok())
     return s;
   if (auto s = input.Validate(); !s.ok())
@@ -291,14 +296,85 @@ Status PrepareReferenceModularFrame(PackedModularImageView input,
     if (stats.local_trees && (i == 0 || record.channel_count))
       stream.local_tree = &record.tree;
   }
+  using namespace modular_gpu_internal;
+  ManagedVector<ModularStreamChannel> jobs;
+  ManagedVector<const DecisionTree *> trees;
+  std::unique_ptr<PreparedGpuModularStreamFeatures> features;
+  if (gpu) {
+    ProfileScope profile(ProfileStage::kTraining);
+    const auto start = std::chrono::steady_clock::now();
+    size_t channels = 0;
+    for (const auto &stream : result.streams_)
+      for (const auto &channel : stream.channels)
+        channels += !channel.descriptor.extent.empty();
+    const size_t tree_count = stats.local_trees ? count : 1;
+    HostStorageBound headers;
+    if (!headers.AddVector<ModularStreamChannel>(channels, VectorCapacityPolicy::kFreshExact) ||
+        !headers.AddVector<const DecisionTree *>(tree_count, VectorCapacityPolicy::kFreshExact))
+      return Invalid();
+    if (auto s = Stage(budget, headers.peak_bytes, &stats,
+                       [&] {
+                         jobs.resize(channels);
+                         trees.resize(tree_count);
+                         return Status::Ok();
+                       });
+        !s.ok())
+      return s;
+    size_t next = 0;
+    for (size_t i = 0; i < count; ++i) {
+      const auto &stream = result.streams_[i];
+      if (stats.local_trees || i == 0)
+        trees[i] = &result.records_[i].tree;
+      for (size_t c = 0; c < stream.channels.size(); ++c)
+        if (!stream.channels[c].descriptor.extent.empty())
+          jobs[next++] = {stream.channels[c], stream.weighted,
+                          static_cast<uint32_t>(result.records_[i].id), static_cast<uint32_t>(c),
+                          static_cast<uint32_t>(stats.local_trees ? i : 0)};
+    }
+    const auto limits = gpu->modular_stream_limits();
+    ModularStreamBatchPlan batch;
+    if (auto s = ComputeModularStreamBatchPlan(jobs, 1, &batch, &limits); !s.ok())
+      return s;
+    if (auto s = Stage(budget, batch.preparation.peak_bytes, &stats,
+                       [&] {
+                         return gpu->PrepareModularStreamFeatures(jobs, &features,
+                                                                  options.weighted_feature_backend);
+                       });
+        !s.ok())
+      return s;
+    std::span<const AdaptiveModularWeightedFeature> host;
+    if (auto s = features->BorrowWeightedHostView(&host); !s.ok())
+      return s;
+    if (host.size() != batch.tokens.token_count)
+      return Status::Internal("Incomplete Modular weighted features");
+    size_t offset = 0;
+    for (size_t i = 0; i < count; ++i) {
+      size_t samples = 0;
+      for (const auto &channel : result.streams_[i].channels)
+        samples += channel.descriptor.extent.width * channel.descriptor.extent.height;
+      result.records_[i].weighted_features = host.subspan(offset, samples);
+      offset += samples;
+    }
+    stats.reused_feature_samples = host.size();
+    if (active_modular_profile) {
+      auto &p = active_modular_profile->adaptive_gpu;
+      const double elapsed =
+          std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+      p.feature_seconds += elapsed;
+      p.learning_feature_seconds += elapsed;
+      ++p.feature_preparations;
+      ++p.learning_feature_uses;
+      p.feature_samples += host.size();
+    }
+  }
   if (stats.local_trees) {
     for (size_t i = 0; i < result.records_.size(); ++i) {
       auto &record = result.records_[i];
       if (record.channel_count == 0)
         continue;
-      const HistogramTrainingImage image{
-          record.learning_extent, record.training_channels(),
-          record.metadata_channels, result.streams_[i].weighted};
+      const HistogramTrainingImage image{record.learning_extent, record.training_channels(),
+                                         record.metadata_channels, result.streams_[i].weighted,
+                                         record.weighted_features};
       size_t coded_samples = 0;
       for (auto v : result.streams_[i].channels)
         coded_samples += v.descriptor.extent.width * v.descriptor.extent.height;
@@ -331,8 +407,8 @@ Status PrepareReferenceModularFrame(PackedModularImageView input,
       const auto &record = result.records_[i];
       if (record.id < stop)
         images[record.id] = {record.learning_extent, record.training_channels(),
-                             record.metadata_channels,
-                             result.streams_[i].weighted};
+                             record.metadata_channels, result.streams_[i].weighted,
+                             record.weighted_features};
     }
     if (auto s = Learn(images, MaximumGlobalTreeLeaves(population), options,
                        budget, &stats, &global);
@@ -346,6 +422,53 @@ Status PrepareReferenceModularFrame(PackedModularImageView input,
           result.view(), options.entropy, &coding);
       !s.ok())
     return s;
+  if (gpu) {
+    ProfileScope profile(ProfileStage::kTokens);
+    const auto start = std::chrono::steady_clock::now();
+    size_t nodes = 0;
+    for (const auto *tree : trees) {
+      if (tree->size > UINT32_MAX - nodes)
+        return Status::Unsupported("Modular stream tree table exceeds limits");
+      nodes += tree->size;
+    }
+    const auto limits = gpu->modular_stream_limits();
+    ModularStreamBatchPlan batch;
+    if (auto s = ComputeModularStreamBatchPlan(jobs, nodes, &batch, &limits); !s.ok())
+      return s;
+    if (!batch.generation.AddVector<EntropyTokenStreamView>(count,
+                                                            VectorCapacityPolicy::kFreshExact))
+      return Invalid();
+    if (auto s = Stage(budget, batch.generation.peak_bytes, &stats,
+                       [&] {
+                         result.token_views_.resize(count);
+                         return gpu->GenerateModularStreamTokens(*features, trees,
+                                                                 &result.gpu_tokens_);
+                       });
+        !s.ok())
+      return s;
+    ModularTokenHostView host;
+    if (auto s = result.gpu_tokens_->BorrowHostView(&host); !s.ok())
+      return s;
+    if (host.values.size() != batch.tokens.token_count ||
+        host.contexts.size() != host.values.size())
+      return Status::Internal("Incomplete Modular stream tokens");
+    size_t offset = 0;
+    for (size_t i = 0; i < count; ++i) {
+      const size_t samples = result.records_[i].weighted_features.size();
+      result.token_views_[i] = EntropyTokenStreamView::Split(
+          host.values.subspan(offset, samples), host.contexts.subspan(offset, samples));
+      result.records_[i].weighted_features = {};
+      offset += samples;
+    }
+    stats.gpu_token_samples = host.values.size();
+    if (active_modular_profile) {
+      auto &p = active_modular_profile->adaptive_gpu;
+      p.token_seconds +=
+          std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count();
+      ++p.feature_reuses;
+      ++p.encoded_candidates;
+    }
+  }
   *out = std::move(result);
   return Status::Ok();
 } catch (const ManagedAllocationFailure &error) {

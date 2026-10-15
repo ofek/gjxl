@@ -611,6 +611,7 @@ add_library(
   src/gpu/ops/modular_token_storage_plan.cpp
   src/gpu/ops/modular_adaptive_token_storage_plan.cpp
   src/gpu/ops/modular_adaptive_layout.cpp
+  src/gpu/ops/modular_stream_batch.cpp
   src/gpu/ops/modular_input.cpp
   src/gpu/ops/profile_storage_plan.cpp
   src/gpu/ops/adaptive_quantization.cpp
@@ -3796,6 +3797,14 @@ if(GJXL_BUILD_TESTS)
   set_tests_properties(metal_modular_tree_statistics PROPERTIES TIMEOUT 180)
 
   add_executable(gjxl_metal_modular_adaptive_test tests/metal_modular_adaptive_test.cpp)
+  add_executable(gjxl_metal_modular_reference_workflow_test tests/metal_modular_reference_workflow_test.cpp)
+  target_link_libraries(gjxl_metal_modular_reference_workflow_test PRIVATE gjxl_codestream gjxl_c gjxl_metal)
+  if(TARGET gjxl_modular_reference)
+    target_link_libraries(gjxl_metal_modular_reference_workflow_test PRIVATE gjxl_modular_reference)
+    target_compile_definitions(gjxl_metal_modular_reference_workflow_test PRIVATE GJXL_REFERENCE_WORKFLOW_ORACLE=1)
+  endif()
+  add_test(NAME metal_modular_reference_workflow COMMAND gjxl_metal_modular_reference_workflow_test)
+  set_tests_properties(metal_modular_reference_workflow PROPERTIES TIMEOUT 180)
   target_link_libraries(gjxl_metal_modular_adaptive_test PRIVATE gjxl_codestream gjxl_metal)
   target_compile_definitions(gjxl_metal_modular_adaptive_test PRIVATE GJXL_METALLIB_PATH="${GJXL_METALLIB}")
   if(TARGET gjxl_modular_reference)

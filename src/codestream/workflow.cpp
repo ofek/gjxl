@@ -2074,6 +2074,8 @@ Status EnsureProductionMetalBackendAvailable() {
   return Status::Ok();
 }
 
+Status BorrowProductionMetalBackend(GpuBackend **out) { return ResolveProductionMetalBackend(out); }
+
 Status EnsureProductionCudaBackendAvailable() {
   GpuBackend* backend = nullptr;
   Status status = ResolveProductionCudaBackend(&backend);

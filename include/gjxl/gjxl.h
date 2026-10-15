@@ -244,7 +244,9 @@ typedef struct {
 GJXL_API GJXLResult gjxl_modular_options_init(GJXLModularOptions *options,
                                               size_t caller_size) GJXL_NOEXCEPT;
 /// Exact gray/RGB/RGBA 8/16-bit encoding. Alpha is unassociated and preserved.
-/// Null options use defaults. AUTO selects CPU; forced GPU is unsupported.
+/// Null options use defaults. AUTO selects CPU. Explicit METAL supports learned
+/// policy with shared weighted features and GPU data tokens; selection, fitting
+/// and entropy coding remain on CPU. CUDA and legacy-policy GPU are unsupported.
 /// Uses the existing empty-output ownership contract and gjxl_buffer_free.
 /// Learned policy uses staged, nonblocking memory admission and can return
 /// GJXL_ERROR_UNAVAILABLE when the domain is busy. CPU execution is serial.

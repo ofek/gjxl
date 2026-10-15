@@ -3,6 +3,7 @@
 #include "codestream/modular/public.h"
 #include "codestream/modular/reference_workflow.h"
 #include "codestream/workflow_admission_scope.h"
+#include "codestream/workflow_internal.h"
 #include "core/thread_budget.h"
 #include <chrono>
 namespace gjxl::modular_internal {
@@ -11,10 +12,10 @@ Status ResolvePublicModularPolicy(const gjxl::ModularEncodingOptions &options,
   switch (options.backend) {
   case ModularBackend::kAutomatic:
   case ModularBackend::kCpu:
-    break;
   case ModularBackend::kMetal:
+    break;
   case ModularBackend::kCuda:
-    return Status::Unsupported("Modular GPU encoding is not implemented");
+    return Status::Unsupported("Modular CUDA encoding is not implemented");
   default:
     return Status::InvalidArgument("Invalid Modular backend");
   }
@@ -28,6 +29,14 @@ Status ResolvePublicModularPolicy(const gjxl::ModularEncodingOptions &options,
   if (options.search && options.policy == ModularPolicy::kBaseline)
     return Status::InvalidArgument("Modular search conflicts with baseline policy");
   *policy = options.search ? ModularPolicy::kSearch : options.policy;
+  if (options.backend == ModularBackend::kMetal) {
+#if !defined(GJXL_ENABLE_METAL)
+    return Status::Unsupported("Modular Metal encoding is not built");
+#else
+    if (*policy != ModularPolicy::kLearned)
+      return Status::Unsupported("Modular Metal encoding requires the learned policy");
+#endif
+  }
   return Status::Ok();
 }
 
@@ -65,6 +74,9 @@ Status EncodePublicModularImageOwned(PackedModularImageView input,
     return s;
   thread_budget_internal::EncodeScope threads(1);
   ReferenceWorkflowOptions learned;
+  if (options.backend == ModularBackend::kMetal)
+    if (auto s = codestream_internal::BorrowProductionMetalBackend(&learned.gpu); !s.ok())
+      return s;
   if (options.entropy == ModularEntropy::kPrefix)
     learned.entropy = {PreparedModularEntropyPolicy::kPrefix};
   return EncodeReferenceModularImage(input, learned, budget, output);
@@ -92,7 +104,9 @@ Status EncodeModularImage(ModularImageView input, ModularEncodingOptions options
     return s;
   candidate.PublishTo(output);
   if (summary)
-    *summary = {input.extent, output->size(), ModularBackend::kCpu,
+    *summary = {input.extent, output->size(),
+                options.backend == ModularBackend::kMetal ? ModularBackend::kMetal
+                                                          : ModularBackend::kCpu,
                 std::chrono::duration<double>(std::chrono::steady_clock::now() - start).count()};
   return Status::Ok();
 }

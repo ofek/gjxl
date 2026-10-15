@@ -166,6 +166,39 @@ void Validation() {
   Check(!TokenizePreparedModularStreams(view, &moved).ok() && moved.streams[0][0] == first,
         "Unrepresentable residual changed token output");
 }
+void PreparedTokenHandoff() {
+  for (bool local : {false, true}) {
+    Fixture f;
+    auto view = f.View(local);
+    PreparedModularStreamTokens cpu;
+    Ok(TokenizePreparedModularStreams(view, &cpu));
+    for (const auto &variant : test::kPreparedEntropyCases) {
+      CodestreamBuffer expected, actual;
+      Ok(EncodePreparedModularStreams(view, variant.options, &expected));
+      auto borrowed = view;
+      borrowed.prepared_tokens = cpu.streams;
+      PreparedModularStreamTokens handoff;
+      Ok(TokenizePreparedModularStreams(borrowed, &handoff));
+      Check(handoff.tokens.empty() && handoff.streams[0].tokens.data() == cpu.tokens.data(),
+            "Prepared token handoff copied or regenerated data tokens");
+      Ok(EncodePreparedModularStreams(borrowed, variant.options, &actual));
+      Check(std::ranges::equal(expected.view(), actual.view()),
+            "Prepared token handoff changed bytes");
+    }
+    std::array<EntropyTokenStreamView, 3> invalid{};
+    invalid[0] = cpu.streams[0];
+    invalid[1] = cpu.streams[0]; // The canonical DC slot has no tokens.
+    view.prepared_tokens = invalid;
+    ModularWorkflowStoragePlan plan;
+    ArmNextManagedHostAllocationFailureForTest();
+    const auto status =
+        ComputePreparedModularStreamsStoragePlan(view, EntropyCodingMode::kPrefix, &plan);
+    const bool pending = ManagedHostAllocationFailurePendingForTest();
+    DisarmManagedHostAllocationFailureForTest();
+    Check(status.code() == StatusCode::kInvalidArgument && pending,
+          "Nonempty tokens for an empty stream were accepted");
+  }
+}
 void InvalidOptions() {
   for (size_t error = 0; error < 6; ++error) {
     Fixture f;
@@ -204,6 +237,7 @@ void InvalidOptions() {
 int main() try {
   Validation();
   InvalidOptions();
+  PreparedTokenHandoff();
   for (bool local : {false, true})
     for (const auto &variant : test::kPreparedEntropyCases)
       AllocationSweep(local, variant);

@@ -214,6 +214,10 @@ struct VarDctEncodingProfile {
 /// Used by frontends that promise eager failure for an explicitly forced
 /// Metal execution policy.
 [[nodiscard]] Status EnsureProductionMetalBackendAvailable();
+// Borrow the process-cached backend without imposing VarDCT capabilities.
+// Callers validate their own operation capability. The pointer stays live for
+// the process lifetime, including completed Modular token owners.
+[[nodiscard]] Status BorrowProductionMetalBackend(GpuBackend **out);
 
 /// Initializes and validates the process-cached production CUDA backend.
 /// Used by frontends that promise eager failure for an explicitly forced

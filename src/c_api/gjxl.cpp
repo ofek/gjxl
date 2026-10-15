@@ -657,10 +657,21 @@ GJXLResult gjxl_encode_modular(GJXLContext *context, const GJXLImageView *image,
     if (image->struct_size < sizeof(GJXLImageView) ||
         (options && options->struct_size < sizeof(uint32_t)))
       return Fail(GJXL_ERROR_INVALID_ARGUMENT, "Modular input/options prefix is too small");
-    if (context->backend != VarDctBackendPreference::kCpu &&
-        context->backend != VarDctBackendPreference::kAutomatic)
-      return Fail(GJXL_ERROR_UNSUPPORTED, "Modular GPU encoding is not implemented");
     ModularEncodingOptions resolved;
+    switch (context->backend) {
+    case VarDctBackendPreference::kAutomatic:
+      resolved.backend = ModularBackend::kAutomatic;
+      break;
+    case VarDctBackendPreference::kCpu:
+      resolved.backend = ModularBackend::kCpu;
+      break;
+    case VarDctBackendPreference::kMetal:
+      resolved.backend = ModularBackend::kMetal;
+      break;
+    case VarDctBackendPreference::kCuda:
+      resolved.backend = ModularBackend::kCuda;
+      break;
+    }
     resolved.execution_domain = context->execution_domain;
     resolved.cpu_thread_count = context->cpu_thread_count;
     if (options &&

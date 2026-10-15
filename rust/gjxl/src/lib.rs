@@ -358,7 +358,9 @@ impl Context {
     }
 
     /// Encodes exact integer samples, including invisible RGB and alpha.
-    /// Automatic execution uses CPU; forced GPU contexts are unsupported.
+    /// Automatic execution uses CPU. Explicit Metal supports the learned policy
+    /// with shared weighted features and GPU tokens; fitting stays on CPU.
+    /// CUDA and GPU execution of legacy policies are unsupported.
     pub fn encode_modular(
         &self,
         image: &ImageView<'_>,

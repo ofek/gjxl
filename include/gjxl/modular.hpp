@@ -42,7 +42,10 @@ struct ModularEncodingSummary {
   double total_seconds = 0;
 };
 // Atomic output and summary replacement. Input layout and format are validated
-// before admission. GPU requests are unsupported; no float conversion occurs.
+// before admission; no float conversion occurs. Explicit Metal supports the
+// learned policy, sharing weighted features between CPU learning and GPU token
+// generation. Automatic remains CPU; CUDA and legacy-policy GPU requests are
+// unsupported. Transform/WP selection, fitting and entropy coding stay on CPU.
 // Learned uses staged, nonblocking memory admission: a busy domain can return
 // Unavailable. It currently executes serially within the requested CPU limit.
 [[nodiscard]] Status EncodeModularImage(ModularImageView input, ModularEncodingOptions options,

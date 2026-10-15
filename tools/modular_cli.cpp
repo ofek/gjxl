@@ -13,7 +13,7 @@ int RunModularCli(int argc, char **argv,
     std::cerr << "Usage: gjxl_encode --modular --input-color-space srgb "
                  "[--policy learned|baseline|search] [--search] [--entropy "
                  "prefix|ans] "
-                 "[--threads 0..256] [--backend auto|cpu] INPUT.pgm|ppm|pam OUTPUT.jxl\n"
+                 "[--threads 0..256] [--backend auto|cpu|metal] INPUT.pgm|ppm|pam OUTPUT.jxl\n"
                  "Defaults: learned policy, ANS entropy. --search selects legacy policy search.\n";
     return 1;
   };
@@ -88,6 +88,7 @@ int RunModularCli(int argc, char **argv,
     return 1;
   }
   std::cout << "Encoded " << summary.extent.width << 'x' << summary.extent.height
-            << " lossless Modular to " << summary.encoded_bytes << " bytes on CPU\n";
+            << " lossless Modular to " << summary.encoded_bytes << " bytes on "
+            << (summary.backend == gjxl::ModularBackend::kMetal ? "Metal" : "CPU") << '\n';
   return 0;
 }

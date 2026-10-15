@@ -147,6 +147,15 @@ void Case(ModularPixelFormat format, bool big, Extent2D extent, ModularEntropy e
   gjxl_context_destroy(context);
   for (auto backend : {ModularBackend::kMetal, ModularBackend::kCuda}) {
     options.backend = backend;
+#if GJXL_TEST_HAS_METAL
+    if (learned && backend == ModularBackend::kMetal) {
+      options.execution_domain.reset(); // GPU retained backing has its own stage bounds.
+      Ok(EncodeModularImage(input, options, &parallel, &summary));
+      Check(parallel == serial && summary.backend == ModularBackend::kMetal,
+            "Explicit learned Metal changed bytes or backend summary");
+      continue;
+    }
+#endif
     Check(EncodeModularImage(input, options, &parallel, &summary).code() ==
                   StatusCode::kUnsupported &&
               parallel == serial,

@@ -63,6 +63,8 @@ Status DescribeFrame(const PreparedModularStreamsView &input, FrameInfo *out) {
     return s;
   if (input.streams.empty())
     return Invalid();
+  if (!input.prepared_tokens.empty() && input.prepared_tokens.size() != input.streams.size())
+    return Invalid();
   if (auto s = ValidateTransformBitDepth(input.streams[0].transforms, p.profile.metadata.bits); !s.ok())
     return s;
   if (auto s = ModularFrameGeometry::Create(input.source, &p.geometry); !s.ok())
@@ -144,6 +146,9 @@ Status DescribeStream(const PreparedModularStreamsView &input, const FrameInfo &
     if (original.count == 0) {
       if (!stream.channels.empty() || stream.transforms.size || stream.rct || stream.local_tree)
         return Invalid();
+      if (!input.prepared_tokens.empty() &&
+          (!input.prepared_tokens[index].valid() || input.prepared_tokens[index].size()))
+        return Invalid();
       *out = p;
       return Status::Ok();
     }
@@ -196,6 +201,9 @@ Status DescribeStream(const PreparedModularStreamsView &input, const FrameInfo &
     if (p.tokens && stream.local_tree)
       p.tree_tokens = ModularTreeTokenCount(*tree, *layout);
   }
+  if (!input.prepared_tokens.empty() &&
+      (!input.prepared_tokens[index].valid() || input.prepared_tokens[index].size() != p.tokens))
+    return Invalid();
   *out = p;
   return Status::Ok();
 }
@@ -300,11 +308,12 @@ Status Plan(const PreparedModularStreamsView &input, const PreparedModularEntrop
     if (!Add(info.tokens, &p.tokens) || !Add(info.tree_tokens, &tree_tokens) ||
         (!input.streams[i].local_tree && !Add(info.tokens, &global_tokens)))
       return Overflow();
-    if (info.weighted)
+    if (info.weighted && input.prepared_tokens.empty())
       weighted_width = std::max(weighted_width, info.width);
   }
   HostStorageBound owned;
-  if (!owned.AddVector<EntropyToken>(p.tokens, VectorCapacityPolicy::kFreshExact) ||
+  if (!owned.AddVector<EntropyToken>(input.prepared_tokens.empty() ? p.tokens : 0,
+                                     VectorCapacityPolicy::kFreshExact) ||
       !owned.AddVector<EntropyToken>(tree_tokens, VectorCapacityPolicy::kFreshExact) ||
       !owned.AddVector<EntropyTokenStreamView>(p.streams, VectorCapacityPolicy::kFreshExact) ||
       !owned.AddVector<std::span<const EntropyToken>>(p.streams, VectorCapacityPolicy::kFreshExact))
@@ -415,7 +424,8 @@ Status Tokenize(const PreparedModularStreamsView &input, const FrameInfo &frame,
       return Overflow();
   }
   PreparedModularStreamTokens result;
-  result.tokens.resize(total);
+  if (input.prepared_tokens.empty())
+    result.tokens.resize(total);
   result.tree_tokens.resize(total_tree);
   result.streams.resize(input.streams.size());
   result.local_tree_tokens.resize(input.streams.size());
@@ -440,6 +450,10 @@ Status Tokenize(const PreparedModularStreamsView &input, const FrameInfo &frame,
       TokenizeValidatedModularTree(*tree, layout, span);
       result.local_tree_tokens[i] = span;
       next_tree += info.tree_tokens;
+    }
+    if (!input.prepared_tokens.empty()) {
+      result.streams[i] = input.prepared_tokens[i];
+      continue;
     }
     for (size_t c = 0; c < stream.channels.size(); ++c) {
       const auto &channel = stream.channels[c];

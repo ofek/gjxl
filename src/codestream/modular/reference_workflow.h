@@ -4,6 +4,7 @@
 #include "codec/modular/histogram_sample_preparation.h"
 #include "codec/modular/reference_selection.h"
 #include "codestream/modular/prepared_streams.h"
+#include "gpu/ops/modular_stream_batch.h"
 
 namespace gjxl::modular_internal {
 enum class ReferenceBuffering : uint8_t { kAutomatic, kBuffered };
@@ -15,6 +16,10 @@ struct ReferenceWorkflowOptions {
   PreparedModularEntropyOptions entropy{
       PreparedModularEntropyPolicy::kDirectRateAns,
       AnsSelectionMode::kEstimated, 64};
+  // Optional explicit GPU execution. Selection and fitting remain on CPU;
+  // completed weighted features are shared by learning and token generation.
+  GpuBackend *gpu = nullptr;
+  WeightedFeatureBackend weighted_feature_backend = WeightedFeatureBackend::kAuto;
 };
 struct ReferenceLearningStats {
   size_t first_group = 0, stop_group = 0;
@@ -27,6 +32,7 @@ struct ReferenceWorkflowStats {
          empty_learning_calls = 0;
   size_t scanned_pixels = 0, selected_samples = 0, distinct_samples = 0,
          tree_nodes = 0;
+  size_t reused_feature_samples = 0, gpu_token_samples = 0;
   // Largest individual stage reservation, excluding backing retained by other
   // stages. The caller's ResourceBudget observes the complete managed peak.
   size_t maximum_stage_bytes = 0;
@@ -41,6 +47,8 @@ struct ReferenceModularStream {
   ReferenceSelectionResult selection;
   DecisionTree tree;
   ReferenceLearningStats learning;
+  // Temporary borrow while learning; cleared before publishing the frame.
+  std::span<const WeightedPredictorFeature> weighted_features{};
   [[nodiscard]] std::span<const ModularChannelView> training_channels() const {
     return std::span(channels).first(channel_count);
   }
@@ -74,6 +82,8 @@ private:
   PackedModularFormat format_ = PackedModularFormat::kRgb8;
   resource_budget_internal::ManagedVector<ReferenceModularStream> records_;
   resource_budget_internal::ManagedVector<PreparedModularStreamView> streams_;
+  std::unique_ptr<modular_gpu_internal::PreparedGpuModularTokens> gpu_tokens_;
+  resource_budget_internal::ManagedVector<EntropyTokenStreamView> token_views_;
   ReferenceWorkflowStats stats_;
 };
 
@@ -84,7 +94,8 @@ private:
 // palettes and one shared tree. Each selected scope is prepared once and fit
 // once; empty learning calls produce a trivial tree without invoking the
 // fitter. Caps reject rather than truncate. The result owns its samples and
-// does not borrow the packed input.
+// does not borrow the packed input. If supplied, options.gpu must outlive the
+// result's completed token owner.
 //
 // Staged, nonblocking admission in the caller's managed-memory domain. Before
 // every allocating stage, its existing planner bounds the fresh backing and

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 Yunho Cho
 #include "codec/modular/histogram_sample_preparation.h"
+#include "codec/modular/profile.h"
 #include <iostream>
 #include <limits>
 #include <numeric>
@@ -42,6 +43,48 @@ struct Image {
     images[0] = {{33, 41}, channels, 0};
   }
 };
+void ReusedFeatures() {
+  Image image;
+  image.images[0].weighted = {{8, 8, 4, 0, 3, 23, 2}, {13, 12, 12, 12}};
+  std::vector<WeightedPredictorFeature> features(image.pixels.size());
+  for (size_t c = 0; c < image.channels.size(); ++c)
+    Ok(PrepareWeightedPredictorFeatures(image.channels[c], image.images[0].weighted,
+                                        std::span(features).subspan(c * 33 * 41, 33 * 41)));
+  for (bool excluded : {false, true}) {
+    HistogramSamplingOptions options;
+    options.maximum_channel_size = 256;
+    if (excluded)
+      image.channels[1].descriptor.extent.width = 257;
+    PreparedHistogramSamples scalar, reused;
+    image.images[0].weighted_features = {};
+    Ok(PrepareHistogramSamples(image.images, &scalar, options));
+    image.images[0].weighted_features =
+        std::span(features).first(excluded ? 33 * 41 : features.size());
+    ModularProfile profile;
+    {
+      ProfileSession session(&profile);
+      Ok(PrepareHistogramSamples(image.images, &reused, options));
+    }
+    Check(Same(scalar.samples(), reused.samples()) &&
+              scalar.tree_options().split_threshold == reused.tree_options().split_threshold &&
+              profile.training_work.weighted_prediction_samples == 0 &&
+              profile.training_work.reused_prediction_samples == scalar.stats().scanned_pixels,
+          "Borrowed features changed samples or recomputed weighted predictions");
+    DecisionTree a, b;
+    Ok(LearnPreparedHistogramTree(scalar, &a));
+    Ok(LearnPreparedHistogramTree(reused, &b));
+    Check(a == b, "Borrowed features changed the learned tree");
+    const auto *old = reused.samples().weights.data();
+    image.images[0].weighted_features = image.images[0].weighted_features.first(1);
+    ArmNextManagedHostAllocationFailureForTest();
+    const auto s = PrepareHistogramSamples(image.images, &reused, options);
+    const bool pending = ManagedHostAllocationFailurePendingForTest();
+    DisarmManagedHostAllocationFailureForTest();
+    Check(s.code() == StatusCode::kInvalidArgument && pending &&
+              reused.samples().weights.data() == old,
+          "Incomplete weighted features allocated or changed output");
+  }
+}
 void AdmissionAndPublication() {
   Image image;
   HistogramSamplingOptions options;
@@ -229,6 +272,7 @@ void StorageAndPopulation() {
 }
 } // namespace
 int main() try {
+  ReusedFeatures();
   AdmissionAndPublication();
   StorageAndPopulation();
   std::cout << "Histogram preparation admission, population, storage and "

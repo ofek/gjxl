@@ -12,8 +12,9 @@ qualified in [the reference workflow](modular-reference-workflow.md) and
 [The integration report](modular-public-learner-integration.md) qualifies this
 default together with the CPU/Metal performance line on `feat/modular`.
 
-This change promotes that implementation; it adds no further fitting/search,
-WP fallback, LZ77, patches, or GPU dispatch. Rate and timing measurements in those
+The original default promotion added no further fitting/search, WP fallback,
+LZ77, patches, or GPU dispatch. Explicit Metal integration is described below.
+Rate and timing measurements in those
 studies retain their original corpus and revision boundaries. In particular,
 the learned policy is not guaranteed to beat legacy search on every image.
 
@@ -39,17 +40,66 @@ with `struct_size` set explicitly requests prefix (its existing enum value is
 zero); use `gjxl_modular_options_init` for current defaults. Rust struct literals
 can use `..ModularOptions::default()` for the new field.
 
-All six integer layouts, endian/padded-row handling, hidden RGB, atomic output,
-CPU backend resolution and forced-GPU rejection retain their public contracts.
+All six integer layouts, endian/padded-row handling, hidden RGB, atomic output
+and automatic CPU backend resolution retain their public contracts.
 The learner supports up to 2^28 source samples and canonical group IDs below
 65535; preparation admits at most 16M training samples and rejects overflow
 rather than silently truncating. Explicit legacy policies retain their existing
 profile limits.
 
+## Explicit Metal execution
+
+The learned policy accepts `ModularBackend::kMetal`, a C/Rust context with the
+Metal backend, or CLI `--backend metal`. Automatic continues to select CPU.
+CUDA, CPU-only builds requesting Metal, and public legacy-policy GPU requests
+return Unsupported. The existing private legacy GPU operations remain available.
+
+After CPU transform/WP selection, all coded channels are batched with their own
+WP parameters, canonical stream/channel IDs and tree indices. One completed
+weighted-feature map supplies both the CPU sample learner and Metal adaptive
+token generation. Each scope still fits exactly once. Tokens are generated in
+one batch after fitting and borrowed directly by the existing CPU entropy
+encoder; data tokens and weighted predictions are not regenerated there.
+Transform/WP selection, fitting, entropy modeling and bitstream emission remain
+CPU work.
+
+The weighted producer retains the existing automatic cutoff: at least 4M
+samples and an average of 16,384 samples per channel job. Eligible channels up
+to 256x256 use the wavefront kernel. Small batches and oversized metadata
+channels use the scalar producer before GPU submission, preserving exact
+channel reset boundaries. Mixed batches share the completed map. Execution
+failures propagate without a CPU retry. Explicit Metal still generates data
+tokens on the GPU when weighted features were produced on the CPU.
+
+Feature preparation retains a packed 4-byte plane and 16-byte feature per coded
+sample until token generation finishes. The completed split token arena uses
+4-byte values and 2-byte contexts, plus alignment. These buffers, descriptors,
+tree tables and stage scratch are admitted in the same managed domain as the
+CPU stages. Features are released before entropy coding; token backing survives
+through encoding. This integration adds retained memory and has not established
+an end-to-end performance win; Automatic awaits performance qualification.
+
+`metal_modular_reference_workflow` checks exact trees, all tokens, ANS/prefix
+codestream parity and pinned-decoder samples across all six formats, padded and
+unaligned input, endianness, hidden RGB, shared/local trees and buffered All
+predictors. Its mixed batch covers distinct WP headers, tree tables, strided
+channels, wide/tall scalar fallback, and allocation/submission/completion
+failures. Public API and CLI tests also compare explicit Metal with CPU bytes.
+
+The 2026-10-15 integration checks passed: 10 Release Metal tests, five Release
+CPU-only tests, and the two host handoff/preparation tests under ASan/UBSan.
+The new workflow test matched 36 complete CPU/Metal codestream pairs and 104,482
+learned tokens. The Metal CLI matrix decoded 90 files exactly and preserved
+outputs for 16 invalid requests. The existing adaptive-token, weighted-feature,
+weighted-workflow and shared-feature Metal regression tests also passed.
+Logs are `build/modular-integration-20261013/{cpu,metal}/feature-token-tests.log`
+and `build/modular-rct-search/sanitize/feature-token-tests.log`. These establish
+correctness and failure cleanup, not throughput qualification.
+
 ## Resources
 
-The learned workflow currently executes serially, within the requested CPU and
-shared-domain participation limits. A higher thread limit does not imply a
+CPU work in the learned workflow currently executes serially, within the requested
+CPU and shared-domain participation limits. A higher thread limit does not imply a
 speedup. The existing parallel tokenization/emission path remains available in
 the legacy policies.
 
@@ -67,7 +117,7 @@ The implementation shares option validation and owned-output dispatch between
 C++ and C. Stage resource contexts preserve the execution domain. Errors leave
 output/summary unchanged and release managed backing, reservations and CPU slots.
 
-## Validation
+## Original CPU-default qualification
 
 Validated on Apple Silicon with AppleClang 21.0.0, using the clean pinned libjxl
 decoder at `e8ff09762481785938d8e4e01333ed3917571161`. Native production libraries

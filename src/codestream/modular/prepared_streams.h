@@ -22,6 +22,10 @@ struct PreparedModularStreamsView {
   // Canonical order: global, all DC groups, all pixel groups (including empty
   // slots). IDs/sections are derived from geometry, never caller-renumbered.
   std::span<const PreparedModularStreamView> streams;
+  // Optional completed data tokens, one view per canonical stream. The caller
+  // guarantees equality to these planes/trees and retains backing until encode
+  // completes. Tree tokens are still generated here. Empty selects CPU tokens.
+  std::span<const EntropyTokenStreamView> prepared_tokens{};
 };
 struct PreparedModularStreamTokens {
   codestream_internal::Storage<EntropyToken> tokens;
@@ -63,6 +67,8 @@ ComputePreparedModularStreamsStoragePlan(const PreparedModularStreamsView &input
 ComputePreparedModularStreamsStoragePlan(const PreparedModularStreamsView &input,
                                          const PreparedModularEntropyOptions &options,
                                          ModularWorkflowStoragePlan *out);
+// Supplied data tokens remain borrowed in the result. Their owner must outlive
+// every consumer of the returned token views; generated tree tokens are owned.
 [[nodiscard]] Status TokenizePreparedModularStreams(const PreparedModularStreamsView &input,
                                                     PreparedModularStreamTokens *out);
 // Complete private CPU encode with prescribed decisions; no transform search,
