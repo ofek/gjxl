@@ -11,6 +11,8 @@ qualified in [the reference workflow](modular-reference-workflow.md) and
 
 [The integration report](modular-public-learner-integration.md) qualifies this
 default together with the CPU/Metal performance line on `feat/modular`.
+The current regular and exhaustive allocation-test coverage is described in
+[Modular allocation-failure qualification](modular-allocation-testing.md).
 
 The original default promotion added no further fitting/search, WP fallback,
 LZ77, patches, or GPU dispatch. Explicit Metal integration is described below.

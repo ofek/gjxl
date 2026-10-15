@@ -70,7 +70,11 @@ runtime. Dedicated API, training, ANS and GPU workflow failure tests remain in
 scope. This is selected correctness qualification, not the full repository suite
 or a matched performance benchmark. Hosted CI results are tracked by PR #48.
 
-Hosted CI still runs the exhaustive legacy allocation sweep. It now sets
+The following describes PR #48's historical allocation-test policy. See
+[Modular allocation-failure qualification](modular-allocation-testing.md) for
+the subsequent regular/exhaustive split and current invocation commands.
+
+At this milestone, hosted CI ran the exhaustive legacy allocation sweep. It set
 four shards on Linux/macOS and sixteen on Windows, with four CTests concurrent. The existing
 `--allocation-shard INDEX COUNT` interface partitions failure indices; all shard
 indices are registered, so every fixture and every failure position remain in

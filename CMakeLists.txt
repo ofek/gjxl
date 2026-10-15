@@ -2588,24 +2588,33 @@ if(GJXL_BUILD_TESTS)
 
   add_executable(gjxl_modular_workflow_test tests/modular_workflow_test.cpp)
   target_link_libraries(gjxl_modular_workflow_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_workflow COMMAND gjxl_modular_workflow_test --regular
+    --report "${CMAKE_CURRENT_BINARY_DIR}/modular-allocation-reports/regular.jsonl")
+  set_tests_properties(modular_workflow PROPERTIES TIMEOUT 600 LABELS "modular_allocations")
+  add_executable(gjxl_modular_public_allocation_test tests/modular_public_allocation_test.cpp)
+  target_link_libraries(gjxl_modular_public_allocation_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_public_allocations COMMAND gjxl_modular_public_allocation_test
+    --report "${CMAKE_CURRENT_BINARY_DIR}/modular-allocation-reports/public.jsonl")
+  set_tests_properties(modular_public_allocations PROPERTIES TIMEOUT 600 LABELS "modular_allocations")
+  option(GJXL_ENABLE_EXHAUSTIVE_MODULAR_SEARCH_TESTS
+    "Register expensive exhaustive legacy Modular search allocation tests" OFF)
   set(GJXL_MODULAR_WORKFLOW_SHARDS "1" CACHE STRING
-    "Disjoint allocation-index shards for the exhaustive Modular workflow test")
+    "Disjoint allocation-index shards for opt-in exhaustive legacy Modular search tests")
   if(NOT GJXL_MODULAR_WORKFLOW_SHARDS MATCHES "^[1-9][0-9]*$" OR
      GJXL_MODULAR_WORKFLOW_SHARDS GREATER 64)
     message(FATAL_ERROR "GJXL_MODULAR_WORKFLOW_SHARDS must be an integer from 1 to 64")
   endif()
-  # Exhaustive allocation injection repeats the bounded context search at every
-  # allocation boundary. Every shard visits all fixtures, and together they
-  # cover every failure index. Keep the default standalone test name/behavior.
-  if(GJXL_MODULAR_WORKFLOW_SHARDS EQUAL 1)
-    add_test(NAME modular_workflow COMMAND gjxl_modular_workflow_test)
-    set_tests_properties(modular_workflow PROPERTIES TIMEOUT 7200)
-  else()
+  # Labels alone do not exclude tests from bare ctest. Only register the hours-
+  # long search sweeps when explicitly requested. Each shard visits only the
+  # four search fixtures; their union covers every original failure position.
+  if(GJXL_ENABLE_EXHAUSTIVE_MODULAR_SEARCH_TESTS)
     math(EXPR modular_workflow_last_shard "${GJXL_MODULAR_WORKFLOW_SHARDS} - 1")
     foreach(shard RANGE 0 ${modular_workflow_last_shard})
-      add_test(NAME modular_workflow_shard_${shard} COMMAND gjxl_modular_workflow_test
-        --allocation-shard ${shard} ${GJXL_MODULAR_WORKFLOW_SHARDS})
-      set_tests_properties(modular_workflow_shard_${shard} PROPERTIES TIMEOUT 7200)
+      add_test(NAME modular_legacy_search_faults_shard_${shard} COMMAND gjxl_modular_workflow_test
+        --legacy-search-faults --allocation-shard ${shard} ${GJXL_MODULAR_WORKFLOW_SHARDS}
+        --report "${CMAKE_CURRENT_BINARY_DIR}/modular-allocation-reports/legacy-search-${shard}.jsonl")
+      set_tests_properties(modular_legacy_search_faults_shard_${shard} PROPERTIES
+        TIMEOUT 7200 LABELS "modular_search_exhaustive")
     endforeach()
   endif()
 

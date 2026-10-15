@@ -110,7 +110,9 @@ counters and every expected index; all non-search counts match the previous
 qualification. See the [structured record](modular-palette-context-results.json).
 The allocation guard is 75,000 because expanded ANS search reaches 52,213
 allocations in the existing 257x3 RGBA16 fault fixture. Four disjoint shards
-cover every allocation index; the default test still runs the full sweep.
+cover every allocation index; at this milestone the default test ran the full
+sweep. See [Modular allocation-failure qualification](modular-allocation-testing.md)
+for the subsequent regular/exhaustive split and current invocation commands.
 
 `build/modular-palette-context/` retains frozen libraries, input/output hashes,
 paired ledgers, the exact source patch, reference captures, the audited v1/v2

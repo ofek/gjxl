@@ -64,6 +64,8 @@ add_test(NAME modular_reference_wp_sweep
 set_tests_properties(modular_reference_wp_sweep PROPERTIES TIMEOUT 600)
 target_link_libraries(gjxl_modular_reference_workflow_test PRIVATE gjxl_modular_reference)
 target_compile_definitions(gjxl_modular_reference_workflow_test PRIVATE GJXL_REFERENCE_WORKFLOW_ORACLE=1)
+target_link_libraries(gjxl_modular_public_allocation_test PRIVATE gjxl_modular_reference)
+target_compile_definitions(gjxl_modular_public_allocation_test PRIVATE GJXL_PUBLIC_ALLOCATION_ORACLE=1)
 target_link_libraries(gjxl_modular_parallel_learning_test PRIVATE gjxl_modular_reference)
 target_compile_definitions(gjxl_modular_parallel_learning_test PRIVATE GJXL_REFERENCE_WORKFLOW_ORACLE=1)
 target_link_libraries(gjxl_modular_parallel_entropy_test PRIVATE gjxl_modular_reference)
@@ -79,7 +81,7 @@ endif()
 if(WIN32)
   set_tests_properties(modular_reference_workflow modular_reference_wp_sweep
     modular_parallel_learning modular_parallel_entropy modular_parallel_selection
-    modular_parallel_prepared_tokenization PROPERTIES
+    modular_parallel_prepared_tokenization modular_public_allocations PROPERTIES
     ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:${GJXL_MODULAR_ORACLE_BUILD}/tools")
 endif()
 target_link_libraries(gjxl_ans_selection_test PRIVATE gjxl_modular_reference)
