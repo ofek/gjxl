@@ -362,14 +362,3094 @@
     "timing_note": "A bounded correctness check; overlapped the regular ASan/UBSan rerun, not a performance comparison."
   },
   "hosted_qualification": {
-    "status": "not_run",
-    "reason": "Implementation is local; new hosted workflow has not been dispatched."
+    "status": "passed",
+    "tested_revision": "2b7aa16be3edafdb00a0223c30b945fdf69c7f24",
+    "recorded_at_utc": "2026-10-15T20:40:31.489941+00:00",
+    "pull_request": "https://github.com/yunho-c/gjxl/pull/49",
+    "ordinary_native": {
+      "run_id": 38780341426,
+      "url": "https://github.com/yunho-c/gjxl/actions/runs/38780341426",
+      "event": "pull_request",
+      "head_sha": "2b7aa16be3edafdb00a0223c30b945fdf69c7f24",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    "rust": {
+      "run_id": 38780341142,
+      "url": "https://github.com/yunho-c/gjxl/actions/runs/38780341142",
+      "status": "passed",
+      "jobs": [
+        "macos-26 native wrapper",
+        "ubuntu-24.04 native wrapper",
+        "windows-2022 native wrapper"
+      ]
+    },
+    "explicit_exhaustive": {
+      "run_id": 38780445270,
+      "url": "https://github.com/yunho-c/gjxl/actions/runs/38780445270",
+      "event": "workflow_dispatch",
+      "head_sha": "2b7aa16be3edafdb00a0223c30b945fdf69c7f24",
+      "status": "completed",
+      "conclusion": "success"
+    },
+    "ordinary_artifacts": [
+      {
+        "artifact_id": 11998426189,
+        "artifact_name": "native-macos-26-cxx20",
+        "artifact_sha256": "a03bbc19297bc4861610bd561cc7ffda7347e91abd5a3aa31f8a856b9c337109",
+        "artifact_url": "https://github.com/yunho-c/gjxl/actions/runs/38780341426/artifacts/11998426189",
+        "junit_test_count": 48,
+        "passed": true,
+        "regular_seconds": 26.3772,
+        "public_seconds": 53.0639,
+        "public_injected_failures": 7221,
+        "regular_summary": {
+          "summary": true,
+          "exhaustive_fixtures": 40,
+          "probe_fixtures": 4,
+          "injected_failures": 18126,
+          "passed": true
+        },
+        "public_reports": [
+          {
+            "policy": "learned",
+            "coverage": "exhaustive",
+            "format": "rgba16be",
+            "width": 17,
+            "height": 19,
+            "entropy": "prefix",
+            "allocation_count": 2065,
+            "injected_failures": 2065,
+            "seconds": 12.1925,
+            "exact_decode": true,
+            "passed": true
+          },
+          {
+            "policy": "learned",
+            "coverage": "exhaustive",
+            "format": "rgba16be",
+            "width": 257,
+            "height": 3,
+            "entropy": "prefix",
+            "allocation_count": 2015,
+            "injected_failures": 2015,
+            "seconds": 12.7178,
+            "exact_decode": true,
+            "passed": true
+          },
+          {
+            "policy": "learned",
+            "coverage": "exhaustive",
+            "format": "rgba16be",
+            "width": 17,
+            "height": 19,
+            "entropy": "ANS",
+            "allocation_count": 1484,
+            "injected_failures": 1484,
+            "seconds": 9.14532,
+            "exact_decode": true,
+            "passed": true
+          },
+          {
+            "policy": "learned",
+            "coverage": "exhaustive",
+            "format": "rgba16be",
+            "width": 257,
+            "height": 3,
+            "entropy": "ANS",
+            "allocation_count": 1657,
+            "injected_failures": 1657,
+            "seconds": 18.8274,
+            "exact_decode": true,
+            "passed": true
+          }
+        ],
+        "legacy_search_probe_counts": [
+          {
+            "entropy": "prefix",
+            "width": 17,
+            "height": 19,
+            "first_successful_index": 27392
+          },
+          {
+            "entropy": "prefix",
+            "width": 257,
+            "height": 3,
+            "first_successful_index": 27827
+          },
+          {
+            "entropy": "ANS",
+            "width": 17,
+            "height": 19,
+            "first_successful_index": 44391
+          },
+          {
+            "entropy": "ANS",
+            "width": 257,
+            "height": 3,
+            "first_successful_index": 50397
+          }
+        ],
+        "combined_allocation_test_seconds": 79.44109999999999,
+        "regular_failure_positions": 25347,
+        "historical_exhaustive_step_seconds": 5381.0,
+        "historical_failure_positions": 168101,
+        "legacy_trace_counts_in_fixture_order": [
+          292,
+          319,
+          324,
+          315,
+          299,
+          306,
+          311,
+          324,
+          331,
+          322,
+          329,
+          327,
+          334,
+          425,
+          444,
+          448,
+          444,
+          424,
+          432,
+          434,
+          453,
+          456,
+          450,
+          454,
+          455,
+          456,
+          756,
+          782,
+          27392,
+          27827,
+          1260,
+          1283,
+          44391,
+          50397,
+          330,
+          340,
+          354,
+          355,
+          337,
+          465,
+          468,
+          491,
+          490,
+          475
+        ]
+      },
+      {
+        "artifact_id": 11996299511,
+        "artifact_name": "native-macos-26-cxx23",
+        "artifact_sha256": "9f9b247cc14779e524178140369449f2567aa1a62e95142132f39391d2301a83",
+        "artifact_url": "https://github.com/yunho-c/gjxl/actions/runs/38780341426/artifacts/11996299511",
+        "junit_test_count": 48,
+        "passed": true,
+        "regular_seconds": 16.9321,
+        "public_seconds": 32.3007,
+        "public_injected_failures": 7221,
+        "regular_summary": {
+          "summary": true,
+          "exhaustive_fixtures": 40,
+          "probe_fixtures": 4,
+          "injected_failures": 18126,
+          "passed": true
+        },
+        "public_reports": [
+          {
+            "policy": "learned",
+            "coverage": "exhaustive",
+            "format": "rgba16be",
+            "width": 17,
+            "height": 19,
+            "entropy": "prefix",
+            "allocation_count": 2065,
+            "injected_failures": 2065,
+            "seconds": 8.5778,
+            "exact_decode": true,
+            "passed": true
+          },
+          {
+            "policy": "learned",
+            "coverage": "exhaustive",
+            "format": "rgba16be",
+            "width": 257,
+            "height": 3,
+            "entropy": "prefix",
+            "allocation_count": 2015,
+            "injected_failures": 2015,
+            "seconds": 8.79216,
+            "exact_decode": true,
+            "passed": true
+          },
+          {
+            "policy": "learned",
+            "coverage": "exhaustive",
+            "format": "rgba16be",
+            "width": 17,
+            "height": 19,
+            "entropy": "ANS",
+            "allocation_count": 1484,
+            "injected_failures": 1484,
+            "seconds": 6.0318,
+            "exact_decode": true,
+            "passed": true
+          },
+          {
+            "policy": "learned",
+            "coverage": "exhaustive",
+            "format": "rgba16be",
+            "width": 257,
+            "height": 3,
+            "entropy": "ANS",
+            "allocation_count": 1657,
+            "injected_failures": 1657,
+            "seconds": 8.83837,
+            "exact_decode": true,
+            "passed": true
+          }
+        ],
+        "legacy_search_probe_counts": [
+          {
+            "entropy": "prefix",
+            "width": 17,
+            "height": 19,
+            "first_successful_index": 27392
+          },
+          {
+            "entropy": "prefix",
+            "width": 257,
+            "height": 3,
+            "first_successful_index": 27827
+          },
+          {
+            "entropy": "ANS",
+            "width": 17,
+            "height": 19,
+            "first_successful_index": 44391
+          },
+          {
+            "entropy": "ANS",
+            "width": 257,
+            "height": 3,
+            "first_successful_index": 50397
+          }
+        ],
+        "combined_allocation_test_seconds": 49.2328,
+        "regular_failure_positions": 25347,
+        "historical_exhaustive_step_seconds": 6315.0,
+        "historical_failure_positions": 168101,
+        "legacy_trace_counts_in_fixture_order": [
+          292,
+          319,
+          324,
+          315,
+          299,
+          306,
+          311,
+          324,
+          331,
+          322,
+          329,
+          327,
+          334,
+          425,
+          444,
+          448,
+          444,
+          424,
+          432,
+          434,
+          453,
+          456,
+          450,
+          454,
+          455,
+          456,
+          756,
+          782,
+          27392,
+          27827,
+          1260,
+          1283,
+          44391,
+          50397,
+          330,
+          340,
+          354,
+          355,
+          337,
+          465,
+          468,
+          491,
+          490,
+          475
+        ]
+      },
+      {
+        "artifact_id": 11995872587,
+        "artifact_name": "native-ubuntu-24.04-cxx20",
+        "artifact_sha256": "63b8e67338d86dc3734feb9d16255a26038be43b289369da21bc5181f49b51aa",
+        "artifact_url": "https://github.com/yunho-c/gjxl/actions/runs/38780341426/artifacts/11995872587",
+        "junit_test_count": 45,
+        "passed": true,
+        "regular_seconds": 26.6064,
+        "public_seconds": 121.428,
+        "public_injected_failures": 6477,
+        "regular_summary": {
+          "summary": true,
+          "exhaustive_fixtures": 40,
+          "probe_fixtures": 4,
+          "injected_failures": 18127,
+          "passed": true
+        },
+        "public_reports": [
+          {
+            "policy": "learned",
+            "coverage": "exhaustive",
+            "format": "rgba16be",
+            "width": 17,
+            "height": 19,
+            "entropy": "prefix",
+            "allocation_count": 1881,
+            "injected_failures": 1881,
+            "seconds": 27.9291,
+            "exact_decode": true,
+            "passed": true
+          },
+          {
+            "policy": "learned",
+            "coverage": "exhaustive",
+            "format": "rgba16be",
+            "width": 257,
+            "height": 3,
+            "entropy": "prefix",
+            "allocation_count": 1827,
+            "injected_failures": 1827,
+            "seconds": 43.2472,
+            "exact_decode": true,
+            "passed": true
+          },
+          {
+            "policy": "learned",
+            "coverage": "exhaustive",
+            "format": "rgba16be",
+            "width": 17,
+            "height": 19,
+            "entropy": "ANS",
+            "allocation_count": 1300,
+            "injected_failures": 1300,
+            "seconds": 19.7812,
+            "exact_decode": true,
+            "passed": true
+          },
+          {
+            "policy": "learned",
+            "coverage": "exhaustive",
+            "format": "rgba16be",
+            "width": 257,
+            "height": 3,
+            "entropy": "ANS",
+            "allocation_count": 1469,
+            "injected_failures": 1469,
+            "seconds": 30.3696,
+            "exact_decode": true,
+            "passed": true
+          }
+        ],
+        "legacy_search_probe_counts": [
+          {
+            "entropy": "prefix",
+            "width": 17,
+            "height": 19,
+            "first_successful_index": 27070
+          },
+          {
+            "entropy": "prefix",
+            "width": 257,
+            "height": 3,
+            "first_successful_index": 27734
+          },
+          {
+            "entropy": "ANS",
+            "width": 17,
+            "height": 19,
+            "first_successful_index": 44067
+          },
+          {
+            "entropy": "ANS",
+            "width": 257,
+            "height": 3,
+            "first_successful_index": 50308
+          }
+        ],
+        "combined_allocation_test_seconds": 148.0344,
+        "regular_failure_positions": 24604,
+        "historical_exhaustive_step_seconds": 4807.0,
+        "historical_failure_positions": 167274,
+        "legacy_trace_counts_in_fixture_order": [
+          292,
+          319,
+          324,
+          315,
+          299,
+          306,
+          311,
+          324,
+          331,
+          322,
+          329,
+          327,
+          334,
+          425,
+          444,
+          448,
+          444,
+          424,
+          432,
+          434,
+          453,
+          456,
+          450,
+          454,
+          455,
+          456,
+          757,
+          782,
+          27070,
+          27734,
+          1260,
+          1283,
+          44067,
+          50308,
+          330,
+          340,
+          354,
+          355,
+          337,
+          465,
+          468,
+          491,
+          490,
+          475
+        ]
+      },
+      {
+        "artifact_id": 11995783308,
+        "artifact_name": "native-ubuntu-24.04-cxx23",
+        "artifact_sha256": "e7be2d9b66616a124464e7b8480d55aaf24fb2d70a78230a6c76b20caf4d774a",
+        "artifact_url": "https://github.com/yunho-c/gjxl/actions/runs/38780341426/artifacts/11995783308",
+        "junit_test_count": 45,
+        "passed": true,
+        "regular_seconds": 26.2351,
+        "public_seconds": 119.951,
+        "public_injected_failures": 6477,
+        "regular_summary": {
+          "summary": true,
+          "exhaustive_fixtures": 40,
+          "probe_fixtures": 4,
+          "injected_failures": 18127,
+          "passed": true
+        },
+        "public_reports": [
+          {
+            "policy": "learned",
+            "coverage": "exhaustive",
+            "format": "rgba16be",
+            "width": 17,
+            "height": 19,
+            "entropy": "prefix",
+            "allocation_count": 1881,
+            "injected_failures": 1881,
+            "seconds": 26.8892,
+            "exact_decode": true,
+            "passed": true
+          },
+          {
+            "policy": "learned",
+            "coverage": "exhaustive",
+            "format": "rgba16be",
+            "width": 257,
+            "height": 3,
+            "entropy": "prefix",
+            "allocation_count": 1827,
+            "injected_failures": 1827,
+            "seconds": 42.5861,
+            "exact_decode": true,
+            "passed": true
+          },
+          {
+            "policy": "learned",
+            "coverage": "exhaustive",
+            "format": "rgba16be",
+            "width": 17,
+            "height": 19,
+            "entropy": "ANS",
+            "allocation_count": 1300,
+            "injected_failures": 1300,
+            "seconds": 19.1665,
+            "exact_decode": true,
+            "passed": true
+          },
+          {
+            "policy": "learned",
+            "coverage": "exhaustive",
+            "format": "rgba16be",
+            "width": 257,
+            "height": 3,
+            "entropy": "ANS",
+            "allocation_count": 1469,
+            "injected_failures": 1469,
+            "seconds": 31.2109,
+            "exact_decode": true,
+            "passed": true
+          }
+        ],
+        "legacy_search_probe_counts": [
+          {
+            "entropy": "prefix",
+            "width": 17,
+            "height": 19,
+            "first_successful_index": 27070
+          },
+          {
+            "entropy": "prefix",
+            "width": 257,
+            "height": 3,
+            "first_successful_index": 27734
+          },
+          {
+            "entropy": "ANS",
+            "width": 17,
+            "height": 19,
+            "first_successful_index": 44067
+          },
+          {
+            "entropy": "ANS",
+            "width": 257,
+            "height": 3,
+            "first_successful_index": 50308
+          }
+        ],
+        "combined_allocation_test_seconds": 146.18609999999998,
+        "regular_failure_positions": 24604,
+        "historical_exhaustive_step_seconds": 7062.0,
+        "historical_failure_positions": 167274,
+        "legacy_trace_counts_in_fixture_order": [
+          292,
+          319,
+          324,
+          315,
+          299,
+          306,
+          311,
+          324,
+          331,
+          322,
+          329,
+          327,
+          334,
+          425,
+          444,
+          448,
+          444,
+          424,
+          432,
+          434,
+          453,
+          456,
+          450,
+          454,
+          455,
+          456,
+          757,
+          782,
+          27070,
+          27734,
+          1260,
+          1283,
+          44067,
+          50308,
+          330,
+          340,
+          354,
+          355,
+          337,
+          465,
+          468,
+          491,
+          490,
+          475
+        ]
+      },
+      {
+        "artifact_id": 11997585626,
+        "artifact_name": "native-windows-2022-cxx20",
+        "artifact_sha256": "18af2f1d9ab152b991f5604fba20102dd43c4ff80d1952376c2a821eee982e53",
+        "artifact_url": "https://github.com/yunho-c/gjxl/actions/runs/38780341426/artifacts/11997585626",
+        "junit_test_count": 45,
+        "passed": true,
+        "regular_seconds": 33.3299,
+        "public_seconds": 259.599,
+        "public_injected_failures": 7455,
+        "regular_summary": {
+          "summary": true,
+          "exhaustive_fixtures": 40,
+          "probe_fixtures": 4,
+          "injected_failures": 20510,
+          "passed": true
+        },
+        "public_reports": [
+          {
+            "policy": "learned",
+            "coverage": "exhaustive",
+            "format": "rgba16be",
+            "width": 17,
+            "height": 19,
+            "entropy": "prefix",
+            "allocation_count": 2145,
+            "injected_failures": 2145,
+            "seconds": 66.6493,
+            "exact_decode": true,
+            "passed": true
+          },
+          {
+            "policy": "learned",
+            "coverage": "exhaustive",
+            "format": "rgba16be",
+            "width": 257,
+            "height": 3,
+            "entropy": "prefix",
+            "allocation_count": 2097,
+            "injected_failures": 2097,
+            "seconds": 104.902,
+            "exact_decode": true,
+            "passed": true
+          },
+          {
+            "policy": "learned",
+            "coverage": "exhaustive",
+            "format": "rgba16be",
+            "width": 17,
+            "height": 19,
+            "entropy": "ANS",
+            "allocation_count": 1507,
+            "injected_failures": 1507,
+            "seconds": 30.5573,
+            "exact_decode": true,
+            "passed": true
+          },
+          {
+            "policy": "learned",
+            "coverage": "exhaustive",
+            "format": "rgba16be",
+            "width": 257,
+            "height": 3,
+            "entropy": "ANS",
+            "allocation_count": 1706,
+            "injected_failures": 1706,
+            "seconds": 57.2954,
+            "exact_decode": true,
+            "passed": true
+          }
+        ],
+        "legacy_search_probe_counts": [
+          {
+            "entropy": "prefix",
+            "width": 17,
+            "height": 19,
+            "first_successful_index": 31003
+          },
+          {
+            "entropy": "prefix",
+            "width": 257,
+            "height": 3,
+            "first_successful_index": 31684
+          },
+          {
+            "entropy": "ANS",
+            "width": 17,
+            "height": 19,
+            "first_successful_index": 51510
+          },
+          {
+            "entropy": "ANS",
+            "width": 257,
+            "height": 3,
+            "first_successful_index": 59338
+          }
+        ],
+        "combined_allocation_test_seconds": 292.9289,
+        "regular_failure_positions": 27965,
+        "historical_exhaustive_step_seconds": 9764.0,
+        "historical_failure_positions": 194013,
+        "legacy_trace_counts_in_fixture_order": [
+          316,
+          351,
+          358,
+          343,
+          334,
+          340,
+          346,
+          361,
+          370,
+          354,
+          363,
+          363,
+          372,
+          473,
+          500,
+          504,
+          497,
+          483,
+          489,
+          491,
+          513,
+          520,
+          506,
+          510,
+          516,
+          518,
+          864,
+          891,
+          31003,
+          31684,
+          1474,
+          1496,
+          51510,
+          59338,
+          368,
+          383,
+          398,
+          399,
+          378,
+          529,
+          531,
+          566,
+          566,
+          544
+        ]
+      },
+      {
+        "artifact_id": 11997116181,
+        "artifact_name": "native-windows-2022-cxx23",
+        "artifact_sha256": "0d6412905eea6c4440f96deeabaaf8ca3faac5aa4ec98c63e518817ec7650829",
+        "artifact_url": "https://github.com/yunho-c/gjxl/actions/runs/38780341426/artifacts/11997116181",
+        "junit_test_count": 45,
+        "passed": true,
+        "regular_seconds": 32.6652,
+        "public_seconds": 266.483,
+        "public_injected_failures": 7455,
+        "regular_summary": {
+          "summary": true,
+          "exhaustive_fixtures": 40,
+          "probe_fixtures": 4,
+          "injected_failures": 20510,
+          "passed": true
+        },
+        "public_reports": [
+          {
+            "policy": "learned",
+            "coverage": "exhaustive",
+            "format": "rgba16be",
+            "width": 17,
+            "height": 19,
+            "entropy": "prefix",
+            "allocation_count": 2145,
+            "injected_failures": 2145,
+            "seconds": 70.035,
+            "exact_decode": true,
+            "passed": true
+          },
+          {
+            "policy": "learned",
+            "coverage": "exhaustive",
+            "format": "rgba16be",
+            "width": 257,
+            "height": 3,
+            "entropy": "prefix",
+            "allocation_count": 2097,
+            "injected_failures": 2097,
+            "seconds": 107.342,
+            "exact_decode": true,
+            "passed": true
+          },
+          {
+            "policy": "learned",
+            "coverage": "exhaustive",
+            "format": "rgba16be",
+            "width": 17,
+            "height": 19,
+            "entropy": "ANS",
+            "allocation_count": 1507,
+            "injected_failures": 1507,
+            "seconds": 30.5022,
+            "exact_decode": true,
+            "passed": true
+          },
+          {
+            "policy": "learned",
+            "coverage": "exhaustive",
+            "format": "rgba16be",
+            "width": 257,
+            "height": 3,
+            "entropy": "ANS",
+            "allocation_count": 1706,
+            "injected_failures": 1706,
+            "seconds": 58.4076,
+            "exact_decode": true,
+            "passed": true
+          }
+        ],
+        "legacy_search_probe_counts": [
+          {
+            "entropy": "prefix",
+            "width": 17,
+            "height": 19,
+            "first_successful_index": 31003
+          },
+          {
+            "entropy": "prefix",
+            "width": 257,
+            "height": 3,
+            "first_successful_index": 31684
+          },
+          {
+            "entropy": "ANS",
+            "width": 17,
+            "height": 19,
+            "first_successful_index": 51510
+          },
+          {
+            "entropy": "ANS",
+            "width": 257,
+            "height": 3,
+            "first_successful_index": 59338
+          }
+        ],
+        "combined_allocation_test_seconds": 299.1482,
+        "regular_failure_positions": 27965,
+        "historical_exhaustive_step_seconds": 7692.0,
+        "historical_failure_positions": 194013,
+        "legacy_trace_counts_in_fixture_order": [
+          316,
+          351,
+          358,
+          343,
+          334,
+          340,
+          346,
+          361,
+          370,
+          354,
+          363,
+          363,
+          372,
+          473,
+          500,
+          504,
+          497,
+          483,
+          489,
+          491,
+          513,
+          520,
+          506,
+          510,
+          516,
+          518,
+          864,
+          891,
+          31003,
+          31684,
+          1474,
+          1496,
+          51510,
+          59338,
+          368,
+          383,
+          398,
+          399,
+          378,
+          529,
+          531,
+          566,
+          566,
+          544
+        ]
+      }
+    ],
+    "exhaustive_artifacts": [
+      {
+        "artifact_id": 12002382185,
+        "artifact_name": "modular-search-faults-macos-26-cxx20",
+        "artifact_sha256": "a402c80172708cc6a352a88027293e9c965f407b1893b75d07c2649cff4bd1ff",
+        "artifact_url": "https://github.com/yunho-c/gjxl/actions/runs/38780445270/artifacts/12002382185",
+        "junit_test_count": 4,
+        "junit_wall_seconds": 5763.0,
+        "passed": true,
+        "shards": 4,
+        "fixture_totals": [
+          {
+            "entropy": "ANS",
+            "width": 17,
+            "height": 19,
+            "allocation_count": 44391
+          },
+          {
+            "entropy": "ANS",
+            "width": 257,
+            "height": 3,
+            "allocation_count": 50397
+          },
+          {
+            "entropy": "prefix",
+            "width": 17,
+            "height": 19,
+            "allocation_count": 27392
+          },
+          {
+            "entropy": "prefix",
+            "width": 257,
+            "height": 3,
+            "allocation_count": 27827
+          }
+        ],
+        "injected_failures": 150007,
+        "shard_seconds": {
+          "modular_legacy_search_faults_shard_0": 5747.34,
+          "modular_legacy_search_faults_shard_1": 5762.09,
+          "modular_legacy_search_faults_shard_2": 5763.29,
+          "modular_legacy_search_faults_shard_3": 5741.05
+        },
+        "every_allocation_covered_once": true,
+        "shard_reports": [
+          {
+            "shard": 0,
+            "injected_failures": [
+              6848,
+              6957,
+              11098,
+              12600
+            ],
+            "first_successful_indices": [
+              27392,
+              27828,
+              44392,
+              50400
+            ],
+            "case_seconds": [
+              598.129,
+              1278.32,
+              1247.46,
+              2618.66
+            ],
+            "passed": true
+          },
+          {
+            "shard": 1,
+            "injected_failures": [
+              6848,
+              6957,
+              11098,
+              12599
+            ],
+            "first_successful_indices": [
+              27393,
+              27829,
+              44393,
+              50397
+            ],
+            "case_seconds": [
+              601.757,
+              1282.4,
+              1255.42,
+              2617.49
+            ],
+            "passed": true
+          },
+          {
+            "shard": 2,
+            "injected_failures": [
+              6848,
+              6957,
+              11098,
+              12599
+            ],
+            "first_successful_indices": [
+              27394,
+              27830,
+              44394,
+              50398
+            ],
+            "case_seconds": [
+              602.65,
+              1281.7,
+              1256.96,
+              2617.23
+            ],
+            "passed": true
+          },
+          {
+            "shard": 3,
+            "injected_failures": [
+              6848,
+              6956,
+              11097,
+              12599
+            ],
+            "first_successful_indices": [
+              27395,
+              27827,
+              44391,
+              50399
+            ],
+            "case_seconds": [
+              596.683,
+              1275.38,
+              1247.48,
+              2616.9
+            ],
+            "passed": true
+          }
+        ],
+        "fixture_order": [
+          {
+            "fixture": 1,
+            "entropy": "prefix",
+            "width": 17,
+            "height": 19
+          },
+          {
+            "fixture": 2,
+            "entropy": "prefix",
+            "width": 257,
+            "height": 3
+          },
+          {
+            "fixture": 3,
+            "entropy": "ANS",
+            "width": 17,
+            "height": 19
+          },
+          {
+            "fixture": 4,
+            "entropy": "ANS",
+            "width": 257,
+            "height": 3
+          }
+        ]
+      },
+      {
+        "artifact_id": 12000943254,
+        "artifact_name": "modular-search-faults-macos-26-cxx23",
+        "artifact_sha256": "70469b41c1daff2fc548fccd837347eb40a155219f6a73e09aa28b3df2b36e78",
+        "artifact_url": "https://github.com/yunho-c/gjxl/actions/runs/38780445270/artifacts/12000943254",
+        "junit_test_count": 4,
+        "junit_wall_seconds": 5834.0,
+        "passed": true,
+        "shards": 4,
+        "fixture_totals": [
+          {
+            "entropy": "ANS",
+            "width": 17,
+            "height": 19,
+            "allocation_count": 44391
+          },
+          {
+            "entropy": "ANS",
+            "width": 257,
+            "height": 3,
+            "allocation_count": 50397
+          },
+          {
+            "entropy": "prefix",
+            "width": 17,
+            "height": 19,
+            "allocation_count": 27392
+          },
+          {
+            "entropy": "prefix",
+            "width": 257,
+            "height": 3,
+            "allocation_count": 27827
+          }
+        ],
+        "injected_failures": 150007,
+        "shard_seconds": {
+          "modular_legacy_search_faults_shard_0": 5828.63,
+          "modular_legacy_search_faults_shard_1": 5834.32,
+          "modular_legacy_search_faults_shard_2": 5822.56,
+          "modular_legacy_search_faults_shard_3": 5832.22
+        },
+        "every_allocation_covered_once": true,
+        "shard_reports": [
+          {
+            "shard": 0,
+            "injected_failures": [
+              6848,
+              6957,
+              11098,
+              12600
+            ],
+            "first_successful_indices": [
+              27392,
+              27828,
+              44392,
+              50400
+            ],
+            "case_seconds": [
+              631.698,
+              1327.56,
+              1145.3,
+              2718.53
+            ],
+            "passed": true
+          },
+          {
+            "shard": 1,
+            "injected_failures": [
+              6848,
+              6957,
+              11098,
+              12599
+            ],
+            "first_successful_indices": [
+              27393,
+              27829,
+              44393,
+              50397
+            ],
+            "case_seconds": [
+              630.818,
+              1332.55,
+              1143.69,
+              2721.77
+            ],
+            "passed": true
+          },
+          {
+            "shard": 2,
+            "injected_failures": [
+              6848,
+              6957,
+              11098,
+              12599
+            ],
+            "first_successful_indices": [
+              27394,
+              27830,
+              44394,
+              50398
+            ],
+            "case_seconds": [
+              629.039,
+              1328.71,
+              1138.19,
+              2721.13
+            ],
+            "passed": true
+          },
+          {
+            "shard": 3,
+            "injected_failures": [
+              6848,
+              6956,
+              11097,
+              12599
+            ],
+            "first_successful_indices": [
+              27395,
+              27827,
+              44391,
+              50399
+            ],
+            "case_seconds": [
+              632.458,
+              1328.23,
+              1146.11,
+              2719.89
+            ],
+            "passed": true
+          }
+        ],
+        "fixture_order": [
+          {
+            "fixture": 1,
+            "entropy": "prefix",
+            "width": 17,
+            "height": 19
+          },
+          {
+            "fixture": 2,
+            "entropy": "prefix",
+            "width": 257,
+            "height": 3
+          },
+          {
+            "fixture": 3,
+            "entropy": "ANS",
+            "width": 17,
+            "height": 19
+          },
+          {
+            "fixture": 4,
+            "entropy": "ANS",
+            "width": 257,
+            "height": 3
+          }
+        ]
+      },
+      {
+        "artifact_id": 12001699103,
+        "artifact_name": "modular-search-faults-ubuntu-24.04-cxx20",
+        "artifact_sha256": "8a2329ac7c00827ec1b3f13b64142245dc4f40b4f5d25abf43fd642bf9ff7aa2",
+        "artifact_url": "https://github.com/yunho-c/gjxl/actions/runs/38780445270/artifacts/12001699103",
+        "junit_test_count": 4,
+        "junit_wall_seconds": 6986.0,
+        "passed": true,
+        "shards": 4,
+        "fixture_totals": [
+          {
+            "entropy": "ANS",
+            "width": 17,
+            "height": 19,
+            "allocation_count": 44067
+          },
+          {
+            "entropy": "ANS",
+            "width": 257,
+            "height": 3,
+            "allocation_count": 50308
+          },
+          {
+            "entropy": "prefix",
+            "width": 17,
+            "height": 19,
+            "allocation_count": 27070
+          },
+          {
+            "entropy": "prefix",
+            "width": 257,
+            "height": 3,
+            "allocation_count": 27734
+          }
+        ],
+        "injected_failures": 149179,
+        "shard_seconds": {
+          "modular_legacy_search_faults_shard_0": 6983.63,
+          "modular_legacy_search_faults_shard_1": 6979.88,
+          "modular_legacy_search_faults_shard_2": 6986.7,
+          "modular_legacy_search_faults_shard_3": 6985.23
+        },
+        "every_allocation_covered_once": true,
+        "shard_reports": [
+          {
+            "shard": 0,
+            "injected_failures": [
+              6768,
+              6934,
+              11017,
+              12577
+            ],
+            "first_successful_indices": [
+              27072,
+              27736,
+              44068,
+              50308
+            ],
+            "case_seconds": [
+              703.318,
+              1542.51,
+              1418.27,
+              3313.79
+            ],
+            "passed": true
+          },
+          {
+            "shard": 1,
+            "injected_failures": [
+              6768,
+              6934,
+              11017,
+              12577
+            ],
+            "first_successful_indices": [
+              27073,
+              27737,
+              44069,
+              50309
+            ],
+            "case_seconds": [
+              702.63,
+              1542.43,
+              1416.94,
+              3311.98
+            ],
+            "passed": true
+          },
+          {
+            "shard": 2,
+            "injected_failures": [
+              6767,
+              6933,
+              11017,
+              12577
+            ],
+            "first_successful_indices": [
+              27070,
+              27734,
+              44070,
+              50310
+            ],
+            "case_seconds": [
+              702.862,
+              1541.99,
+              1418.25,
+              3317.86
+            ],
+            "passed": true
+          },
+          {
+            "shard": 3,
+            "injected_failures": [
+              6767,
+              6933,
+              11016,
+              12577
+            ],
+            "first_successful_indices": [
+              27071,
+              27735,
+              44067,
+              50311
+            ],
+            "case_seconds": [
+              702.806,
+              1542.17,
+              1416.95,
+              3317.59
+            ],
+            "passed": true
+          }
+        ],
+        "fixture_order": [
+          {
+            "fixture": 1,
+            "entropy": "prefix",
+            "width": 17,
+            "height": 19
+          },
+          {
+            "fixture": 2,
+            "entropy": "prefix",
+            "width": 257,
+            "height": 3
+          },
+          {
+            "fixture": 3,
+            "entropy": "ANS",
+            "width": 17,
+            "height": 19
+          },
+          {
+            "fixture": 4,
+            "entropy": "ANS",
+            "width": 257,
+            "height": 3
+          }
+        ]
+      },
+      {
+        "artifact_id": 12002437519,
+        "artifact_name": "modular-search-faults-ubuntu-24.04-cxx23",
+        "artifact_sha256": "386b054bb776e4b632253be1bfdd4f1aac69ceefc38fae29d3b1dfe490e4b34c",
+        "artifact_url": "https://github.com/yunho-c/gjxl/actions/runs/38780445270/artifacts/12002437519",
+        "junit_test_count": 4,
+        "junit_wall_seconds": 7049.0,
+        "passed": true,
+        "shards": 4,
+        "fixture_totals": [
+          {
+            "entropy": "ANS",
+            "width": 17,
+            "height": 19,
+            "allocation_count": 44067
+          },
+          {
+            "entropy": "ANS",
+            "width": 257,
+            "height": 3,
+            "allocation_count": 50308
+          },
+          {
+            "entropy": "prefix",
+            "width": 17,
+            "height": 19,
+            "allocation_count": 27070
+          },
+          {
+            "entropy": "prefix",
+            "width": 257,
+            "height": 3,
+            "allocation_count": 27734
+          }
+        ],
+        "injected_failures": 149179,
+        "shard_seconds": {
+          "modular_legacy_search_faults_shard_0": 7043.88,
+          "modular_legacy_search_faults_shard_1": 7049.43,
+          "modular_legacy_search_faults_shard_2": 7046.42,
+          "modular_legacy_search_faults_shard_3": 7043.26
+        },
+        "every_allocation_covered_once": true,
+        "shard_reports": [
+          {
+            "shard": 0,
+            "injected_failures": [
+              6768,
+              6934,
+              11017,
+              12577
+            ],
+            "first_successful_indices": [
+              27072,
+              27736,
+              44068,
+              50308
+            ],
+            "case_seconds": [
+              709.109,
+              1563.53,
+              1419.35,
+              3345.9
+            ],
+            "passed": true
+          },
+          {
+            "shard": 1,
+            "injected_failures": [
+              6768,
+              6934,
+              11017,
+              12577
+            ],
+            "first_successful_indices": [
+              27073,
+              27737,
+              44069,
+              50309
+            ],
+            "case_seconds": [
+              709.497,
+              1564.14,
+              1421.64,
+              3348.35
+            ],
+            "passed": true
+          },
+          {
+            "shard": 2,
+            "injected_failures": [
+              6767,
+              6933,
+              11017,
+              12577
+            ],
+            "first_successful_indices": [
+              27070,
+              27734,
+              44070,
+              50310
+            ],
+            "case_seconds": [
+              710.056,
+              1563.15,
+              1420.72,
+              3346.59
+            ],
+            "passed": true
+          },
+          {
+            "shard": 3,
+            "injected_failures": [
+              6767,
+              6933,
+              11016,
+              12577
+            ],
+            "first_successful_indices": [
+              27071,
+              27735,
+              44067,
+              50311
+            ],
+            "case_seconds": [
+              709.168,
+              1563.23,
+              1419.1,
+              3345.76
+            ],
+            "passed": true
+          }
+        ],
+        "fixture_order": [
+          {
+            "fixture": 1,
+            "entropy": "prefix",
+            "width": 17,
+            "height": 19
+          },
+          {
+            "fixture": 2,
+            "entropy": "prefix",
+            "width": 257,
+            "height": 3
+          },
+          {
+            "fixture": 3,
+            "entropy": "ANS",
+            "width": 17,
+            "height": 19
+          },
+          {
+            "fixture": 4,
+            "entropy": "ANS",
+            "width": 257,
+            "height": 3
+          }
+        ]
+      },
+      {
+        "artifact_id": 12002798598,
+        "artifact_name": "modular-search-faults-windows-2022-cxx20",
+        "artifact_sha256": "e24951bac16f04d95f4cfefc288f07a67d56167b30dd7ddccdd490a289e1b417",
+        "artifact_url": "https://github.com/yunho-c/gjxl/actions/runs/38780445270/artifacts/12002798598",
+        "junit_test_count": 16,
+        "junit_wall_seconds": 7676.0,
+        "passed": true,
+        "shards": 16,
+        "fixture_totals": [
+          {
+            "entropy": "ANS",
+            "width": 17,
+            "height": 19,
+            "allocation_count": 51510
+          },
+          {
+            "entropy": "ANS",
+            "width": 257,
+            "height": 3,
+            "allocation_count": 59338
+          },
+          {
+            "entropy": "prefix",
+            "width": 17,
+            "height": 19,
+            "allocation_count": 31003
+          },
+          {
+            "entropy": "prefix",
+            "width": 257,
+            "height": 3,
+            "allocation_count": 31684
+          }
+        ],
+        "injected_failures": 173535,
+        "shard_seconds": {
+          "modular_legacy_search_faults_shard_0": 1910.62,
+          "modular_legacy_search_faults_shard_1": 1908.64,
+          "modular_legacy_search_faults_shard_2": 1909.72,
+          "modular_legacy_search_faults_shard_3": 1916.82,
+          "modular_legacy_search_faults_shard_4": 1917.56,
+          "modular_legacy_search_faults_shard_5": 1921.49,
+          "modular_legacy_search_faults_shard_6": 1911.53,
+          "modular_legacy_search_faults_shard_7": 1923.08,
+          "modular_legacy_search_faults_shard_8": 1910.72,
+          "modular_legacy_search_faults_shard_9": 1919.99,
+          "modular_legacy_search_faults_shard_10": 1910.01,
+          "modular_legacy_search_faults_shard_11": 1908.35,
+          "modular_legacy_search_faults_shard_12": 1927.7,
+          "modular_legacy_search_faults_shard_13": 1930.13,
+          "modular_legacy_search_faults_shard_14": 1923.19,
+          "modular_legacy_search_faults_shard_15": 1927.86
+        },
+        "every_allocation_covered_once": true,
+        "shard_reports": [
+          {
+            "shard": 0,
+            "injected_failures": [
+              1938,
+              1981,
+              3220,
+              3709
+            ],
+            "first_successful_indices": [
+              31008,
+              31696,
+              51520,
+              59344
+            ],
+            "case_seconds": [
+              191.023,
+              412.711,
+              389.666,
+              911.571
+            ],
+            "passed": true
+          },
+          {
+            "shard": 1,
+            "injected_failures": [
+              1938,
+              1981,
+              3220,
+              3709
+            ],
+            "first_successful_indices": [
+              31009,
+              31697,
+              51521,
+              59345
+            ],
+            "case_seconds": [
+              190.7,
+              411.793,
+              389.489,
+              911.061
+            ],
+            "passed": true
+          },
+          {
+            "shard": 2,
+            "injected_failures": [
+              1938,
+              1981,
+              3220,
+              3709
+            ],
+            "first_successful_indices": [
+              31010,
+              31698,
+              51522,
+              59346
+            ],
+            "case_seconds": [
+              190.753,
+              412.41,
+              389.506,
+              911.452
+            ],
+            "passed": true
+          },
+          {
+            "shard": 3,
+            "injected_failures": [
+              1938,
+              1981,
+              3220,
+              3709
+            ],
+            "first_successful_indices": [
+              31011,
+              31699,
+              51523,
+              59347
+            ],
+            "case_seconds": [
+              190.647,
+              412.049,
+              389.634,
+              918.89
+            ],
+            "passed": true
+          },
+          {
+            "shard": 4,
+            "injected_failures": [
+              1938,
+              1980,
+              3220,
+              3709
+            ],
+            "first_successful_indices": [
+              31012,
+              31684,
+              51524,
+              59348
+            ],
+            "case_seconds": [
+              190.762,
+              412.527,
+              391.078,
+              917.585
+            ],
+            "passed": true
+          },
+          {
+            "shard": 5,
+            "injected_failures": [
+              1938,
+              1980,
+              3220,
+              3709
+            ],
+            "first_successful_indices": [
+              31013,
+              31685,
+              51525,
+              59349
+            ],
+            "case_seconds": [
+              191,
+              412.283,
+              391.181,
+              921.418
+            ],
+            "passed": true
+          },
+          {
+            "shard": 6,
+            "injected_failures": [
+              1938,
+              1980,
+              3219,
+              3709
+            ],
+            "first_successful_indices": [
+              31014,
+              31686,
+              51510,
+              59350
+            ],
+            "case_seconds": [
+              191.098,
+              412.662,
+              390.229,
+              911.945
+            ],
+            "passed": true
+          },
+          {
+            "shard": 7,
+            "injected_failures": [
+              1938,
+              1980,
+              3219,
+              3709
+            ],
+            "first_successful_indices": [
+              31015,
+              31687,
+              51511,
+              59351
+            ],
+            "case_seconds": [
+              190.798,
+              412.625,
+              391.006,
+              922.989
+            ],
+            "passed": true
+          },
+          {
+            "shard": 8,
+            "injected_failures": [
+              1938,
+              1980,
+              3219,
+              3709
+            ],
+            "first_successful_indices": [
+              31016,
+              31688,
+              51512,
+              59352
+            ],
+            "case_seconds": [
+              190.991,
+              412.08,
+              389.572,
+              912.505
+            ],
+            "passed": true
+          },
+          {
+            "shard": 9,
+            "injected_failures": [
+              1938,
+              1980,
+              3219,
+              3709
+            ],
+            "first_successful_indices": [
+              31017,
+              31689,
+              51513,
+              59353
+            ],
+            "case_seconds": [
+              190.509,
+              412.434,
+              389.714,
+              921.738
+            ],
+            "passed": true
+          },
+          {
+            "shard": 10,
+            "injected_failures": [
+              1938,
+              1980,
+              3219,
+              3708
+            ],
+            "first_successful_indices": [
+              31018,
+              31690,
+              51514,
+              59338
+            ],
+            "case_seconds": [
+              190.463,
+              412.136,
+              389.441,
+              912.329
+            ],
+            "passed": true
+          },
+          {
+            "shard": 11,
+            "injected_failures": [
+              1937,
+              1980,
+              3219,
+              3708
+            ],
+            "first_successful_indices": [
+              31003,
+              31691,
+              51515,
+              59339
+            ],
+            "case_seconds": [
+              190.421,
+              411.798,
+              389.393,
+              911.056
+            ],
+            "passed": true
+          },
+          {
+            "shard": 12,
+            "injected_failures": [
+              1937,
+              1980,
+              3219,
+              3708
+            ],
+            "first_successful_indices": [
+              31004,
+              31692,
+              51516,
+              59340
+            ],
+            "case_seconds": [
+              190.593,
+              412.98,
+              393.182,
+              925.39
+            ],
+            "passed": true
+          },
+          {
+            "shard": 13,
+            "injected_failures": [
+              1937,
+              1980,
+              3219,
+              3708
+            ],
+            "first_successful_indices": [
+              31005,
+              31693,
+              51517,
+              59341
+            ],
+            "case_seconds": [
+              190.712,
+              412.297,
+              393.483,
+              927.891
+            ],
+            "passed": true
+          },
+          {
+            "shard": 14,
+            "injected_failures": [
+              1937,
+              1980,
+              3219,
+              3708
+            ],
+            "first_successful_indices": [
+              31006,
+              31694,
+              51518,
+              59342
+            ],
+            "case_seconds": [
+              190.902,
+              412.643,
+              393.366,
+              920.389
+            ],
+            "passed": true
+          },
+          {
+            "shard": 15,
+            "injected_failures": [
+              1937,
+              1980,
+              3219,
+              3708
+            ],
+            "first_successful_indices": [
+              31007,
+              31695,
+              51519,
+              59343
+            ],
+            "case_seconds": [
+              191.065,
+              413.3,
+              393.49,
+              924.42
+            ],
+            "passed": true
+          }
+        ],
+        "fixture_order": [
+          {
+            "fixture": 1,
+            "entropy": "prefix",
+            "width": 17,
+            "height": 19
+          },
+          {
+            "fixture": 2,
+            "entropy": "prefix",
+            "width": 257,
+            "height": 3
+          },
+          {
+            "fixture": 3,
+            "entropy": "ANS",
+            "width": 17,
+            "height": 19
+          },
+          {
+            "fixture": 4,
+            "entropy": "ANS",
+            "width": 257,
+            "height": 3
+          }
+        ]
+      },
+      {
+        "artifact_id": 12005052160,
+        "artifact_name": "modular-search-faults-windows-2022-cxx23",
+        "artifact_sha256": "2502c098d04bf7e4bf2b25cf8c667d364233b1d07f18c4c9a40d79953714c8e3",
+        "artifact_url": "https://github.com/yunho-c/gjxl/actions/runs/38780445270/artifacts/12005052160",
+        "junit_test_count": 16,
+        "junit_wall_seconds": 9666.0,
+        "passed": true,
+        "shards": 16,
+        "fixture_totals": [
+          {
+            "entropy": "ANS",
+            "width": 17,
+            "height": 19,
+            "allocation_count": 51510
+          },
+          {
+            "entropy": "ANS",
+            "width": 257,
+            "height": 3,
+            "allocation_count": 59338
+          },
+          {
+            "entropy": "prefix",
+            "width": 17,
+            "height": 19,
+            "allocation_count": 31003
+          },
+          {
+            "entropy": "prefix",
+            "width": 257,
+            "height": 3,
+            "allocation_count": 31684
+          }
+        ],
+        "injected_failures": 173535,
+        "shard_seconds": {
+          "modular_legacy_search_faults_shard_0": 2415.8,
+          "modular_legacy_search_faults_shard_1": 2417.5,
+          "modular_legacy_search_faults_shard_2": 2414.77,
+          "modular_legacy_search_faults_shard_3": 2417.83,
+          "modular_legacy_search_faults_shard_4": 2407.22,
+          "modular_legacy_search_faults_shard_5": 2408.11,
+          "modular_legacy_search_faults_shard_6": 2416.94,
+          "modular_legacy_search_faults_shard_7": 2407.26,
+          "modular_legacy_search_faults_shard_8": 2423.04,
+          "modular_legacy_search_faults_shard_9": 2417.06,
+          "modular_legacy_search_faults_shard_10": 2414.56,
+          "modular_legacy_search_faults_shard_11": 2415.14,
+          "modular_legacy_search_faults_shard_12": 2418.48,
+          "modular_legacy_search_faults_shard_13": 2419.45,
+          "modular_legacy_search_faults_shard_14": 2419.49,
+          "modular_legacy_search_faults_shard_15": 2417.0
+        },
+        "every_allocation_covered_once": true,
+        "shard_reports": [
+          {
+            "shard": 0,
+            "injected_failures": [
+              1938,
+              1981,
+              3220,
+              3709
+            ],
+            "first_successful_indices": [
+              31008,
+              31696,
+              51520,
+              59344
+            ],
+            "case_seconds": [
+              243.83,
+              520.372,
+              492.954,
+              1151.5
+            ],
+            "passed": true
+          },
+          {
+            "shard": 1,
+            "injected_failures": [
+              1938,
+              1981,
+              3220,
+              3709
+            ],
+            "first_successful_indices": [
+              31009,
+              31697,
+              51521,
+              59345
+            ],
+            "case_seconds": [
+              244.104,
+              520.137,
+              492.645,
+              1153.18
+            ],
+            "passed": true
+          },
+          {
+            "shard": 2,
+            "injected_failures": [
+              1938,
+              1981,
+              3220,
+              3709
+            ],
+            "first_successful_indices": [
+              31010,
+              31698,
+              51522,
+              59346
+            ],
+            "case_seconds": [
+              243.873,
+              520.402,
+              491.966,
+              1151.39
+            ],
+            "passed": true
+          },
+          {
+            "shard": 3,
+            "injected_failures": [
+              1938,
+              1981,
+              3220,
+              3709
+            ],
+            "first_successful_indices": [
+              31011,
+              31699,
+              51523,
+              59347
+            ],
+            "case_seconds": [
+              244.214,
+              519.754,
+              492.336,
+              1154.15
+            ],
+            "passed": true
+          },
+          {
+            "shard": 4,
+            "injected_failures": [
+              1938,
+              1980,
+              3220,
+              3709
+            ],
+            "first_successful_indices": [
+              31012,
+              31684,
+              51524,
+              59348
+            ],
+            "case_seconds": [
+              239.175,
+              519.271,
+              491.96,
+              1149.79
+            ],
+            "passed": true
+          },
+          {
+            "shard": 5,
+            "injected_failures": [
+              1938,
+              1980,
+              3220,
+              3709
+            ],
+            "first_successful_indices": [
+              31013,
+              31685,
+              51525,
+              59349
+            ],
+            "case_seconds": [
+              239.383,
+              519.678,
+              492.091,
+              1149.92
+            ],
+            "passed": true
+          },
+          {
+            "shard": 6,
+            "injected_failures": [
+              1938,
+              1980,
+              3219,
+              3709
+            ],
+            "first_successful_indices": [
+              31014,
+              31686,
+              51510,
+              59350
+            ],
+            "case_seconds": [
+              239.305,
+              519.451,
+              491.605,
+              1159.52
+            ],
+            "passed": true
+          },
+          {
+            "shard": 7,
+            "injected_failures": [
+              1938,
+              1980,
+              3219,
+              3709
+            ],
+            "first_successful_indices": [
+              31015,
+              31687,
+              51511,
+              59351
+            ],
+            "case_seconds": [
+              239.695,
+              519.507,
+              491.749,
+              1149.23
+            ],
+            "passed": true
+          },
+          {
+            "shard": 8,
+            "injected_failures": [
+              1938,
+              1980,
+              3219,
+              3709
+            ],
+            "first_successful_indices": [
+              31016,
+              31688,
+              51512,
+              59352
+            ],
+            "case_seconds": [
+              238.94,
+              518.499,
+              491.106,
+              1167.39
+            ],
+            "passed": true
+          },
+          {
+            "shard": 9,
+            "injected_failures": [
+              1938,
+              1980,
+              3219,
+              3709
+            ],
+            "first_successful_indices": [
+              31017,
+              31689,
+              51513,
+              59353
+            ],
+            "case_seconds": [
+              239.151,
+              519.351,
+              491.235,
+              1160.29
+            ],
+            "passed": true
+          },
+          {
+            "shard": 10,
+            "injected_failures": [
+              1938,
+              1980,
+              3219,
+              3708
+            ],
+            "first_successful_indices": [
+              31018,
+              31690,
+              51514,
+              59338
+            ],
+            "case_seconds": [
+              239.178,
+              517.565,
+              491.47,
+              1159.31
+            ],
+            "passed": true
+          },
+          {
+            "shard": 11,
+            "injected_failures": [
+              1937,
+              1980,
+              3219,
+              3708
+            ],
+            "first_successful_indices": [
+              31003,
+              31691,
+              51515,
+              59339
+            ],
+            "case_seconds": [
+              239.253,
+              517.639,
+              490.131,
+              1161.05
+            ],
+            "passed": true
+          },
+          {
+            "shard": 12,
+            "injected_failures": [
+              1937,
+              1980,
+              3219,
+              3708
+            ],
+            "first_successful_indices": [
+              31004,
+              31692,
+              51516,
+              59340
+            ],
+            "case_seconds": [
+              241.54,
+              522.132,
+              493.613,
+              1154.1
+            ],
+            "passed": true
+          },
+          {
+            "shard": 13,
+            "injected_failures": [
+              1937,
+              1980,
+              3219,
+              3708
+            ],
+            "first_successful_indices": [
+              31005,
+              31693,
+              51517,
+              59341
+            ],
+            "case_seconds": [
+              241.515,
+              522.156,
+              493.913,
+              1154.72
+            ],
+            "passed": true
+          },
+          {
+            "shard": 14,
+            "injected_failures": [
+              1937,
+              1980,
+              3219,
+              3708
+            ],
+            "first_successful_indices": [
+              31006,
+              31694,
+              51518,
+              59342
+            ],
+            "case_seconds": [
+              241.86,
+              522.295,
+              493.258,
+              1155.19
+            ],
+            "passed": true
+          },
+          {
+            "shard": 15,
+            "injected_failures": [
+              1937,
+              1980,
+              3219,
+              3708
+            ],
+            "first_successful_indices": [
+              31007,
+              31695,
+              51519,
+              59343
+            ],
+            "case_seconds": [
+              241.223,
+              522.489,
+              493.181,
+              1153.16
+            ],
+            "passed": true
+          }
+        ],
+        "fixture_order": [
+          {
+            "fixture": 1,
+            "entropy": "prefix",
+            "width": 17,
+            "height": 19
+          },
+          {
+            "fixture": 2,
+            "entropy": "prefix",
+            "width": 257,
+            "height": 3
+          },
+          {
+            "fixture": 3,
+            "entropy": "ANS",
+            "width": 17,
+            "height": 19
+          },
+          {
+            "fixture": 4,
+            "entropy": "ANS",
+            "width": 257,
+            "height": 3
+          }
+        ]
+      }
+    ],
+    "manual_regular_repetition": [
+      {
+        "artifact_id": 11997675821,
+        "artifact_name": "native-macos-26-cxx23",
+        "artifact_sha256": "e37f53d2469a9ad877656947a8e0ce0214d2d4b1d4c56db96b9278b21d0f771b",
+        "artifact_url": "https://github.com/yunho-c/gjxl/actions/runs/38780445270/artifacts/11997675821",
+        "junit_test_count": 48,
+        "regular_seconds": 19.926,
+        "public_seconds": 35.1209,
+        "public_injected_failures": 7221,
+        "regular_summary": {
+          "summary": true,
+          "exhaustive_fixtures": 40,
+          "probe_fixtures": 4,
+          "injected_failures": 18126,
+          "passed": true
+        },
+        "passed": true
+      },
+      {
+        "artifact_id": 11997450282,
+        "artifact_name": "native-windows-2022-cxx20",
+        "artifact_sha256": "f3c0833f88558f6eda9e5f45b572ab48c145447ba0661df851eff647ed902c29",
+        "artifact_url": "https://github.com/yunho-c/gjxl/actions/runs/38780445270/artifacts/11997450282",
+        "junit_test_count": 45,
+        "regular_seconds": 25.4861,
+        "public_seconds": 206.658,
+        "public_injected_failures": 7455,
+        "regular_summary": {
+          "summary": true,
+          "exhaustive_fixtures": 40,
+          "probe_fixtures": 4,
+          "injected_failures": 20510,
+          "passed": true
+        },
+        "passed": true
+      },
+      {
+        "artifact_id": 11996922622,
+        "artifact_name": "native-windows-2022-cxx23",
+        "artifact_sha256": "275ea59eb987c9765782560c69bc9bdcfd6fd6d6fc44e6273f24fc053253b64f",
+        "artifact_url": "https://github.com/yunho-c/gjxl/actions/runs/38780445270/artifacts/11996922622",
+        "junit_test_count": 45,
+        "regular_seconds": 25.4131,
+        "public_seconds": 207.013,
+        "public_injected_failures": 7455,
+        "regular_summary": {
+          "summary": true,
+          "exhaustive_fixtures": 40,
+          "probe_fixtures": 4,
+          "injected_failures": 20510,
+          "passed": true
+        },
+        "passed": true
+      },
+      {
+        "artifact_id": 11996353778,
+        "artifact_name": "native-macos-26-cxx20",
+        "artifact_sha256": "b3b10555b3ace7a8e028c5bc03ddad1daf4fb3c92f714b77e77e8115e6d9c505",
+        "artifact_url": "https://github.com/yunho-c/gjxl/actions/runs/38780445270/artifacts/11996353778",
+        "junit_test_count": 48,
+        "regular_seconds": 14.8165,
+        "public_seconds": 30.4088,
+        "public_injected_failures": 7221,
+        "regular_summary": {
+          "summary": true,
+          "exhaustive_fixtures": 40,
+          "probe_fixtures": 4,
+          "injected_failures": 18126,
+          "passed": true
+        },
+        "passed": true
+      },
+      {
+        "artifact_id": 11996268050,
+        "artifact_name": "native-ubuntu-24.04-cxx20",
+        "artifact_sha256": "5f62a5dc6aba56d1d0c33e722c0f4a436732907c0f4fca49ddbe03590ecfba6e",
+        "artifact_url": "https://github.com/yunho-c/gjxl/actions/runs/38780445270/artifacts/11996268050",
+        "junit_test_count": 45,
+        "regular_seconds": 26.5546,
+        "public_seconds": 105.157,
+        "public_injected_failures": 6477,
+        "regular_summary": {
+          "summary": true,
+          "exhaustive_fixtures": 40,
+          "probe_fixtures": 4,
+          "injected_failures": 18127,
+          "passed": true
+        },
+        "passed": true
+      },
+      {
+        "artifact_id": 11996087649,
+        "artifact_name": "native-ubuntu-24.04-cxx23",
+        "artifact_sha256": "82219929c50e19fb5b89b1e92897d6d86ce2cdc64d604919d3e6c4daca8ed4f0",
+        "artifact_url": "https://github.com/yunho-c/gjxl/actions/runs/38780445270/artifacts/11996087649",
+        "junit_test_count": 45,
+        "regular_seconds": 26.5201,
+        "public_seconds": 121.071,
+        "public_injected_failures": 6477,
+        "regular_summary": {
+          "summary": true,
+          "exhaustive_fixtures": 40,
+          "probe_fixtures": 4,
+          "injected_failures": 18127,
+          "passed": true
+        },
+        "passed": true
+      }
+    ],
+    "historical_run": {
+      "run_id": 38522028697,
+      "head_sha": "1c1a9109b7197c295ced1389ad22c7c5cc243eec",
+      "url": "https://github.com/yunho-c/gjxl/actions/runs/38522028697",
+      "artifacts": [
+        {
+          "artifact_id": 11879192069,
+          "artifact_name": "native-macos-26-cxx20",
+          "artifact_sha256": "c297755c5d8c4aba64fe8ffd7da1bb519bc85590644f88828fec386301f94c27",
+          "search_total": 150007,
+          "all_failure_positions": 168101,
+          "junit_attributes": {
+            "name": "(empty)",
+            "tests": "4",
+            "failures": "0",
+            "disabled": "0",
+            "skipped": "0",
+            "hostname": "",
+            "time": "5381",
+            "timestamp": "2026-10-14T06:51:37"
+          },
+          "legacy_trace_counts_in_fixture_order": [
+            292,
+            319,
+            324,
+            315,
+            299,
+            306,
+            311,
+            324,
+            331,
+            322,
+            329,
+            327,
+            334,
+            425,
+            444,
+            448,
+            444,
+            424,
+            432,
+            434,
+            453,
+            456,
+            450,
+            454,
+            455,
+            456,
+            756,
+            782,
+            27392,
+            27827,
+            1260,
+            1283,
+            44391,
+            50397,
+            330,
+            340,
+            354,
+            355,
+            337,
+            465,
+            468,
+            491,
+            490,
+            475
+          ]
+        },
+        {
+          "artifact_id": 11880282400,
+          "artifact_name": "native-macos-26-cxx23",
+          "artifact_sha256": "ccd848c5f1e0e7bce3d107e10235b16c5b526a6abfb7a027316905339bbf20e8",
+          "search_total": 150007,
+          "all_failure_positions": 168101,
+          "junit_attributes": {
+            "name": "(empty)",
+            "tests": "4",
+            "failures": "0",
+            "disabled": "0",
+            "skipped": "0",
+            "hostname": "",
+            "time": "6315",
+            "timestamp": "2026-10-14T06:53:52"
+          },
+          "legacy_trace_counts_in_fixture_order": [
+            292,
+            319,
+            324,
+            315,
+            299,
+            306,
+            311,
+            324,
+            331,
+            322,
+            329,
+            327,
+            334,
+            425,
+            444,
+            448,
+            444,
+            424,
+            432,
+            434,
+            453,
+            456,
+            450,
+            454,
+            455,
+            456,
+            756,
+            782,
+            27392,
+            27827,
+            1260,
+            1283,
+            44391,
+            50397,
+            330,
+            340,
+            354,
+            355,
+            337,
+            465,
+            468,
+            491,
+            490,
+            475
+          ]
+        },
+        {
+          "artifact_id": 11877972472,
+          "artifact_name": "native-ubuntu-24.04-cxx20",
+          "artifact_sha256": "236ac106a5b4946f79bf5c6d91c7f10d570adb185b81a8ee956113fffa18d9cd",
+          "search_total": 149179,
+          "all_failure_positions": 167274,
+          "junit_attributes": {
+            "name": "(empty)",
+            "tests": "4",
+            "failures": "0",
+            "disabled": "0",
+            "skipped": "0",
+            "hostname": "",
+            "time": "4807",
+            "timestamp": "2026-10-14T06:34:51"
+          },
+          "legacy_trace_counts_in_fixture_order": [
+            292,
+            319,
+            324,
+            315,
+            299,
+            306,
+            311,
+            324,
+            331,
+            322,
+            329,
+            327,
+            334,
+            425,
+            444,
+            448,
+            444,
+            424,
+            432,
+            434,
+            453,
+            456,
+            450,
+            454,
+            455,
+            456,
+            757,
+            782,
+            27070,
+            27734,
+            1260,
+            1283,
+            44067,
+            50308,
+            330,
+            340,
+            354,
+            355,
+            337,
+            465,
+            468,
+            491,
+            490,
+            475
+          ]
+        },
+        {
+          "artifact_id": 11879209878,
+          "artifact_name": "native-ubuntu-24.04-cxx23",
+          "artifact_sha256": "25cf23ae37578a43543e8df44d4f24fe5eab331048cfe8c8c180591168d6bcef",
+          "search_total": 149179,
+          "all_failure_positions": 167274,
+          "junit_attributes": {
+            "name": "(empty)",
+            "tests": "4",
+            "failures": "0",
+            "disabled": "0",
+            "skipped": "0",
+            "hostname": "",
+            "time": "7062",
+            "timestamp": "2026-10-14T06:39:19"
+          },
+          "legacy_trace_counts_in_fixture_order": [
+            292,
+            319,
+            324,
+            315,
+            299,
+            306,
+            311,
+            324,
+            331,
+            322,
+            329,
+            327,
+            334,
+            425,
+            444,
+            448,
+            444,
+            424,
+            432,
+            434,
+            453,
+            456,
+            450,
+            454,
+            455,
+            456,
+            757,
+            782,
+            27070,
+            27734,
+            1260,
+            1283,
+            44067,
+            50308,
+            330,
+            340,
+            354,
+            355,
+            337,
+            465,
+            468,
+            491,
+            490,
+            475
+          ]
+        },
+        {
+          "artifact_id": 11882384558,
+          "artifact_name": "native-windows-2022-cxx20",
+          "artifact_sha256": "d8ee8c830dc264e731ae91534478ea8f9d3286ee4a5cd39be00f1ba36ed91422",
+          "search_total": 173535,
+          "all_failure_positions": 194013,
+          "junit_attributes": {
+            "name": "(empty)",
+            "tests": "16",
+            "failures": "0",
+            "disabled": "0",
+            "skipped": "0",
+            "hostname": "",
+            "time": "9764",
+            "timestamp": "2026-10-14T06:49:06"
+          },
+          "legacy_trace_counts_in_fixture_order": [
+            316,
+            351,
+            358,
+            343,
+            334,
+            340,
+            346,
+            361,
+            370,
+            354,
+            363,
+            363,
+            372,
+            473,
+            500,
+            504,
+            497,
+            483,
+            489,
+            491,
+            513,
+            520,
+            506,
+            510,
+            516,
+            518,
+            864,
+            891,
+            31003,
+            31684,
+            1474,
+            1496,
+            51510,
+            59338,
+            368,
+            383,
+            398,
+            399,
+            378,
+            529,
+            531,
+            566,
+            566,
+            544
+          ]
+        },
+        {
+          "artifact_id": 11880354729,
+          "artifact_name": "native-windows-2022-cxx23",
+          "artifact_sha256": "c3c5ec53faf09b884e3067b26ac9d32b68ae0e503b1ed5b598466ecc0c0587ed",
+          "search_total": 173535,
+          "all_failure_positions": 194013,
+          "junit_attributes": {
+            "name": "(empty)",
+            "tests": "16",
+            "failures": "0",
+            "disabled": "0",
+            "skipped": "0",
+            "hostname": "",
+            "time": "7692",
+            "timestamp": "2026-10-14T06:48:16"
+          },
+          "legacy_trace_counts_in_fixture_order": [
+            316,
+            351,
+            358,
+            343,
+            334,
+            340,
+            346,
+            361,
+            370,
+            354,
+            363,
+            363,
+            372,
+            473,
+            500,
+            504,
+            497,
+            483,
+            489,
+            491,
+            513,
+            520,
+            506,
+            510,
+            516,
+            518,
+            864,
+            891,
+            31003,
+            31684,
+            1474,
+            1496,
+            51510,
+            59338,
+            368,
+            383,
+            398,
+            399,
+            378,
+            529,
+            531,
+            566,
+            566,
+            544
+          ]
+        }
+      ]
+    },
+    "coverage_comparisons": [
+      {
+        "artifact": "native-macos-26-cxx20",
+        "run_id": 38780341426,
+        "historical_artifact_id": 11879192069,
+        "all_44_legacy_trace_counts_match": true,
+        "regular_failure_positions": 25347,
+        "previous_failure_positions": 168101
+      },
+      {
+        "artifact": "native-macos-26-cxx23",
+        "run_id": 38780341426,
+        "historical_artifact_id": 11880282400,
+        "all_44_legacy_trace_counts_match": true,
+        "regular_failure_positions": 25347,
+        "previous_failure_positions": 168101
+      },
+      {
+        "artifact": "native-ubuntu-24.04-cxx20",
+        "run_id": 38780341426,
+        "historical_artifact_id": 11877972472,
+        "all_44_legacy_trace_counts_match": true,
+        "regular_failure_positions": 24604,
+        "previous_failure_positions": 167274
+      },
+      {
+        "artifact": "native-ubuntu-24.04-cxx23",
+        "run_id": 38780341426,
+        "historical_artifact_id": 11879209878,
+        "all_44_legacy_trace_counts_match": true,
+        "regular_failure_positions": 24604,
+        "previous_failure_positions": 167274
+      },
+      {
+        "artifact": "native-windows-2022-cxx20",
+        "run_id": 38780341426,
+        "historical_artifact_id": 11882384558,
+        "all_44_legacy_trace_counts_match": true,
+        "regular_failure_positions": 27965,
+        "previous_failure_positions": 194013
+      },
+      {
+        "artifact": "native-windows-2022-cxx23",
+        "run_id": 38780341426,
+        "historical_artifact_id": 11880354729,
+        "all_44_legacy_trace_counts_match": true,
+        "regular_failure_positions": 27965,
+        "previous_failure_positions": 194013
+      },
+      {
+        "artifact": "modular-search-faults-macos-26-cxx20",
+        "run_id": 38780445270,
+        "historical_artifact_id": 11879192069,
+        "all_four_exhaustive_search_counts_match": true,
+        "search_failure_positions": 150007
+      },
+      {
+        "artifact": "modular-search-faults-macos-26-cxx23",
+        "run_id": 38780445270,
+        "historical_artifact_id": 11880282400,
+        "all_four_exhaustive_search_counts_match": true,
+        "search_failure_positions": 150007
+      },
+      {
+        "artifact": "modular-search-faults-ubuntu-24.04-cxx20",
+        "run_id": 38780445270,
+        "historical_artifact_id": 11877972472,
+        "all_four_exhaustive_search_counts_match": true,
+        "search_failure_positions": 149179
+      },
+      {
+        "artifact": "modular-search-faults-ubuntu-24.04-cxx23",
+        "run_id": 38780445270,
+        "historical_artifact_id": 11879209878,
+        "all_four_exhaustive_search_counts_match": true,
+        "search_failure_positions": 149179
+      },
+      {
+        "artifact": "modular-search-faults-windows-2022-cxx20",
+        "run_id": 38780445270,
+        "historical_artifact_id": 11882384558,
+        "all_four_exhaustive_search_counts_match": true,
+        "search_failure_positions": 173535
+      },
+      {
+        "artifact": "modular-search-faults-windows-2022-cxx23",
+        "run_id": 38780445270,
+        "historical_artifact_id": 11880354729,
+        "all_four_exhaustive_search_counts_match": true,
+        "search_failure_positions": 173535
+      },
+      {
+        "artifact": "native-macos-26-cxx20",
+        "run_id": 38780445270,
+        "historical_artifact_id": 11879192069,
+        "all_44_legacy_trace_counts_match": true,
+        "regular_failure_positions": 25347,
+        "previous_failure_positions": 168101
+      },
+      {
+        "artifact": "native-macos-26-cxx23",
+        "run_id": 38780445270,
+        "historical_artifact_id": 11880282400,
+        "all_44_legacy_trace_counts_match": true,
+        "regular_failure_positions": 25347,
+        "previous_failure_positions": 168101
+      },
+      {
+        "artifact": "native-ubuntu-24.04-cxx20",
+        "run_id": 38780445270,
+        "historical_artifact_id": 11877972472,
+        "all_44_legacy_trace_counts_match": true,
+        "regular_failure_positions": 24604,
+        "previous_failure_positions": 167274
+      },
+      {
+        "artifact": "native-ubuntu-24.04-cxx23",
+        "run_id": 38780445270,
+        "historical_artifact_id": 11879209878,
+        "all_44_legacy_trace_counts_match": true,
+        "regular_failure_positions": 24604,
+        "previous_failure_positions": 167274
+      },
+      {
+        "artifact": "native-windows-2022-cxx20",
+        "run_id": 38780445270,
+        "historical_artifact_id": 11882384558,
+        "all_44_legacy_trace_counts_match": true,
+        "regular_failure_positions": 27965,
+        "previous_failure_positions": 194013
+      },
+      {
+        "artifact": "native-windows-2022-cxx23",
+        "run_id": 38780445270,
+        "historical_artifact_id": 11880354729,
+        "all_44_legacy_trace_counts_match": true,
+        "regular_failure_positions": 27965,
+        "previous_failure_positions": 194013
+      }
+    ],
+    "audit": {
+      "complete_exhaustive_shards": 48,
+      "full_exhaustive_coverage": true,
+      "search_failure_positions_across_six_configurations": 945442,
+      "normal_reports_require_40_exhaustive_and_four_probe_fixtures": true,
+      "public_reports_require_four_exhaustive_fixtures_and_exact_decoding": true,
+      "every_shard_progression_and_contiguous_union_checked": true,
+      "all_legacy_counts_match_historical_complete_run": true,
+      "junit_requires_all_expected_tests_passed_without_skips": true,
+      "ordinary_junit_contains_no_exhaustive_shards": true
+    },
+    "workflow_sha256": "eb3ea15ac511f8ac6b9ff5fa746ad0a0d70c8d4ecf97e250db0b54c3f1975484",
+    "timing_note": "Sum of the two allocation-test durations under concurrent CTest, not step wall time or whole CI latency. Historical comparison changes test coverage policy; it is not an encoder speedup measurement. Hosted runner variability is visible in the retained manual repetition."
   },
   "limitations": [
     "The matched timings are local diagnostic measurements, not a hosted CI speedup factor.",
-    "The full historical CI run predates the test split. No new complete exhaustive matrix is claimed.",
     "The two regular targets do not include the unchanged API, component and training allocation tests.",
-    "Allocation counts vary across compiler and platform."
+    "Allocation counts vary across compiler and platform.",
+    "Sum of the two allocation-test durations under concurrent CTest, not step wall time or whole CI latency. Historical comparison changes test coverage policy; it is not an encoder speedup measurement. Hosted runner variability is visible in the retained manual repetition."
   ],
   "test_commit": "0efc7bb95feb02b441b12ee46a0aa5106a6c67cf",
   "source_sha256": {

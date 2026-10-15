@@ -129,7 +129,49 @@ resource-release checks remain active and the linked decoder is uninstrumented.
 Default exclusion and opt-in 1/4/16-shard registration passed, as did the CLI
 rejection checks and `actionlint`.
 
-Hosted qualification of this new workflow has not yet run. The results ledger
-distinguishes the bounded opt-in shard smoke check from a complete exhaustive
-run; neither that smoke check nor historical PR #48 results establish a new
-complete hosted matrix.
+## Hosted qualification (2026-10-15)
+
+[PR #49](https://github.com/yunho-c/gjxl/pull/49) qualifies code revision
+`2b7aa16be3edafdb00a0223c30b945fdf69c7f24`. The subsequent evidence update changes
+only documentation. All six native platform/standard combinations and CUDA
+compilation passed in [ordinary PR CI](https://github.com/yunho-c/gjxl/actions/runs/38780341426),
+as did [all three Rust wrappers](https://github.com/yunho-c/gjxl/actions/runs/38780341142).
+The [explicit qualification](https://github.com/yunho-c/gjxl/actions/runs/38780445270)
+also passed its six complete exhaustive search jobs and repeated ordinary native
+qualification. No encoder or test-source fixes were needed for these runs.
+
+| Ordinary PR configuration | Legacy regular s | Public learned s | Combined allocation-test s | Previous exhaustive step min |
+| --- | ---: | ---: | ---: | ---: |
+| macos-26 C++20 | 26.38 | 53.06 | 79.44 | 89.7 |
+| macos-26 C++23 | 16.93 | 32.30 | 49.23 | 105.2 |
+| ubuntu-24.04 C++20 | 26.61 | 121.43 | 148.03 | 80.1 |
+| ubuntu-24.04 C++23 | 26.24 | 119.95 | 146.19 | 117.7 |
+| windows-2022 C++20 | 33.33 | 259.60 | 292.93 | 162.7 |
+| windows-2022 C++23 | 32.67 | 266.48 | 299.15 | 128.2 |
+
+The combined column sums two test durations under concurrent CTest; it is not
+the wall time of the entire Modular step or native job. The historical column
+comes from PR #48's full allocation step. This comparison measures a coverage
+policy change, not encoder throughput. The explicit run's repeated regular
+measurements are retained in the ledger, including hosted-runner variability.
+
+Each regular configuration covers 24,604 failure positions/probes on Linux,
+25,347 on macOS, or 27,965 on Windows in these two targets. Public learned
+fixtures account for 6,477, 7,221, or 7,455 positions respectively. The other API,
+component and training fault tests remain additional coverage.
+
+All 48 exhaustive shards passed: four per Linux/macOS configuration and sixteen
+per Windows configuration. Together they inject 945,442 failures across the six
+configurations. Each configuration retains all four legacy search fixtures:
+149,179 positions on Linux, 150,007 on macOS, and 173,535 on Windows. Every count
+matches its historical complete qualification.
+
+The artifact audit checks all expected JUnit results and report rows, exact
+decoding for public fixtures, all 44 legacy trace counts, dynamic probe positions,
+and each shard's allocation progression. For each exhaustive fixture the shard
+union covers every index exactly once; no failed, missing, or skipped shard is
+accepted. Artifact IDs, URLs, archive hashes, timings and per-fixture counts are
+retained in the results ledger.
+
+Weekly runs still require this workflow to reach the default branch (`main`).
+Manual qualification remains available on the feature branch before that merge.
