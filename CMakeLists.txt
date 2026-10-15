@@ -364,6 +364,7 @@ add_library(
   src/codestream/modular/frame_encoder.cpp
   src/codestream/modular/prepared_streams.cpp
   src/codestream/modular/reference_workflow.cpp
+  src/codestream/modular/reference_selection_workflow.cpp
   src/codestream/modular/reference_learning_workflow.cpp
   src/codestream/modular/candidate_cost.cpp
   src/codestream/modular/candidate_screen.cpp
@@ -2456,6 +2457,11 @@ if(GJXL_BUILD_TESTS)
   target_link_libraries(gjxl_modular_parallel_entropy_test PRIVATE gjxl_codestream)
   add_test(NAME modular_parallel_entropy COMMAND gjxl_modular_parallel_entropy_test)
   set_tests_properties(modular_parallel_entropy PROPERTIES TIMEOUT 180)
+
+  add_executable(gjxl_modular_parallel_selection_test tests/modular_parallel_selection_test.cpp)
+  target_link_libraries(gjxl_modular_parallel_selection_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_parallel_selection COMMAND gjxl_modular_parallel_selection_test)
+  set_tests_properties(modular_parallel_selection PROPERTIES TIMEOUT 180)
 
   add_executable(gjxl_modular_histogram_learning_test tests/modular_histogram_learning_test.cpp)
   target_link_libraries(gjxl_modular_histogram_learning_test PRIVATE gjxl_codestream)

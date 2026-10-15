@@ -44,8 +44,8 @@ struct ModularEncodingSummary {
 // Atomic output and summary replacement. Input layout and format are validated
 // before admission. GPU requests are unsupported; no float conversion occurs.
 // Learned uses staged, nonblocking memory admission: a busy domain can return
-// Unavailable. Independent local sample preparation/fits use the requested CPU
-// limit and shared domain; global fitting stays serial. Local entropy models
+// Unavailable. Independent local selection and sample preparation/fits use the
+// requested CPU limit and shared domain; global fitting stays serial. Local entropy models
 // and payloads run across streams; shared ANS configuration search can use
 // cluster workers. Memory admission may reduce concurrency without changing
 // encoding decisions.

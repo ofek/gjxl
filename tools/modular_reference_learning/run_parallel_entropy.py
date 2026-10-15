@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bounded, paired complete-call check of serial versus parallel entropy."""
+"""Bounded, paired complete-call check of parallel entropy or stream selection."""
 import argparse
 import hashlib
 import json
@@ -34,6 +34,7 @@ def main():
     parser.add_argument("--threads", type=int, default=4)
     parser.add_argument("--repetitions", type=int, default=3)
     parser.add_argument("--route", choices=["cpu", "shared-cpu", "hybrid", "auto"], default="cpu")
+    parser.add_argument("--phase", choices=["entropy", "selection"], default="entropy")
     args = parser.parse_args()
     if not 2 <= args.threads <= 256 or args.repetitions < 1:
         parser.error("threads must be 2..256 and repetitions positive")
@@ -43,15 +44,20 @@ def main():
     manifest = {"schema": 1, "status": "running", "input": str(source),
                 "input_sha256": digest(source), "binary": str(binary),
                 "binary_sha256": digest(binary), "threads": args.threads,
-                "repetitions": args.repetitions, "route": args.route,
+                "repetitions": args.repetitions, "route": args.route, "phase": args.phase,
                 "revision": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=repo, text=True).strip(),
                 "stages": ["input", "transforms", "training", "tokens", "model", "emission",
                            "assembly", "gpu_input_tokens", "stream_encoding"],
                 "boundary": "Complete encoder call; input loading, backend setup, independent decode and file I/O excluded. "
-                            "Local learning and CPU ceiling fixed; only entropy participation changes. "
+                            f"Learning and CPU ceiling fixed; only {args.phase} participation changes. "
                             "One unmeasured warmup per mode; alternating measured order; active desktop.",
                 "runs": []}
     patch = subprocess.check_output(["git", "diff", "HEAD", "--"], cwd=repo)
+    for name in subprocess.check_output(["git", "ls-files", "--others", "--exclude-standard"], cwd=repo, text=True).splitlines():
+        diff = subprocess.run(["git", "diff", "--no-index", "--", "/dev/null", name], cwd=repo, capture_output=True)
+        if diff.returncode not in (0, 1):
+            raise RuntimeError(diff.stderr.decode())
+        patch += diff.stdout
     (output / "source.diff").write_bytes(patch)
     manifest["source_diff_sha256"] = digest(output / "source.diff")
     representative = None
@@ -59,16 +65,19 @@ def main():
         for repetition in range(-1, args.repetitions):
             modes = [1, args.threads] if repetition % 2 == 0 else [args.threads, 1]
             for participants in modes:
-                name = f"{'warmup' if repetition < 0 else f'rep-{repetition}'}-entropy-{participants}"
+                name = f"{'warmup' if repetition < 0 else f'rep-{repetition}'}-{args.phase}-{participants}"
                 directory = output / name
                 command = [str(binary), str(source), str(directory), args.route, "auto", "best", "fit-off",
-                           str(args.threads), str(args.threads), str(participants)]
+                           str(args.threads), str(args.threads),
+                           str(participants if args.phase == "entropy" else args.threads)]
+                if args.phase == "selection":
+                    command.append(str(participants))
                 before = environment()
                 with open(output / f"{name}.log", "w") as log:
                     subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=True)
                 after = environment()
                 result = json.loads((directory / "result.json").read_text())
-                assert result["schema"] == 3 and result["exact_decode"]
+                assert result["schema"] == (4 if args.phase == "selection" else 3) and result["exact_decode"]
                 assert len(result["profile_wall"]) == 9
                 assert all(value >= -1e-6 for value in result["profile_wall"])
                 encoded = directory / "output.jxl"
@@ -78,7 +87,7 @@ def main():
                     manifest["output_sha256"] = encoded_hash
                     manifest["output_artifact"] = str(encoded.relative_to(output))
                 else:
-                    assert encoded_hash == manifest["output_sha256"], "Entropy parallelism changed complete bytes"
+                    assert encoded_hash == manifest["output_sha256"], "Parallelism changed complete bytes"
                     # Each run already independently decoded its own output.
                     # Retain one identical compressed artifact to save storage.
                     encoded.unlink()
@@ -93,7 +102,8 @@ def main():
             runs = [r["result"] for r in manifest["runs"] if r["measured"] and r["participants"] == participants]
             manifest["medians"][str(participants)] = {
                 "complete_seconds": statistics.median(r["total"]["wall"] for r in runs),
-                "model_and_emission_seconds": statistics.median(
+                ("selection_seconds" if args.phase == "selection" else "model_and_emission_seconds"): statistics.median(
+                    r["profile_wall"][1] if args.phase == "selection" else
                     r["profile_wall"][4] + r["profile_wall"][5] + r["profile_wall"][8] for r in runs),
                 "peak_backing_bytes": max(r["memory"]["peak_backing_bytes"] for r in runs),
                 "peak_committed_bytes": max(r["memory"]["peak_committed_bytes"] for r in runs)}

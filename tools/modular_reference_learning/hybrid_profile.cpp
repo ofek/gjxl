@@ -43,8 +43,11 @@ template <typename T> void Array(std::ostream &out, const T &a) {
 }
 } // namespace
 int main(int argc, char **argv) try {
-  Check(argc >= 6 && argc <= 10, "hybrid_profile INPUT OUT cpu|shared-cpu|hybrid|auto auto|buffered "
-                                "best|all [fit-off|fit-on [learning-participants [cpu-ceiling [entropy-participants]]]]");
+  Check(argc >= 6 && argc <= 11, "hybrid_profile INPUT OUT cpu|shared-cpu|hybrid|auto auto|buffered "
+                                "best|all [fit-off|fit-on [learning-participants [cpu-ceiling [entropy-participants [selection-participants]]]]]");
+  const bool selection_diagnostics = argc >= 11;
+  const size_t selection_participants = selection_diagnostics ? std::stoull(argv[10]) : 1;
+  Check(selection_participants <= 256, "Invalid selection participant limit");
   const bool entropy_diagnostics = argc >= 10;
   const size_t entropy_participants = entropy_diagnostics ? std::stoull(argv[9]) : 1;
   Check(entropy_participants <= 256, "Invalid entropy participant limit");
@@ -86,6 +89,7 @@ int main(int argc, char **argv) try {
                                      : (uint16_t(view.bytes[pos]) << 8) | view.bytes[pos + 1]);
     }
   ReferenceWorkflowOptions options;
+  options.selection_cpu_participants = selection_participants;
   options.learning_cpu_participants = learning_participants;
   options.buffering =
       buffering == "auto" ? ReferenceBuffering::kAutomatic : ReferenceBuffering::kBuffered;
@@ -167,7 +171,7 @@ int main(int argc, char **argv) try {
         "Completed encode leaked managed storage");
   std::ofstream out(directory / "result.json");
   out.exceptions(std::ios::failbit | std::ios::badbit);
-  out << std::setprecision(17) << std::boolalpha << "{\"schema\":" << (entropy_diagnostics ? 3 : parallel_diagnostics ? 2 : 1)
+  out << std::setprecision(17) << std::boolalpha << "{\"schema\":" << (selection_diagnostics ? 4 : entropy_diagnostics ? 3 : parallel_diagnostics ? 2 : 1)
       << ",\"route\":" << std::quoted(route)
       << ",\"device\":" << std::quoted(device) << ",\"buffering\":" << std::quoted(buffering)
       << ",\"predictors\":" << std::quoted(predictors) << ",\"width\":" << view.extent.width
@@ -209,6 +213,12 @@ int main(int argc, char **argv) try {
       << ",\"parallel_calls\":" << profile.parallel_entropy.parallel_calls
       << ",\"model_work_seconds\":" << profile.parallel_entropy.model_work_seconds
       << ",\"emission_work_seconds\":" << profile.parallel_entropy.emission_work_seconds
+      << "},\"selection\":{\"requested_participants\":" << selection_participants
+      << ",\"peak_participants\":" << stats.selection_peak_participants
+      << ",\"waves\":" << stats.selection_waves
+      << ",\"memory_limited_waves\":" << stats.selection_memory_limited_waves
+      << ",\"wall_seconds\":" << stats.selection_seconds
+      << ",\"work_seconds\":" << stats.selection_work_seconds
       << "},\"detail_work\":{\"sample_preparation\":" << stats.sample_preparation_seconds
       << ",\"fitting\":" << stats.fitting_seconds
       << "},\"detail_wall\":{\"learning\":" << stats.learning_seconds

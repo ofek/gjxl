@@ -34,6 +34,13 @@ private:
 };
 using GpuTokenOwners = resource_budget_internal::ManagedVector<
     std::unique_ptr<modular_gpu_internal::PreparedGpuModularTokens>>;
+// Select independent unpublished records, retaining each record's original
+// candidate order. Input views stay alive until all jobs have joined. Records
+// may be partially updated on failure; the owning frame is published later.
+[[nodiscard]] Status SelectReferenceModularScopes(
+    std::span<ReferenceModularStream> records, ReferenceSelectionOptions options,
+    size_t participants, const resource_budget_internal::ResourceBudget &budget,
+    ReferenceWorkflowStats *stats);
 // Records and stream views are unpublished and remain at stable addresses.
 // CPU learning policy is shared by both routes. Hybrid token owners outlive
 // the completed borrows installed into streams; feature owners never escape.

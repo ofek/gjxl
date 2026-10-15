@@ -48,7 +48,8 @@ profile limits.
 
 ## Resources
 
-The learned workflow parallelizes independent local sample preparation and tree
+The learned workflow parallelizes independent local palette/RCT/predictor
+selection, sample preparation and tree
 fits within the requested CPU and shared-domain participation limits. A limit
 of one selects serial execution; zero uses the available allowance. Global fits
 remain serial. Memory admission can reduce local concurrency, including falling
@@ -62,6 +63,11 @@ search can use the existing cluster workers. Outer stream jobs suppress nested
 ANS teams. The same CPU and memory limits apply; admission reduces entropy
 concurrency before encoding if necessary. See
 [parallel entropy modeling](parallel-entropy-modeling.md).
+
+Local selection keeps each stream's candidate order and decisions unchanged.
+Its scratch and selected image are admitted per job; memory pressure reduces
+concurrency down to the serial envelope. Global selection precedes stream
+placement. See [parallel selection](parallel-selection.md).
 
 Each learned stage uses its checked storage bound and nonblocking `TryReserve`
 in the public execution domain. Retained planes, trees and output backing stay

@@ -1,0 +1,216 @@
+{
+  "schema": 1,
+  "base_revision": "25b88da1e0886f5acb06efbb0efdeda3b5c7647d",
+  "threads": 14,
+  "repetitions": 3,
+  "validation": {
+    "release_suites_passed": 8,
+    "parallel_selection_exact_decode_files": 36,
+    "hybrid_regression_files": 58,
+    "thread_sanitizer": "Full dedicated suite passed without Metal or external decoder oracle; no race reports"
+  },
+  "routes": {
+    "cpu": {
+      "input": "/Users/yunhocho/GitHub/gjxl-modular/build/modular-token-performance-20261010/inputs/photo-large-1029.pam",
+      "input_sha256": "a1c487b0160d8f3e8cb86753131b919ac3de28e908fde757050ebccdb4407b6d",
+      "binary": "/Users/yunhocho/GitHub/gjxl-parallel-selection/build/selection-provenance/hybrid_profile",
+      "binary_sha256": "8f45a580083845fd166d631cb1d38d86c7247e4ce56837f6678bfc337ff98ac9",
+      "source_diff_sha256": "1d538b8cba13cb851124b19ee08df8610d5edd87a61df11add12df6fa64ae36d",
+      "boundary": "Complete encoder call; input loading, backend setup, independent decode and file I/O excluded. Learning and CPU ceiling fixed; only selection participation changes. One unmeasured warmup per mode; alternating measured order; active desktop.",
+      "medians": {
+        "1": {
+          "complete_seconds": 10.865857875,
+          "selection_seconds": 3.750567209,
+          "peak_backing_bytes": 849163255,
+          "peak_committed_bytes": 1891701896
+        },
+        "14": {
+          "complete_seconds": 7.588258958,
+          "selection_seconds": 0.461011375,
+          "peak_backing_bytes": 848792211,
+          "peak_committed_bytes": 1891701896
+        }
+      },
+      "output_sha256": "2cfd2402384ff6670fd8357e1e5e626aded66c7a91f7293f8ba54ec945a367ad",
+      "output_artifact": "warmup-selection-14/output.jxl",
+      "artifact_directory": "/Users/yunhocho/GitHub/gjxl-parallel-selection/build/parallel-selection-cpu",
+      "manifest_sha256": "7ac4c56c038543895c2574647c1ff322778f41485ebbfcba0a5f5b16318f2fee",
+      "selection_speedup": 8.135519886033181,
+      "complete_speedup": 1.4319302932518607,
+      "ac_power_all_snapshots": true,
+      "runs": [
+        {
+          "measured": false,
+          "participants": 14,
+          "complete_seconds": 7.453564708,
+          "selection_seconds": 0.488467958,
+          "gpu_feature_batches": 0,
+          "token_batches": 0
+        },
+        {
+          "measured": false,
+          "participants": 1,
+          "complete_seconds": 10.7265215,
+          "selection_seconds": 3.745248792,
+          "gpu_feature_batches": 0,
+          "token_batches": 0
+        },
+        {
+          "measured": true,
+          "participants": 1,
+          "complete_seconds": 10.865857875,
+          "selection_seconds": 3.750679667,
+          "gpu_feature_batches": 0,
+          "token_batches": 0
+        },
+        {
+          "measured": true,
+          "participants": 14,
+          "complete_seconds": 7.782324958,
+          "selection_seconds": 0.464702875,
+          "gpu_feature_batches": 0,
+          "token_batches": 0
+        },
+        {
+          "measured": true,
+          "participants": 14,
+          "complete_seconds": 7.482175958,
+          "selection_seconds": 0.460974,
+          "gpu_feature_batches": 0,
+          "token_batches": 0
+        },
+        {
+          "measured": true,
+          "participants": 1,
+          "complete_seconds": 10.884562083,
+          "selection_seconds": 3.736442791,
+          "gpu_feature_batches": 0,
+          "token_batches": 0
+        },
+        {
+          "measured": true,
+          "participants": 1,
+          "complete_seconds": 10.769245875,
+          "selection_seconds": 3.750567209,
+          "gpu_feature_batches": 0,
+          "token_batches": 0
+        },
+        {
+          "measured": true,
+          "participants": 14,
+          "complete_seconds": 7.588258958,
+          "selection_seconds": 0.461011375,
+          "gpu_feature_batches": 0,
+          "token_batches": 0
+        }
+      ]
+    },
+    "auto": {
+      "input": "/Users/yunhocho/GitHub/gjxl-modular/build/modular-token-performance-20261010/inputs/photo-large-1029.pam",
+      "input_sha256": "a1c487b0160d8f3e8cb86753131b919ac3de28e908fde757050ebccdb4407b6d",
+      "binary": "/Users/yunhocho/GitHub/gjxl-parallel-selection/build/selection-provenance/hybrid_profile",
+      "binary_sha256": "8f45a580083845fd166d631cb1d38d86c7247e4ce56837f6678bfc337ff98ac9",
+      "source_diff_sha256": "1d538b8cba13cb851124b19ee08df8610d5edd87a61df11add12df6fa64ae36d",
+      "boundary": "Complete encoder call; input loading, backend setup, independent decode and file I/O excluded. Learning and CPU ceiling fixed; only selection participation changes. One unmeasured warmup per mode; alternating measured order; active desktop.",
+      "medians": {
+        "1": {
+          "complete_seconds": 9.403515334,
+          "selection_seconds": 3.750748708,
+          "peak_backing_bytes": 775898002,
+          "peak_committed_bytes": 1902505608
+        },
+        "14": {
+          "complete_seconds": 6.107585041,
+          "selection_seconds": 0.490797792,
+          "peak_backing_bytes": 775613989,
+          "peak_committed_bytes": 1902505608
+        }
+      },
+      "output_sha256": "2cfd2402384ff6670fd8357e1e5e626aded66c7a91f7293f8ba54ec945a367ad",
+      "output_artifact": "warmup-selection-14/output.jxl",
+      "artifact_directory": "/Users/yunhocho/GitHub/gjxl-parallel-selection/build/parallel-selection-auto",
+      "manifest_sha256": "dfec804995568d80b234e676bc2e16fa87ced0171d1d7ade31e4122f9825c672",
+      "selection_speedup": 7.642146662306093,
+      "complete_speedup": 1.5396454197321097,
+      "ac_power_all_snapshots": true,
+      "runs": [
+        {
+          "measured": false,
+          "participants": 14,
+          "complete_seconds": 6.093694167,
+          "selection_seconds": 0.482592,
+          "gpu_feature_batches": 4,
+          "token_batches": 5
+        },
+        {
+          "measured": false,
+          "participants": 1,
+          "complete_seconds": 9.395430708,
+          "selection_seconds": 3.749886333,
+          "gpu_feature_batches": 4,
+          "token_batches": 5
+        },
+        {
+          "measured": true,
+          "participants": 1,
+          "complete_seconds": 9.530723791,
+          "selection_seconds": 3.750748708,
+          "gpu_feature_batches": 4,
+          "token_batches": 5
+        },
+        {
+          "measured": true,
+          "participants": 14,
+          "complete_seconds": 6.110159958,
+          "selection_seconds": 0.480494959,
+          "gpu_feature_batches": 4,
+          "token_batches": 5
+        },
+        {
+          "measured": true,
+          "participants": 14,
+          "complete_seconds": 6.107585041,
+          "selection_seconds": 0.506347125,
+          "gpu_feature_batches": 4,
+          "token_batches": 5
+        },
+        {
+          "measured": true,
+          "participants": 1,
+          "complete_seconds": 9.327709459,
+          "selection_seconds": 3.750077208,
+          "gpu_feature_batches": 4,
+          "token_batches": 5
+        },
+        {
+          "measured": true,
+          "participants": 1,
+          "complete_seconds": 9.403515334,
+          "selection_seconds": 3.752061875,
+          "gpu_feature_batches": 4,
+          "token_batches": 5
+        },
+        {
+          "measured": true,
+          "participants": 14,
+          "complete_seconds": 6.03763825,
+          "selection_seconds": 0.490797792,
+          "gpu_feature_batches": 4,
+          "token_batches": 5
+        }
+      ]
+    }
+  },
+  "source_sha256": {
+    "src/codestream/modular/reference_selection_workflow.cpp": "598396357d0fd2ae7f1d99a3e952ac2103af0d7638e588c3fd0f66d97c74e9af",
+    "src/codestream/modular/reference_workflow.cpp": "999409956bef1689ae63718de340599a89312cad760a19d0103b1d7b8f5c187c",
+    "tests/modular_parallel_selection_test.cpp": "beae91715f824841128cb936a7a57cd7b636624cfdb23206332cd851e4420f01",
+    "tools/modular_reference_learning/hybrid_profile.cpp": "69eb4db38d208983c73ad1939fda80b0a5e3127b3a107eeb57461a1701eeca19",
+    "tools/modular_reference_learning/run_parallel_entropy.py": "a73d52b0c5c0d99e8630a2aab55a391124dc4c7a7701b2eac8756bc69baa7387"
+  },
+  "validation_log_sha256": {
+    "build/release/selection-ctest.log": "94b34199e59e5f8228e609346c9711993b6932e95f845f2b1fe12dd48a79721a",
+    "build/release/Testing/Temporary/LastTest.log": "2b1512a2c74c856ebf44ec5318569c32d2c8fa622dfacf2127ebf03efffc95d3",
+    "build/tsan/parallel-selection.log": "7b8cdfd35730023baa6520b4c1780e17ec7fdec3827a1a25f40629cca11c511e"
+  }
+}

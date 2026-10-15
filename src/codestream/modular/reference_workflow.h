@@ -25,6 +25,10 @@ struct ReferenceWorkflowOptions {
   // one is the serial control. Global fitting stays serial. Additional workers
   // require CPU participation and managed-memory admission before launch.
   size_t learning_cpu_participants = 0;
+  // Independent local palette/RCT/WP selection jobs. Zero inherits the
+  // admitted CPU allowance; one retains serial selection. Global selection
+  // still precedes stream placement and always runs as one job.
+  size_t selection_cpu_participants = 0;
 };
 struct ReferenceLearningStats {
   size_t first_group = 0, stop_group = 0;
@@ -32,6 +36,10 @@ struct ReferenceLearningStats {
   size_t distinct_samples = 0, tree_nodes = 0;
 };
 struct ReferenceWorkflowStats {
+  size_t selection_peak_participants = 0, selection_waves = 0,
+         selection_memory_limited_waves = 0;
+  // Joined caller wall versus summed job wall; work is not an additive stage.
+  double selection_seconds = 0, selection_work_seconds = 0;
   size_t entropy_cpu_participants = 1, entropy_memory_reductions = 0;
   bool local_trees = false;
   size_t selection_calls = 0, learning_calls = 0, fits = 0,

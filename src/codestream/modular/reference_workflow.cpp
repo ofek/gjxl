@@ -23,29 +23,6 @@ Status Fill(const ModularImage &image, ReferenceModularStream *record) {
     record->channels[c] = image.view(c);
   return Status::Ok();
 }
-Status Select(ReferenceSelectionOptions options, const ResourceBudget &budget,
-              ReferenceWorkflowStats *stats, ReferenceModularStream *record) {
-  ProfileScope profile(ProfileStage::kTransforms);
-  HostStorageBound bound;
-  if (auto s = ComputeReferenceSelectionStorageBound(
-          record->training_channels(), record->metadata_channels, options,
-          &bound);
-      !s.ok())
-    return s;
-  if (auto s = Stage(budget, bound.peak_bytes, stats,
-                     [&] {
-                       return SelectReferenceModularEncoding(
-                           record->training_channels(),
-                           record->metadata_channels, options,
-                           &record->selection);
-                     });
-      !s.ok())
-    return s;
-  ++stats->selection_calls;
-  if (record->selection.image.channel_count())
-    return Fill(record->selection.image, record);
-  return Status::Ok();
-}
 } // namespace
 
 PreparedModularStreamsView ReferenceModularFrame::view() const {
@@ -59,6 +36,7 @@ Status PrepareReferenceModularFrame(PackedModularImageView input,
                                     ReferenceModularFrame *out) try {
   if (!out ||
       options.learning_cpu_participants > 256 ||
+      options.selection_cpu_participants > 256 ||
       (options.buffering != ReferenceBuffering::kAutomatic &&
        options.buffering != ReferenceBuffering::kBuffered) ||
       (options.predictors != ReferencePredictors::kBest &&
@@ -131,9 +109,10 @@ Status PrepareReferenceModularFrame(PackedModularImageView input,
   global.learning_extent = input.extent;
   if (!stats.local_trees) {
     const bool single = geometry.group_count() == 1;
-    if (auto s = Select({ReferencePaletteStage::kGlobal, source.metadata.bits,
-                         1024, single, single},
-                        budget, &stats, &global);
+    if (auto s = reference_workflow_internal::SelectReferenceModularScopes(
+            {&global, 1}, {ReferencePaletteStage::kGlobal, source.metadata.bits,
+                           1024, single, single},
+            options.selection_cpu_participants, budget, &stats);
         !s.ok())
       return s;
   }
@@ -191,13 +170,18 @@ Status PrepareReferenceModularFrame(PackedModularImageView input,
             !s.ok())
           return s;
       }
-      if (record.channel_count)
-        if (auto s =
-                Select({ReferencePaletteStage::kLocal, source.metadata.bits},
-                       budget, &stats, &record);
-            !s.ok())
-          return s;
     }
+  }
+  if (auto s = reference_workflow_internal::SelectReferenceModularScopes(
+          std::span(result.records_).subspan(1),
+          {ReferencePaletteStage::kLocal, source.metadata.bits},
+          options.selection_cpu_participants, budget, &stats); !s.ok())
+    return s;
+  // Selection may replace channel backing and add metadata. Publish views only
+  // after every selection job has joined and its owning record is final.
+  for (size_t i = 0; i < plan.streams.size(); ++i) {
+    const auto &entry = plan.streams[i];
+    auto &record = result.records_[i];
     auto &stream = result.streams_[i];
     stream.channels = record.training_channels().first(
         i == 0 ? entry.slice_count : record.channel_count);
