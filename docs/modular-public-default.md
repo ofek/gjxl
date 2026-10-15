@@ -54,41 +54,47 @@ Metal backend, or CLI `--backend metal`. Automatic continues to select CPU.
 CUDA, CPU-only builds requesting Metal, and public legacy-policy GPU requests
 return Unsupported. The existing private legacy GPU operations remain available.
 
-After CPU transform/WP selection, all coded channels are batched with their own
-WP parameters, canonical stream/channel IDs and tree indices. One completed
-weighted-feature map supplies both the CPU sample learner and Metal adaptive
-token generation. Each scope still fits exactly once. Tokens are generated in
-one batch after fitting and borrowed directly by the existing CPU entropy
-encoder; data tokens and weighted predictions are not regenerated there.
-Transform/WP selection, fitting, entropy modeling and bitstream emission remain
-CPU work.
+After CPU transform/WP selection, coded channels are grouped into bounded
+batches with their own WP parameters and canonical stream/channel IDs. The
+completed weighted maps feed both CPU sample learning and Metal token generation.
+Each scope still fits exactly once. Local trees retain at most one feature batch
+(up to 8 Mi samples) while independent scopes are prepared and fitted in parallel.
+Tokens are generated for each completed batch and borrowed by the CPU entropy
+encoder. Buffered shared-tree mode retains its scope's feature batches until its
+single fit. Transform/WP selection, fitting, entropy and emission remain CPU work.
 
-The weighted producer retains the existing automatic cutoff: at least 4M
-samples and an average of 16,384 samples per channel job. Eligible channels up
-to 256x256 use the wavefront kernel. Small batches and oversized metadata
-channels use the scalar producer before GPU submission, preserving exact
-channel reset boundaries. Mixed batches share the completed map. Execution
-failures propagate without a CPU retry. Explicit Metal still generates data
-tokens on the GPU when weighted features were produced on the CPU.
+The weighted producer retains the automatic cutoff: at least 4M samples and an
+average of 16,384 samples per channel job. Batches with shapes up to 256x256 use
+the wavefront kernel when selected. Small batches and batches containing oversized
+metadata use CPU feature preparation, with up to four admitted participants.
+The workflow separates supported and unsupported stream batches. Failures after
+execution begins propagate without retry. Metal still generates data tokens when
+features were produced on CPU.
 
-Feature preparation retains a packed 4-byte plane and 16-byte feature per coded
-sample until token generation finishes. The completed split token arena uses
-4-byte values and 2-byte contexts, plus alignment. These buffers, descriptors,
-tree tables and stage scratch are admitted in the same managed domain as the
-CPU stages. Features are released before entropy coding; token backing survives
-through encoding. The [end-to-end and forced-producer qualification](modular-learned-metal-qualification.md)
-measures about 6% less aggregate elapsed time for explicit Metal on 17 inputs
-on an M4 Pro. The 12 MP case uses about 1.5x the CPU path's managed peak backing.
-Automatic remains CPU, and the existing feature-producer cutoff is unchanged.
+A live feature batch retains a packed 4-byte plane and 16-byte feature per sample.
+Completed split tokens use 4-byte values and 2-byte contexts, plus alignment.
+Descriptors, trees, concurrent scratch and retained buffers share the managed
+execution domain. Local feature backing is released after each token batch;
+token owners survive entropy encoding. Automatic continues to select CPU.
+
+The [original qualification](modular-learned-metal-qualification.md) measured about
+6% less aggregate elapsed time and roughly 1.5x managed peak backing for explicit
+Metal at revision `05f2f2f`. Those measurements used serial CPU execution and one
+whole-image feature batch; they are historical evidence, not measurements of the
+bounded, parallel implementation. The [combined parallel qualification](modular-parallel-integration-qualification.md)
+passed 25 CTest runs, 102 exact independently decoded encodes and 36 feature-map
+checks. On its five-image set, increasing the CPU limit from one to 14 reduced
+the sum of image medians by 5.84x for CPU and 5.13x for Metal. Explicit Metal used
+7.27% more aggregate time than CPU at limit 14. These are quick integration
+measurements; the incoming parallel-stage studies are linked below.
 
 `metal_modular_reference_workflow` checks exact trees, all tokens, ANS/prefix
 codestream parity and pinned-decoder samples across all six formats, padded and
 unaligned input, endianness, hidden RGB, shared/local trees and buffered All
-predictors. Its mixed batch covers distinct WP headers, tree tables, strided
-channels, wide/tall scalar fallback, and allocation/submission/completion
-failures. Public API and CLI tests also compare explicit Metal with CPU bytes.
+predictors. Its batches cover distinct WP headers, tree tables, strided
+channels, wide/tall CPU fallback, and allocation/submission/completion failures. Public API and CLI tests also compare explicit Metal with CPU bytes.
 
-The 2026-10-15 integration checks passed: 10 Release Metal tests, five Release
+Before the parallel reconciliation, the 2026-10-15 integration checks passed: 10 Release Metal tests, five Release
 CPU-only tests, and the two host handoff/preparation tests under ASan/UBSan.
 The new workflow test matched 36 complete CPU/Metal codestream pairs and 104,482
 learned tokens. The Metal CLI matrix decoded 90 files exactly and preserved
@@ -100,10 +106,33 @@ correctness and failure cleanup, not throughput qualification.
 
 ## Resources
 
-CPU work in the learned workflow currently executes serially, within the requested
-CPU and shared-domain participation limits. A higher thread limit does not imply a
-speedup. The existing parallel tokenization/emission path remains available in
-the legacy policies.
+The learned workflow parallelizes independent local palette/RCT/predictor
+selection, sample preparation and tree
+fits within the requested CPU and shared-domain participation limits. A limit
+of one selects serial execution; zero uses the available allowance. Global fits
+remain serial. Memory admission can reduce local concurrency, including falling
+back to serial per-stage admission, without changing compression decisions.
+See [parallel tree fitting](parallel-tree-fitting.md) for ownership, diagnostics
+and qualification. Legacy policies retain their parallel tokenization/emission.
+
+The learned path also parallelizes independent local entropy models and their
+payload emission, with one writer per section. Shared-model ANS configuration
+search can use the existing cluster workers. Outer stream jobs suppress nested
+ANS teams. The same CPU and memory limits apply; admission reduces entropy
+concurrency before encoding if necessary. See
+[parallel entropy modeling](parallel-entropy-modeling.md).
+
+Local selection keeps each stream's candidate order and decisions unchanged.
+Its scratch and selected image are admitted per job; memory pressure reduces
+concurrency down to the serial envelope. Global selection precedes stream
+placement. See [parallel selection](parallel-selection.md).
+
+Prepared-stream CPU tokenization also runs across independent streams, with
+private predictor state and fixed output ranges. Completed GPU tokens remain
+borrowed; inputs needing no CPU sample tokens launch no tokenization workers.
+Tokenization and entropy participation are independently bounded by the same
+CPU domain and storage admission. See
+[parallel prepared-stream tokenization](parallel-prepared-tokenization.md).
 
 Each learned stage uses its checked storage bound and nonblocking `TryReserve`
 in the public execution domain. Retained planes, trees and output backing stay
@@ -141,8 +170,9 @@ Every learned case also matches the private qualified workflow byte for byte;
 its limited domain admits the measured private peak without bypassing accounting.
 The tests cover default/null/4/8/12/full-size C options, initializer canaries,
 invalid options, tiny/busy shared C/C++ domains, mixed VarDCT calls, forced GPU
-rejection, and atomic output/summary replacement. The learned implementation
-uses one CPU participant even with a limit of four.
+rejection, and atomic output/summary replacement. At the original qualification
+below, learning used one CPU participant even with a limit of four. The parallel
+extension and its additional checks are recorded in the linked fitting report.
 
 All 1,197 C++ managed-allocation failure positions and 513 C publication-path
 failure positions pass, including cleanup/accounting checks. The CLI independently

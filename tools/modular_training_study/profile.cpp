@@ -234,7 +234,7 @@ int main(int argc, char **argv) try {
             << ",\"peak_cpu_participants\":" << resources.peak_cpu_participants
             << ",\"candidates\":" << profile.encoded_candidates << ",\"stages\":";
   Stages(std::array{"input", "transforms", "training", "tokens", "model", "emission", "assembly",
-                    "gpu_input_tokens"},
+                    "gpu_input_tokens", "stream_encoding"},
          profile.seconds);
   const auto &g = profile.adaptive_gpu;
   std::cout << ",\"adaptive_gpu\":{\"feature_seconds\":" << g.feature_seconds

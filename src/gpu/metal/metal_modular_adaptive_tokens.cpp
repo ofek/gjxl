@@ -92,19 +92,17 @@ private:
 };
 class CompletedStreamFeatures final : public PreparedGpuModularStreamFeatures {
 public:
-  size_t token_count() const noexcept override { return plan.tokens.token_count; }
-  Status
-  BorrowWeightedHostView(std::span<const AdaptiveModularWeightedFeature> *out) const override {
-    if (!out)
-      return Status::InvalidArgument("Null Modular stream feature view");
-    *out = host;
-    return Status::Ok();
-  }
+  BackendId backend_id() const noexcept override { return backend; }
+  size_t sample_count() const noexcept override { return plan.samples; }
+  WeightedFeatureBackend producer() const noexcept override { return selected_producer; }
+  std::span<const WeightedFeatureView> weighted_views() const noexcept override { return views; }
   BackendId backend;
-  ModularStreamBatchPlan plan;
+  const MetalBackend *owner = nullptr;
+  WeightedFeatureBackend selected_producer = WeightedFeatureBackend::kCpu;
+  ModularStreamFeatureStoragePlan plan;
   ManagedVector<AdaptiveModularTokenSlice> slices;
+  ManagedVector<WeightedFeatureView> views;
   std::unique_ptr<DeviceBuffer> planes, weighted;
-  std::span<const AdaptiveModularWeightedFeature> host;
 };
 struct Pending {
   std::unique_ptr<GpuSubmission> submission;
@@ -144,8 +142,8 @@ struct WeightedContext {
   MTL::ComputePipelineState *pipeline;
   gjxl_weighted_features::Parameters parameters;
   size_t slices, status_offset;
+  MTL::Buffer *parameter_buffer = nullptr;
   size_t parameters_offset = 0;
-  bool batched = false;
 };
 void EncodeWeighted(MetalBackend &, MTL::ComputeCommandEncoder *encoder, const void *opaque) {
   const auto &c = *static_cast<const WeightedContext *>(opaque);
@@ -155,8 +153,8 @@ void EncodeWeighted(MetalBackend &, MTL::ComputeCommandEncoder *encoder, const v
   encoder->setBuffer(c.features, 0, 1);
   encoder->setBuffer(c.dispatch, 0, 2);
   encoder->setBuffer(c.dispatch, c.status_offset, 3);
-  if (c.batched)
-    encoder->setBuffer(c.dispatch, c.parameters_offset, 4);
+  if (c.parameter_buffer)
+    encoder->setBuffer(c.parameter_buffer, c.parameters_offset, 4);
   else
     encoder->setBytes(&c.parameters, sizeof(c.parameters), 4);
   DispatchMetalThreadgroups(encoder, MTL::Size(c.slices, 1, 1), MTL::Size(128, 1, 1));
@@ -166,6 +164,257 @@ ModularTokenDeviceLimits MetalBackend::adaptive_modular_limits() const noexcept 
   return {size_t(PTRDIFF_MAX) / sizeof(uint32_t), UINT32_MAX,
           static_cast<size_t>(device_->maxBufferLength())};
 }
+ModularTokenDeviceLimits MetalBackend::modular_stream_limits() const noexcept {
+  auto limits = adaptive_modular_limits();
+  limits.maximum_slices = kMaximumModularFeatureBatchSlices;
+  return limits;
+}
+Status
+MetalBackend::PrepareModularStreamFeatures(std::span<const ModularStreamFeatureSlice> slices,
+                                           std::unique_ptr<PreparedGpuModularStreamFeatures> *out,
+                                           size_t cpu_participants,
+                                           WeightedFeatureBackend producer) try {
+  if (!out ||
+      (producer != WeightedFeatureBackend::kCpu && producer != WeightedFeatureBackend::kGpu &&
+       producer != WeightedFeatureBackend::kAuto))
+    return Status::InvalidArgument("Invalid Modular stream feature request");
+  const auto limits = modular_stream_limits();
+  ModularStreamFeatureStoragePlan plan;
+  if (auto s = ComputeModularStreamFeatureStoragePlan(slices, cpu_participants, &plan, &limits);
+      !s.ok())
+    return s;
+  const bool use_gpu = modular_token_pipelines_[5] && plan.wavefront_shapes &&
+                       (producer == WeightedFeatureBackend::kGpu ||
+                        (producer == WeightedFeatureBackend::kAuto &&
+                         PreferGpuWeightedFeatures(plan.samples, slices.size())));
+  const ManagedHostScope resources(ResourceClass::kPreparation);
+  auto *profile =
+      active_modular_profile ? &active_modular_profile->adaptive_gpu.feature_preparation : nullptr;
+  auto candidate = std::make_unique<CompletedStreamFeatures>();
+  candidate->backend = id();
+  candidate->owner = this;
+  candidate->selected_producer = use_gpu ? WeightedFeatureBackend::kGpu : WeightedFeatureBackend::kCpu;
+  candidate->plan = plan;
+  {
+    const FeaturePreparationScope allocation(profile,
+                                             &FeaturePreparationProfile::allocation_seconds);
+    const ResourceClassScope retained(ResourceClass::kCompletedFrame);
+    candidate->slices.resize(slices.size());
+    candidate->views.resize(slices.size());
+    if (auto s = Allocate(plan.plane_bytes, &candidate->planes); !s.ok())
+      return s;
+    if (auto s = Allocate(plan.feature_bytes, &candidate->weighted); !s.ok())
+      return s;
+  }
+  {
+    const FeaturePreparationScope copy(profile, &FeaturePreparationProfile::copy_seconds);
+    auto *pixels = static_cast<int32_t *>(AsMetalBuffer(*candidate->planes)->contents());
+    size_t next = 0;
+    for (size_t i = 0; i < slices.size(); ++i) {
+      const auto &slice = slices[i];
+      const auto [w, h] = slice.input.descriptor.extent;
+      candidate->slices[i] = {next,
+                              next,
+                              w,
+                              slice.stream_id,
+                              slice.channel,
+                              static_cast<uint32_t>(w),
+                              static_cast<uint32_t>(h),
+                              {static_cast<uint32_t>(i), 0}};
+      for (size_t y = 0; y < h; ++y)
+        std::memcpy(pixels + next + y * w, slice.input.Row(y), w * sizeof(int32_t));
+      next += w * h;
+    }
+  }
+  if (use_gpu) {
+    std::unique_ptr<DeviceBuffer> dispatch;
+    {
+      const FeaturePreparationScope allocation(profile,
+                                               &FeaturePreparationProfile::allocation_seconds);
+      if (auto s = Allocate(plan.dispatch_bytes, &dispatch); !s.ok())
+        return s;
+    }
+    auto *bytes = static_cast<std::byte *>(AsMetalBuffer(*dispatch)->contents());
+    {
+      const FeaturePreparationScope copy(profile, &FeaturePreparationProfile::copy_seconds);
+      std::memcpy(bytes, candidate->slices.data(), plan.slices_bytes);
+      std::memset(bytes + plan.status_offset, 0, sizeof(uint32_t));
+      auto *parameters =
+          reinterpret_cast<gjxl_weighted_features::Parameters *>(bytes + plan.parameters_offset);
+      for (size_t i = 0; i < slices.size(); ++i) {
+        for (size_t p = 0; p < 7; ++p)
+          parameters[i].coefficients[p] = slices[i].parameters.coefficients[p];
+        for (size_t p = 0; p < 4; ++p)
+          parameters[i].weights[p] = slices[i].parameters.weights[p];
+      }
+    }
+    WeightedContext context{AsMetalBuffer(*candidate->planes)->handle(),
+                            AsMetalBuffer(*candidate->weighted)->handle(),
+                            AsMetalBuffer(*dispatch)->handle(),
+                            modular_token_pipelines_[5].get(),
+                            {},
+                            slices.size(),
+                            plan.status_offset,
+                            AsMetalBuffer(*dispatch)->handle(),
+                            plan.parameters_offset};
+    if (profile) {
+      ++profile->gpu_calls;
+      profile->gpu_samples += plan.samples;
+      profile->slice_jobs += slices.size();
+    }
+    const FeaturePreparationScope compute(profile, &FeaturePreparationProfile::prediction_seconds);
+    Pending pending;
+    if (auto s = SubmitCompute("modular.stream_weighted_features", EncodeWeighted, &context,
+                               &pending.submission);
+        !s.ok())
+      return s;
+    if (!pending.submission)
+      return Status::Internal("Modular stream features returned no submission");
+    if (auto s = pending.Wait(); !s.ok())
+      return s;
+    uint32_t status;
+    std::memcpy(&status, bytes + plan.status_offset, sizeof(status));
+    if (status == 1)
+      return Status::Unsupported("Modular weighted state exceeds supported range");
+    if (status)
+      return Status::Internal("Unknown Modular weighted feature status");
+  } else {
+    if (profile && producer != WeightedFeatureBackend::kCpu)
+      ++profile->cpu_fallback_calls;
+    ManagedVector<WeightedFeatureSlice> jobs;
+    ManagedVector<WeightedPredictorParameters> parameters;
+    {
+      const FeaturePreparationScope allocation(profile,
+                                               &FeaturePreparationProfile::allocation_seconds);
+      jobs.resize(slices.size());
+      parameters.resize(slices.size());
+    }
+    for (size_t i = 0; i < slices.size(); ++i) {
+      jobs[i] = {slices[i].input, static_cast<size_t>(candidate->slices[i].token_offset)};
+      parameters[i] = slices[i].parameters;
+    }
+    auto *features =
+        static_cast<WeightedPredictorFeature *>(AsMetalBuffer(*candidate->weighted)->contents());
+    if (auto s = PrepareWeightedPredictorFeatureBatchWithParameters(
+            jobs, parameters, {features, plan.samples}, cpu_participants, profile);
+        !s.ok())
+      return s;
+  }
+  {
+    const FeaturePreparationScope publication(profile,
+                                              &FeaturePreparationProfile::publication_seconds);
+    std::span<const std::byte> bytes;
+    if (auto s = BorrowCompletedReadOnly(*candidate->weighted, plan.feature_bytes, 0, &bytes);
+        !s.ok())
+      return s;
+    const auto features =
+        std::span(reinterpret_cast<const WeightedPredictorFeature *>(bytes.data()), plan.samples);
+    for (size_t i = 0; i < slices.size(); ++i) {
+      const auto &s = candidate->slices[i];
+      candidate->views[i] = {slices[i].input, slices[i].parameters,
+                             features.subspan(s.token_offset, size_t{s.width} * s.height)};
+    }
+    *out = std::move(candidate);
+  }
+  return Status::Ok();
+} catch (const ManagedAllocationFailure &e) {
+  return e.status();
+} catch (const std::bad_alloc &) {
+  return Status::OutOfMemory("Modular stream feature allocation failed");
+} catch (const std::length_error &) {
+  return Status::InvalidArgument("Modular stream feature storage overflow");
+}
+
+Status
+MetalBackend::GenerateModularStreamTokens(const PreparedGpuModularStreamFeatures &features,
+                                          std::span<const ModularStreamTokenTree> trees,
+                                          std::unique_ptr<PreparedGpuModularTokens> *out) try {
+  const auto *input = dynamic_cast<const CompletedStreamFeatures *>(&features);
+  if (!out || !input || input->owner != this)
+    return Status::InvalidArgument("Invalid Modular stream feature owner/output");
+  ModularStreamTokenStoragePlan plan;
+  const auto limits = modular_stream_limits();
+  if (auto s = ComputeModularStreamTokenStoragePlan(input->plan.samples, input->slices.size(),
+                                                    trees, &plan, &limits);
+      !s.ok())
+    return s;
+  const ManagedHostScope resources(ResourceClass::kPreparation);
+  AdaptiveModularTokenStoragePlan token_plan;
+  token_plan.token_count = input->plan.samples;
+  token_plan.values_bytes = plan.values_bytes;
+  token_plan.contexts_offset = plan.contexts_offset;
+  token_plan.output_bytes = plan.output_bytes;
+  auto candidate = std::make_unique<CompletedTokens>(id(), token_plan, plan.maximum_contexts);
+  {
+    const ResourceClassScope retained(ResourceClass::kCompletedFrame);
+    if (auto s = Allocate(plan.output_bytes, &candidate->buffer); !s.ok())
+      return s;
+  }
+  std::unique_ptr<DeviceBuffer> dispatch;
+  if (auto s = Allocate(plan.dispatch_bytes, &dispatch); !s.ok())
+    return s;
+  auto *bytes = static_cast<std::byte *>(AsMetalBuffer(*dispatch)->contents());
+  std::memcpy(bytes, input->slices.data(), input->plan.slices_bytes);
+  auto *slices = reinterpret_cast<AdaptiveModularTokenSlice *>(bytes);
+  auto *nodes = reinterpret_cast<ModularTokenNode *>(bytes + plan.nodes_offset);
+  size_t next = 0;
+  for (const auto &binding : trees) {
+    TreeLayout layout;
+    if (auto s = ValidateTree(*binding.tree, &layout); !s.ok())
+      return s;
+    for (size_t i = binding.first_slice; i < binding.first_slice + binding.slice_count; ++i)
+      slices[i].reserved[0] = static_cast<uint32_t>(next);
+    for (size_t i = 0; i < binding.tree->size; ++i) {
+      const auto &n = binding.tree->nodes[i];
+      nodes[next + i] = {
+          n.property, n.split,      n.left,           n.right, static_cast<uint32_t>(n.predictor),
+          n.offset,   n.multiplier, layout.context[i]};
+    }
+    next += binding.tree->size;
+  }
+  std::memset(bytes + plan.status_offset, 0, sizeof(uint32_t));
+  EncodeContext context{};
+  context.planes = AsMetalBuffer(*input->planes)->handle();
+  context.weighted = AsMetalBuffer(*input->weighted)->handle();
+  context.output = AsMetalBuffer(*candidate->buffer)->handle();
+  context.dispatch = AsMetalBuffer(*dispatch)->handle();
+  context.pipeline = modular_token_pipelines_[3].get();
+  context.params = {plan.contexts_offset,
+                    plan.nodes_offset,
+                    plan.status_offset,
+                    static_cast<uint32_t>(input->slices.size()),
+                    static_cast<uint32_t>(plan.nodes),
+                    1,
+                    1};
+  context.maximum_slice_tokens = input->plan.maximum_slice_samples;
+  Pending pending;
+  if (auto s = SubmitCompute("modular.stream_tokens", Encode, &context, &pending.submission);
+      !s.ok())
+    return s;
+  if (!pending.submission)
+    return Status::Internal("Modular stream tokens returned no submission");
+  if (auto s = pending.Wait(); !s.ok())
+    return s;
+  uint32_t status;
+  std::memcpy(&status, bytes + plan.status_offset, sizeof(status));
+  if (auto s = CheckModularTokenDeviceStatus(status); !s.ok())
+    return s;
+  std::span<const std::byte> output;
+  if (auto s = BorrowCompletedReadOnly(*candidate->buffer, plan.output_bytes, 0, &output); !s.ok())
+    return s;
+  candidate->host = {{reinterpret_cast<const uint32_t *>(output.data()), input->plan.samples},
+                     {reinterpret_cast<const uint16_t *>(output.data() + plan.contexts_offset),
+                      input->plan.samples}};
+  *out = std::move(candidate);
+  return Status::Ok();
+} catch (const ManagedAllocationFailure &e) {
+  return e.status();
+} catch (const std::bad_alloc &) {
+  return Status::OutOfMemory("Modular stream token allocation failed");
+} catch (const std::length_error &) {
+  return Status::InvalidArgument("Modular stream token storage overflow");
+}
+
 Status MetalBackend::PrepareAdaptiveModularFeatures(
     const ModularEncoderFrame &frame, std::span<const AdaptiveModularTokenSlice> slices,
     const WeightedPredictorParameters &parameters, bool weighted,
@@ -451,247 +700,6 @@ Status MetalBackend::GenerateAdaptiveModularTokensImpl(
   return Status::OutOfMemory("Adaptive Modular token allocation failed");
 } catch (const std::length_error &) {
   return Status::InvalidArgument("Adaptive Modular token storage overflow");
-}
-
-ModularTokenDeviceLimits MetalBackend::modular_stream_limits() const noexcept {
-  return adaptive_modular_limits();
-}
-Status
-MetalBackend::PrepareModularStreamFeatures(std::span<const ModularStreamChannel> channels,
-                                           std::unique_ptr<PreparedGpuModularStreamFeatures> *out,
-                                           WeightedFeatureBackend producer) try {
-  if (!out ||
-      (producer != WeightedFeatureBackend::kCpu && producer != WeightedFeatureBackend::kGpu &&
-       producer != WeightedFeatureBackend::kAuto))
-    return Status::InvalidArgument("Invalid Modular stream feature request");
-  ModularStreamBatchPlan plan;
-  const auto limits = modular_stream_limits();
-  if (auto s = ComputeModularStreamBatchPlan(channels, 1, &plan, &limits); !s.ok())
-    return s;
-  const ManagedHostScope resources(ResourceClass::kPreparation);
-  auto *profile =
-      active_modular_profile ? &active_modular_profile->adaptive_gpu.feature_preparation : nullptr;
-  FeaturePreparationScope allocation(profile, &FeaturePreparationProfile::allocation_seconds);
-  auto candidate = std::make_unique<CompletedStreamFeatures>();
-  candidate->backend = id();
-  candidate->plan = plan;
-  candidate->slices.resize(channels.size());
-  {
-    const ResourceClassScope retained(ResourceClass::kCompletedFrame);
-    if (auto s = Allocate(plan.tokens.plane_bytes, &candidate->planes); !s.ok())
-      return s;
-    if (auto s = Allocate(plan.tokens.weighted_bytes, &candidate->weighted); !s.ok())
-      return s;
-  }
-  std::unique_ptr<DeviceBuffer> dispatch;
-  if (auto s = Allocate(plan.tokens.feature_dispatch_bytes, &dispatch); !s.ok())
-    return s;
-  allocation.Stop();
-  auto *bytes = static_cast<std::byte *>(AsMetalBuffer(*dispatch)->contents());
-  std::memset(bytes, 0, plan.tokens.feature_dispatch_bytes);
-  auto *parameters =
-      reinterpret_cast<gjxl_weighted_features::Parameters *>(bytes + plan.parameters_offset);
-  auto *planes = static_cast<std::byte *>(AsMetalBuffer(*candidate->planes)->contents());
-  auto *weighted = static_cast<AdaptiveModularWeightedFeature *>(
-      AsMetalBuffer(*candidate->weighted)->contents());
-  const bool prefer_gpu = modular_token_pipelines_[5] && producer != WeightedFeatureBackend::kCpu &&
-                          (producer == WeightedFeatureBackend::kGpu ||
-                           PreferGpuWeightedFeatures(plan.tokens.token_count, channels.size()));
-  size_t offset = 0, token = 0, gpu_samples = 0, cpu_jobs = 0;
-  for (size_t i = 0; i < channels.size(); ++i) {
-    const auto &job = channels[i];
-    const auto [w, h] = job.channel.descriptor.extent;
-    offset = (offset + 255) & ~size_t{255};
-    const bool gpu = prefer_gpu && w <= 256 && h <= 256;
-    candidate->slices[i] = {token,
-                            offset / sizeof(int32_t),
-                            w,
-                            job.stream_id,
-                            job.channel_id,
-                            static_cast<uint32_t>(w),
-                            static_cast<uint32_t>(h),
-                            {gpu ? static_cast<uint32_t>(i) : UINT32_MAX, job.tree_index}};
-    FeaturePreparationScope copy(profile, &FeaturePreparationProfile::copy_seconds);
-    for (size_t y = 0; y < h; ++y)
-      std::memcpy(planes + offset + y * w * sizeof(int32_t), job.channel.Row(y),
-                  w * sizeof(int32_t));
-    for (size_t k = 0; k < 7; ++k)
-      parameters[i].coefficients[k] = job.weighted.coefficients[k];
-    for (size_t k = 0; k < 4; ++k)
-      parameters[i].weights[k] = job.weighted.weights[k];
-    copy.Stop();
-    if (gpu) {
-      gpu_samples += w * h;
-    } else {
-      if (auto s = PrepareWeightedPredictorFeatures(job.channel, job.weighted,
-                                                    {weighted + token, w * h}, profile);
-          !s.ok())
-        return s;
-      ++cpu_jobs;
-    }
-    offset += w * h * sizeof(int32_t);
-    token += w * h;
-  }
-  if (gpu_samples) {
-    std::memcpy(bytes, candidate->slices.data(), plan.tokens.slices_bytes);
-    WeightedContext context{AsMetalBuffer(*candidate->planes)->handle(),
-                            AsMetalBuffer(*candidate->weighted)->handle(),
-                            AsMetalBuffer(*dispatch)->handle(),
-                            modular_token_pipelines_[5].get(),
-                            {},
-                            channels.size(),
-                            plan.feature_status_offset,
-                            plan.parameters_offset,
-                            true};
-    const FeaturePreparationScope computation(profile,
-                                              &FeaturePreparationProfile::prediction_seconds);
-    Pending pending;
-    if (auto s = SubmitCompute("modular.stream_weighted_features", EncodeWeighted, &context,
-                               &pending.submission);
-        !s.ok())
-      return s;
-    if (!pending.submission)
-      return Status::Internal("Missing Modular stream feature submission");
-    if (auto s = pending.Wait(); !s.ok())
-      return s;
-    uint32_t status;
-    std::memcpy(&status, bytes + plan.feature_status_offset, sizeof(status));
-    if (status & ~1u)
-      return Status::DeviceError("Invalid Modular stream feature status");
-    if (status)
-      return Status::Unsupported("Modular stream weighted state exceeds supported range");
-  }
-  if (active_modular_profile) {
-    auto &p = active_modular_profile->adaptive_gpu.feature_preparation;
-    p.gpu_calls += gpu_samples != 0;
-    p.gpu_samples += gpu_samples;
-    p.cpu_fallback_calls += cpu_jobs != 0 && producer != WeightedFeatureBackend::kCpu;
-    p.slice_jobs += channels.size();
-  }
-  const FeaturePreparationScope publication(profile,
-                                            &FeaturePreparationProfile::publication_seconds);
-  std::span<const std::byte> completed;
-  if (auto s =
-          BorrowCompletedReadOnly(*candidate->weighted, plan.tokens.weighted_bytes, 0, &completed);
-      !s.ok())
-    return s;
-  candidate->host = {reinterpret_cast<const AdaptiveModularWeightedFeature *>(completed.data()),
-                     token};
-  *out = std::move(candidate);
-  return Status::Ok();
-} catch (const ManagedAllocationFailure &e) {
-  return e.status();
-} catch (const std::bad_alloc &) {
-  return Status::OutOfMemory("Modular stream feature allocation failed");
-} catch (const std::length_error &) {
-  return Status::InvalidArgument("Modular stream feature storage overflow");
-}
-
-Status
-MetalBackend::GenerateModularStreamTokens(const PreparedGpuModularStreamFeatures &features,
-                                          std::span<const DecisionTree *const> trees,
-                                          std::unique_ptr<PreparedGpuModularTokens> *out) try {
-  const auto *input = dynamic_cast<const CompletedStreamFeatures *>(&features);
-  if (!out || !input || input->backend != id() || trees.empty())
-    return Status::InvalidArgument("Invalid Modular stream token request");
-  size_t nodes_count = 0, contexts = 0;
-  for (const auto *tree : trees) {
-    if (!tree)
-      return Status::InvalidArgument("Missing Modular stream tree");
-    TreeLayout layout;
-    if (auto s = ValidateTree(*tree, &layout); !s.ok())
-      return s;
-    if (tree->size > UINT32_MAX - nodes_count)
-      return Status::Unsupported("Modular stream tree table exceeds limits");
-    nodes_count += tree->size;
-    contexts = std::max(contexts, layout.leaves);
-  }
-  for (const auto &slice : input->slices)
-    if (slice.reserved[1] >= trees.size())
-      return Status::InvalidArgument("Invalid Modular stream tree index");
-  auto plan = input->plan.tokens;
-  plan.node_count = nodes_count;
-  if (nodes_count > (size_t(PTRDIFF_MAX) - plan.nodes_offset - 255) / sizeof(ModularTokenNode))
-    return Status::Unsupported("Modular stream node storage exceeds limits");
-  plan.status_offset =
-      (plan.nodes_offset + nodes_count * sizeof(ModularTokenNode) + 255) & ~size_t{255};
-  plan.dispatch_bytes = plan.status_offset + sizeof(uint32_t);
-  if (plan.dispatch_bytes > modular_stream_limits().maximum_buffer_bytes)
-    return Status::Unsupported("Modular stream token dispatch exceeds limits");
-  const ManagedHostScope resources(ResourceClass::kPreparation);
-  auto candidate = std::make_unique<CompletedTokens>(id(), plan, contexts);
-  {
-    const ResourceClassScope retained(ResourceClass::kCompletedFrame);
-    if (auto s = Allocate(plan.output_bytes, &candidate->buffer); !s.ok())
-      return s;
-  }
-  std::unique_ptr<DeviceBuffer> dispatch;
-  if (auto s = Allocate(plan.dispatch_bytes, &dispatch); !s.ok())
-    return s;
-  auto *bytes = static_cast<std::byte *>(AsMetalBuffer(*dispatch)->contents());
-  std::memset(bytes, 0, plan.dispatch_bytes);
-  std::memcpy(bytes, input->slices.data(), plan.slices_bytes);
-  auto *slices = reinterpret_cast<Slice *>(bytes);
-  auto *nodes = reinterpret_cast<ModularTokenNode *>(bytes + plan.nodes_offset);
-  ManagedVector<uint32_t> tree_offsets(trees.size());
-  size_t node_offset = 0;
-  for (size_t t = 0; t < trees.size(); ++t) {
-    tree_offsets[t] = static_cast<uint32_t>(node_offset);
-    TreeLayout layout;
-    const auto &tree = *trees[t];
-    if (auto s = ValidateTree(tree, &layout); !s.ok())
-      return s;
-    for (size_t i = 0; i < tree.size; ++i) {
-      const auto &n = tree.nodes[i];
-      nodes[node_offset + i] = {
-          n.property, n.split,      n.left,           n.right, static_cast<uint32_t>(n.predictor),
-          n.offset,   n.multiplier, layout.context[i]};
-    }
-    node_offset += tree.size;
-  }
-  for (size_t i = 0; i < input->slices.size(); ++i)
-    slices[i].reserved[1] = tree_offsets[input->slices[i].reserved[1]];
-  EncodeContext context{};
-  context.planes = AsMetalBuffer(*input->planes)->handle();
-  context.weighted = AsMetalBuffer(*input->weighted)->handle();
-  context.output = AsMetalBuffer(*candidate->buffer)->handle();
-  context.dispatch = AsMetalBuffer(*dispatch)->handle();
-  context.pipeline = modular_token_pipelines_[3].get();
-  context.params = {plan.contexts_offset,
-                    plan.nodes_offset,
-                    plan.status_offset,
-                    static_cast<uint32_t>(plan.slice_count),
-                    static_cast<uint32_t>(nodes_count),
-                    1,
-                    0};
-  context.maximum_slice_tokens = input->plan.maximum_slice_tokens;
-  Pending pending;
-  if (auto s = SubmitCompute("modular.stream_tokens", Encode, &context, &pending.submission);
-      !s.ok())
-    return s;
-  if (!pending.submission)
-    return Status::Internal("Missing Modular stream token submission");
-  if (auto s = pending.Wait(); !s.ok())
-    return s;
-  uint32_t status;
-  std::memcpy(&status, bytes + plan.status_offset, sizeof(status));
-  if (auto s = CheckModularTokenDeviceStatus(status); !s.ok())
-    return s;
-  std::span<const std::byte> completed;
-  if (auto s = BorrowCompletedReadOnly(*candidate->buffer, plan.output_bytes, 0, &completed);
-      !s.ok())
-    return s;
-  candidate->host = {{reinterpret_cast<const uint32_t *>(completed.data()), plan.token_count},
-                     {reinterpret_cast<const uint16_t *>(completed.data() + plan.contexts_offset),
-                      plan.token_count}};
-  *out = std::move(candidate);
-  return Status::Ok();
-} catch (const ManagedAllocationFailure &e) {
-  return e.status();
-} catch (const std::bad_alloc &) {
-  return Status::OutOfMemory("Modular stream token allocation failed");
-} catch (const std::length_error &) {
-  return Status::InvalidArgument("Modular stream token storage overflow");
 }
 
 Status

@@ -70,15 +70,17 @@ DecisionTree LargeTree() {
   fill(fill, 0, 0, leaves - 1);
   return tree;
 }
-void Batch(GpuBackend &gpu) {
-  auto *op = QueryGpuModularStreamGeneration(gpu);
+void Batch(GpuBackend &gpu, bool wavefront) {
+  auto *op = QueryGpuModularStreamProcessing(gpu);
   Check(op, "Missing stream generation capability");
-  const std::array<Extent2D, 5> shapes = {{{17, 13}, {9, 21}, {513, 1}, {1, 33}, {1, 257}}};
+  const std::array<Extent2D, 5> shapes = {
+      {{17, 13}, {9, 21}, {wavefront ? 127u : 513u, 1}, {1, 33},
+       {1, wavefront ? 255u : 257u}}};
   std::array<std::vector<int32_t>, 5> pixels;
-  std::array<ModularStreamChannel, 5> jobs;
+  std::array<ModularStreamFeatureSlice, 5> jobs;
   std::array<DecisionTree, 4> tree = {Split(0), Split(1), Split(15), LargeTree()};
-  const std::array<const DecisionTree *, 4> trees = {&tree[0], &tree[1], &tree[2], &tree[3]};
-  size_t total = 0, wide = 0;
+  std::array<ModularStreamTokenTree, 5> trees;
+  size_t total = 0;
   for (size_t i = 0; i < jobs.size(); ++i) {
     const auto [w, h] = shapes[i];
     pixels[i].resize((w + 3) * h, 0x7f7f);
@@ -88,33 +90,33 @@ void Batch(GpuBackend &gpu) {
     jobs[i] = {{pixels[i], {shapes[i]}, w + 3},
                kSelectionWeightedPresets[i % 3],
                static_cast<uint32_t>(i == 1 ? 65534 : i * 3),
-               static_cast<uint32_t>(i % 3),
-               static_cast<uint32_t>((i + 2) % trees.size())};
+               static_cast<uint32_t>(i % 3)};
+    trees[i] = {i, 1, &tree[(i + 2) % tree.size()]};
     total += w * h;
-    if (w > 256 || h > 256)
-      wide += w * h;
   }
   const auto limits = op->modular_stream_limits();
-  ModularStreamBatchPlan plan;
-  Ok(ComputeModularStreamBatchPlan(jobs, 9 + tree[3].size, &plan, &limits));
+  ModularStreamFeatureStoragePlan plan;
+  ModularStreamTokenStoragePlan token_plan;
+  Ok(ComputeModularStreamFeatureStoragePlan(jobs, 1, &plan, &limits));
+  Ok(ComputeModularStreamTokenStoragePlan(total, jobs.size(), trees, &token_plan, &limits));
   auto limited = limits;
   limited.maximum_tokens = total - 1;
   ArmNextManagedHostAllocationFailureForTest();
-  const auto rejected = ComputeModularStreamBatchPlan(jobs, 9 + tree[3].size, &plan, &limited);
+  const auto rejected = ComputeModularStreamFeatureStoragePlan(jobs, 1, &plan, &limited);
   const bool untouched = ManagedHostAllocationFailurePendingForTest();
   DisarmManagedHostAllocationFailureForTest();
-  Check(rejected.code() == StatusCode::kUnsupported && untouched && plan.tokens.token_count == total,
+  Check(rejected.code() == StatusCode::kUnsupported && untouched && plan.samples == total,
         "Batch preflight allocated or changed the prior plan");
   ResourceBudget budget(size_t{256} << 20);
   std::unique_ptr<PreparedGpuModularStreamFeatures> features;
   std::unique_ptr<PreparedGpuModularTokens> tokens;
   auto prepare = [&] {
-    return Admit(budget, plan.preparation.peak_bytes, [&] {
-      return op->PrepareModularStreamFeatures(jobs, &features, WeightedFeatureBackend::kGpu);
+    return Admit(budget, std::max(plan.cpu_preparation.peak_bytes, plan.gpu_preparation.peak_bytes), [&] {
+      return op->PrepareModularStreamFeatures(jobs, &features, 1, WeightedFeatureBackend::kGpu);
     });
   };
   auto generate = [&] {
-    return Admit(budget, plan.generation.peak_bytes,
+    return Admit(budget, token_plan.generation.peak_bytes,
                  [&] { return op->GenerateModularStreamTokens(*features, trees, &tokens); });
   };
   ModularProfile profile;
@@ -124,26 +126,26 @@ void Batch(GpuBackend &gpu) {
     Ok(prepare());
     Ok(generate());
   }
-  Check(gpu.stats().committed_submissions == submissions + 2 &&
-            profile.adaptive_gpu.feature_preparation.gpu_samples == total - wide &&
-            profile.adaptive_gpu.feature_preparation.cpu_fallback_calls == 1,
-        "Mixed batch did not use one feature and one token dispatch");
-  std::span<const AdaptiveModularWeightedFeature> host_features;
+  Check(gpu.stats().committed_submissions == submissions + (wavefront ? 2 : 1) &&
+            profile.adaptive_gpu.feature_preparation.gpu_samples == (wavefront ? total : 0) &&
+            profile.adaptive_gpu.feature_preparation.cpu_fallback_calls == (wavefront ? 0 : 1),
+        "Feature routing or token dispatch count changed");
+  const auto host_features = features->weighted_views();
   ModularTokenHostView host_tokens;
-  Ok(features->BorrowWeightedHostView(&host_features));
   Ok(tokens->BorrowHostView(&host_tokens));
   size_t offset = 0;
-  for (const auto &job : jobs) {
-    const size_t area = job.channel.descriptor.extent.width * job.channel.descriptor.extent.height;
+  for (size_t i = 0; i < jobs.size(); ++i) {
+    const auto &job = jobs[i];
+    const size_t area = job.input.descriptor.extent.width * job.input.descriptor.extent.height;
     std::vector<WeightedPredictorFeature> expected_features(area);
     std::vector<EntropyToken> expected_tokens(area);
-    Ok(PrepareWeightedPredictorFeatures(job.channel, job.weighted, expected_features));
+    Ok(PrepareWeightedPredictorFeatures(job.input, job.parameters, expected_features));
     TreeLayout layout;
-    Ok(ValidateTree(*trees[job.tree_index], &layout));
-    Ok(TokenizeValidatedModularChannel(job.channel, job.channel_id, job.stream_id,
-                                       *trees[job.tree_index], layout, job.weighted,
+    Ok(ValidateTree(*trees[i].tree, &layout));
+    Ok(TokenizeValidatedModularChannel(job.input, job.channel, job.stream_id,
+                                       *trees[i].tree, layout, job.parameters,
                                        expected_tokens));
-    Check(std::ranges::equal(expected_features, host_features.subspan(offset, area)),
+    Check(std::ranges::equal(expected_features, host_features[i].values),
           "Per-stream weighted parameters or reset boundary changed");
     for (size_t j = 0; j < area; ++j)
       Check(host_tokens.values[offset + j] == expected_tokens[j].value &&
@@ -155,10 +157,12 @@ void Batch(GpuBackend &gpu) {
   const auto *old_tokens = tokens.get();
   const size_t retained = budget.snapshot().committed_bytes();
   for (bool completion : {false, true}) {
-    Ok(ArmNextMetalSubmissionFailureForTest(gpu, !completion, completion));
-    Check(!prepare().ok() && features.get() == old_features &&
-              budget.snapshot().committed_bytes() == retained,
-          "Feature submission failure published/leaked");
+    if (wavefront) {
+      Ok(ArmNextMetalSubmissionFailureForTest(gpu, !completion, completion));
+      Check(!prepare().ok() && features.get() == old_features &&
+                budget.snapshot().committed_bytes() == retained,
+            "Feature submission failure published/leaked");
+    }
     Ok(ArmNextMetalSubmissionFailureForTest(gpu, !completion, completion));
     Check(!generate().ok() && tokens.get() == old_tokens &&
               budget.snapshot().committed_bytes() == retained,
@@ -173,12 +177,12 @@ void Batch(GpuBackend &gpu) {
             budget.snapshot().committed_bytes() == retained,
         "Token allocation failure published/leaked");
   ArmNextManagedHostAllocationFailureForTest();
-  const auto failure = generate();
+  const auto failure = prepare();
   const bool pending = ManagedHostAllocationFailurePendingForTest();
   DisarmManagedHostAllocationFailureForTest();
-  Check(!failure.ok() && !pending && tokens.get() == old_tokens &&
+  Check(!failure.ok() && !pending && features.get() == old_features &&
             budget.snapshot().committed_bytes() == retained,
-        "Tree offset allocation failure published/leaked");
+        "Feature descriptor allocation failure published/leaked");
   Ok(generate());
   features.reset();
   tokens.reset();
@@ -231,7 +235,7 @@ void WorkflowFailures(GpuBackend &gpu) {
   const auto retained = budget.snapshot().committed_bytes();
   ReferenceWorkflowOptions options;
   options.gpu = &gpu;
-  options.weighted_feature_backend = WeightedFeatureBackend::kGpu;
+  options.feature_producer = WeightedFeatureBackend::kGpu;
   for (bool completion : {false, true}) {
     Ok(ArmNextMetalSubmissionFailureForTest(gpu, !completion, completion));
     Check(!PrepareReferenceModularFrame(f.view(), options, budget, &prior).ok() &&
@@ -263,7 +267,7 @@ void Workflow(GpuBackend &gpu, const Fixture &f, ReferenceWorkflowOptions option
   Ok(PrepareReferenceModularFrame(f.view(), options, budget, &cpu));
   options.gpu = &gpu;
   if (f.extent == Extent2D{257, 257})
-    options.weighted_feature_backend = WeightedFeatureBackend::kGpu;
+    options.feature_producer = WeightedFeatureBackend::kGpu;
   ModularProfile profile;
   {
     ProfileSession session(&profile);
@@ -272,12 +276,12 @@ void Workflow(GpuBackend &gpu, const Fixture &f, ReferenceWorkflowOptions option
   Check(cpu.stats().learning_calls == metal.stats().learning_calls &&
             cpu.stats().fits == metal.stats().fits &&
             cpu.stats().scanned_pixels == metal.stats().scanned_pixels &&
-            metal.stats().scanned_pixels == metal.stats().reused_feature_samples &&
-            metal.stats().reused_feature_samples == metal.stats().gpu_token_samples &&
+            metal.stats().scanned_pixels == metal.stats().feature_samples &&
+            metal.stats().feature_samples == metal.stats().token_samples &&
             profile.training_work.weighted_prediction_samples == 0 &&
             profile.training_work.reused_prediction_samples == metal.stats().scanned_pixels &&
-            profile.adaptive_gpu.feature_preparations == 1 &&
-            profile.adaptive_gpu.feature_reuses == 1,
+            profile.adaptive_gpu.feature_preparations == metal.stats().feature_batches &&
+            profile.adaptive_gpu.feature_reuses == metal.stats().token_batches,
         "Learned Metal refitted or regenerated weighted features");
   if (f.extent == Extent2D{257, 257})
     Check(profile.adaptive_gpu.feature_preparation.gpu_calls == 1 &&
@@ -286,21 +290,25 @@ void Workflow(GpuBackend &gpu, const Fixture &f, ReferenceWorkflowOptions option
   for (size_t i = 0; i < cpu.streams().size(); ++i) {
     Check(cpu.streams()[i].tree == metal.streams()[i].tree &&
               cpu.streams()[i].selection.wp_mode == metal.streams()[i].selection.wp_mode &&
-              metal.streams()[i].weighted_features.empty(),
+              metal.view().streams[i].weighted_features.empty(),
           "Learned tree/WP differs or stale borrow retained");
   }
   PreparedModularStreamTokens expected;
   Ok(TokenizePreparedModularStreams(cpu.view(), &expected));
-  const auto *values = metal.view().prepared_tokens[0].values.data();
+  PreparedModularStreamTokens actual;
+  Ok(TokenizePreparedModularStreams(metal.view(), &actual));
+  const auto *values = actual.streams[0].values.data();
   ReferenceModularFrame moved(std::move(metal));
   metal = std::move(moved);
-  Check(values == metal.view().prepared_tokens[0].values.data(),
+  PreparedModularStreamTokens after_move;
+  Ok(TokenizePreparedModularStreams(metal.view(), &after_move));
+  Check(values == after_move.streams[0].values.data(),
         "Frame move invalidated token backing");
   for (size_t i = 0; i < expected.streams.size(); ++i) {
-    auto actual = metal.view().prepared_tokens[i];
-    Check(expected.streams[i].size() == actual.size(), "Canonical stream coverage differs");
-    for (size_t j = 0; j < actual.size(); ++j)
-      Check(expected.streams[i][j] == actual[j], "Learned GPU token differs");
+    const auto stream = actual.streams[i];
+    Check(expected.streams[i].size() == stream.size(), "Canonical stream coverage differs");
+    for (size_t j = 0; j < stream.size(); ++j)
+      Check(expected.streams[i][j] == stream[j], "Learned GPU token differs");
   }
   for (bool prefix : {false, true}) {
     auto entropy = options.entropy;
@@ -324,7 +332,7 @@ void Workflow(GpuBackend &gpu, const Fixture &f, ReferenceWorkflowOptions option
 #endif
     ++cases;
   }
-  samples_checked += metal.stats().gpu_token_samples;
+  samples_checked += metal.stats().token_samples;
   metal = {};
   cpu = {};
   Released(budget);
@@ -356,7 +364,8 @@ void PublicC() {
 int main() try {
   std::unique_ptr<GpuBackend> gpu;
   Ok(CreateEmbeddedMetalBackend({}, &gpu));
-  Batch(*gpu);
+  Batch(*gpu, false);
+  Batch(*gpu, true);
   WorkflowFailures(*gpu);
   for (auto format :
        {PackedModularFormat::kGray8, PackedModularFormat::kRgb8, PackedModularFormat::kRgba8,

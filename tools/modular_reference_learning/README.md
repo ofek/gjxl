@@ -1,11 +1,138 @@
 # Reference Modular learner bridge
 
-Research-only first milestone of the
+Research and qualification tools for the
 [learner replacement plan](../../docs/modular-tree-learning-cost.md#recommended-implementation-order).
-Encoder defaults remain unchanged. The native histogram fitter is a private
-implementation under differential qualification. The reference is libjxl
+The native one-fit histogram workflow is now the public learned CPU policy;
+older archives below describe their recorded revisions, not current defaults.
+The reference is libjxl
 `e8ff09762481785938d8e4e01333ed3917571161`; qualified native archives come from
 `f27a797` (`perf/modular-ans-estimates`).
+
+## CPU-hybrid histogram qualification
+
+The root-CMake target `gjxl_modular_hybrid_profile` requires tests enabled and
+`GJXL_MODULAR_ORACLE_BUILD` pointing to the pinned libjxl build. Enable Metal
+for hybrid routes. The driver encodes original packed pixels with the same
+native histogram workflow, independently decodes the result, checks resource
+release, and writes `output.jxl` and `result.json` to a fresh directory.
+
+```sh
+cmake --build build/release --target gjxl_modular_hybrid_profile
+build/release/gjxl_modular_hybrid_profile INPUT.pam OUT auto auto best
+python3 tools/modular_reference_learning/run_hybrid_qualification.py \
+  --binary build/release/gjxl_modular_hybrid_profile \
+  --input INPUT.pam --out build/histogram-hybrid-qualification \
+  --routes cpu auto --warmups 1 --repeats 3
+```
+
+Driver arguments are `INPUT OUT ROUTE BUFFERING PREDICTORS`:
+
+- `cpu`: ordinary scalar workflow, with no Metal backend.
+- `shared-cpu`: bounded CPU feature preparation shared by learning and Metal
+  token generation.
+- `hybrid`: requests GPU features for supported shapes, plus Metal tokens;
+  oversized metadata or unavailable optional feature pipelines select CPU
+  preparation before execution.
+- `auto`: chooses the feature producer using the existing batch crossover,
+  plus Metal tokens. This is a private route, not public automatic GPU routing.
+
+Buffering is `auto|buffered`; predictors are `best|all`. The repeated runner
+holds these at `auto best`, uses the same four-participant CPU ceiling and
+estimated direct ANS/64-cluster policy for every route, and rotates serial
+fresh-process route order. One warmup per route/input precedes measured calls.
+The ordinary CPU workflow remains serial. Use repeated `--input` arguments for
+multiple images. With no `--routes`, all four controls run; check the projected
+runtime before launching a large corpus.
+
+Commit implementation changes before running the harness: it requires a clean
+worktree, freezes the executable, records revision/build/dependency/input
+hashes and start/end power conditions, saves raw results and output hashes,
+and rejects changed bytes or learning-work counts across routes/repetitions.
+Each run needs a fresh output directory. The complete API timer includes
+selection, feature/sample preparation, fitting, tokens, entropy, admission,
+output copy and prepared-frame teardown. It excludes input/output I/O, backend
+initialization, reference source unpacking and independent decoding. Feature,
+sample-preparation and fitting details are nested within training; GPU token
+details are nested within tokens. Managed memory excludes caller input and
+reference-decode buffers, stack, allocator bookkeeping and backend initialization.
+Use the [integration plan](../../docs/gpu-histogram-learner-integration.md)
+for ownership, admission, routing and validation boundaries.
+The [2026-10-14 qualification](../../docs/gpu-histogram-learner-qualification.md)
+records matched full-resolution and crossover results on Apple M4 Pro.
+
+## Parallel local learning
+
+Append explicit learning participants and a fixed CPU ceiling after the fitting
+profile mode to measure local CPU preparation/fitting concurrency:
+
+```sh
+build/release/gjxl_modular_hybrid_profile INPUT.pam OUT auto auto best fit-off 14 14
+python3 tools/modular_reference_learning/run_parallel_learning.py \
+  --binary build/release/gjxl_modular_hybrid_profile \
+  --input INPUT.pam --out build/parallel-learning-qualification \
+  --reference docs/gpu-histogram-learner-integration-results.json \
+  --participants 1 4 14 --cpu-ceiling 14
+```
+
+The runner freezes the executable and tracked/untracked build sources, rotates
+participant counts, requires AC power on macOS, and checks complete bytes
+against the earlier qualification. Supply `--input` once per photograph. Each
+configuration has one warmup and three measured repetitions by default.
+
+Explicit participant arguments select schema 2: `detail_wall.learning` is
+elapsed preparation/fitting time; `detail_work` contains overlapping per-job
+time sums. Feature and token routing remain fixed. Older invocations keep
+serial learning and schema 1. See the [implementation and results](../../docs/parallel-tree-fitting.md).
+
+## Histogram fitting attribution
+
+The same driver accepts an optional final `fit-off|fit-on` argument (default
+`fit-off`). The private histogram profile has allocation-free counters and
+exclusive wall phases inside `LearnHistogramTree`, plus inclusive node times
+by distinct-row count/depth, bin/symbol-span distributions and per-fit records.
+It does not reuse the original sort-based learner's attribution. Candidate
+evaluation combines prefix histogram updates, entropy costs and predictor
+comparison; no clock runs per threshold. Diagnostic arrays are caller-owned,
+allocated outside the encoder timer, and excluded from codec admission.
+
+```sh
+python3 tools/modular_reference_learning/run_histogram_attribution.py \
+  --binary build/release/gjxl_modular_hybrid_profile \
+  --input /path/to/photo-large-1029.pam \
+  --input /path/to/photo-large-1039.pam \
+  --input /path/to/photo-large-1049.pam \
+  --reference docs/gpu-histogram-learner-integration-results.json \
+  --out build/histogram-fitting-attribution --warmups 1 --repeats 3
+python3 tools/modular_reference_learning/analyze_histogram_attribution.py \
+  build/histogram-fitting-attribution \
+  --json docs/modular-histogram-fitting-profile-results.json \
+  --markdown docs/modular-histogram-fitting-profile.md
+```
+
+This runner compares attribution on/off through the same automatic hybrid
+policy and binary. It checks exact decoding, bytes, routing and work counters,
+freezes the executable, archives/hashes all build/tool sources including local
+edits, and rejects source/input/dependency changes during capture. Unlike the
+older route-qualification runner, it records a source snapshot rather than
+requiring a commit. Its base revision alone does not identify that snapshot.
+Before/after power, load and thermal observations accompany every call.
+
+The analyzer rejects an image cohort whose observed power source changes.
+Repeat that entire input cohort under stable power, then pass the completed
+capture with `--replacement build/replacement-capture`. The replacement must
+use the identical frozen binary and input. All original calls remain in the
+JSON; only the complete replacement cohort supplies timing medians. Reports
+label power per image and keep node-time shares separate across images.
+
+For a separate sampling diagnostic, build with `-O3 -g -DNDEBUG`, retain a
+matching `dsymutil` bundle, and record the driver directly with
+`samply record --save-only --main-thread-only --unstable-presymbolicate` using
+`fit-off`. `analyze_fitting_samply.py PROFILE.json.gz --binary BINARY --output
+ANALYSIS.json` resolves the native fitter and its inline source frames using
+`llvm-symbolizer`. It checks symbol coverage and reports both current-stack
+and preceding-stack assignments of sampled CPU deltas. These CPU samples are
+not additive wall-clock phases and the sampled run is excluded from paired
+timing medians.
 
 ## Conditional native WP search
 
@@ -402,3 +529,38 @@ mode. Historical frozen records remain readable. Use
 `analyze_prepared_entropy.py` to qualify these integrated paths against the
 previous standalone controls and generated Release/sanitizer files; see the
 [integration report](../../docs/modular-prepared-entropy.md).
+
+## Public CPU/Metal qualification
+
+`gjxl_modular_metal_workflow_profile` builds with Metal, benchmarks, tests and the
+pinned Modular oracle enabled. Its schema 2 records bounded feature/token batches,
+the CPU ceiling, actual participation and the joined stream-encoding stage. The
+default complete comparison retains public CPU/Metal and the two private forced
+feature producers. `--public-only` selects just the public CPU and explicit Metal
+routes; `metal-auto` means automatic feature routing within explicit Metal.
+
+```sh
+python3 tools/modular_reference_learning/run_metal_workflow_qualification.py \
+  --binary build/release/gjxl_modular_metal_workflow_profile \
+  --inputs inputs.json --out build/public-metal-check \
+  --cpu-participants 14 --public-only --encode-repeats 2 --feature-repeats 3
+python3 tools/modular_reference_learning/report_metal_workflow_qualification.py \
+  --capture build/public-metal-check \
+  --json build/public-metal-check/results.json \
+  --markdown build/public-metal-check/report.md
+```
+
+The input manifest lists `name`, `path`, `sha256` and `modes` (`encode` and/or
+`features`) for each image. Each process checks all output bytes and independently
+decodes every encode. Feature trials compare every map with the serial predictor.
+Use multiples of two measured rounds for public-only comparisons, four for all
+encoder variants and three for feature producers to balance order positions.
+
+The encoder timer includes admission, selection, learning, tokens, entropy,
+cleanup and publication. Feature-operation trials partition selected channels by
+shape and bounded sample/slice counts, retaining all completed batch owners until
+comparison; their memory peak is distinct from the workflow's one-live-local-batch
+policy. Selection, planning, independent verification and file I/O are outside
+that operation timer. The runner freezes the executable, source, source patch,
+inputs and per-call environment; the analyzer also reads historical schema 1
+captures without changing their statistics or reports.

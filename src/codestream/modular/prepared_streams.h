@@ -2,8 +2,21 @@
 // Copyright (c) 2026 Yunho Cho
 #pragma once
 #include "codestream/modular/storage_plan.h"
+#include "codec/modular/weighted_features.h"
+#include <optional>
 
 namespace gjxl::modular_internal {
+// Borrowed result from a completed, checked token producer for exactly these
+// immutable channels, parameters, coding ID and tree. Owner/backend and all
+// identities remain live until the last consumer finishes. Contents are trusted
+// producer results; validation checks identities/shape without rescanning tokens.
+struct PreparedModularStreamTokenView {
+  EntropyTokenStreamView tokens;
+  std::span<const ModularChannelView> channels;
+  const DecisionTree *tree = nullptr;
+  WeightedPredictorParameters weighted;
+  size_t stream_id = 0;
+};
 struct PreparedModularStreamView {
   // Already transformed, in coding order. Global stream 0 includes only its
   // coded prefix; excluded full-image channels need no pixel backing here.
@@ -14,6 +27,13 @@ struct PreparedModularStreamView {
   // Null selects the frame's shared tree AND entropy model. A non-null tree
   // selects a local tree AND a model built from this stream's tokens alone.
   const DecisionTree *local_tree = nullptr;
+  // Optional parallel array of completed channel-local maps; see
+  // WeightedFeatureView. Owners remain live through tokenization, separately
+  // charged by the caller. Empty entries retain scalar WP for those channels.
+  std::span<const WeightedFeatureView> weighted_features;
+  // Skips sample tokenization and borrows the completed backing without copying
+  // or charging it again. CPU tree-header tokenization and entropy stay intact.
+  std::optional<PreparedModularStreamTokenView> completed_tokens;
 };
 struct PreparedModularStreamsView {
   Extent2D source;
@@ -22,10 +42,6 @@ struct PreparedModularStreamsView {
   // Canonical order: global, all DC groups, all pixel groups (including empty
   // slots). IDs/sections are derived from geometry, never caller-renumbered.
   std::span<const PreparedModularStreamView> streams;
-  // Optional completed data tokens, one view per canonical stream. The caller
-  // guarantees equality to these planes/trees and retains backing until encode
-  // completes. Tree tokens are still generated here. Empty selects CPU tokens.
-  std::span<const EntropyTokenStreamView> prepared_tokens{};
 };
 struct PreparedModularStreamTokens {
   codestream_internal::Storage<EntropyToken> tokens;
@@ -38,6 +54,12 @@ struct PreparedModularStreamTokens {
   PreparedModularStreamTokens &operator=(const PreparedModularStreamTokens &) = delete;
   PreparedModularStreamTokens(PreparedModularStreamTokens &&) noexcept = default;
   PreparedModularStreamTokens &operator=(PreparedModularStreamTokens &&) noexcept = default;
+};
+struct PreparedModularTokenizationOptions {
+  // Zero inherits the admitted CPU allowance; one is the serial control.
+  // Streams own disjoint output ranges and private raster predictor state.
+  // Unadmitted/nested calls and completed-token-only inputs stay serial.
+  size_t cpu_participants = 0;
 };
 enum class PreparedModularEntropyPolicy {
   kPrefix,
@@ -52,25 +74,34 @@ struct PreparedModularEntropyOptions {
   // Direct rate ANS only, in [1, kMaximumAnsClusters]. Other policies require
   // this default value. The optimizer and storage planner share this limit.
   size_t maximum_ans_clusters = kDefaultDirectAnsClusters;
+  // Zero uses the admitted caller's CPU allowance; one is the serial control.
+  // Unadmitted or explicitly nested calls stay serial. Local streams use outer
+  // workers; a shared/single model may use the existing ANS cluster workers.
+  size_t cpu_participants = 0;
 };
 [[nodiscard]] Status ValidatePreparedModularEntropyOptions(const PreparedModularEntropyOptions &options);
 // Allocation-free validation/planning. Borrowed samples, views, trees, prior
 // outputs and their lifetimes remain the caller's responsibility. Managed
-// bounds cover fresh tokenization, serial modeling/emission, assembly and
+// bounds exclude borrowed completed tokens and cover fresh tokenization,
+// modeling/emission at the resolved CPU allowance, assembly and
 // publication. Global transforms define full-image shape before grouping; group
 // transforms define each tile's shape after grouping. All provided descriptors
-// must match.
+// must match. Plan and encode must use the same options and CPU scope. The
+// Returned participants and tokenization_participants are resolved allowances,
+// not guaranteed grants. The preparation bound also covers standalone token
+// generation with the same tokenization options and CPU scope.
 [[nodiscard]] Status
 ComputePreparedModularStreamsStoragePlan(const PreparedModularStreamsView &input,
-                                         EntropyCodingMode mode, ModularWorkflowStoragePlan *out);
+                                         EntropyCodingMode mode, ModularWorkflowStoragePlan *out,
+                                         PreparedModularTokenizationOptions tokenization = {});
 [[nodiscard]] Status
 ComputePreparedModularStreamsStoragePlan(const PreparedModularStreamsView &input,
                                          const PreparedModularEntropyOptions &options,
-                                         ModularWorkflowStoragePlan *out);
-// Supplied data tokens remain borrowed in the result. Their owner must outlive
-// every consumer of the returned token views; generated tree tokens are owned.
+                                         ModularWorkflowStoragePlan *out,
+                                         PreparedModularTokenizationOptions tokenization = {});
 [[nodiscard]] Status TokenizePreparedModularStreams(const PreparedModularStreamsView &input,
-                                                    PreparedModularStreamTokens *out);
+                                                    PreparedModularStreamTokens *out,
+                                                    PreparedModularTokenizationOptions options = {});
 // Complete private CPU encode with prescribed decisions; no transform search,
 // sample fitting, pixel copy or GPU work. The caller owns admission. All
 // borrows must stay immutable/live until return. Failure preserves the previous
@@ -78,8 +109,10 @@ ComputePreparedModularStreamsStoragePlan(const PreparedModularStreamsView &input
 [[nodiscard]] Status
 EncodePreparedModularStreams(const PreparedModularStreamsView &input, EntropyCodingMode mode,
                              codestream_internal::CodestreamBuffer *out,
-                             AnsSelectionMode selection = AnsSelectionMode::kExact);
+                             AnsSelectionMode selection = AnsSelectionMode::kExact,
+                             PreparedModularTokenizationOptions tokenization = {});
 [[nodiscard]] Status EncodePreparedModularStreams(const PreparedModularStreamsView &input,
                                                   const PreparedModularEntropyOptions &options,
-                                                  codestream_internal::CodestreamBuffer *out);
+                                                  codestream_internal::CodestreamBuffer *out,
+                                                  PreparedModularTokenizationOptions tokenization = {});
 } // namespace gjxl::modular_internal

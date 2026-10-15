@@ -272,9 +272,11 @@ int main(int argc, char **argv) try {
          << ",\"peak_committed_bytes\":" << snapshot.peak_committed_bytes
          << ",\"prepare\":" << preparation.str()
          << ",\"encode_prepared\":" << coding.str() << ",\"profile_wall\":";
-  Array(result, profile.seconds);
+  // This unadmitted private control stays serial; preserve schema 2's eight
+  // stage entries when new parallel diagnostics are appended to the profile.
+  Array(result, std::span(profile.seconds).first(8));
   result << ",\"profile_cpu\":";
-  Array(result, profile.cpu_seconds);
+  Array(result, std::span(profile.cpu_seconds).first(8));
   result << ",\"total\":" << (mode == "timing" ? total.str() : "null")
          << ",\"total_includes_prepared_teardown\":" << (mode == "timing");
   result << "}\n";

@@ -4,6 +4,7 @@
 // Adapted from pinned libjxl e8ff0976 enc_ma.cc and fast_math-inl.h.
 // Native storage, validation and SIMD operations; no libjxl/Highway dependency.
 #include "codec/modular/histogram_tree_learning.h"
+#include "codec/modular/histogram_tree_profile.h"
 
 #include <bit>
 #include <cmath>
@@ -17,6 +18,7 @@
 namespace gjxl::modular_internal {
 namespace {
 using resource_budget_internal::ManagedVector;
+using histogram_profile_internal::Phase;
 constexpr size_t kSymbols = 256;
 // The last (unevaluated) property bin is cleared after all predictors, so its
 // histogram may temporarily hold every predictor's weighted population.
@@ -170,17 +172,20 @@ IntersectionType BoxIntersects(HistogramStaticRange needle,
   }
   return partial ? IntersectionType::kPartial : IntersectionType::kInside;
 }
-template <bool S>
+template <bool S, bool Profiled>
 void SplitTreeSamples(SamplesView &samples, size_t begin, size_t pos,
-                      size_t end, size_t prop, uint32_t value) {
+                      size_t end, size_t prop, uint32_t value,
+                      HistogramNodeBucket *profile) {
   size_t low = begin, high = pos;
   do {
     while (low < pos && samples.Property<S>(prop, low) <= value)
       ++low;
     while (high < end && samples.Property<S>(prop, high) > value)
       ++high;
-    if (low < pos && high < end)
+    if (low < pos && high < end) {
       samples.Swap(low, high);
+      if constexpr (Profiled) ++profile->work.row_swaps;
+    }
     ++low;
     ++high;
   } while (low < pos && high < end);
@@ -277,11 +282,13 @@ size_t MaximumBins(const HistogramTrainingSamples &s) {
   return bins;
 }
 
+template <bool Profiled>
 Status FindBestSplit(SamplesView &tree_samples, Workspace &w,
                      HistogramTreeLearningOptions options, float threshold,
                      std::span<const HistogramMultiplierRange> mul_info,
                      HistogramStaticRange initial_static_prop_range,
-                     float fast_decode_multiplier, DecisionTree *tree) {
+                     float fast_decode_multiplier, DecisionTree *tree,
+                     HistogramFittingProfile *profile, HistogramFitRecord *record) {
   auto &nodes = w.nodes;
   nodes.push_back(NodeInfo{0, 0, tree_samples.NumDistinctSamples(),
                            initial_static_prop_range, 1});
@@ -301,6 +308,7 @@ Status FindBestSplit(SamplesView &tree_samples, Workspace &w,
     nodes.pop_back();
     if (begin == end)
       continue;
+    histogram_profile_internal::Node<Profiled> node_profile(profile, end - begin, depth, record);
 
     struct SplitInfo {
       size_t prop = 0;
@@ -319,6 +327,7 @@ Status FindBestSplit(SamplesView &tree_samples, Workspace &w,
     SplitInfo best_split_nowp;
 
     // Compute the maximum token in the range.
+    Phase<Profiled> symbol_timer(profile, HistogramFitStage::kSymbolRange, node_profile.bucket);
     size_t max_symbols = 0;
     for (size_t pred = 0; pred < num_predictors; pred++) {
       for (size_t i = begin; i < end; i++) {
@@ -327,6 +336,13 @@ Status FindBestSplit(SamplesView &tree_samples, Workspace &w,
       }
     }
     max_symbols = Padded(max_symbols);
+    symbol_timer.Stop();
+    if constexpr (Profiled) {
+      ++profile->nodes_by_symbol_span[max_symbols];
+      node_profile.bucket->work.symbol_row_visits += (end - begin) * num_predictors;
+      node_profile.bucket->work.parent_histogram_row_visits += (end - begin) * num_predictors;
+    }
+    Phase<Profiled> parent_timer(profile, HistogramFitStage::kParentHistograms, node_profile.bucket);
     auto &counts = w.counts;
     auto &tot_extra_bits = w.total_extra;
     std::fill_n(counts.begin(), max_symbols * num_predictors, int32_t{0});
@@ -350,6 +366,7 @@ Status FindBestSplit(SamplesView &tree_samples, Workspace &w,
           EstimateBits(counts.data() + pred * max_symbols, max_symbols) +
           tot_extra_bits[pred];
     }
+    parent_timer.Stop();
 
     SplitInfo *best = &best_split_nonstatic;
 
@@ -382,6 +399,7 @@ Status FindBestSplit(SamplesView &tree_samples, Workspace &w,
         forced_split.lcost = forced_split.rcost = base_bits / 2 - threshold;
         forced_split.lpred = forced_split.rpred = tree->nodes[pos].predictor;
         best = &forced_split;
+        if constexpr (Profiled) ++node_profile.bucket->work.forced_splits;
         best->pos = begin;
 
         if (best->prop < tree_samples.NumStaticProps()) {
@@ -420,6 +438,7 @@ Status FindBestSplit(SamplesView &tree_samples, Workspace &w,
       float change_pred_penalty = 800.0f / (100.0f + threshold);
       for (size_t prop = 0; prop < num_properties && base_bits > threshold;
            prop++) {
+        Phase<Profiled> property_timer(profile, HistogramFitStage::kPropertyPopulation, node_profile.bucket);
         const size_t prop_size = tree_samples.NumPropertyValues(prop);
         std::fill_n(prop_value_used_count.begin(), prop_size, int32_t{0});
 
@@ -446,8 +465,18 @@ Status FindBestSplit(SamplesView &tree_samples, Workspace &w,
         }
         std::fill_n(costs_l.begin(), last_used - first_used, CostInfo{});
         std::fill_n(costs_r.begin(), last_used - first_used, CostInfo{});
+        property_timer.Stop();
+        if constexpr (Profiled) {
+          ++node_profile.bucket->work.properties;
+          node_profile.bucket->work.constant_properties += first_used == last_used;
+          node_profile.bucket->work.property_row_visits += end - begin;
+          node_profile.bucket->work.joint_histogram_row_visits += (end - begin) * num_predictors;
+          node_profile.bucket->work.bin_span += last_used - first_used + 1;
+          ++profile->properties_by_bin_span[HistogramProfileBucket(last_used - first_used + 1, kHistogramBinBuckets)];
+        }
         // For all predictors, compute the right and left costs of each split.
         for (size_t pred = 0; pred < num_predictors; pred++) {
+          Phase<Profiled> joint_timer(profile, HistogramFitStage::kJointHistograms, node_profile.bucket);
           // Compute cost and histogram increments for each property value.
           const auto &rtokens = tree_samples.RTokens(pred);
           if (prop < tree_samples.NumStaticProps()) {
@@ -459,6 +488,8 @@ Status FindBestSplit(SamplesView &tree_samples, Workspace &w,
                 tree_samples, rtokens, count_increase, extra_bits_increase,
                 begin, end, prop - tree_samples.NumStaticProps(), max_symbols);
           }
+          joint_timer.Stop();
+          Phase<Profiled> candidate_timer(profile, HistogramFitStage::kCandidateEvaluation, node_profile.bucket);
           memcpy(counts_above.data(), counts.data() + pred * max_symbols,
                  max_symbols * sizeof counts_above[0]);
           memset(counts_below.data(), 0, max_symbols * sizeof counts_below[0]);
@@ -514,10 +545,13 @@ Status FindBestSplit(SamplesView &tree_samples, Workspace &w,
         }
         // Iterate through the possible splits and find the one with minimum sum
         // of costs of the two sides.
+        Phase<Profiled> selection_timer(profile, HistogramFitStage::kSplitSelection, node_profile.bucket);
+        size_t active_thresholds = 0;
         size_t split = begin;
         for (size_t i = first_used; i < last_used; i++) {
           if (!prop_value_used_count[i])
             continue;
+          if constexpr (Profiled) ++active_thresholds;
           split += prop_value_used_count[i];
           float rcost = costs_r[i - first_used].cost;
           float lcost = costs_l[i - first_used].cost;
@@ -541,6 +575,15 @@ Status FindBestSplit(SamplesView &tree_samples, Workspace &w,
             best_ref.rcost = rcost;
             best_ref.rpred = costs_r[i - first_used].pred;
           }
+        }
+        selection_timer.Stop();
+        if constexpr (Profiled) {
+          auto &work = node_profile.bucket->work;
+          work.active_bins += active_thresholds + 1;
+          work.candidate_thresholds += active_thresholds;
+          work.entropy_evaluations += 2 * active_thresholds * num_predictors;
+          work.symbol_terms += 2 * active_thresholds * num_predictors * max_symbols;
+          ++profile->properties_by_active_bins[HistogramProfileBucket(active_thresholds + 1, kHistogramBinBuckets)];
         }
         // Clear extra_bits_increase and cost_increase for last_used.
         extra_bits_increase[last_used] = 0;
@@ -575,15 +618,21 @@ Status FindBestSplit(SamplesView &tree_samples, Workspace &w,
         return Status::Unsupported(
             "Histogram Modular fit exceeds tree capacity or depth");
       MakeSplitNode(pos, p, dequant, best->lpred, best->rpred, tree);
-      // "Sort" according to winning property
-      if (best->prop < tree_samples.NumStaticProps()) {
-        SplitTreeSamples<true>(tree_samples, begin, best->pos, end, best->prop,
-                               best->val);
-      } else {
-        SplitTreeSamples<false>(tree_samples, begin, best->pos, end,
-                                best->prop - tree_samples.NumStaticProps(),
-                                best->val);
+      if constexpr (Profiled) {
+        ++node_profile.bucket->work.splits;
+        node_profile.bucket->work.partition_rows += end - begin;
       }
+      // "Sort" according to winning property
+      Phase<Profiled> partition_timer(profile, HistogramFitStage::kPartition, node_profile.bucket);
+      if (best->prop < tree_samples.NumStaticProps()) {
+        SplitTreeSamples<true, Profiled>(tree_samples, begin, best->pos, end, best->prop,
+                                         best->val, node_profile.bucket);
+      } else {
+        SplitTreeSamples<false, Profiled>(tree_samples, begin, best->pos, end,
+                                best->prop - tree_samples.NumStaticProps(),
+                                best->val, node_profile.bucket);
+      }
+      partition_timer.Stop();
       auto new_sp_range = static_prop_range;
       if (p < kHistogramStaticProperties) {
         new_sp_range[p][1] = dequant + 1;
@@ -670,20 +719,33 @@ Status ComputeHistogramTreeLearningStorageBound(
     return Status::InvalidArgument("Null histogram learning storage output");
   if (auto status = ValidateShape(s, options); !status.ok())
     return status;
+  return ComputeHistogramTreeWorkspaceStorageBound(
+      s.predictor_count, MaximumBins(s), options.maximum_leaves,
+      options.maximum_depth, out);
+}
+
+Status ComputeHistogramTreeWorkspaceStorageBound(
+    size_t predictor_count, size_t bins, size_t maximum_leaves,
+    size_t maximum_depth, resource_budget_internal::HostStorageBound *out) {
+  if (!out || !predictor_count || predictor_count > kHistogramPredictors ||
+      !bins || bins > kHistogramMaximumStaticBins || !maximum_leaves ||
+      maximum_leaves > kMaximumTreeLeaves || !maximum_depth ||
+      maximum_depth > kMaximumTreeDepth)
+    return Status::InvalidArgument("Invalid histogram workspace capacity");
   using namespace resource_budget_internal;
   HostStorageBound bound;
-  const size_t bins = MaximumBins(s), nodes = 2 * options.maximum_leaves - 1;
+  const size_t nodes = 2 * maximum_leaves - 1;
   if (!bound.AddVector<Workspace>(1, VectorCapacityPolicy::kFreshExact) ||
-      !bound.AddVector<NodeInfo>(options.maximum_depth,
+      !bound.AddVector<NodeInfo>(maximum_depth,
                                  VectorCapacityPolicy::kFreshExact) ||
-      !bound.AddVector<int32_t>(kSymbols * s.predictor_count,
+      !bound.AddVector<int32_t>(kSymbols * predictor_count,
                                 VectorCapacityPolicy::kFreshExact) ||
       !bound.AddVector<int32_t>(kSymbols, VectorCapacityPolicy::kFreshExact,
                                 2) ||
       !bound.AddVector<int32_t>(bins, VectorCapacityPolicy::kFreshExact) ||
       !bound.AddVector<int32_t>(bins * kSymbols,
                                 VectorCapacityPolicy::kFreshExact) ||
-      !bound.AddVector<uint32_t>(s.predictor_count,
+      !bound.AddVector<uint32_t>(predictor_count,
                                  VectorCapacityPolicy::kFreshExact) ||
       !bound.AddVector<size_t>(bins, VectorCapacityPolicy::kFreshExact) ||
       !bound.AddVector<CostInfo>(bins, VectorCapacityPolicy::kFreshExact, 2) ||
@@ -698,10 +760,22 @@ Status ComputeHistogramTreeLearningStorageBound(
 
 Status LearnHistogramTree(HistogramTrainingSamples &s, DecisionTree *out,
                           HistogramTreeLearningOptions options) try {
+  auto *profile = active_histogram_fitting_profile;
+  histogram_profile_internal::Fit fit_profile(profile);
+  Phase<true> validation_timer(profile, HistogramFitStage::kValidation);
   if (!out)
     return Status::InvalidArgument("Null histogram tree output");
   if (auto status = ValidateHistogramTrainingSamples(s, options); !status.ok())
     return status;
+  validation_timer.Stop();
+  if (fit_profile.record) {
+    auto &record = *fit_profile.record;
+    record.rows = s.weights.size();
+    record.population = s.total_samples;
+    record.predictors = s.predictor_count;
+    record.properties = s.property_count;
+  }
+  Phase<true> setup_timer(profile, HistogramFitStage::kSetup);
   ManagedVector<Workspace> storage(1);
   auto &w = storage[0];
   const size_t bins = MaximumBins(s);
@@ -719,17 +793,24 @@ Status LearnHistogramTree(HistogramTrainingSamples &s, DecisionTree *out,
   result.nodes.resize(2 * options.maximum_leaves - 1);
   result.nodes[0].predictor = s.predictors[0];
   SamplesView view{s};
-  if (auto status = FindBestSplit(view, w, options, options.split_threshold,
-                                  options.multipliers, options.static_range,
-                                  options.fast_decode_multiplier, &result);
-      !status.ok())
+  setup_timer.Stop();
+  const auto status = profile
+      ? FindBestSplit<true>(view, w, options, options.split_threshold, options.multipliers,
+                            options.static_range, options.fast_decode_multiplier, &result,
+                            profile, fit_profile.record)
+      : FindBestSplit<false>(view, w, options, options.split_threshold, options.multipliers,
+                             options.static_range, options.fast_decode_multiplier, &result,
+                             nullptr, nullptr);
+  if (!status.ok())
     return status;
+  Phase<true> output_timer(profile, HistogramFitStage::kOutput);
   TreeLayout layout;
   if (auto status = ValidateTree(result, &layout); !status.ok())
     return status;
   if (result.size <= kInlineTreeNodes)
     result.nodes.resize(result.size); // Releases only; cannot allocate.
   *out = std::move(result);
+  fit_profile.Success(out->size);
   return Status::Ok();
 } catch (const resource_budget_internal::ManagedAllocationFailure &e) {
   return e.status();

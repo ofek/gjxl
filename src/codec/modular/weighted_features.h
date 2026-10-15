@@ -7,6 +7,23 @@
 #include <chrono>
 
 namespace gjxl::modular_internal {
+// Borrow of one COMPLETED channel-local feature map. Source identity includes
+// the first pixel, descriptor, stride and selected predictor parameters. The
+// owner keeps both samples and features immutable/live through all consumers;
+// this view neither owns nor charges storage. Empty values explicitly request
+// scalar preparation. Nonempty values are a trusted producer result, not a
+// user-supplied approximation, and contain exactly width*height raster entries.
+struct WeightedFeatureView {
+  ModularChannelView source;
+  WeightedPredictorParameters parameters;
+  std::span<const WeightedPredictorFeature> values;
+};
+// Allocation-free and pixel/feature-read-free. Empty values select the scalar
+// path. Otherwise reject stale/mismatched source, header or extent before work.
+[[nodiscard]] Status ValidateWeightedFeatureView(
+    const WeightedFeatureView &features, const ModularChannelView &source,
+    const WeightedPredictorParameters &parameters);
+
 // Private producer selection. kGpu requests GPU work for supported shapes;
 // unsupported shapes select the CPU before execution. Failures never retry.
 enum class WeightedFeatureBackend { kCpu, kGpu, kAuto };
@@ -109,6 +126,14 @@ struct WeightedFeatureBatchStoragePlan {
 // resets, scheduler setup, launching and joining as well as predictor work.
 [[nodiscard]] Status PrepareWeightedPredictorFeatureBatch(
     std::span<const WeightedFeatureSlice> slices, const WeightedPredictorParameters &parameters,
+    std::span<WeightedPredictorFeature> output, size_t maximum_participants,
+    FeaturePreparationProfile *profile = nullptr);
+// Same execution/storage contract; parameters has either one shared entry or
+// one entry per slice. Every header is validated before any work. Worker scratch
+// is reused with both width and parameters reset at each independent slice.
+[[nodiscard]] Status PrepareWeightedPredictorFeatureBatchWithParameters(
+    std::span<const WeightedFeatureSlice> slices,
+    std::span<const WeightedPredictorParameters> parameters,
     std::span<WeightedPredictorFeature> output, size_t maximum_participants,
     FeaturePreparationProfile *profile = nullptr);
 } // namespace gjxl::modular_internal

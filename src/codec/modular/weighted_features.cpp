@@ -31,6 +31,25 @@ Status ProduceSlice(ModularChannelView slice, PredictorState &predictor,
 }
 } // namespace
 
+Status ValidateWeightedFeatureView(const WeightedFeatureView &features,
+                                   const ModularChannelView &source,
+                                   const WeightedPredictorParameters &parameters) {
+  if (features.values.empty())
+    return Status::Ok();
+  size_t count;
+  if (!parameters.valid() || features.parameters != parameters ||
+      features.source.backing.data() != source.backing.data() ||
+      features.source.descriptor != source.descriptor ||
+      features.source.stride != source.stride ||
+      !source.descriptor.extent.try_area(&count) ||
+      count > size_t(PTRDIFF_MAX) / sizeof(WeightedPredictorFeature) ||
+      features.values.size() != count || !features.values.data())
+    return Status::InvalidArgument("Mismatched completed weighted feature view");
+  if (auto s = source.Validate(); !s.ok())
+    return s;
+  return features.source.Validate();
+}
+
 Status ComputeWeightedPredictorScratchBound(size_t maximum_width, size_t participants,
                                             HostStorageBound *out) {
   if (!out || !maximum_width || !participants || participants > 256 ||
@@ -98,16 +117,19 @@ Status ComputeWeightedFeatureBatchStoragePlan(size_t slices, size_t maximum_widt
   return Status::Ok();
 }
 
-Status PrepareWeightedPredictorFeatureBatch(std::span<const WeightedFeatureSlice> slices,
-                                            const WeightedPredictorParameters &parameters,
-                                            std::span<WeightedPredictorFeature> output,
-                                            size_t maximum_participants,
-                                            FeaturePreparationProfile *profile) try {
+Status PrepareWeightedPredictorFeatureBatchWithParameters(
+    std::span<const WeightedFeatureSlice> slices,
+    std::span<const WeightedPredictorParameters> parameters,
+    std::span<WeightedPredictorFeature> output, size_t maximum_participants,
+    FeaturePreparationProfile *profile) try {
   using namespace thread_budget_internal;
-  if (!parameters.valid() || slices.empty() || !maximum_participants ||
-      maximum_participants > 256 || !output.data() ||
+  if ((parameters.size() != 1 && parameters.size() != slices.size()) || parameters.empty() ||
+      slices.empty() || !maximum_participants || maximum_participants > 256 || !output.data() ||
       output.size() > size_t(PTRDIFF_MAX) / sizeof(WeightedPredictorFeature))
     return Status::InvalidArgument("Invalid weighted feature batch request");
+  for (const auto &p : parameters)
+    if (!p.valid())
+      return Status::InvalidArgument("Invalid weighted feature batch parameters");
   size_t next = 0, maximum_width = 0;
   for (const auto &slice : slices) {
     if (auto s = slice.input.Validate(); !s.ok())
@@ -141,14 +163,14 @@ Status PrepareWeightedPredictorFeatureBatch(std::span<const WeightedFeatureSlice
   const auto run = [&](size_t i, PredictorState &predictor) {
     const auto &slice = slices[i];
     const auto [width, height] = slice.input.descriptor.extent;
-    if (!predictor.ResetForWidth(width))
+    if (!predictor.ResetForWidth(width, parameters[parameters.size() == 1 ? 0 : i]))
       return Status::Internal("Weighted predictor scratch is narrower than its slice");
     return ProduceSlice(slice.input, predictor,
                         output.subspan(slice.feature_offset, width * height));
   };
   FeaturePreparationScope allocation(profile, &FeaturePreparationProfile::scratch_seconds);
   if (participants == 1) {
-    PredictorState predictor(maximum_width, parameters);
+    PredictorState predictor(maximum_width, parameters.front());
     allocation.Stop();
     const FeaturePreparationScope computation(profile,
                                               &FeaturePreparationProfile::prediction_seconds);
@@ -160,7 +182,7 @@ Status PrepareWeightedPredictorFeatureBatch(std::span<const WeightedFeatureSlice
   PreparationStorage<PredictorState> predictors;
   predictors.reserve(participants);
   for (size_t i = 0; i < participants; ++i)
-    predictors.emplace_back(maximum_width, parameters);
+    predictors.emplace_back(maximum_width, parameters.front());
   allocation.Stop();
   const FeaturePreparationScope computation(profile,
                                             &FeaturePreparationProfile::prediction_seconds);
@@ -180,5 +202,13 @@ Status PrepareWeightedPredictorFeatureBatch(std::span<const WeightedFeatureSlice
   return Status::OutOfMemory("Weighted feature batch allocation failed");
 } catch (const std::length_error &) {
   return Status::InvalidArgument("Weighted feature batch storage overflow");
+}
+Status PrepareWeightedPredictorFeatureBatch(std::span<const WeightedFeatureSlice> slices,
+                                            const WeightedPredictorParameters &parameters,
+                                            std::span<WeightedPredictorFeature> output,
+                                            size_t maximum_participants,
+                                            FeaturePreparationProfile *profile) {
+  return PrepareWeightedPredictorFeatureBatchWithParameters(slices, {&parameters, 1}, output,
+                                                            maximum_participants, profile);
 }
 } // namespace gjxl::modular_internal

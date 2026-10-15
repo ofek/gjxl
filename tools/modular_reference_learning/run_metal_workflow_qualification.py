@@ -50,9 +50,14 @@ def main():
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--encode-repeats", type=int, default=4)
     parser.add_argument("--feature-repeats", type=int, default=6)
+    parser.add_argument("--cpu-participants", type=int, default=1)
+    parser.add_argument("--public-only", action="store_true",
+                        help="Encode only public CPU and explicit Metal; omit forced producers")
     args = parser.parse_args()
     if args.encode_repeats < 1 or args.feature_repeats < 1:
         parser.error("Repetitions must be positive")
+    if not 1 <= args.cpu_participants <= 256:
+        parser.error("CPU participants must be in 1..256")
     root = Path(__file__).resolve().parents[2]
     out = args.out.resolve()
     out.mkdir(parents=True, exist_ok=False)
@@ -64,8 +69,12 @@ def main():
     clone(args.binary.resolve(), binary)
     captures = []
     manifest = {
-        "schema": 1, "complete": False,
+        "schema": 2, "complete": False,
+        "cpu_ceiling": args.cpu_participants,
+        "encode_variants": ["cpu", "metal-auto"] if args.public_only else
+                           ["cpu", "metal-auto", "metal-cpu", "metal-gpu"],
         "source_revision": command(["git", "rev-parse", "HEAD"], cwd=root),
+        "merge_parent": command(["git", "rev-parse", "-q", "--verify", "MERGE_HEAD"], cwd=root),
         "source_status": command(["git", "status", "--short", "--branch"], cwd=root),
         "platform": platform.platform(),
         "system": command(["sysctl", "hw.model", "machdep.cpu.brand_string", "hw.memsize",
@@ -83,6 +92,8 @@ def main():
                  "copy, predictor computation, dispatch, wait and publication; selected channels, "
                  "backend setup, admission and output destruction outside. Managed peaks exclude "
                  "borrowed inputs, published output, immutable backend, driver and oracle storage. "
+                 "Bounded feature batches; standalone feature trials retain all batch owners "
+                 "through comparison. Explicit CPU ceiling recorded per call. "
                  "Active desktop; no concurrent qualification/build/test processes launched here.",
         "inputs": [], "sources": [], "captures": captures,
     }
@@ -98,7 +109,7 @@ def main():
         source = root / relative
         clone(source, out / "source" / relative)
         manifest["sources"].append({"path": relative, "sha256": digest(source)})
-    patch = subprocess.check_output(["git", "diff", "--binary"], cwd=root)
+    patch = subprocess.check_output(["git", "diff", "HEAD", "--binary"], cwd=root)
     (out / "source.patch").write_bytes(patch)
     manifest["source_patch_sha256"] = digest(out / "source.patch")
     for filename in ["CMakeCache.txt", "compile_commands.json", "build.ninja"]:
@@ -125,7 +136,9 @@ def main():
                 directory = out / mode / name
                 directory.parent.mkdir(exist_ok=True)
                 repeats = args.encode_repeats if mode == "encode" else args.feature_repeats
-                argv = [str(binary), item["frozen_path"], str(directory), str(repeats), mode]
+                selected_mode = "encode-public" if mode == "encode" and args.public_only else mode
+                argv = [str(binary), item["frozen_path"], str(directory), str(repeats),
+                        selected_mode, str(args.cpu_participants)]
                 capture = {"name": name, "mode": mode, "argv": argv, "before": environment()}
                 start = time.monotonic()
                 print(f"START {mode} {name}", flush=True)
@@ -138,7 +151,8 @@ def main():
                 if child.returncode == 0:
                     result = directory / ("encodes.jsonl" if mode == "encode" else "features.jsonl")
                     rows = [json.loads(line) for line in result.read_text().splitlines()]
-                    expected = 2 + 4 * (1 + repeats) if mode == "encode" else 3 * (1 + repeats)
+                    expected = (2 + len(manifest["encode_variants"]) * (1 + repeats)
+                                if mode == "encode" else 3 * (1 + repeats))
                     if len(rows) != expected or not all(r["released"] for r in rows):
                         raise RuntimeError(f"Incomplete capture: {mode} {name}")
                     capture.update(rows=len(rows), result_sha256=digest(result))

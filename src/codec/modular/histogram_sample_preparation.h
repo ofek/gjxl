@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Yunho Cho
 #pragma once
 #include "codec/modular/histogram_tree_learning.h"
+#include "codec/modular/weighted_features.h"
 
 namespace gjxl::modular_internal {
 
@@ -16,10 +17,10 @@ struct HistogramTrainingImage {
   // Applies to this stream's channels; predictor state still resets for each
   // channel. These must be the parameters used when tokenizing the same data.
   WeightedPredictorParameters weighted;
-  // Optional completed features for the included channel prefix, concatenated
-  // in channel/raster order. Same pixels, parameters and channel resets; borrowed
-  // for this call. An empty span retains the scalar producer.
-  std::span<const WeightedPredictorFeature> weighted_features{};
+  // Optional parallel array of channel-local completed maps. Empty array uses
+  // scalar WP for every channel; an empty entry uses scalar WP for that channel.
+  // Borrowed maps preserve all sampling, quantization and deduplication order.
+  std::span<const WeightedFeatureView> weighted_features;
 };
 struct HistogramSamplingOptions {
   float sampling_fraction = 0.5f * 1.3f;
@@ -89,8 +90,8 @@ private:
 // Allocation-free and pixel-read-free; replays the geometry-dependent RNG to
 // count admission exactly. Does not truncate samples to meet an admission cap.
 // Bounds all new preparation/result backing, excluding borrowed pixels and old
-// output. Includes worst-case deduplication state and one live WP channel
-// state.
+// output and borrowed feature maps. Includes worst-case deduplication state
+// and one live WP channel state for uncovered channels.
 [[nodiscard]] Status ComputeHistogramSamplePreparationStorageBound(
     std::span<const HistogramTrainingImage> images,
     HistogramSamplingOptions options,

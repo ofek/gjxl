@@ -58,8 +58,11 @@ void ReusedFeatures() {
     PreparedHistogramSamples scalar, reused;
     image.images[0].weighted_features = {};
     Ok(PrepareHistogramSamples(image.images, &scalar, options));
-    image.images[0].weighted_features =
-        std::span(features).first(excluded ? 33 * 41 : features.size());
+    std::array<WeightedFeatureView, 2> views{};
+    for (size_t c = 0; c < (excluded ? 1 : views.size()); ++c)
+      views[c] = {image.channels[c], image.images[0].weighted,
+                  std::span(features).subspan(c * 33 * 41, 33 * 41)};
+    image.images[0].weighted_features = views;
     ModularProfile profile;
     {
       ProfileSession session(&profile);

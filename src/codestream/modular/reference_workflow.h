@@ -4,7 +4,7 @@
 #include "codec/modular/histogram_sample_preparation.h"
 #include "codec/modular/reference_selection.h"
 #include "codestream/modular/prepared_streams.h"
-#include "gpu/ops/modular_stream_batch.h"
+#include "gpu/ops/modular_stream_tokens.h"
 
 namespace gjxl::modular_internal {
 enum class ReferenceBuffering : uint8_t { kAutomatic, kBuffered };
@@ -16,10 +16,20 @@ struct ReferenceWorkflowOptions {
   PreparedModularEntropyOptions entropy{
       PreparedModularEntropyPolicy::kDirectRateAns,
       AnsSelectionMode::kEstimated, 64};
-  // Optional explicit GPU execution. Selection and fitting remain on CPU;
-  // completed weighted features are shared by learning and token generation.
+  PreparedModularTokenizationOptions tokenization;
+  // Optional private hybrid route. Null selects CPU features and tokens.
+  // Backend outlives a prepared frame and its completed token owners.
   GpuBackend *gpu = nullptr;
-  WeightedFeatureBackend weighted_feature_backend = WeightedFeatureBackend::kAuto;
+  WeightedFeatureBackend feature_producer = WeightedFeatureBackend::kAuto;
+  size_t feature_cpu_participants = 4;
+  // Local prepare-and-fit jobs only. Zero uses the caller's CPU allowance;
+  // one is the serial control. Global fitting stays serial. Additional workers
+  // require CPU participation and managed-memory admission before launch.
+  size_t learning_cpu_participants = 0;
+  // Independent local palette/RCT/WP selection jobs. Zero inherits the
+  // admitted CPU allowance; one retains serial selection. Global selection
+  // still precedes stream placement and always runs as one job.
+  size_t selection_cpu_participants = 0;
 };
 struct ReferenceLearningStats {
   size_t first_group = 0, stop_group = 0;
@@ -27,15 +37,32 @@ struct ReferenceLearningStats {
   size_t distinct_samples = 0, tree_nodes = 0;
 };
 struct ReferenceWorkflowStats {
+  size_t selection_peak_participants = 0, selection_waves = 0,
+         selection_memory_limited_waves = 0;
+  // Joined caller wall versus summed job wall; work is not an additive stage.
+  double selection_seconds = 0, selection_work_seconds = 0;
+  size_t entropy_cpu_participants = 1, entropy_memory_reductions = 0;
+  size_t tokenization_cpu_participants = 1, tokenization_memory_reductions = 0;
   bool local_trees = false;
   size_t selection_calls = 0, learning_calls = 0, fits = 0,
          empty_learning_calls = 0;
   size_t scanned_pixels = 0, selected_samples = 0, distinct_samples = 0,
          tree_nodes = 0;
-  size_t reused_feature_samples = 0, gpu_token_samples = 0;
   // Largest individual stage reservation, excluding backing retained by other
   // stages. The caller's ResourceBudget observes the complete managed peak.
   size_t maximum_stage_bytes = 0;
+  size_t feature_batches = 0, feature_samples = 0, gpu_feature_batches = 0,
+         gpu_feature_samples = 0, cpu_feature_batches = 0;
+  size_t token_batches = 0, token_samples = 0;
+  size_t peak_feature_samples = 0, peak_feature_bytes = 0;
+  size_t learning_peak_participants = 0, learning_waves = 0,
+         learning_memory_limited_waves = 0;
+  // Sums of per-job wall time (overlap when local jobs run concurrently).
+  // Preparation includes sample planning; fitting includes compaction.
+  double sample_preparation_seconds = 0, fitting_seconds = 0;
+  // Caller-wall intervals. Learning includes admission, preparation, fitting,
+  // joins and diagnostic reduction. Features and GPU tokens are separate.
+  double learning_seconds = 0, feature_seconds = 0, token_seconds = 0;
 };
 // A lossless source has at most four normal planes. One reference palette pass
 // adds at most four metadata planes; local passes start without global meta.
@@ -47,13 +74,13 @@ struct ReferenceModularStream {
   ReferenceSelectionResult selection;
   DecisionTree tree;
   ReferenceLearningStats learning;
-  // Temporary borrow while learning; cleared before publishing the frame.
-  std::span<const WeightedPredictorFeature> weighted_features{};
   [[nodiscard]] std::span<const ModularChannelView> training_channels() const {
     return std::span(channels).first(channel_count);
   }
 };
-// Owns all samples/trees behind view(). Channel spans and local-tree pointers
+// Owns all samples/trees and optional GPU token backing behind view(). A GPU
+// backend must outlive this frame. No feature maps survive preparation.
+// Channel spans and local-tree pointers
 // point into fixed managed allocations, so moves preserve their addresses.
 // The global learning image retains excluded descriptors, while view() exposes
 // only the coded global prefix. Empty canonical stream-ID slots are preserved
@@ -81,9 +108,9 @@ private:
   Extent2D extent_;
   PackedModularFormat format_ = PackedModularFormat::kRgb8;
   resource_budget_internal::ManagedVector<ReferenceModularStream> records_;
+  resource_budget_internal::ManagedVector<
+      std::unique_ptr<modular_gpu_internal::PreparedGpuModularTokens>> gpu_tokens_;
   resource_budget_internal::ManagedVector<PreparedModularStreamView> streams_;
-  std::unique_ptr<modular_gpu_internal::PreparedGpuModularTokens> gpu_tokens_;
-  resource_budget_internal::ManagedVector<EntropyTokenStreamView> token_views_;
   ReferenceWorkflowStats stats_;
 };
 
@@ -94,8 +121,7 @@ private:
 // palettes and one shared tree. Each selected scope is prepared once and fit
 // once; empty learning calls produce a trivial tree without invoking the
 // fitter. Caps reject rather than truncate. The result owns its samples and
-// does not borrow the packed input. If supplied, options.gpu must outlive the
-// result's completed token owner.
+// does not borrow the packed input.
 //
 // Staged, nonblocking admission in the caller's managed-memory domain. Before
 // every allocating stage, its existing planner bounds the fresh backing and

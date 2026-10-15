@@ -44,6 +44,14 @@ add_executable(gjxl_modular_reference_workflow_check
   tools/modular_reference_learning/reference_workflow_check.cpp src/io/pnm.cpp)
 target_include_directories(gjxl_modular_reference_workflow_check PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/tests")
 target_link_libraries(gjxl_modular_reference_workflow_check PRIVATE gjxl_codestream gjxl_modular_reference)
+add_executable(gjxl_modular_hybrid_profile
+  tools/modular_reference_learning/hybrid_profile.cpp src/io/pnm.cpp)
+target_include_directories(gjxl_modular_hybrid_profile PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/tests")
+target_link_libraries(gjxl_modular_hybrid_profile PRIVATE gjxl_codestream gjxl_modular_reference)
+if(TARGET gjxl_metal)
+  target_link_libraries(gjxl_modular_hybrid_profile PRIVATE gjxl_metal)
+  target_compile_definitions(gjxl_modular_hybrid_profile PRIVATE GJXL_HYBRID_PROFILE_METAL=1)
+endif()
 add_executable(gjxl_modular_reference_wp_sweep
   tools/modular_reference_learning/reference_wp_sweep.cpp src/io/pnm.cpp)
 target_include_directories(gjxl_modular_reference_wp_sweep PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/tests")
@@ -56,8 +64,22 @@ add_test(NAME modular_reference_wp_sweep
 set_tests_properties(modular_reference_wp_sweep PROPERTIES TIMEOUT 600)
 target_link_libraries(gjxl_modular_reference_workflow_test PRIVATE gjxl_modular_reference)
 target_compile_definitions(gjxl_modular_reference_workflow_test PRIVATE GJXL_REFERENCE_WORKFLOW_ORACLE=1)
+target_link_libraries(gjxl_modular_parallel_learning_test PRIVATE gjxl_modular_reference)
+target_compile_definitions(gjxl_modular_parallel_learning_test PRIVATE GJXL_REFERENCE_WORKFLOW_ORACLE=1)
+target_link_libraries(gjxl_modular_parallel_entropy_test PRIVATE gjxl_modular_reference)
+target_compile_definitions(gjxl_modular_parallel_entropy_test PRIVATE GJXL_REFERENCE_WORKFLOW_ORACLE=1)
+target_link_libraries(gjxl_modular_parallel_selection_test PRIVATE gjxl_modular_reference)
+target_compile_definitions(gjxl_modular_parallel_selection_test PRIVATE GJXL_REFERENCE_WORKFLOW_ORACLE=1)
+target_link_libraries(gjxl_modular_parallel_prepared_tokenization_test PRIVATE gjxl_modular_reference)
+target_compile_definitions(gjxl_modular_parallel_prepared_tokenization_test PRIVATE GJXL_REFERENCE_WORKFLOW_ORACLE=1)
+if(TARGET gjxl_modular_reference_hybrid_test)
+  target_link_libraries(gjxl_modular_reference_hybrid_test PRIVATE gjxl_modular_reference)
+  target_compile_definitions(gjxl_modular_reference_hybrid_test PRIVATE GJXL_REFERENCE_WORKFLOW_ORACLE=1)
+endif()
 if(WIN32)
-  set_tests_properties(modular_reference_workflow modular_reference_wp_sweep PROPERTIES
+  set_tests_properties(modular_reference_workflow modular_reference_wp_sweep
+    modular_parallel_learning modular_parallel_entropy modular_parallel_selection
+    modular_parallel_prepared_tokenization PROPERTIES
     ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:${GJXL_MODULAR_ORACLE_BUILD}/tools")
 endif()
 target_link_libraries(gjxl_ans_selection_test PRIVATE gjxl_modular_reference)

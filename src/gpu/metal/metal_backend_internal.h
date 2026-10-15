@@ -39,8 +39,8 @@
 #include "gpu/ops/aq_evaluation_internal.h"
 #include "gpu/ops/butteraugli.h"
 #include "gpu/ops/gpu_execution_profile_internal.h"
-#include "gpu/ops/modular_stream_batch.h"
 #include "gpu/ops/modular_tokenization.h"
+#include "gpu/ops/modular_stream_tokens.h"
 #include "gpu/ops/primitives.h"
 #include "gpu/ops/resident_input.h"
 #include "gpu/scratch.h"
@@ -377,7 +377,7 @@ class MetalBackend final
     public modular_gpu_internal::GpuModularInputPreparation,
     public modular_gpu_internal::GpuModularTokenGeneration,
     public modular_gpu_internal::GpuAdaptiveModularTokenGeneration,
-    public modular_gpu_internal::GpuModularStreamGeneration,
+    public modular_gpu_internal::GpuModularStreamProcessing,
     public ans_gpu_internal::GpuAnsTokenCost,
     public tree_gpu_internal::GpuModularTreeStatistics,
     public modular_gpu_internal::GpuModularPopulations,
@@ -570,19 +570,20 @@ public:
     const modular_gpu_internal::PreparedGpuAdaptiveModularFeatures& features,
     const modular_internal::DecisionTree& tree,
     std::unique_ptr<modular_gpu_internal::PreparedGpuModularTokens>* out) override;
-  modular_gpu_internal::ModularTokenDeviceLimits modular_stream_limits() const noexcept override;
-  Status PrepareModularStreamFeatures(
-      std::span<const modular_gpu_internal::ModularStreamChannel> channels,
-      std::unique_ptr<modular_gpu_internal::PreparedGpuModularStreamFeatures> *out,
-      modular_internal::WeightedFeatureBackend producer) override;
-  Status GenerateModularStreamTokens(
-      const modular_gpu_internal::PreparedGpuModularStreamFeatures &features,
-      std::span<const modular_internal::DecisionTree *const> trees,
-      std::unique_ptr<modular_gpu_internal::PreparedGpuModularTokens> *out) override;
   Status DiagnoseAdaptiveModularTokens(
     const modular_gpu_internal::PreparedGpuAdaptiveModularFeatures& features,
     const modular_internal::DecisionTree& tree,
     resource_budget_internal::ManagedVector<AdaptiveModularDiagnostic>* out);
+
+  modular_gpu_internal::ModularTokenDeviceLimits modular_stream_limits() const noexcept override;
+  Status PrepareModularStreamFeatures(
+    std::span<const modular_gpu_internal::ModularStreamFeatureSlice> slices,
+    std::unique_ptr<modular_gpu_internal::PreparedGpuModularStreamFeatures>* out,
+    size_t cpu_participants, modular_internal::WeightedFeatureBackend producer) override;
+  Status GenerateModularStreamTokens(
+    const modular_gpu_internal::PreparedGpuModularStreamFeatures& features,
+    std::span<const modular_gpu_internal::ModularStreamTokenTree> trees,
+    std::unique_ptr<modular_gpu_internal::PreparedGpuModularTokens>* out) override;
 
   Status Prepare(
     GpuBackend& backend,

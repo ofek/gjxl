@@ -118,8 +118,9 @@ void tokenize(device const int *planes, device const WeightedFeature *features,
   device const int *plane = planes + s.plane_offset_elements;
   const Neighborhood n = neighbors(plane, s.plane_stride_elements, s.width, x, y);
   const WeightedFeature weighted = p.has_weighted ? features[token] : WeightedFeature{0, 0};
-  device const Node *nodes = reinterpret_cast<device const Node *>(dispatch + p.nodes_offset_bytes) +
-                             s.reserved[1];
+  device const Node *nodes = reinterpret_cast<device const Node *>(dispatch + p.nodes_offset_bytes);
+  if (p.reserved)
+    nodes += s.reserved[0]; // Independent stream tree, with local child/context indices.
   uint leaf = 0;
   while (nodes[leaf].property != -1) {
     const Node node = nodes[leaf];
@@ -182,16 +183,11 @@ kernel void gjxl_modular_adaptive_diagnostic(device const int *planes [[buffer(0
 kernel void gjxl_modular_weighted_features(
     device const int *planes [[buffer(0)]], device WeightedFeature *features [[buffer(1)]],
     device const Slice *slices [[buffer(2)]], device atomic_uint *status [[buffer(3)]],
-    device const gjxl_weighted_features::Parameters *parameter_table [[buffer(4)]],
+    constant gjxl_weighted_features::Parameters *parameters [[buffer(4)]],
     uint group [[threadgroup_position_in_grid]], uint lane [[thread_index_in_threadgroup]]) {
   using namespace gjxl_weighted_features;
   threadgroup State frontier[4 * 256];
   const Slice s = slices[group];
-  // A batch may contain wide metadata handled by the CPU before submission.
-  // This branch is uniform across the entire threadgroup.
-  if (s.reserved[0] == 0xffffffffu)
-    return;
-  const Parameters parameters = parameter_table[s.reserved[0]];
   device const int *plane = planes + s.plane_offset_elements;
   for (uint step = 0; step < s.width + 2 * s.height - 2; ++step) {
     for (uint y = lane; y < s.height; y += 128) {
@@ -209,7 +205,7 @@ kernel void gjxl_modular_weighted_features(
       const auto n = neighbors(plane, s.plane_stride_elements, s.width, x, y);
       const auto result =
           PredictAndUpdate(x, s.width, {n.top, n.left, n.top_right, n.top_left, n.top_top},
-                           plane[ulong(y) * s.plane_stride_elements + x], parameters, west,
+                           plane[ulong(y) * s.plane_stride_elements + x], parameters[s.reserved[0]], west,
                            westwest, north, northeast, northwest);
       features[s.token_offset + ulong(y) * s.width + x] = {result.prediction, result.property15};
       frontier[(step & 3) * 256 + y] = result.state;

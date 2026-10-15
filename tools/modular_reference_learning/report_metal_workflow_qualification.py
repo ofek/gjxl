@@ -33,7 +33,8 @@ def describe(rows, mode):
     result = {key: distribution([r[key] for r in rows]) for key in
               ["seconds", "cpu_seconds", "peak_backing_bytes", "peak_committed_bytes"]}
     if mode == "encode":
-        for index, stage in enumerate(STAGES):
+        stages = STAGES + (["stream_encoding"] if len(rows[0]["profile_wall"]) == 9 else [])
+        for index, stage in enumerate(stages):
             result[stage + "_wall"] = distribution([r["profile_wall"][index] for r in rows])
             result[stage + "_cpu"] = distribution([r["profile_cpu"][index] for r in rows])
         for key in ["feature_seconds", "token_seconds"]:
@@ -52,6 +53,13 @@ def describe(rows, mode):
         key: distribution([p[key] for p in prep]) if key.endswith("seconds") else prep[0][key]
         for key in prep[0]
     }
+    if rows[0]["schema"] >= 2:
+        result["cpu_ceiling"] = rows[0]["cpu_ceiling"]
+        result["peak_cpu_participants"] = distribution([r["peak_cpu_participants"] for r in rows])
+        if mode == "encode":
+            for key in ["parallel_tokens", "parallel_entropy"]:
+                result[key] = {field: distribution([r[key][field] for r in rows])
+                               for field in rows[0][key]}
     return result
 
 
@@ -59,6 +67,11 @@ def collect(root):
     manifest_path = root / "manifest.json"
     manifest = json.loads(manifest_path.read_text())
     require(manifest["complete"], "Capture is incomplete")
+    require(digest(root / "source.patch") == manifest["source_patch_sha256"], "Source patch changed")
+    schema = manifest.get("schema", 1)
+    encode_variants = manifest.get("encode_variants", VARIANTS)
+    require(encode_variants in [VARIANTS, VARIANTS[:2]], "Unexpected encoder variants")
+    cpu_ceiling = manifest.get("cpu_ceiling", 1)
     require(digest(root / "gjxl_modular_metal_workflow_profile") == manifest["binary_sha256"],
             "Frozen binary changed")
     for source in manifest["sources"]:
@@ -72,11 +85,16 @@ def collect(root):
     wanted = {(mode, item["name"]) for item in manifest["inputs"] for mode in item["modes"]}
     require(set(captures) == wanted and len(captures) == len(manifest["captures"]),
             "Missing or duplicated capture")
-    result = dict(schema=1, manifest=str(manifest_path.resolve()),
+    result = dict(schema=schema, manifest=str(manifest_path.resolve()),
                   manifest_sha256=digest(manifest_path), source_revision=manifest["source_revision"],
                   binary_sha256=manifest["binary_sha256"], scope=manifest["scope"],
                   encodes=[], features=[], counts=dict(encodes=0, measured_encodes=0,
                                                       feature_maps=0, compared_features=0))
+    if schema >= 2:
+        result.update(cpu_ceiling=cpu_ceiling, variants=encode_variants,
+                      merge_parent=manifest["merge_parent"], source_status=manifest["source_status"],
+                      platform=manifest["platform"], system=manifest["system"], os=manifest["os"],
+                      source_patch_sha256=manifest["source_patch_sha256"])
     result["additional_evidence"] = {}
     for filename in ["oracle-provenance.json", "prior-cpu-controls.json", "timing-disturbance.json"]:
         path = root / filename
@@ -98,7 +116,7 @@ def collect(root):
         require(digest(path) == capture["result_sha256"], "Capture changed: " + name)
         rows = [json.loads(line) for line in path.read_text().splitlines()]
         repeats = manifest["encode_repeats" if mode == "encode" else "feature_repeats"]
-        variants = VARIANTS if mode == "encode" else ["cpu", "gpu", "auto"]
+        variants = encode_variants if mode == "encode" else ["cpu", "gpu", "auto"]
         expected = {(r, v) for r in range(repeats + 1) for v in variants}
         if mode == "encode":
             expected |= {(-1, "cpu"), (-1, "metal-auto")}
@@ -107,8 +125,9 @@ def collect(root):
                 "Missing or duplicate trial: " + name)
         grouped = defaultdict(list)
         for row in rows:
-            require(row["released"] and row["peak_cpu_participants"] == 1,
+            require(row["released"] and 1 <= row["peak_cpu_participants"] <= cpu_ceiling,
                     "Resource/CPU participation mismatch: " + name)
+            require(row.get("cpu_ceiling", 1) == cpu_ceiling, "CPU ceiling changed")
             require(row["seconds"] > 0 and math.isfinite(row["seconds"]), "Invalid timing")
             if mode == "encode":
                 require(row["exact_bytes"] and row["exact_decode"], "Incorrect encode")
@@ -117,16 +136,18 @@ def collect(root):
                         "Stage timings exceed total")
                 gpu = row["gpu"]
                 cpu = row["variant"] == "cpu"
-                require(gpu["feature_preparations"] == (0 if cpu else 1) and
-                        gpu["feature_reuses"] == (0 if cpu else 1), "Feature build/reuse mismatch")
-                require(row["gpu_submissions"] == (0 if cpu else 1 + gpu["preparation"]["gpu_calls"]),
+                batches = gpu["feature_preparations"]
+                require((batches == 0 if cpu else batches >= 1) and
+                        gpu["feature_reuses"] == batches and (schema >= 2 or batches <= 1),
+                        "Feature build/reuse mismatch")
+                require(row["gpu_submissions"] == (0 if cpu else batches + gpu["preparation"]["gpu_calls"]),
                         "Unexpected GPU submissions")
                 if not cpu:
                     require(row["training"]["weighted_prediction_samples"] == 0 and
                             row["training"]["reused_prediction_samples"] ==
                             rows[0]["training"]["weighted_prediction_samples"],
                             "Learning did not reuse the same sample population")
-                    require(gpu["encoded_candidates"] == 1, "Unexpected token passes")
+                    require(gpu["encoded_candidates"] == batches, "Unexpected token passes")
                 result["counts"]["encodes"] += 1
                 result["counts"]["measured_encodes"] += row["round"] > 0
             else:
@@ -152,18 +173,26 @@ def collect(root):
         else:
             result["features"].append(entry)
     sums = {v: sum(e["variants"][v]["seconds"]["median"] for e in result["encodes"])
-            for v in VARIANTS}
+            for v in encode_variants}
     result["aggregate"] = {"sum_image_wall_medians": sums,
-                           "speedup_vs_cpu": {v: sums["cpu"] / sums[v] for v in VARIANTS},
-                           "forced_gpu_vs_cpu_prep_encode_speedup": sums["metal-cpu"] / sums["metal-gpu"]}
+                           "speedup_vs_cpu": {v: sums["cpu"] / sums[v] if sums[v] else None
+                                              for v in encode_variants}}
+    if "metal-gpu" in sums:
+        result["aggregate"]["forced_gpu_vs_cpu_prep_encode_speedup"] = (
+            sums["metal-cpu"] / sums["metal-gpu"] if sums["metal-gpu"] else None)
     result["validation"] = {"exact_codestreams": True, "independent_decode_every_encode": True,
                              "every_feature_compared": True, "all_domains_released": True,
                              "one_feature_build_and_one_token_pass": True,
                              "learning_population_preserved": True}
+    if schema >= 2:
+        del result["validation"]["one_feature_build_and_one_token_pass"]
+        result["validation"]["one_feature_build_and_one_token_pass_per_batch"] = True
     return result
 
 
 def render(result):
+    if result["schema"] >= 2:
+        return render_parallel(result)
     counts = result["counts"]
     repeated_encodes = result.get("repeat", {}).get("counts", {}).get("encodes", 0)
     sums = result["aggregate"]["sum_image_wall_medians"]
@@ -327,6 +356,58 @@ def render(result):
               "with an active desktop. Background OS work is present. Small end-to-end changes "
               "need to be judged against the recorded spread; these results do not qualify "
               "other devices, concurrent encodes, all possible image layouts or process RSS.", ""]
+    return "\n".join(lines)
+
+
+def render_parallel(result):
+    variants = result["variants"]
+    counts = result["counts"]
+    sums = result["aggregate"]["sum_image_wall_medians"]
+    lines = ["# Bounded parallel Modular qualification", "",
+             f"CPU ceiling: {result['cpu_ceiling']} participants. "
+             f"{counts['encodes']} exact, independently decoded encodes; "
+             f"{counts['feature_maps']} exact feature maps. Every managed domain released.", "",
+             result["scope"], "",
+             "`metal-auto` is explicit Metal with automatic feature routing; public Automatic "
+             "still selects CPU. Cold calls and warmups are excluded from medians. "
+             "This is a limited integration check, not a device/corpus-wide performance claim.", "",
+             "| Image | " + " | ".join(v + " (s)" for v in variants) + " |",
+             "|---|" + "---:|" * len(variants)]
+    for entry in result["encodes"]:
+        lines.append("| " + entry["name"] + " | " + " | ".join(
+            f"{entry['variants'][v]['seconds']['median']:.4f}" for v in variants) + " |")
+    if result["encodes"]:
+        lines += ["| Sum of image medians | " + " | ".join(f"{sums[v]:.4f}" for v in variants) + " |",
+                  "", f"Metal elapsed-time change versus CPU: "
+                  f"{100 * (sums['metal-auto'] / sums['cpu'] - 1):+.2f}%.", "",
+                  "| Stage (sum of image medians, s) | " + " | ".join(variants) + " |",
+                  "|---|" + "---:|" * len(variants)]
+        for stage in STAGES + ["stream_encoding"]:
+            lines.append("| " + stage + " | " + " | ".join(
+                f"{sum(e['variants'][v][stage + '_wall']['median'] for e in result['encodes']):.4f}"
+                for v in variants) + " |")
+        lines += ["", "`stream_encoding` is the joined parallel modeling/emission interval. "
+                  "Feature preparation is nested in training and GPU token work in tokens. "
+                  "Do not add nested diagnostics to stage totals.", "",
+                  "| Image | " + " | ".join(v + " peak backing (MiB)" for v in variants) + " |",
+                  "|---|" + "---:|" * len(variants)]
+        for entry in result["encodes"]:
+            lines.append("| " + entry["name"] + " | " + " | ".join(
+                f"{entry['variants'][v]['peak_backing_bytes']['max'] / 2**20:.2f}"
+                for v in variants) + " |")
+    if result["features"]:
+        lines += ["", "| Feature case | CPU (ms) | GPU (ms) | Auto (ms) |",
+                  "|---|---:|---:|---:|"]
+        for entry in result["features"]:
+            lines.append("| " + entry["name"] + " | " + " | ".join(
+                f"{1000 * entry['variants'][v]['seconds']['median']:.3f}"
+                for v in ["cpu", "gpu", "auto"]) + " |")
+    lines += ["", "All observations, including first calls, warmups, counterbalanced measured "
+              "rounds, participation, hashes and power/process snapshots remain in the capture.", "",
+              f"Source base: `{result['source_revision']['stdout'].strip()}`. "
+              f"Source patch SHA-256: `{result['source_patch_sha256']}`.",
+              f"Manifest: `{result['manifest']}`; SHA-256 `{result['manifest_sha256']}`.",
+              f"Executable SHA-256: `{result['binary_sha256']}`.", ""]
     return "\n".join(lines)
 
 

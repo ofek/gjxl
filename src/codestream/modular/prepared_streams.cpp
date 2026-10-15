@@ -7,7 +7,7 @@
 #include "codestream/modular/stream_encoder.h"
 #include "codestream/modular/tree_codec.h"
 #include "codestream/sections.h"
-#include "core/thread_budget.h"
+#include "core/parallel_work_internal.h"
 #include <algorithm>
 
 namespace gjxl::modular_internal {
@@ -18,6 +18,8 @@ Status Invalid() { return Status::InvalidArgument("Invalid prepared Modular stre
 Status Overflow() { return Status::InvalidArgument("Prepared Modular stream storage overflow"); }
 using EntropyPolicy = PreparedModularEntropyPolicy;
 Status ValidateOptions(const PreparedModularEntropyOptions &options) {
+  if (options.cpu_participants > 256)
+    return Invalid();
   if (auto s = ValidateAnsSelectionMode(options.selection); !s.ok())
     return s;
   if (options.policy == EntropyPolicy::kDirectRateAns)
@@ -29,6 +31,17 @@ Status ValidateOptions(const PreparedModularEntropyOptions &options) {
                  options.maximum_ans_clusters == kDefaultDirectAnsClusters
              ? Status::Ok()
              : Invalid();
+}
+size_t CpuParticipants(size_t maximum) {
+  using namespace thread_budget_internal;
+  if (!HasCpuParticipation() || InExplicitParallelScope())
+    return 1;
+  size_t count = current_cpu_execution.job.limit();
+  if (CpuThreadCount())
+    count = std::min(count, CpuThreadCount());
+  if (maximum)
+    count = std::min(count, maximum);
+  return std::min(size_t{256}, count);
 }
 EntropyCodingMode CodingMode(const PreparedModularEntropyOptions &options) {
   return options.policy == EntropyPolicy::kPrefix ? EntropyCodingMode::kPrefix
@@ -57,13 +70,14 @@ struct StreamInfo {
   size_t id = 0, section = 0, tokens = 0, contexts = 0, tree_tokens = 0, width = 0;
   bool present = false, weighted = false;
 };
+struct TokenizationRange {
+  size_t tokens = 0, tree_tokens = 0;
+};
 Status DescribeFrame(const PreparedModularStreamsView &input, FrameInfo *out) {
   FrameInfo p;
   if (auto s = ResolveModularInput(input.source, input.format, &p.profile); !s.ok())
     return s;
   if (input.streams.empty())
-    return Invalid();
-  if (!input.prepared_tokens.empty() && input.prepared_tokens.size() != input.streams.size())
     return Invalid();
   if (auto s = ValidateTransformBitDepth(input.streams[0].transforms, p.profile.metadata.bits); !s.ok())
     return s;
@@ -105,7 +119,9 @@ Status DescribeFrame(const PreparedModularStreamsView &input, FrameInfo *out) {
 Status DescribeStream(const PreparedModularStreamsView &input, const FrameInfo &frame, size_t index,
                       StreamInfo *out, TreeLayout *local_layout = nullptr) {
   const auto &stream = input.streams[index];
-  if (!stream.weighted.valid() || stream.rct >= 42)
+  if (!stream.weighted.valid() || stream.rct >= 42 ||
+      (!stream.weighted_features.empty() &&
+       stream.weighted_features.size() != stream.channels.size()))
     return Invalid();
   if (auto s = ValidateTransformBitDepth(stream.transforms, frame.profile.metadata.bits); !s.ok())
     return s;
@@ -144,10 +160,8 @@ Status DescribeStream(const PreparedModularStreamsView &input, const FrameInfo &
         original.descriptors[original.count++] = ch;
     }
     if (original.count == 0) {
-      if (!stream.channels.empty() || stream.transforms.size || stream.rct || stream.local_tree)
-        return Invalid();
-      if (!input.prepared_tokens.empty() &&
-          (!input.prepared_tokens[index].valid() || input.prepared_tokens[index].size()))
+      if (!stream.channels.empty() || stream.transforms.size || stream.rct || stream.local_tree ||
+          stream.completed_tokens)
         return Invalid();
       *out = p;
       return Status::Ok();
@@ -178,7 +192,13 @@ Status DescribeStream(const PreparedModularStreamsView &input, const FrameInfo &
     size_t area;
     if (!view.descriptor.extent.try_area(&area) || !Add(area, &p.tokens))
       return Overflow();
-    p.width = std::max(p.width, view.descriptor.extent.width);
+    if (!stream.weighted_features.empty())
+      if (auto s = ValidateWeightedFeatureView(stream.weighted_features[c], view,
+                                               stream.weighted);
+          !s.ok())
+        return s;
+    if (stream.weighted_features.empty() || stream.weighted_features[c].values.empty())
+      p.width = std::max(p.width, view.descriptor.extent.width);
   }
   TreeLayout local;
   const TreeLayout *layout = &frame.global_tree;
@@ -201,9 +221,21 @@ Status DescribeStream(const PreparedModularStreamsView &input, const FrameInfo &
     if (p.tokens && stream.local_tree)
       p.tree_tokens = ModularTreeTokenCount(*tree, *layout);
   }
-  if (!input.prepared_tokens.empty() &&
-      (!input.prepared_tokens[index].valid() || input.prepared_tokens[index].size() != p.tokens))
-    return Invalid();
+  if (stream.completed_tokens) {
+    const auto &ready = *stream.completed_tokens;
+    if (!ready.tokens.valid() || ready.tokens.size() != p.tokens || ready.tree != tree ||
+        ready.weighted != stream.weighted || ready.stream_id != p.id ||
+        ready.channels.size() != stream.channels.size() ||
+        (p.tokens && (ready.tokens.split ? !ready.tokens.values.data() || !ready.tokens.contexts.data()
+                                         : !ready.tokens.tokens.data())))
+      return Invalid();
+    for (size_t c = 0; c < ready.channels.size(); ++c) {
+      const auto &a = ready.channels[c], &b = stream.channels[c];
+      if (a.backing.data() != b.backing.data() || a.descriptor != b.descriptor || a.stride != b.stride)
+        return Invalid();
+      if (auto s = a.Validate(); !s.ok()) return s;
+    }
+  }
   *out = p;
   return Status::Ok();
 }
@@ -283,8 +315,9 @@ Status StreamStorage(const PreparedModularStreamView &stream, const StreamInfo &
   return Status::Ok();
 }
 Status Plan(const PreparedModularStreamsView &input, const PreparedModularEntropyOptions &entropy,
+            PreparedModularTokenizationOptions tokenization,
             ModularWorkflowStoragePlan *out, FrameInfo *frame_out = nullptr) {
-  if (!out)
+  if (!out || tokenization.cpu_participants > 256)
     return Invalid();
   if (auto s = ValidateOptions(entropy); !s.ok())
     return s;
@@ -293,11 +326,13 @@ Status Plan(const PreparedModularStreamsView &input, const PreparedModularEntrop
     return s;
   ModularWorkflowStoragePlan p;
   p.geometry = frame.geometry;
+  p.participants = CpuParticipants(entropy.cpu_participants);
   p.streams = input.streams.size();
   size_t tree_tokens =
       input.global_tree ? ModularTreeTokenCount(*input.global_tree, frame.global_tree) : 0;
-  size_t global_tokens = 0, weighted_width = 0, section_bits = 0;
-  HostStorageBound sections, scratch;
+  size_t global_tokens = 0, generated_tokens = 0, weighted_width = 0, section_bits = 0;
+  HostStorageBound sections, scratch, group_scratch;
+  size_t group_jobs = 0, token_jobs = 0;
   if (!sections.AddVector<BitWriter>(p.geometry.section_count(), VectorCapacityPolicy::kFreshExact))
     return Overflow();
   // Count scopes first; a local stream never contributes to the global model.
@@ -308,19 +343,29 @@ Status Plan(const PreparedModularStreamsView &input, const PreparedModularEntrop
     if (!Add(info.tokens, &p.tokens) || !Add(info.tree_tokens, &tree_tokens) ||
         (!input.streams[i].local_tree && !Add(info.tokens, &global_tokens)))
       return Overflow();
-    if (info.weighted && input.prepared_tokens.empty())
+    if (!input.streams[i].completed_tokens && !Add(info.tokens, &generated_tokens))
+      return Overflow();
+    token_jobs += !input.streams[i].completed_tokens && info.tokens != 0;
+    if (info.weighted && !input.streams[i].completed_tokens)
       weighted_width = std::max(weighted_width, info.width);
   }
   HostStorageBound owned;
-  if (!owned.AddVector<EntropyToken>(input.prepared_tokens.empty() ? p.tokens : 0,
-                                     VectorCapacityPolicy::kFreshExact) ||
+  if (!owned.AddVector<EntropyToken>(generated_tokens, VectorCapacityPolicy::kFreshExact) ||
       !owned.AddVector<EntropyToken>(tree_tokens, VectorCapacityPolicy::kFreshExact) ||
       !owned.AddVector<EntropyTokenStreamView>(p.streams, VectorCapacityPolicy::kFreshExact) ||
       !owned.AddVector<std::span<const EntropyToken>>(p.streams, VectorCapacityPolicy::kFreshExact))
     return Overflow();
   p.preparation = owned;
+  p.tokenization_participants = std::min(CpuParticipants(tokenization.cpu_participants),
+                                        std::max(size_t{1}, token_jobs));
   if (weighted_width && !p.preparation.AddVector<uint32_t>((weighted_width + 2) * 2,
-                                                           VectorCapacityPolicy::kFreshExact, 5))
+                                  VectorCapacityPolicy::kFreshExact, 5 * p.tokenization_participants))
+    return Overflow();
+  if (p.tokenization_participants > 1 &&
+      (!p.preparation.AddVector<TokenizationRange>(p.streams, VectorCapacityPolicy::kFreshExact) ||
+       !p.preparation.AddVector<Status>(p.streams, VectorCapacityPolicy::kFreshExact) ||
+       !p.preparation.AddVector<std::thread>(p.tokenization_participants - 1,
+                                            VectorCapacityPolicy::kFreshExact)))
     return Overflow();
   ModelBound global_model;
   p.maximum_global_bits = 1; // Default DC matrices.
@@ -347,11 +392,13 @@ Status Plan(const PreparedModularStreamsView &input, const PreparedModularEntrop
       return s;
     if (auto s = StreamStorage(input.streams[i], info, entropy, &stream); !s.ok())
       return s;
-    scratch.peak_bytes = std::max(scratch.peak_bytes, stream.scratch.peak_bytes);
     if (i == 0) {
+      scratch.peak_bytes = std::max(scratch.peak_bytes, stream.scratch.peak_bytes);
       if (!Add(stream.bits, &p.maximum_global_bits) || !Add(7, &p.maximum_global_bits))
         return Overflow();
     } else if (info.present) {
+      group_jobs += info.tokens != 0;
+      group_scratch.peak_bytes = std::max(group_scratch.peak_bytes, stream.scratch.peak_bytes);
       size_t bits = stream.bits;
       if (!Add(7, &bits))
         return Overflow();
@@ -378,6 +425,19 @@ Status Plan(const PreparedModularStreamsView &input, const PreparedModularEntrop
        !p.modeling.AddVector<EntropyTokenStreamView>(p.streams, VectorCapacityPolicy::kFreshExact)))
     return Overflow();
   p.emission = owned;
+  // Single-group frames append multiple streams into section zero, so retain
+  // ordered writing there. Other frames give every stream a distinct writer.
+  const size_t stream_workers = p.geometry.group_count() == 1 ? 1
+      : std::min(p.participants, std::max(size_t{1}, group_jobs));
+  HostStorageBound parallel_scratch;
+  if (!parallel_scratch.Add(group_scratch, stream_workers))
+    return Overflow();
+  if (stream_workers > 1 &&
+      (!parallel_scratch.AddVector<Status>(p.streams - 1, VectorCapacityPolicy::kFreshExact) ||
+       !parallel_scratch.AddVector<std::thread>(stream_workers - 1, VectorCapacityPolicy::kFreshExact) ||
+       !parallel_scratch.AddVector<ModularProfile>(stream_workers, VectorCapacityPolicy::kFreshExact)))
+    return Overflow();
+  scratch.peak_bytes = std::max(scratch.peak_bytes, parallel_scratch.peak_bytes);
   if (!p.emission.Add(global_model.owned) || !p.emission.Add(sections) || !p.emission.Add(scratch))
     return Overflow();
   constexpr size_t header_bits = 15 + 256 + 128;
@@ -411,8 +471,9 @@ Status Plan(const PreparedModularStreamsView &input, const PreparedModularEntrop
   return Status::Ok();
 }
 Status Tokenize(const PreparedModularStreamsView &input, const FrameInfo &frame,
-                PreparedModularStreamTokens *out) {
+                PreparedModularStreamTokens *out, PreparedModularTokenizationOptions options) {
   ProfileScope profile(ProfileStage::kTokens);
+  size_t jobs = 0, borrowed = 0;
   size_t total = 0, total_tree = input.global_tree
                                      ? ModularTreeTokenCount(*input.global_tree, frame.global_tree)
                                      : 0;
@@ -420,12 +481,18 @@ Status Tokenize(const PreparedModularStreamsView &input, const FrameInfo &frame,
     StreamInfo info;
     if (auto s = DescribeStream(input, frame, i, &info); !s.ok())
       return s;
-    if (!Add(info.tokens, &total) || !Add(info.tree_tokens, &total_tree))
+    if ((!input.streams[i].completed_tokens && !Add(info.tokens, &total)) ||
+        !Add(info.tree_tokens, &total_tree))
       return Overflow();
+    if (input.streams[i].completed_tokens) {
+      if (!Add(info.tokens, &borrowed))
+        return Overflow();
+    } else {
+      jobs += info.tokens != 0;
+    }
   }
   PreparedModularStreamTokens result;
-  if (input.prepared_tokens.empty())
-    result.tokens.resize(total);
+  result.tokens.resize(total);
   result.tree_tokens.resize(total_tree);
   result.streams.resize(input.streams.size());
   result.local_tree_tokens.resize(input.streams.size());
@@ -436,7 +503,7 @@ Status Tokenize(const PreparedModularStreamsView &input, const FrameInfo &frame,
     TokenizeValidatedModularTree(*input.global_tree, frame.global_tree, span);
     result.global_tree_tokens = span;
   }
-  for (size_t i = 0; i < input.streams.size(); ++i) {
+  const auto tokenize_stream = [&](size_t i, size_t first, size_t first_tree) -> Status {
     const auto &stream = input.streams[i];
     StreamInfo info;
     TreeLayout local;
@@ -444,16 +511,15 @@ Status Tokenize(const PreparedModularStreamsView &input, const FrameInfo &frame,
       return s;
     const auto *tree = stream.local_tree ? stream.local_tree : input.global_tree;
     const auto &layout = stream.local_tree ? local : frame.global_tree;
-    const size_t first = next;
+    size_t offset = first;
     if (info.tree_tokens) {
-      auto span = std::span(result.tree_tokens).subspan(next_tree, info.tree_tokens);
+      auto span = std::span(result.tree_tokens).subspan(first_tree, info.tree_tokens);
       TokenizeValidatedModularTree(*tree, layout, span);
       result.local_tree_tokens[i] = span;
-      next_tree += info.tree_tokens;
     }
-    if (!input.prepared_tokens.empty()) {
-      result.streams[i] = input.prepared_tokens[i];
-      continue;
+    if (stream.completed_tokens) {
+      result.streams[i] = stream.completed_tokens->tokens;
+      return Status::Ok();
     }
     for (size_t c = 0; c < stream.channels.size(); ++c) {
       const auto &channel = stream.channels[c];
@@ -462,13 +528,63 @@ Status Tokenize(const PreparedModularStreamsView &input, const FrameInfo &frame,
         continue; // Preserve channel IDs without dereferencing an absent tree.
       if (auto s =
               TokenizeValidatedModularChannel(channel, c, info.id, *tree, layout, stream.weighted,
-                                              std::span(result.tokens).subspan(next, count));
+                                              std::span(result.tokens).subspan(offset, count),
+                                              stream.weighted_features.empty()
+                                                  ? std::span<const WeightedPredictorFeature>{}
+                                                  : stream.weighted_features[c].values);
           !s.ok())
         return s;
-      next += count;
+      offset += count;
     }
     result.streams[i] =
-        EntropyTokenStreamView::Interleaved(std::span(result.tokens).subspan(first, next - first));
+        EntropyTokenStreamView::Interleaved(std::span(result.tokens).subspan(first, offset - first));
+    return Status::Ok();
+  };
+  using namespace thread_budget_internal;
+  CpuWorkerGroup group(std::min(CpuParticipants(options.cpu_participants), std::max(size_t{1}, jobs)));
+  if (active_modular_profile) {
+    auto &work = active_modular_profile->parallel_tokenization;
+    work.stream_jobs += jobs;
+    work.generated_tokens += total;
+    work.borrowed_tokens += borrowed;
+    work.peak_participants = std::max(work.peak_participants, group.participants());
+    work.parallel_calls += group.participants() > 1;
+  }
+  if (group.participants() > 1) {
+    // Stable ranges preserve canonical token/tree order, including empty slots
+    // and borrowed streams. Workers never grow the shared backing or views.
+    Storage<TokenizationRange> ranges(input.streams.size());
+    for (size_t i = 0; i < input.streams.size(); ++i) {
+      ranges[i] = {next, next_tree};
+      StreamInfo info;
+      if (auto s = DescribeStream(input, frame, i, &info); !s.ok())
+        return s;
+      if (!input.streams[i].completed_tokens)
+        next += info.tokens;
+      next_tree += info.tree_tokens;
+    }
+    if (auto s = RunParallelWork<Storage>(
+            input.streams.size(), group, group.participants() - 1,
+            WorkerLaunchSite::kModularPreparedTokenization,
+            {"Prepared token worker allocation failed", "Prepared token worker failed",
+             StatusCode::kInvalidArgument, "Prepared token worker storage overflow",
+             "Prepared token worker launch allocation failed", LaunchFailureAction::kReturnError,
+             "Unable to start prepared token workers"},
+            [&](size_t i, size_t) {
+              EncodeScope serial(1, ParticipantTracker());
+              ProfileSession session(nullptr);
+              return tokenize_stream(i, ranges[i].tokens, ranges[i].tree_tokens);
+            });
+        !s.ok())
+      return s;
+  } else {
+    for (size_t i = 0; i < input.streams.size(); ++i) {
+      if (auto s = tokenize_stream(i, next, next_tree); !s.ok())
+        return s;
+      if (!input.streams[i].completed_tokens)
+        next += result.streams[i].size();
+      next_tree += result.local_tree_tokens[i].size();
+    }
   }
   *out = std::move(result);
   return Status::Ok();
@@ -476,19 +592,21 @@ Status Tokenize(const PreparedModularStreamsView &input, const FrameInfo &frame,
 Status MakeModel(std::span<const EntropyTokenStreamView> streams, size_t contexts,
                  const PreparedModularEntropyOptions &entropy, EntropyCode *out) {
   ProfileScope profile(ProfileStage::kModel);
+  auto *work = active_modular_profile ? &active_modular_profile->entropy_work : nullptr;
   if (entropy.policy == EntropyPolicy::kDirectRateAns)
     return OptimizeDirectAnsEntropyCode(streams,
                                         {.context_count = static_cast<uint32_t>(contexts),
                                          .maximum_ans_clusters = entropy.maximum_ans_clusters},
-                                        DirectAnsEntropyMode::kRateOptimized, out, nullptr, nullptr,
+                                        DirectAnsEntropyMode::kRateOptimized, out, nullptr, work,
                                         entropy.selection);
   if (auto s =
-          OptimizeEntropyCode(streams, {.context_count = static_cast<uint32_t>(contexts)}, out);
+          OptimizeEntropyCode(streams, {.context_count = static_cast<uint32_t>(contexts)}, out,
+                              nullptr, work);
       !s.ok())
     return s;
   if (entropy.policy == EntropyPolicy::kAnsFromPrefix) {
     EntropyCode ans;
-    if (auto s = OptimizeAnsEntropyCode(streams, *out, &ans, nullptr, nullptr, entropy.selection);
+    if (auto s = OptimizeAnsEntropyCode(streams, *out, &ans, nullptr, work, entropy.selection);
         !s.ok())
       return s;
     *out = std::move(ans);
@@ -502,24 +620,27 @@ Status ValidatePreparedModularEntropyOptions(const PreparedModularEntropyOptions
 }
 Status ComputePreparedModularStreamsStoragePlan(const PreparedModularStreamsView &input,
                                                 EntropyCodingMode mode,
-                                                ModularWorkflowStoragePlan *out) {
+                                                ModularWorkflowStoragePlan *out,
+                                                PreparedModularTokenizationOptions tokenization) {
   if (mode != EntropyCodingMode::kPrefix && mode != EntropyCodingMode::kAns)
     return Invalid();
-  return Plan(input, LegacyOptions(mode), out);
+  return Plan(input, LegacyOptions(mode), tokenization, out);
 }
 Status ComputePreparedModularStreamsStoragePlan(const PreparedModularStreamsView &input,
                                                 const PreparedModularEntropyOptions &options,
-                                                ModularWorkflowStoragePlan *out) {
-  return Plan(input, options, out);
+                                                ModularWorkflowStoragePlan *out,
+                                                PreparedModularTokenizationOptions tokenization) {
+  return Plan(input, options, tokenization, out);
 }
 Status TokenizePreparedModularStreams(const PreparedModularStreamsView &input,
-                                      PreparedModularStreamTokens *out) try {
-  if (!out)
+                                      PreparedModularStreamTokens *out,
+                                      PreparedModularTokenizationOptions options) try {
+  if (!out || options.cpu_participants > 256)
     return Invalid();
   FrameInfo frame;
   if (auto s = DescribeFrame(input, &frame); !s.ok())
     return s;
-  return Tokenize(input, frame, out);
+  return Tokenize(input, frame, out, options);
 } catch (const ManagedAllocationFailure &e) {
   return e.status();
 } catch (const std::bad_alloc &) {
@@ -529,26 +650,29 @@ Status TokenizePreparedModularStreams(const PreparedModularStreamsView &input,
 }
 
 Status EncodePreparedModularStreams(const PreparedModularStreamsView &input, EntropyCodingMode mode,
-                                    CodestreamBuffer *out, AnsSelectionMode selection) {
+                                    CodestreamBuffer *out, AnsSelectionMode selection,
+                                    PreparedModularTokenizationOptions tokenization) {
   if (mode != EntropyCodingMode::kPrefix && mode != EntropyCodingMode::kAns)
     return Invalid();
-  return EncodePreparedModularStreams(input, LegacyOptions(mode, selection), out);
+  return EncodePreparedModularStreams(input, LegacyOptions(mode, selection), out, tokenization);
 }
 Status EncodePreparedModularStreams(const PreparedModularStreamsView &input,
                                     const PreparedModularEntropyOptions &entropy,
-                                    CodestreamBuffer *out) try {
+                                    CodestreamBuffer *out,
+                                    PreparedModularTokenizationOptions tokenization) try {
   if (!out)
     return Invalid();
   ModularWorkflowStoragePlan plan;
   FrameInfo frame;
-  if (auto s = Plan(input, entropy, &plan, &frame); !s.ok())
+  if (auto s = Plan(input, entropy, tokenization, &plan, &frame); !s.ok())
     return s;
-  thread_budget_internal::EncodeScope serial(1);
+  using namespace thread_budget_internal;
   Storage<BitWriter> sections;
   {
     PreparedModularStreamTokens tokens;
-    if (auto s = Tokenize(input, frame, &tokens); !s.ok())
+    if (auto s = Tokenize(input, frame, &tokens, {plan.tokenization_participants}); !s.ok())
       return s;
+    EncodeScope allowance(plan.participants, ParticipantTracker());
     EntropyCode global_model;
     if (input.global_tree) {
       Storage<EntropyTokenStreamView> shared(input.streams.size());
@@ -606,9 +730,9 @@ Status EncodePreparedModularStreams(const PreparedModularStreamsView &input,
             });
         !s.ok())
       return s;
-    for (size_t i = 1; i < input.streams.size(); ++i) {
+    const auto encode_group = [&](size_t i) -> Status {
       if (!tokens.streams[i].size())
-        continue;
+        return Status::Ok();
       StreamInfo info;
       StreamBound bound;
       if (auto s = DescribeStream(input, frame, i, &info); !s.ok())
@@ -618,8 +742,50 @@ Status EncodePreparedModularStreams(const PreparedModularStreamsView &input,
       if (!Add(7, &bound.bits))
         return Overflow();
       auto &section = sections[info.section];
-      if (auto s = section.WithMaxBits(bound.bits, [&] { return emit(i, &section); }); !s.ok())
-        return s;
+      return section.WithMaxBits(bound.bits, [&] { return emit(i, &section); });
+    };
+    size_t active_groups = 0;
+    for (size_t i = 1; i < tokens.streams.size(); ++i)
+      active_groups += tokens.streams[i].size() != 0;
+    const size_t desired = frame.geometry.group_count() == 1 ? 1
+        : std::min(plan.participants, std::max(size_t{1}, active_groups));
+    CpuWorkerGroup group(desired);
+    if (group.participants() > 1) {
+      ProfileScope joined(ProfileStage::kStreamEncoding);
+      auto *parent = active_modular_profile;
+      Storage<ModularProfile> profiles(parent ? group.participants() : 0);
+      if (parent) {
+        parent->parallel_entropy.stream_jobs += active_groups;
+        ++parent->parallel_entropy.parallel_calls;
+        parent->parallel_entropy.peak_participants = std::max(
+            parent->parallel_entropy.peak_participants, group.participants());
+      }
+      const auto status = RunParallelWork<Storage>(
+          input.streams.size() - 1, group, group.participants() - 1,
+          WorkerLaunchSite::kModularEntropy,
+          {"Modular entropy worker allocation failed", "Modular entropy worker failed",
+           StatusCode::kInvalidArgument, "Modular entropy worker storage overflow",
+           "Modular entropy worker launch allocation failed", LaunchFailureAction::kReturnError,
+           "Unable to start Modular entropy workers"},
+          [&](size_t index, size_t worker) {
+            // The outer stream grant owns the parallelism. Do not spawn an
+            // ANS cluster team inside each concurrently executing stream.
+            EncodeScope serial(1, ParticipantTracker());
+            ProfileSession session(parent ? &profiles[worker] : nullptr);
+            return encode_group(index + 1);
+          });
+      // Canonical worker-order reduction, after every worker has joined.
+      for (const auto &profile : profiles) {
+        AccumulateEntropyWorkProfile(profile.entropy_work, &parent->entropy_work);
+        parent->parallel_entropy.model_work_seconds += profile.seconds[size_t(ProfileStage::kModel)];
+        parent->parallel_entropy.emission_work_seconds += profile.seconds[size_t(ProfileStage::kEmission)];
+      }
+      if (!status.ok())
+        return status;
+    } else {
+      for (size_t i = 1; i < input.streams.size(); ++i)
+        if (auto s = encode_group(i); !s.ok())
+          return s;
     }
   }
   ProfileScope assembly(ProfileStage::kAssembly);

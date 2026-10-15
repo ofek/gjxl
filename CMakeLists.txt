@@ -364,6 +364,8 @@ add_library(
   src/codestream/modular/frame_encoder.cpp
   src/codestream/modular/prepared_streams.cpp
   src/codestream/modular/reference_workflow.cpp
+  src/codestream/modular/reference_selection_workflow.cpp
+  src/codestream/modular/reference_learning_workflow.cpp
   src/codestream/modular/candidate_cost.cpp
   src/codestream/modular/candidate_screen.cpp
   src/codestream/modular/public.cpp
@@ -610,8 +612,8 @@ add_library(
   src/gpu/ops/modular_input_storage_plan.cpp
   src/gpu/ops/modular_token_storage_plan.cpp
   src/gpu/ops/modular_adaptive_token_storage_plan.cpp
+  src/gpu/ops/modular_stream_token_storage_plan.cpp
   src/gpu/ops/modular_adaptive_layout.cpp
-  src/gpu/ops/modular_stream_batch.cpp
   src/gpu/ops/modular_input.cpp
   src/gpu/ops/profile_storage_plan.cpp
   src/gpu/ops/adaptive_quantization.cpp
@@ -2446,6 +2448,25 @@ if(GJXL_BUILD_TESTS)
   add_test(NAME modular_reference_workflow COMMAND gjxl_modular_reference_workflow_test
     "${CMAKE_CURRENT_BINARY_DIR}/modular-reference-workflow")
   set_tests_properties(modular_reference_workflow PROPERTIES TIMEOUT 600)
+  add_executable(gjxl_modular_parallel_learning_test tests/modular_parallel_learning_test.cpp)
+  target_link_libraries(gjxl_modular_parallel_learning_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_parallel_learning COMMAND gjxl_modular_parallel_learning_test)
+  set_tests_properties(modular_parallel_learning PROPERTIES TIMEOUT 180)
+
+  add_executable(gjxl_modular_parallel_entropy_test tests/modular_parallel_entropy_test.cpp)
+  target_link_libraries(gjxl_modular_parallel_entropy_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_parallel_entropy COMMAND gjxl_modular_parallel_entropy_test)
+  set_tests_properties(modular_parallel_entropy PROPERTIES TIMEOUT 180)
+
+  add_executable(gjxl_modular_parallel_selection_test tests/modular_parallel_selection_test.cpp)
+  target_link_libraries(gjxl_modular_parallel_selection_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_parallel_selection COMMAND gjxl_modular_parallel_selection_test)
+  set_tests_properties(modular_parallel_selection PROPERTIES TIMEOUT 180)
+
+  add_executable(gjxl_modular_parallel_prepared_tokenization_test tests/modular_parallel_prepared_tokenization_test.cpp)
+  target_link_libraries(gjxl_modular_parallel_prepared_tokenization_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_parallel_prepared_tokenization COMMAND gjxl_modular_parallel_prepared_tokenization_test)
+  set_tests_properties(modular_parallel_prepared_tokenization PROPERTIES TIMEOUT 180)
 
   add_executable(gjxl_modular_histogram_learning_test tests/modular_histogram_learning_test.cpp)
   target_link_libraries(gjxl_modular_histogram_learning_test PRIVATE gjxl_codestream)
@@ -2454,6 +2475,30 @@ if(GJXL_BUILD_TESTS)
   add_executable(gjxl_modular_histogram_preparation_test tests/modular_histogram_preparation_test.cpp)
   target_link_libraries(gjxl_modular_histogram_preparation_test PRIVATE gjxl_codestream)
   add_test(NAME modular_histogram_preparation COMMAND gjxl_modular_histogram_preparation_test)
+
+  add_executable(gjxl_modular_shared_feature_consumers_test tests/modular_shared_feature_consumers_test.cpp)
+  target_link_libraries(gjxl_modular_shared_feature_consumers_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_shared_feature_consumers COMMAND gjxl_modular_shared_feature_consumers_test)
+  set_tests_properties(modular_shared_feature_consumers PROPERTIES TIMEOUT 60)
+
+  add_executable(gjxl_modular_stream_batch_test tests/modular_stream_batch_test.cpp)
+  target_link_libraries(gjxl_modular_stream_batch_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_stream_batch COMMAND gjxl_modular_stream_batch_test)
+  set_tests_properties(modular_stream_batch PROPERTIES TIMEOUT 60)
+  if(TARGET gjxl_metal)
+    target_link_libraries(gjxl_modular_stream_batch_test PRIVATE gjxl_metal)
+    target_compile_definitions(gjxl_modular_stream_batch_test PRIVATE
+      GJXL_STREAM_BATCH_METAL=1 GJXL_METALLIB_PATH="${GJXL_METALLIB}")
+    add_test(NAME metal_modular_stream_batch COMMAND gjxl_modular_stream_batch_test --metal)
+    set_tests_properties(metal_modular_stream_batch PROPERTIES TIMEOUT 120 SKIP_RETURN_CODE 77)
+    add_executable(gjxl_modular_reference_hybrid_test tests/modular_reference_hybrid_test.cpp)
+    target_link_libraries(gjxl_modular_reference_hybrid_test PRIVATE gjxl_codestream gjxl_metal)
+    target_compile_definitions(gjxl_modular_reference_hybrid_test PRIVATE GJXL_METALLIB_PATH="${GJXL_METALLIB}")
+    add_test(NAME modular_reference_hybrid COMMAND gjxl_modular_reference_hybrid_test)
+    set_tests_properties(modular_reference_hybrid PROPERTIES TIMEOUT 180)
+    add_test(NAME modular_reference_hybrid_palette COMMAND gjxl_modular_reference_hybrid_test --palette)
+    set_tests_properties(modular_reference_hybrid_palette PROPERTIES TIMEOUT 120)
+  endif()
 
   add_executable(gjxl_modular_selection_cost_test tests/modular_selection_cost_test.cpp)
   target_link_libraries(gjxl_modular_selection_cost_test PRIVATE gjxl_codec)

@@ -74,6 +74,12 @@ ValidateHistogramTrainingSamples(const HistogramTrainingSamples &samples,
     const HistogramTrainingSamples &samples,
     HistogramTreeLearningOptions options,
     resource_budget_internal::HostStorageBound *out);
+// Capacity-only upper bound for admitting independent prepare-and-fit jobs
+// before their sample columns exist. maximum_bins includes every static and
+// dynamic property's bins. Excludes sample columns and tree compaction.
+[[nodiscard]] Status ComputeHistogramTreeWorkspaceStorageBound(
+    size_t predictor_count, size_t maximum_bins, size_t maximum_leaves,
+    size_t maximum_depth, resource_budget_internal::HostStorageBound *out);
 // Threshold-driven, depth-first reference-style growth. Capacity/depth limits
 // reject the fit; they never silently truncate it. All allocation is completed
 // before row partitioning; only *out publication is atomic. The caller provides

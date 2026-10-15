@@ -27,6 +27,7 @@ using namespace gjxl::modular_gpu_internal;
 using namespace gjxl::resource_budget_internal;
 using namespace gjxl::thread_budget_internal;
 namespace reference = gjxl::test::modular_reference;
+size_t cpu_participants = 1;
 constexpr std::array<const char *, 4> kNames = {"cpu", "metal-auto",
                                                 "metal-cpu", "metal-gpu"};
 void Check(bool ok, const char *message) {
@@ -62,6 +63,8 @@ void FeatureProfile(std::ostream &out, const FeaturePreparationProfile &p) {
       << ",\"publication_seconds\":" << p.publication_seconds
       << ",\"slice_jobs\":" << p.slice_jobs << ",\"gpu_calls\":" << p.gpu_calls
       << ",\"gpu_samples\":" << p.gpu_samples
+      << ",\"parallel_calls\":" << p.parallel_calls
+      << ",\"peak_participants\":" << p.peak_participants
       << ",\"cpu_fallback_calls\":" << p.cpu_fallback_calls << '}';
 }
 void Profile(std::ostream &out, const ModularProfile &p) {
@@ -84,7 +87,12 @@ void Profile(std::ostream &out, const ModularProfile &p) {
       << ",\"encoded_candidates\":" << g.encoded_candidates
       << ",\"preparation\":";
   FeatureProfile(out, g.feature_preparation);
-  out << '}';
+  out << "},\"parallel_tokens\":{\"jobs\":" << p.parallel_tokenization.stream_jobs
+      << ",\"participants\":" << p.parallel_tokenization.peak_participants
+      << ",\"generated\":" << p.parallel_tokenization.generated_tokens
+      << ",\"borrowed\":" << p.parallel_tokenization.borrowed_tokens
+      << "},\"parallel_entropy\":{\"jobs\":" << p.parallel_entropy.stream_jobs
+      << ",\"participants\":" << p.parallel_entropy.peak_participants << '}';
 }
 void Resources(std::ostream &out, const ExecutionDomain &domain) {
   const auto s = domain.snapshot();
@@ -103,7 +111,7 @@ void Resources(std::ostream &out, const ExecutionDomain &domain) {
 }
 std::shared_ptr<const ExecutionDomain> Domain() {
   std::shared_ptr<const ExecutionDomain> domain;
-  Ok(ExecutionDomain::Create({size_t{8} << 30, 1}, &domain));
+  Ok(ExecutionDomain::Create({size_t{8} << 30, cpu_participants}, &domain));
   return domain;
 }
 reference::IntegerImage Unpack(const io::IntegerImage &input,
@@ -141,17 +149,17 @@ void ForcedEncode(ModularImageView input,
     ResourceContextScope resources(
         {nullptr, ResourceClass::kPreparation, true, domain.get()});
     CpuExecutionScope cpu;
-    Ok(cpu.Start(domain, 1));
-    EncodeScope threads(1);
+    Ok(cpu.Start(domain, cpu_participants));
+    EncodeScope threads(cpu_participants);
     ReferenceWorkflowOptions options;
     Ok(codestream_internal::BorrowProductionMetalBackend(&options.gpu));
-    options.weighted_feature_backend = producer;
+    options.feature_producer = producer;
     Ok(EncodeReferenceModularImage(packed, options, budget, &candidate));
   }
   candidate.PublishTo(output);
 }
 void Encodes(const io::IntegerImage &input,
-             const std::filesystem::path &directory, size_t repeats) {
+             const std::filesystem::path &directory, size_t repeats, bool public_only = false) {
   const ModularImageView view{input.bytes, input.extent, input.row_stride,
                               input.format, ModularByteOrder::kBigEndian};
   ModularInputProfile source;
@@ -176,7 +184,7 @@ void Encodes(const io::IntegerImage &input,
         gjxl::ModularEncodingOptions options;
         options.backend =
             variant ? ModularBackend::kMetal : ModularBackend::kCpu;
-        options.cpu_thread_count = 1;
+        options.cpu_thread_count = cpu_participants;
         options.execution_domain = domain;
         ModularEncodingSummary summary;
         Ok(EncodeModularImage(view, options, &actual, &summary));
@@ -204,7 +212,8 @@ void Encodes(const io::IntegerImage &input,
     Check(actual == expected, "Completed codestream differs from CPU control");
     Check(reference::DecodeLossless(actual) == original,
           "Independent decoded samples differ");
-    out << "{\"schema\":1,\"variant\":\"" << kNames[variant]
+    out << "{\"schema\":2,\"cpu_ceiling\":" << cpu_participants
+        << ",\"variant\":\"" << kNames[variant]
         << "\",\"round\":" << round << ",\"order\":" << order
         << ",\"cold\":" << (round == -1) << ",\"warmup\":" << (round == 0)
         << ",\"seconds\":" << elapsed[0] << ",\"cpu_seconds\":" << elapsed[1]
@@ -223,20 +232,20 @@ void Encodes(const io::IntegerImage &input,
   // cold controls separate from warmup and the position-balanced steady runs.
   run(0, -1, 0);
   run(1, -1, 1);
+  const size_t variants = public_only ? 2 : kNames.size();
   for (size_t round = 0; round <= repeats; ++round)
-    for (size_t order = 0; order < 4; ++order)
-      run((order + round) % 4, static_cast<int>(round), order);
+    for (size_t order = 0; order < variants; ++order)
+      run((order + round) % variants, static_cast<int>(round), order);
 }
 void Features(const io::IntegerImage &input,
               const std::filesystem::path &directory, size_t repeats) {
   const PackedModularImageView view{
       input.bytes, input.extent, input.row_stride,
-      static_cast<PackedModularFormat>(input.format),
-      SampleByteOrder::kBigEndian};
+      static_cast<PackedModularFormat>(input.format), SampleByteOrder::kBigEndian};
   ResourceBudget source_budget(size_t{8} << 30);
   ReferenceModularFrame frame;
   Ok(PrepareReferenceModularFrame(view, {}, source_budget, &frame));
-  std::vector<ModularStreamChannel> jobs;
+  std::vector<ModularStreamFeatureSlice> jobs;
   size_t eligible = 0, unsupported = 0;
   const auto streams = frame.view().streams;
   for (size_t i = 0; i < streams.size(); ++i)
@@ -247,94 +256,134 @@ void Features(const io::IntegerImage &input,
         continue;
       jobs.push_back({ch, streams[i].weighted,
                       static_cast<uint32_t>(frame.streams()[i].id),
-                      static_cast<uint32_t>(c), 0});
+                      static_cast<uint32_t>(c)});
       (w <= 256 && h <= 256 ? eligible : unsupported) += w * h;
     }
   GpuBackend *gpu;
   Ok(codestream_internal::BorrowProductionMetalBackend(&gpu));
-  auto *op = QueryGpuModularStreamGeneration(*gpu);
+  auto *op = QueryGpuModularStreamProcessing(*gpu);
   Check(op, "Missing Metal stream operation");
-  ModularStreamBatchPlan plan;
   const auto limits = op->modular_stream_limits();
-  Ok(ComputeModularStreamBatchPlan(jobs, 1, &plan, &limits));
-  // The independent serial producer checks every field, including property 15.
-  // Its map, selected source channels and descriptors are outside trial
-  // budgets.
-  std::vector<WeightedPredictorFeature> expected(plan.tokens.token_count);
+  const size_t feature_participants = std::min(size_t{4}, cpu_participants);
+  struct Batch {
+    size_t first, count;
+    ModularStreamFeatureStoragePlan plan;
+  };
+  std::vector<Batch> batches;
+  size_t retained = 0, planned = 0;
+  for (size_t first = 0; first < jobs.size();) {
+    const auto supported = [](const ModularStreamFeatureSlice &job) {
+      return job.input.descriptor.extent.width <= 256 && job.input.descriptor.extent.height <= 256;
+    };
+    size_t stop = first, samples = 0;
+    while (stop < jobs.size() && stop - first < kMaximumModularFeatureBatchSlices) {
+      const auto [w, h] = jobs[stop].input.descriptor.extent;
+      const size_t area = w * h;
+      if (stop > first && (area > 8 * 1024 * 1024 - samples ||
+                          supported(jobs[stop]) != supported(jobs[first])))
+        break;
+      samples += area;
+      ++stop;
+      if (samples >= 8 * 1024 * 1024)
+        break;
+    }
+    ModularStreamFeatureStoragePlan plan;
+    Ok(ComputeModularStreamFeatureStoragePlan(
+        std::span(jobs).subspan(first, stop - first), feature_participants, &plan, &limits));
+    planned = std::max(planned, retained +
+        std::max(plan.cpu_preparation.peak_bytes, plan.gpu_preparation.peak_bytes));
+    retained += plan.retained.retained_bytes;
+    batches.push_back({first, stop - first, plan});
+    first = stop;
+  }
+  // Selection, descriptors and the serial oracle are outside the trial timer.
+  // Every completed batch stays owned until comparison, then releases together.
+  std::vector<WeightedPredictorFeature> expected(eligible + unsupported);
   size_t offset = 0;
   for (const auto &job : jobs) {
-    const auto [w, h] = job.channel.descriptor.extent;
+    const auto [w, h] = job.input.descriptor.extent;
     Ok(PrepareWeightedPredictorFeatures(
-        job.channel, job.weighted, std::span(expected).subspan(offset, w * h)));
+        job.input, job.parameters, std::span(expected).subspan(offset, w * h)));
     offset += w * h;
   }
   std::ofstream out(directory / "features.jsonl");
   out.exceptions(std::ios::failbit | std::ios::badbit);
   out << std::setprecision(17) << std::boolalpha;
   constexpr std::array<WeightedFeatureBackend, 3> modes = {
-      WeightedFeatureBackend::kCpu, WeightedFeatureBackend::kGpu,
-      WeightedFeatureBackend::kAuto};
+      WeightedFeatureBackend::kCpu, WeightedFeatureBackend::kGpu, WeightedFeatureBackend::kAuto};
   constexpr std::array<const char *, 3> names = {"cpu", "gpu", "auto"};
   for (size_t round = 0; round <= repeats; ++round)
     for (size_t order = 0; order < modes.size(); ++order) {
       const size_t v = (round + order) % modes.size();
       auto domain = Domain();
-      const auto &budget =
-          codestream_internal::WorkflowAdmission::Budget(*domain);
+      const auto &budget = codestream_internal::WorkflowAdmission::Budget(*domain);
       ModularProfile profile;
-      std::unique_ptr<PreparedGpuModularStreamFeatures> features;
+      std::vector<std::unique_ptr<PreparedGpuModularStreamFeatures>> owners(batches.size());
       std::array<double, 2> elapsed;
       {
         ResourceReservation reservation;
-        Ok(budget.TryReserve(plan.preparation.peak_bytes, &reservation));
+        Ok(budget.TryReserve(planned, &reservation));
         ResourceContextScope resources(
             {&reservation, ResourceClass::kPreparation, true, domain.get()});
         CpuExecutionScope cpu;
-        Ok(cpu.Start(domain, 1));
-        EncodeScope threads(1);
+        Ok(cpu.Start(domain, cpu_participants));
+        EncodeScope threads(cpu_participants);
         ProfileSession session(&profile);
         const Timer timer;
-        Ok(op->PrepareModularStreamFeatures(jobs, &features, modes[v]));
+        for (size_t i = 0; i < batches.size(); ++i) {
+          const auto &batch = batches[i];
+          Ok(op->PrepareModularStreamFeatures(
+              std::span(jobs).subspan(batch.first, batch.count), &owners[i],
+              feature_participants, modes[v]));
+        }
         elapsed = timer.Stop();
       }
-      std::span<const WeightedPredictorFeature> actual;
-      Ok(features->BorrowWeightedHostView(&actual));
-      Check(std::ranges::equal(expected, actual),
-            "Prepared weighted features differ");
+      size_t compared = 0;
+      for (const auto &owner : owners)
+        for (const auto &actual : owner->weighted_views()) {
+          Check(std::ranges::equal(std::span(expected).subspan(compared, actual.values.size()),
+                                   actual.values), "Prepared weighted features differ");
+          compared += actual.values.size();
+        }
+      Check(compared == expected.size(), "Feature coverage differs");
       const auto &p = profile.adaptive_gpu.feature_preparation;
       if (modes[v] == WeightedFeatureBackend::kGpu)
-        Check(p.gpu_samples == eligible,
-              "Forced GPU did not process every eligible sample");
+        Check(p.gpu_samples == eligible, "Forced GPU omitted eligible samples");
       if (modes[v] == WeightedFeatureBackend::kCpu)
-        Check(p.gpu_samples == 0,
-              "Forced CPU unexpectedly dispatched features");
-      Check(budget.snapshot().peak_backing_bytes <= plan.preparation.peak_bytes,
+        Check(p.gpu_samples == 0, "Forced CPU unexpectedly dispatched features");
+      Check(budget.snapshot().peak_backing_bytes <= planned,
             "Feature operation exceeded planned backing");
-      features.reset();
-      out << "{\"schema\":1,\"variant\":\"" << names[v]
+      owners.clear();
+      out << "{\"schema\":2,\"cpu_ceiling\":" << cpu_participants
+          << ",\"variant\":\"" << names[v]
           << "\",\"round\":" << round << ",\"order\":" << order
           << ",\"warmup\":" << (round == 0) << ",\"seconds\":" << elapsed[0]
           << ",\"cpu_seconds\":" << elapsed[1]
           << ",\"samples\":" << expected.size() << ",\"jobs\":" << jobs.size()
+          << ",\"batches\":" << batches.size()
           << ",\"eligible_samples\":" << eligible
           << ",\"unsupported_samples\":" << unsupported
-          << ",\"planned_bytes\":" << plan.preparation.peak_bytes
+          << ",\"planned_bytes\":" << planned
           << ",\"exact_features\":true,\"preparation\":";
       FeatureProfile(out, p);
       Resources(out, *domain);
       out << "}\n" << std::flush;
     }
   frame = {};
-  Check(!source_budget.snapshot().committed_bytes(),
-        "Prepared source leaked resources");
+  Check(!source_budget.snapshot().committed_bytes(), "Prepared source leaked resources");
   std::cout << "features samples=" << expected.size() << " jobs=" << jobs.size()
-            << " eligible=" << eligible << " unsupported=" << unsupported
-            << '\n';
+            << " eligible=" << eligible << " unsupported=" << unsupported << '\n';
 }
 } // namespace
 int main(int argc, char **argv) try {
-  Check(argc == 5,
-        "metal_workflow_profile INPUT OUT REPETITIONS encode|features");
+  Check(argc == 5 || argc == 6,
+        "metal_workflow_profile INPUT OUT REPETITIONS encode|encode-public|features [CPU_PARTICIPANTS]");
+  if (argc == 6) {
+    const std::string_view count(argv[5]);
+    const auto parsed = std::from_chars(count.data(), count.data() + count.size(), cpu_participants);
+    Check(parsed.ec == std::errc{} && parsed.ptr == count.data() + count.size() &&
+              cpu_participants && cpu_participants <= 256, "Invalid CPU participation limit");
+  }
   const std::filesystem::path directory = argv[2];
   Check(!std::filesystem::exists(directory), "Output directory already exists");
   size_t repeats = 0;
@@ -344,12 +393,12 @@ int main(int argc, char **argv) try {
   Check(parsed.ec == std::errc{} && parsed.ptr == count.data() + count.size() &&
             repeats && repeats <= 100,
         "Repetitions must be in 1..100");
-  Check(mode == "encode" || mode == "features", "Unknown qualification mode");
+  Check(mode == "encode" || mode == "encode-public" || mode == "features", "Unknown qualification mode");
   std::filesystem::create_directories(directory);
   io::IntegerImage input;
   Ok(io::ReadPnm(argv[1], &input));
-  if (mode == "encode")
-    Encodes(input, directory, repeats);
+  if (mode == "encode" || mode == "encode-public")
+    Encodes(input, directory, repeats, mode == "encode-public");
   else
     Features(input, directory, repeats);
   return 0;

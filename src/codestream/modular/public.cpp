@@ -72,7 +72,7 @@ Status EncodePublicModularImageOwned(PackedModularImageView input,
   thread_budget_internal::CpuExecutionScope cpu;
   if (auto s = cpu.Start(owned_domain, options.cpu_thread_count); !s.ok())
     return s;
-  thread_budget_internal::EncodeScope threads(1);
+  thread_budget_internal::EncodeScope threads(options.cpu_thread_count);
   ReferenceWorkflowOptions learned;
   if (options.backend == ModularBackend::kMetal)
     if (auto s = codestream_internal::BorrowProductionMetalBackend(&learned.gpu); !s.ok())

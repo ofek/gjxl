@@ -47,7 +47,11 @@ struct ModularEncodingSummary {
 // generation. Automatic remains CPU; CUDA and legacy-policy GPU requests are
 // unsupported. Transform/WP selection, fitting and entropy coding stay on CPU.
 // Learned uses staged, nonblocking memory admission: a busy domain can return
-// Unavailable. It currently executes serially within the requested CPU limit.
+// Unavailable. Independent local selection and sample preparation/fits use the
+// requested CPU limit and shared domain; global fitting stays serial. Local entropy models
+// and payloads run across streams; shared ANS configuration search can use
+// cluster workers. Memory admission may reduce concurrency without changing
+// encoding decisions.
 [[nodiscard]] Status EncodeModularImage(ModularImageView input, ModularEncodingOptions options,
                                         std::vector<uint8_t> *output,
                                         ModularEncodingSummary *summary = nullptr);

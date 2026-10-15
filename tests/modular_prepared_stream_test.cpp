@@ -176,7 +176,14 @@ void PreparedTokenHandoff() {
       CodestreamBuffer expected, actual;
       Ok(EncodePreparedModularStreams(view, variant.options, &expected));
       auto borrowed = view;
-      borrowed.prepared_tokens = cpu.streams;
+      auto streams = f.streams;
+      for (size_t i = 0; i < streams.size(); ++i)
+        if (cpu.streams[i].size())
+          streams[i].completed_tokens = PreparedModularStreamTokenView{
+              cpu.streams[i], streams[i].channels,
+              streams[i].local_tree ? streams[i].local_tree : view.global_tree,
+              streams[i].weighted, i};
+      borrowed.streams = streams;
       PreparedModularStreamTokens handoff;
       Ok(TokenizePreparedModularStreams(borrowed, &handoff));
       Check(handoff.tokens.empty() && handoff.streams[0].tokens.data() == cpu.tokens.data(),
@@ -185,10 +192,9 @@ void PreparedTokenHandoff() {
       Check(std::ranges::equal(expected.view(), actual.view()),
             "Prepared token handoff changed bytes");
     }
-    std::array<EntropyTokenStreamView, 3> invalid{};
-    invalid[0] = cpu.streams[0];
-    invalid[1] = cpu.streams[0]; // The canonical DC slot has no tokens.
-    view.prepared_tokens = invalid;
+    // The canonical DC slot has no tokens.
+    f.streams[1].completed_tokens = PreparedModularStreamTokenView{
+        cpu.streams[0], f.streams[1].channels, &f.tree, f.streams[1].weighted, 1};
     ModularWorkflowStoragePlan plan;
     ArmNextManagedHostAllocationFailureForTest();
     const auto status =

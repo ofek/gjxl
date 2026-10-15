@@ -124,11 +124,17 @@ Status Preflight(std::span<const HistogramTrainingImage> images,
     if (image.channels.size() > 65535 ||
         image.metadata_channels > image.channels.size() ||
         !image.weighted.valid() ||
+        (!image.weighted_features.empty() &&
+         image.weighted_features.size() != image.channels.size()) ||
         (image.extent.empty() && !image.channels.empty()))
       return Status::InvalidArgument("Invalid histogram training image");
+    for (size_t c = 0; c < image.weighted_features.size(); ++c)
+      if (auto s = ValidateWeightedFeatureView(image.weighted_features[c],
+                                               image.channels[c], image.weighted);
+          !s.ok())
+        return s;
     plan.maximum_channels =
         std::max(plan.maximum_channels, image.channels.size());
-    size_t feature_count = 0;
     for (size_t c = 0; c < image.channels.size() && Included(image, c, options);
          ++c) {
       const auto &view = image.channels[c];
@@ -145,12 +151,11 @@ Status Preflight(std::span<const HistogramTrainingImage> images,
         return Status::Unsupported(
             "Histogram training population exceeds private admission");
       const size_t area = static_cast<size_t>(area64);
-      feature_count += area;
       plan.stats.scanned_pixels += area;
       if (i == 0)
         initial_population += area;
       ++plan.stats.channels;
-      if (image.weighted_features.empty())
+      if (image.weighted_features.empty() || image.weighted_features[c].values.empty())
         plan.maximum_width = std::max<size_t>(plan.maximum_width, w);
       if (area != previous_area) {
         previous_area = area;
@@ -168,8 +173,6 @@ Status Preflight(std::span<const HistogramTrainingImage> images,
           std::max(plan.hash_capacity, std::bit_ceil(hash_request));
       plan.stats.selected_samples += previous_selected;
     }
-    if (!image.weighted_features.empty() && image.weighted_features.size() != feature_count)
-      return Status::InvalidArgument("Histogram weighted feature coverage differs");
   }
   // LearnTree initializes this denominator with the first image's population,
   // then GatherTreeData adds every visited pixel, including that image again.
@@ -482,7 +485,6 @@ struct HistogramSampleBuilder {
   Status Gather(std::span<const HistogramTrainingImage> images) {
     for (size_t i = 0; i < images.size(); ++i) {
       const auto &image = images[i];
-      size_t feature_offset = 0;
       for (size_t c = 0;
            c < image.channels.size() && Included(image, c, options); ++c) {
         const auto &view = image.channels[c];
@@ -493,18 +495,25 @@ struct HistogramSampleBuilder {
         Random rng;
         const auto threshold = SamplingThreshold(
             PixelFraction(size_t{w} * h, options.sampling_fraction));
+        const auto features = image.weighted_features.empty()
+                                  ? std::span<const WeightedPredictorFeature>{}
+                                  : image.weighted_features[c].values;
         std::optional<WeightedPredictor<resource_budget_internal::ResourceClass::kPreparation>> wp;
-        if (image.weighted_features.empty())
+        if (features.empty())
           wp.emplace(w, image.weighted);
+        if (active_modular_profile) {
+          auto &work = active_modular_profile->training_work;
+          (features.empty() ? work.weighted_prediction_samples : work.reused_prediction_samples) +=
+              size_t{w} * h;
+        }
         for (size_t y = 0; y < h; ++y) {
           int64_t previous_gradient = 0;
           for (size_t x = 0; x < w; ++x) {
             const auto n = Neighbors(view, x, y);
-            const auto weighted =
-                wp ? wp->Predict(x, y, n.top, n.left, n.top_right, n.top_left, n.top_top)
-                   : std::pair{image.weighted_features[feature_offset].prediction,
-                               image.weighted_features[feature_offset].property15};
-            ++feature_offset;
+            const auto weighted = wp ? wp->Predict(x, y, n.top, n.left, n.top_right,
+                                                   n.top_left, n.top_top)
+                                     : std::pair{features[y * w + x].prediction,
+                                                 features[y * w + x].property15};
             const auto properties =
                 Properties(n, c, options.first_group + i, x, y,
                            previous_gradient, weighted.second);
@@ -568,8 +577,9 @@ Status ComputeHistogramSamplePreparationStorageBound(
                                 VectorCapacityPolicy::kFreshExact, 2) ||
       !bound.AddVector<HistogramMultiplierRange>(
           options.multipliers.size(), VectorCapacityPolicy::kFreshExact) ||
-      !bound.AddVector<uint32_t>((plan.maximum_width + 2) * 2,
-                                 VectorCapacityPolicy::kFreshExact, 5))
+      (plan.maximum_width &&
+       !bound.AddVector<uint32_t>((plan.maximum_width + 2) * 2,
+                                  VectorCapacityPolicy::kFreshExact, 5)))
     return Status::InvalidArgument("Histogram preparation storage overflow");
   for (size_t p = 0; p < options.property_count; ++p)
     if (!bound.AddVector<int32_t>(CutCapacity(options, p),
@@ -612,14 +622,6 @@ Status PrepareHistogramSamples(std::span<const HistogramTrainingImage> images,
   for (auto &range : result.range_)
     if (range[1] == 0)
       range[1] = UINT32_MAX;
-  if (active_modular_profile) {
-    size_t reused = 0;
-    for (const auto &image : images)
-      reused += image.weighted_features.size();
-    auto &work = active_modular_profile->training_work;
-    work.reused_prediction_samples += reused;
-    work.weighted_prediction_samples += result.stats_.scanned_pixels - reused;
-  }
   *out = std::move(result);
   return Status::Ok();
 } catch (const resource_budget_internal::ManagedAllocationFailure &e) {

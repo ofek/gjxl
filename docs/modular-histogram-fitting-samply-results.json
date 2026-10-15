@@ -1,0 +1,1564 @@
+{
+  "scope": "Sampled main-thread CPU inside native LearnHistogramTree/FindBestSplit only. Flat rows are disjoint; inclusive inline-function rows overlap. Both current and previous CPU-delta assignment are retained.",
+  "profile_sha256": "8e1788e7e257575619d122c49cf591da01e4f22e3c60934a6ea899c1557b69ad",
+  "sidecar_sha256": "1306b03395d3687aeeae4046d179bfb17a6e76be7cf7a7b0c91df1077a324fb3",
+  "binary_sha256": "ed4eba6c73a47d20eec701a8fc3a3524478f763f5a78092da2a6161ca4493b7d",
+  "symbolizer_command": [
+    "llvm-symbolizer",
+    "--inlines",
+    "--output-style=JSON",
+    "--obj=/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/build/histogram-samply-20261015/hybrid_profile"
+  ],
+  "image_base": 4294967296,
+  "attribution": {
+    "current": {
+      "fitter_cpu_ms": 24923.782,
+      "positive_samples": 25297,
+      "resolved_leaf_percent": 99.96517382474298,
+      "inline_native_resolution_percent": 97.96864248155119,
+      "entropy_arithmetic_inclusive_percent": 23.947083953791605,
+      "flat": [
+        {
+          "name": "void gjxl::modular_internal::(anonymous namespace)::CollectExtraBitsIncrease<false>(gjxl::modular_internal::(anonymous namespace)::SamplesView const&, std::__1::vector<gjxl::modular_internal::HistogramResidualToken, gjxl::resource_budget_internal::ManagedAllocator<gjxl::modular_internal::HistogramResidualToken, (gjxl::resource_budget_internal::ResourceClass)10>> const&, std::__1::vector<int, gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)10>>&, std::__1::vector<unsigned long, gjxl::resource_budget_internal::ManagedAllocator<unsigned long, (gjxl::resource_budget_internal::ResourceClass)10>>&, unsigned long, unsigned long, unsigned long, unsigned long)",
+          "cpu_ms": 7513.013,
+          "percent": 30.143952470776707
+        },
+        {
+          "name": "gjxl::Status gjxl::modular_internal::(anonymous namespace)::FindBestSplit<false>(gjxl::modular_internal::(anonymous namespace)::SamplesView&, gjxl::modular_internal::(anonymous namespace)::Workspace&, gjxl::modular_internal::HistogramTreeLearningOptions, float, std::__1::span<gjxl::modular_internal::HistogramMultiplierRange const, 18446744073709551615ul>, std::__1::array<std::__1::array<unsigned int, 2ul>, 2ul>, float, gjxl::modular_internal::DecisionTree*, gjxl::modular_internal::HistogramFittingProfile*, gjxl::modular_internal::HistogramFitRecord*)",
+          "cpu_ms": 6880.917,
+          "percent": 27.607836563487837
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::EstimateBits(int const*, unsigned long)",
+          "cpu_ms": 3775.969,
+          "percent": 15.150064304045028
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::FastLog2(__simd128_float32_t)",
+          "cpu_ms": 2192.55,
+          "percent": 8.797019649746575
+        },
+        {
+          "name": "void gjxl::modular_internal::(anonymous namespace)::CollectExtraBitsIncrease<true>(gjxl::modular_internal::(anonymous namespace)::SamplesView const&, std::__1::vector<gjxl::modular_internal::HistogramResidualToken, gjxl::resource_budget_internal::ManagedAllocator<gjxl::modular_internal::HistogramResidualToken, (gjxl::resource_budget_internal::ResourceClass)10>> const&, std::__1::vector<int, gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)10>>&, std::__1::vector<unsigned long, gjxl::resource_budget_internal::ManagedAllocator<unsigned long, (gjxl::resource_budget_internal::ResourceClass)10>>&, unsigned long, unsigned long, unsigned long, unsigned long)",
+          "cpu_ms": 1301.098,
+          "percent": 5.220307255134875
+        },
+        {
+          "name": "unsigned long gjxl::modular_internal::(anonymous namespace)::SamplesView::Property<false>(unsigned long, unsigned long) const",
+          "cpu_ms": 863.112,
+          "percent": 3.4630057348439336
+        },
+        {
+          "name": "void gjxl::modular_internal::(anonymous namespace)::SplitTreeSamples<false, false>(gjxl::modular_internal::(anonymous namespace)::SamplesView&, unsigned long, unsigned long, unsigned long, unsigned long, unsigned int, gjxl::modular_internal::HistogramNodeBucket*)",
+          "cpu_ms": 673.814,
+          "percent": 2.703498209059925
+        },
+        {
+          "name": "gjxl::modular_internal::HistogramTrainingSamples::Swap(unsigned long, unsigned long)",
+          "cpu_ms": 645.981,
+          "percent": 2.5918257510036
+        },
+        {
+          "name": "std::__1::enable_if<is_move_constructible<unsigned char>::value && is_move_assignable<unsigned char>::value, void>::type std::__1::swap[abi:nqe220106]<unsigned char>(unsigned char&, unsigned char&)",
+          "cpu_ms": 359.678,
+          "percent": 1.4431116433292508
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::SamplesView::Count(unsigned long) const",
+          "cpu_ms": 224.85,
+          "percent": 0.9021504039796208
+        },
+        {
+          "name": "std::__1::__wrap_iter<gjxl::modular_internal::(anonymous namespace)::CostInfo*> std::__1::__fill_n[abi:nqe220106]<std::__1::__wrap_iter<gjxl::modular_internal::(anonymous namespace)::CostInfo*>, unsigned long, gjxl::modular_internal::(anonymous namespace)::CostInfo, 0>(std::__1::__wrap_iter<gjxl::modular_internal::(anonymous namespace)::CostInfo*>, unsigned long, gjxl::modular_internal::(anonymous namespace)::CostInfo const&)",
+          "cpu_ms": 102.715,
+          "percent": 0.41211642759513784
+        },
+        {
+          "name": "unsigned long gjxl::modular_internal::(anonymous namespace)::SamplesView::Property<true>(unsigned long, unsigned long) const",
+          "cpu_ms": 80.363,
+          "percent": 0.32243501407611413
+        },
+        {
+          "name": "std::__1::enable_if<is_move_constructible<unsigned short>::value && is_move_assignable<unsigned short>::value, void>::type std::__1::swap[abi:nqe220106]<unsigned short>(unsigned short&, unsigned short&)",
+          "cpu_ms": 47.359,
+          "percent": 0.19001530345595222
+        },
+        {
+          "name": "std::__1::enable_if<is_move_constructible<unsigned int>::value && is_move_assignable<unsigned int>::value, void>::type std::__1::swap[abi:nqe220106]<unsigned int>(unsigned int&, unsigned int&)",
+          "cpu_ms": 42.056,
+          "percent": 0.16873843624534993
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::SamplesView::PropertyFromIndex(unsigned long) const",
+          "cpu_ms": 32.789,
+          "percent": 0.1315570807030811
+        },
+        {
+          "name": "std::__1::vector<int, gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)10>>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 29.894,
+          "percent": 0.11994166856378378
+        },
+        {
+          "name": "_platform_memset",
+          "cpu_ms": 27.611,
+          "percent": 0.1107817425140374
+        },
+        {
+          "name": "_platform_memmove",
+          "cpu_ms": 16.847,
+          "percent": 0.0675940754095827
+        },
+        {
+          "name": "std::__1::vector<gjxl::modular_internal::(anonymous namespace)::CostInfo, gjxl::resource_budget_internal::ManagedAllocator<gjxl::modular_internal::(anonymous namespace)::CostInfo, (gjxl::resource_budget_internal::ResourceClass)10>>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 15.0,
+          "percent": 0.06018348258703274
+        },
+        {
+          "name": "std::__1::vector<int, gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)10>>::data[abi:nqe220106]()",
+          "cpu_ms": 13.982,
+          "percent": 0.05609903023545945
+        },
+        {
+          "name": "gjxl::modular_internal::ValidateHistogramTrainingSamples(gjxl::modular_internal::HistogramTrainingSamples const&, gjxl::modular_internal::HistogramTreeLearningOptions)",
+          "cpu_ms": 8.914,
+          "percent": 0.03576503758538732
+        },
+        {
+          "name": "void gjxl::modular_internal::(anonymous namespace)::SplitTreeSamples<true, false>(gjxl::modular_internal::(anonymous namespace)::SamplesView&, unsigned long, unsigned long, unsigned long, unsigned long, unsigned int, gjxl::modular_internal::HistogramNodeBucket*)",
+          "cpu_ms": 7.927,
+          "percent": 0.03180496443116057
+        },
+        {
+          "name": "__bzero",
+          "cpu_ms": 7.139,
+          "percent": 0.028643325479255115
+        },
+        {
+          "name": "std::__1::vector<unsigned long, gjxl::resource_budget_internal::ManagedAllocator<unsigned long, (gjxl::resource_budget_internal::ResourceClass)10>>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 6.782,
+          "percent": 0.027210958593683734
+        },
+        {
+          "name": "gjxl::modular_internal::LearnHistogramTree(gjxl::modular_internal::HistogramTrainingSamples&, gjxl::modular_internal::DecisionTree*, gjxl::modular_internal::HistogramTreeLearningOptions)",
+          "cpu_ms": 6.292,
+          "percent": 0.025244964829174
+        },
+        {
+          "name": "std::__1::vector<unsigned short, gjxl::resource_budget_internal::ManagedAllocator<unsigned short, (gjxl::resource_budget_internal::ResourceClass)10>>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 5.916,
+          "percent": 0.023736365532325714
+        },
+        {
+          "name": "std::__1::vector<unsigned char, gjxl::resource_budget_internal::ManagedAllocator<unsigned char, (gjxl::resource_budget_internal::ResourceClass)10>>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 4.844,
+          "percent": 0.019435252643439104
+        },
+        {
+          "name": "0x48270c",
+          "cpu_ms": 4.591,
+          "percent": 0.018420157903804486
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::CostInfo::Cost() const",
+          "cpu_ms": 4.13,
+          "percent": 0.016570518872296346
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::SamplesView::PredictorFromIndex(unsigned long) const",
+          "cpu_ms": 4.046,
+          "percent": 0.016233491369808964
+        },
+        {
+          "name": "std::__1::enable_if<is_move_constructible<gjxl::modular_internal::HistogramResidualToken>::value && is_move_assignable<gjxl::modular_internal::HistogramResidualToken>::value, void>::type std::__1::swap[abi:nqe220106]<gjxl::modular_internal::HistogramResidualToken>(gjxl::modular_internal::HistogramResidualToken&, gjxl::modular_internal::HistogramResidualToken&)",
+          "cpu_ms": 2.996,
+          "percent": 0.012020647588716672
+        },
+        {
+          "name": "gjxl::modular_internal::ValidateTree(gjxl::modular_internal::DecisionTree const&, gjxl::modular_internal::TreeLayout*)",
+          "cpu_ms": 2.912,
+          "percent": 0.01168362008622929
+        },
+        {
+          "name": "0x482838",
+          "cpu_ms": 2.109,
+          "percent": 0.008461797651736803
+        },
+        {
+          "name": "0x482834",
+          "cpu_ms": 1.98,
+          "percent": 0.007944219701488321
+        },
+        {
+          "name": "std::__1::vector<int, gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)10>>::begin[abi:nqe220106]()",
+          "cpu_ms": 1.975,
+          "percent": 0.007924158540625977
+        },
+        {
+          "name": "gjxl::Status gjxl::modular_internal::(anonymous namespace)::FindBestSplit<false>(gjxl::modular_internal::(anonymous namespace)::SamplesView&, gjxl::modular_internal::(anonymous namespace)::Workspace&, gjxl::modular_internal::HistogramTreeLearningOptions, float, std::__1::span<gjxl::modular_internal::HistogramMultiplierRange const, 18446744073709551615ul>, std::__1::array<std::__1::array<unsigned int, 2ul>, 2ul>, float, gjxl::modular_internal::DecisionTree*, gjxl::modular_internal::HistogramFittingProfile*, gjxl::modular_internal::HistogramFitRecord*)::SplitInfo::Cost() const",
+          "cpu_ms": 1.972,
+          "percent": 0.00791212184410857
+        },
+        {
+          "name": "std::__1::array<std::__1::vector<gjxl::modular_internal::HistogramResidualToken, gjxl::resource_budget_internal::ManagedAllocator<gjxl::modular_internal::HistogramResidualToken, (gjxl::resource_budget_internal::ResourceClass)10>>, 14ul>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 1.921,
+          "percent": 0.007707498003312659
+        },
+        {
+          "name": "std::__1::vector<gjxl::modular_internal::DecisionNode, gjxl::resource_budget_internal::ManagedAllocator<gjxl::modular_internal::DecisionNode, (gjxl::resource_budget_internal::ResourceClass)10>>::empty[abi:nqe220106]() const",
+          "cpu_ms": 1.811,
+          "percent": 0.007266152464341086
+        },
+        {
+          "name": "gjxl::modular_internal::DecisionNode::DecisionNode()",
+          "cpu_ms": 0.995,
+          "percent": 0.003992171011606505
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::SamplesView::Token(unsigned long, unsigned long) const",
+          "cpu_ms": 0.991,
+          "percent": 0.00397612208291663
+        },
+        {
+          "name": "std::__1::vector<gjxl::modular_internal::HistogramResidualToken, gjxl::resource_budget_internal::ManagedAllocator<gjxl::modular_internal::HistogramResidualToken, (gjxl::resource_budget_internal::ResourceClass)10>>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 0.99,
+          "percent": 0.003972109850744161
+        },
+        {
+          "name": "bool std::__1::__less<void, void>::operator()[abi:nqe220106]<int, int>(int const&, int const&) const",
+          "cpu_ms": 0.989,
+          "percent": 0.0039680976185716916
+        },
+        {
+          "name": "std::__1::__wrap_iter<int*> std::__1::__fill_n[abi:nqe220106]<std::__1::__wrap_iter<int*>, unsigned long, int, 0>(std::__1::__wrap_iter<int*>, unsigned long, int const&)",
+          "cpu_ms": 0.986,
+          "percent": 0.003956060922054285
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::Padded(unsigned long)",
+          "cpu_ms": 0.976,
+          "percent": 0.003915938600329597
+        }
+      ],
+      "inclusive": [
+        {
+          "name": "gjxl::modular_internal::LearnPreparedHistogramTree(gjxl::modular_internal::PreparedHistogramSamples&, gjxl::modular_internal::DecisionTree*, unsigned long, unsigned long)",
+          "cpu_ms": 24923.782,
+          "percent": 100.0
+        },
+        {
+          "name": "gjxl::modular_internal::PrepareReferenceModularFrame(gjxl::modular_internal::PackedModularImageView, gjxl::modular_internal::ReferenceWorkflowOptions const&, gjxl::resource_budget_internal::ResourceBudget const&, gjxl::modular_internal::ReferenceModularFrame*)",
+          "cpu_ms": 24923.782,
+          "percent": 100.0
+        },
+        {
+          "name": "start",
+          "cpu_ms": 24923.782,
+          "percent": 100.0
+        },
+        {
+          "name": "gjxl::modular_internal::LearnHistogramTree(gjxl::modular_internal::HistogramTrainingSamples&, gjxl::modular_internal::DecisionTree*, gjxl::modular_internal::HistogramTreeLearningOptions)",
+          "cpu_ms": 24923.782,
+          "percent": 100.0
+        },
+        {
+          "name": "gjxl::modular_internal::EncodeReferenceModularImage(gjxl::modular_internal::PackedModularImageView, gjxl::modular_internal::ReferenceWorkflowOptions const&, gjxl::resource_budget_internal::ResourceBudget const&, gjxl::resource_budget_internal::PublicationVector<unsigned char>*, gjxl::modular_internal::ReferenceWorkflowStats*)",
+          "cpu_ms": 24923.782,
+          "percent": 100.0
+        },
+        {
+          "name": "gjxl::modular_internal::reference_workflow_internal::(anonymous namespace)::Learn(std::__1::span<gjxl::modular_internal::HistogramTrainingImage const, (unsigned long)18446744073709551615>, unsigned long, gjxl::modular_internal::ReferenceWorkflowOptions const&, gjxl::resource_budget_internal::ResourceBudget const&, gjxl::modular_internal::ReferenceWorkflowStats*, gjxl::modular_internal::ReferenceModularStream*)",
+          "cpu_ms": 24923.782,
+          "percent": 100.0
+        },
+        {
+          "name": "gjxl::modular_internal::reference_workflow_internal::LearnReferenceModularScopes(std::__1::span<gjxl::modular_internal::ReferenceModularStream, (unsigned long)18446744073709551615>, std::__1::span<gjxl::modular_internal::PreparedModularStreamView, (unsigned long)18446744073709551615>, unsigned long long, gjxl::modular_internal::ReferenceWorkflowOptions const&, gjxl::resource_budget_internal::ResourceBudget const&, gjxl::modular_internal::ReferenceWorkflowStats*, std::__1::vector<std::__1::unique_ptr<gjxl::modular_gpu_internal::PreparedGpuModularTokens, std::__1::default_delete<gjxl::modular_gpu_internal::PreparedGpuModularTokens> >, gjxl::resource_budget_internal::ManagedAllocator<std::__1::unique_ptr<gjxl::modular_gpu_internal::PreparedGpuModularTokens, std::__1::default_delete<gjxl::modular_gpu_internal::PreparedGpuModularTokens> >, (gjxl::resource_budget_internal::ResourceClass)10> >*)",
+          "cpu_ms": 24923.782,
+          "percent": 100.0
+        },
+        {
+          "name": "main",
+          "cpu_ms": 24923.782,
+          "percent": 100.0
+        },
+        {
+          "name": "gjxl::Status gjxl::modular_internal::(anonymous namespace)::FindBestSplit<false>(gjxl::modular_internal::(anonymous namespace)::SamplesView&, gjxl::modular_internal::(anonymous namespace)::Workspace&, gjxl::modular_internal::HistogramTreeLearningOptions, float, std::__1::span<gjxl::modular_internal::HistogramMultiplierRange const, 18446744073709551615ul>, std::__1::array<std::__1::array<unsigned int, 2ul>, 2ul>, float, gjxl::modular_internal::DecisionTree*, gjxl::modular_internal::HistogramFittingProfile*, gjxl::modular_internal::HistogramFitRecord*)",
+          "cpu_ms": 24843.403,
+          "percent": 99.67750079020912
+        },
+        {
+          "name": "void gjxl::modular_internal::(anonymous namespace)::CollectExtraBitsIncrease<false>(gjxl::modular_internal::(anonymous namespace)::SamplesView const&, std::__1::vector<gjxl::modular_internal::HistogramResidualToken, gjxl::resource_budget_internal::ManagedAllocator<gjxl::modular_internal::HistogramResidualToken, (gjxl::resource_budget_internal::ResourceClass)10>> const&, std::__1::vector<int, gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)10>>&, std::__1::vector<unsigned long, gjxl::resource_budget_internal::ManagedAllocator<unsigned long, (gjxl::resource_budget_internal::ResourceClass)10>>&, unsigned long, unsigned long, unsigned long, unsigned long)",
+          "cpu_ms": 8050.362,
+          "percent": 32.29992141642067
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::EstimateBits(int const*, unsigned long)",
+          "cpu_ms": 5968.519,
+          "percent": 23.947083953791605
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::FastLog2(__simd128_float32_t)",
+          "cpu_ms": 2192.55,
+          "percent": 8.797019649746575
+        },
+        {
+          "name": "void gjxl::modular_internal::(anonymous namespace)::SplitTreeSamples<false, false>(gjxl::modular_internal::(anonymous namespace)::SamplesView&, unsigned long, unsigned long, unsigned long, unsigned long, unsigned int, gjxl::modular_internal::HistogramNodeBucket*)",
+          "cpu_ms": 1864.964,
+          "percent": 7.482668561296195
+        },
+        {
+          "name": "void gjxl::modular_internal::(anonymous namespace)::CollectExtraBitsIncrease<true>(gjxl::modular_internal::(anonymous namespace)::SamplesView const&, std::__1::vector<gjxl::modular_internal::HistogramResidualToken, gjxl::resource_budget_internal::ManagedAllocator<gjxl::modular_internal::HistogramResidualToken, (gjxl::resource_budget_internal::ResourceClass)10>> const&, std::__1::vector<int, gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)10>>&, std::__1::vector<unsigned long, gjxl::resource_budget_internal::ManagedAllocator<unsigned long, (gjxl::resource_budget_internal::ResourceClass)10>>&, unsigned long, unsigned long, unsigned long, unsigned long)",
+          "cpu_ms": 1397.591,
+          "percent": 5.607459574152911
+        },
+        {
+          "name": "gjxl::modular_internal::HistogramTrainingSamples::Swap(unsigned long, unsigned long)",
+          "cpu_ms": 1109.82,
+          "percent": 4.452855509649378
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::SamplesView::Swap(unsigned long, unsigned long)",
+          "cpu_ms": 1109.82,
+          "percent": 4.452855509649378
+        },
+        {
+          "name": "unsigned long gjxl::modular_internal::(anonymous namespace)::SamplesView::Property<false>(unsigned long, unsigned long) const",
+          "cpu_ms": 863.112,
+          "percent": 3.4630057348439336
+        },
+        {
+          "name": "std::__1::enable_if<is_move_constructible<unsigned char>::value && is_move_assignable<unsigned char>::value, void>::type std::__1::swap[abi:nqe220106]<unsigned char>(unsigned char&, unsigned char&)",
+          "cpu_ms": 359.678,
+          "percent": 1.4431116433292508
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::SamplesView::Count(unsigned long) const",
+          "cpu_ms": 224.85,
+          "percent": 0.9021504039796208
+        },
+        {
+          "name": "std::__1::__wrap_iter<gjxl::modular_internal::(anonymous namespace)::CostInfo*> std::__1::__fill_n[abi:nqe220106]<std::__1::__wrap_iter<gjxl::modular_internal::(anonymous namespace)::CostInfo*>, unsigned long, gjxl::modular_internal::(anonymous namespace)::CostInfo, 0>(std::__1::__wrap_iter<gjxl::modular_internal::(anonymous namespace)::CostInfo*>, unsigned long, gjxl::modular_internal::(anonymous namespace)::CostInfo const&)",
+          "cpu_ms": 102.715,
+          "percent": 0.41211642759513784
+        },
+        {
+          "name": "std::__1::__wrap_iter<gjxl::modular_internal::(anonymous namespace)::CostInfo*> std::__1::fill_n[abi:nqe220106]<std::__1::__wrap_iter<gjxl::modular_internal::(anonymous namespace)::CostInfo*>, unsigned long, gjxl::modular_internal::(anonymous namespace)::CostInfo>(std::__1::__wrap_iter<gjxl::modular_internal::(anonymous namespace)::CostInfo*>, unsigned long, gjxl::modular_internal::(anonymous namespace)::CostInfo const&)",
+          "cpu_ms": 102.715,
+          "percent": 0.41211642759513784
+        },
+        {
+          "name": "unsigned long gjxl::modular_internal::(anonymous namespace)::SamplesView::Property<true>(unsigned long, unsigned long) const",
+          "cpu_ms": 80.363,
+          "percent": 0.32243501407611413
+        },
+        {
+          "name": "std::__1::enable_if<is_move_constructible<unsigned short>::value && is_move_assignable<unsigned short>::value, void>::type std::__1::swap[abi:nqe220106]<unsigned short>(unsigned short&, unsigned short&)",
+          "cpu_ms": 47.359,
+          "percent": 0.19001530345595222
+        },
+        {
+          "name": "std::__1::enable_if<is_move_constructible<unsigned int>::value && is_move_assignable<unsigned int>::value, void>::type std::__1::swap[abi:nqe220106]<unsigned int>(unsigned int&, unsigned int&)",
+          "cpu_ms": 42.056,
+          "percent": 0.16873843624534993
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::SamplesView::PropertyFromIndex(unsigned long) const",
+          "cpu_ms": 32.789,
+          "percent": 0.1315570807030811
+        },
+        {
+          "name": "std::__1::vector<int, gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)10>>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 29.894,
+          "percent": 0.11994166856378378
+        },
+        {
+          "name": "_platform_memset",
+          "cpu_ms": 27.611,
+          "percent": 0.1107817425140374
+        },
+        {
+          "name": "void gjxl::modular_internal::(anonymous namespace)::SplitTreeSamples<true, false>(gjxl::modular_internal::(anonymous namespace)::SamplesView&, unsigned long, unsigned long, unsigned long, unsigned long, unsigned int, gjxl::modular_internal::HistogramNodeBucket*)",
+          "cpu_ms": 22.221,
+          "percent": 0.0891558111044303
+        },
+        {
+          "name": "_platform_memmove",
+          "cpu_ms": 16.847,
+          "percent": 0.0675940754095827
+        },
+        {
+          "name": "std::__1::vector<gjxl::modular_internal::(anonymous namespace)::CostInfo, gjxl::resource_budget_internal::ManagedAllocator<gjxl::modular_internal::(anonymous namespace)::CostInfo, (gjxl::resource_budget_internal::ResourceClass)10>>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 15.0,
+          "percent": 0.06018348258703274
+        },
+        {
+          "name": "std::__1::vector<int, gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)10>>::data[abi:nqe220106]()",
+          "cpu_ms": 13.982,
+          "percent": 0.05609903023545945
+        },
+        {
+          "name": "gjxl::modular_internal::ValidateHistogramTrainingSamples(gjxl::modular_internal::HistogramTrainingSamples const&, gjxl::modular_internal::HistogramTreeLearningOptions)",
+          "cpu_ms": 9.903,
+          "percent": 0.03973313520395901
+        },
+        {
+          "name": "__bzero",
+          "cpu_ms": 7.139,
+          "percent": 0.028643325479255115
+        },
+        {
+          "name": "std::__1::vector<unsigned long, gjxl::resource_budget_internal::ManagedAllocator<unsigned long, (gjxl::resource_budget_internal::ResourceClass)10>>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 6.782,
+          "percent": 0.027210958593683734
+        },
+        {
+          "name": "std::__1::vector<unsigned short, gjxl::resource_budget_internal::ManagedAllocator<unsigned short, (gjxl::resource_budget_internal::ResourceClass)10>>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 5.916,
+          "percent": 0.023736365532325714
+        },
+        {
+          "name": "std::__1::vector<unsigned char, gjxl::resource_budget_internal::ManagedAllocator<unsigned char, (gjxl::resource_budget_internal::ResourceClass)10>>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 4.844,
+          "percent": 0.019435252643439104
+        },
+        {
+          "name": "0x48270c",
+          "cpu_ms": 4.591,
+          "percent": 0.018420157903804486
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::CostInfo::Cost() const",
+          "cpu_ms": 4.13,
+          "percent": 0.016570518872296346
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::SamplesView::PredictorFromIndex(unsigned long) const",
+          "cpu_ms": 4.046,
+          "percent": 0.016233491369808964
+        },
+        {
+          "name": "std::__1::enable_if<is_move_constructible<gjxl::modular_internal::HistogramResidualToken>::value && is_move_assignable<gjxl::modular_internal::HistogramResidualToken>::value, void>::type std::__1::swap[abi:nqe220106]<gjxl::modular_internal::HistogramResidualToken>(gjxl::modular_internal::HistogramResidualToken&, gjxl::modular_internal::HistogramResidualToken&)",
+          "cpu_ms": 2.996,
+          "percent": 0.012020647588716672
+        },
+        {
+          "name": "gjxl::modular_internal::ValidateTree(gjxl::modular_internal::DecisionTree const&, gjxl::modular_internal::TreeLayout*)",
+          "cpu_ms": 2.912,
+          "percent": 0.01168362008622929
+        },
+        {
+          "name": "0x482838",
+          "cpu_ms": 2.109,
+          "percent": 0.008461797651736803
+        },
+        {
+          "name": "0x482834",
+          "cpu_ms": 1.98,
+          "percent": 0.007944219701488321
+        },
+        {
+          "name": "std::__1::vector<int, gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)10>>::begin[abi:nqe220106]()",
+          "cpu_ms": 1.975,
+          "percent": 0.007924158540625977
+        },
+        {
+          "name": "gjxl::Status gjxl::modular_internal::(anonymous namespace)::FindBestSplit<false>(gjxl::modular_internal::(anonymous namespace)::SamplesView&, gjxl::modular_internal::(anonymous namespace)::Workspace&, gjxl::modular_internal::HistogramTreeLearningOptions, float, std::__1::span<gjxl::modular_internal::HistogramMultiplierRange const, 18446744073709551615ul>, std::__1::array<std::__1::array<unsigned int, 2ul>, 2ul>, float, gjxl::modular_internal::DecisionTree*, gjxl::modular_internal::HistogramFittingProfile*, gjxl::modular_internal::HistogramFitRecord*)::SplitInfo::Cost() const",
+          "cpu_ms": 1.972,
+          "percent": 0.00791212184410857
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::SamplesView::RTokens(unsigned long) const",
+          "cpu_ms": 1.921,
+          "percent": 0.007707498003312659
+        },
+        {
+          "name": "std::__1::array<std::__1::vector<gjxl::modular_internal::HistogramResidualToken, gjxl::resource_budget_internal::ManagedAllocator<gjxl::modular_internal::HistogramResidualToken, (gjxl::resource_budget_internal::ResourceClass)10>>, 14ul>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 1.921,
+          "percent": 0.007707498003312659
+        },
+        {
+          "name": "gjxl::modular_internal::InlineStorage<gjxl::modular_internal::DecisionNode, 31ul>::data()",
+          "cpu_ms": 1.811,
+          "percent": 0.007266152464341086
+        },
+        {
+          "name": "std::__1::vector<gjxl::modular_internal::DecisionNode, gjxl::resource_budget_internal::ManagedAllocator<gjxl::modular_internal::DecisionNode, (gjxl::resource_budget_internal::ResourceClass)10>>::empty[abi:nqe220106]() const",
+          "cpu_ms": 1.811,
+          "percent": 0.007266152464341086
+        },
+        {
+          "name": "gjxl::modular_internal::InlineStorage<gjxl::modular_internal::DecisionNode, 31ul>::operator[](unsigned long)",
+          "cpu_ms": 1.811,
+          "percent": 0.007266152464341086
+        }
+      ],
+      "leaf_source_lines": [
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:204",
+          "cpu_ms": 6680.107,
+          "percent": 26.802140220934366
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:461",
+          "cpu_ms": 3321.376,
+          "percent": 13.326131644065896
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:63",
+          "cpu_ms": 1659.755,
+          "percent": 6.659322409416035
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:200",
+          "cpu_ms": 1115.518,
+          "percent": 4.475717208568105
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:129",
+          "cpu_ms": 863.112,
+          "percent": 3.4630057348439336
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:203",
+          "cpu_ms": 831.181,
+          "percent": 3.3348911493448306
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:46",
+          "cpu_ms": 662.62,
+          "percent": 2.658585282121309
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:52",
+          "cpu_ms": 628.74,
+          "percent": 2.522650856118064
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:41",
+          "cpu_ms": 601.462,
+          "percent": 2.413205186917459
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:57",
+          "cpu_ms": 581.477,
+          "percent": 2.333020726950669
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:506",
+          "cpu_ms": 556.615,
+          "percent": 2.2332686106787487
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:662",
+          "cpu_ms": 547.182,
+          "percent": 2.19542122459585
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:356",
+          "cpu_ms": 523.062,
+          "percent": 2.0986461845959012
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:47",
+          "cpu_ms": 515.96,
+          "percent": 2.0701513117070274
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:453",
+          "cpu_ms": 505.265,
+          "percent": 2.027240488622473
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:0",
+          "cpu_ms": 493.529,
+          "percent": 1.9801529318463786
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:499",
+          "cpu_ms": 386.44,
+          "percent": 1.550487000728862
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:62",
+          "cpu_ms": 362.256,
+          "percent": 1.4534551778698754
+        },
+        {
+          "name": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__utility/swap.h:44",
+          "cpu_ms": 300.625,
+          "percent": 1.2061772968484479
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:59",
+          "cpu_ms": 300.081,
+          "percent": 1.2039946425466248
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:45",
+          "cpu_ms": 247.377,
+          "percent": 0.9925339581288265
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:108",
+          "cpu_ms": 224.85,
+          "percent": 0.9021504039796208
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:199",
+          "cpu_ms": 187.305,
+          "percent": 0.7515111470642778
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:502",
+          "cpu_ms": 166.816,
+          "percent": 0.6693045220825635
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:185",
+          "cpu_ms": 163.785,
+          "percent": 0.6571434463678105
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:532",
+          "cpu_ms": 157.998,
+          "percent": 0.6339246587857332
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:539",
+          "cpu_ms": 152.151,
+          "percent": 0.6104651372733079
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:182",
+          "cpu_ms": 147.347,
+          "percent": 0.5911903739167675
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:43",
+          "cpu_ms": 115.749,
+          "percent": 0.46441186173109683
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:51",
+          "cpu_ms": 101.957,
+          "percent": 0.40907515560840646
+        },
+        {
+          "name": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/fill_n.h:51",
+          "cpu_ms": 92.708,
+          "percent": 0.37196602024524206
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:184",
+          "cpu_ms": 91.37,
+          "percent": 0.36659765359847873
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:58",
+          "cpu_ms": 89.402,
+          "percent": 0.3587015806830601
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:552",
+          "cpu_ms": 86.921,
+          "percent": 0.3487472326631648
+        },
+        {
+          "name": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__utility/swap.h:43",
+          "cpu_ms": 82.71,
+          "percent": 0.3318517229848985
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:569",
+          "cpu_ms": 82.555,
+          "percent": 0.33122982699816583
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:127",
+          "cpu_ms": 80.363,
+          "percent": 0.32243501407611413
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:538",
+          "cpu_ms": 70.015,
+          "percent": 0.28091643555540646
+        },
+        {
+          "name": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__utility/swap.h:45",
+          "cpu_ms": 68.754,
+          "percent": 0.2758570107859233
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:507",
+          "cpu_ms": 65.241,
+          "percent": 0.2617620391640402
+        },
+        {
+          "name": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__vector/vector.h:415",
+          "cpu_ms": 63.426,
+          "percent": 0.25447983777100924
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:533",
+          "cpu_ms": 56.325,
+          "percent": 0.22598897711430793
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:335",
+          "cpu_ms": 55.709,
+          "percent": 0.2235174420960671
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:551",
+          "cpu_ms": 54.483,
+          "percent": 0.2185984454526203
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:557",
+          "cpu_ms": 52.757,
+          "percent": 0.2116733327229391
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:37",
+          "cpu_ms": 47.408,
+          "percent": 0.19021190283240322
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:352",
+          "cpu_ms": 47.213,
+          "percent": 0.18942951755877177
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:658",
+          "cpu_ms": 40.48,
+          "percent": 0.16241515834153902
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:529",
+          "cpu_ms": 39.266,
+          "percent": 0.15754430848416184
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:508",
+          "cpu_ms": 38.764,
+          "percent": 0.15553016793358246
+        }
+      ]
+    },
+    "previous": {
+      "fitter_cpu_ms": 24936.441,
+      "positive_samples": 25297,
+      "resolved_leaf_percent": 99.96254878553039,
+      "inline_native_resolution_percent": 97.98696152650712,
+      "entropy_arithmetic_inclusive_percent": 23.655196024163992,
+      "flat": [
+        {
+          "name": "void gjxl::modular_internal::(anonymous namespace)::CollectExtraBitsIncrease<false>(gjxl::modular_internal::(anonymous namespace)::SamplesView const&, std::__1::vector<gjxl::modular_internal::HistogramResidualToken, gjxl::resource_budget_internal::ManagedAllocator<gjxl::modular_internal::HistogramResidualToken, (gjxl::resource_budget_internal::ResourceClass)10>> const&, std::__1::vector<int, gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)10>>&, std::__1::vector<unsigned long, gjxl::resource_budget_internal::ManagedAllocator<unsigned long, (gjxl::resource_budget_internal::ResourceClass)10>>&, unsigned long, unsigned long, unsigned long, unsigned long)",
+          "cpu_ms": 7524.522,
+          "percent": 30.174803212695828
+        },
+        {
+          "name": "gjxl::Status gjxl::modular_internal::(anonymous namespace)::FindBestSplit<false>(gjxl::modular_internal::(anonymous namespace)::SamplesView&, gjxl::modular_internal::(anonymous namespace)::Workspace&, gjxl::modular_internal::HistogramTreeLearningOptions, float, std::__1::span<gjxl::modular_internal::HistogramMultiplierRange const, 18446744073709551615ul>, std::__1::array<std::__1::array<unsigned int, 2ul>, 2ul>, float, gjxl::modular_internal::DecisionTree*, gjxl::modular_internal::HistogramFittingProfile*, gjxl::modular_internal::HistogramFitRecord*)",
+          "cpu_ms": 6914.177,
+          "percent": 27.727200525528083
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::EstimateBits(int const*, unsigned long)",
+          "cpu_ms": 3704.052,
+          "percent": 14.8539721446216
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::FastLog2(__simd128_float32_t)",
+          "cpu_ms": 2194.712,
+          "percent": 8.801223879542393
+        },
+        {
+          "name": "void gjxl::modular_internal::(anonymous namespace)::CollectExtraBitsIncrease<true>(gjxl::modular_internal::(anonymous namespace)::SamplesView const&, std::__1::vector<gjxl::modular_internal::HistogramResidualToken, gjxl::resource_budget_internal::ManagedAllocator<gjxl::modular_internal::HistogramResidualToken, (gjxl::resource_budget_internal::ResourceClass)10>> const&, std::__1::vector<int, gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)10>>&, std::__1::vector<unsigned long, gjxl::resource_budget_internal::ManagedAllocator<unsigned long, (gjxl::resource_budget_internal::ResourceClass)10>>&, unsigned long, unsigned long, unsigned long, unsigned long)",
+          "cpu_ms": 1282.533,
+          "percent": 5.143207886001053
+        },
+        {
+          "name": "unsigned long gjxl::modular_internal::(anonymous namespace)::SamplesView::Property<false>(unsigned long, unsigned long) const",
+          "cpu_ms": 867.232,
+          "percent": 3.4777697426830074
+        },
+        {
+          "name": "void gjxl::modular_internal::(anonymous namespace)::SplitTreeSamples<false, false>(gjxl::modular_internal::(anonymous namespace)::SamplesView&, unsigned long, unsigned long, unsigned long, unsigned long, unsigned int, gjxl::modular_internal::HistogramNodeBucket*)",
+          "cpu_ms": 685.892,
+          "percent": 2.75056091605053
+        },
+        {
+          "name": "gjxl::modular_internal::HistogramTrainingSamples::Swap(unsigned long, unsigned long)",
+          "cpu_ms": 649.837,
+          "percent": 2.6059733223357737
+        },
+        {
+          "name": "std::__1::enable_if<is_move_constructible<unsigned char>::value && is_move_assignable<unsigned char>::value, void>::type std::__1::swap[abi:nqe220106]<unsigned char>(unsigned char&, unsigned char&)",
+          "cpu_ms": 366.623,
+          "percent": 1.4702298535705236
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::SamplesView::Count(unsigned long) const",
+          "cpu_ms": 219.462,
+          "percent": 0.8800854941569248
+        },
+        {
+          "name": "std::__1::__wrap_iter<gjxl::modular_internal::(anonymous namespace)::CostInfo*> std::__1::__fill_n[abi:nqe220106]<std::__1::__wrap_iter<gjxl::modular_internal::(anonymous namespace)::CostInfo*>, unsigned long, gjxl::modular_internal::(anonymous namespace)::CostInfo, 0>(std::__1::__wrap_iter<gjxl::modular_internal::(anonymous namespace)::CostInfo*>, unsigned long, gjxl::modular_internal::(anonymous namespace)::CostInfo const&)",
+          "cpu_ms": 112.163,
+          "percent": 0.449795542194654
+        },
+        {
+          "name": "unsigned long gjxl::modular_internal::(anonymous namespace)::SamplesView::Property<true>(unsigned long, unsigned long) const",
+          "cpu_ms": 81.991,
+          "percent": 0.328799927784402
+        },
+        {
+          "name": "std::__1::enable_if<is_move_constructible<unsigned short>::value && is_move_assignable<unsigned short>::value, void>::type std::__1::swap[abi:nqe220106]<unsigned short>(unsigned short&, unsigned short&)",
+          "cpu_ms": 54.039,
+          "percent": 0.21670694707396296
+        },
+        {
+          "name": "std::__1::enable_if<is_move_constructible<unsigned int>::value && is_move_assignable<unsigned int>::value, void>::type std::__1::swap[abi:nqe220106]<unsigned int>(unsigned int&, unsigned int&)",
+          "cpu_ms": 44.557,
+          "percent": 0.1786822746678245
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::SamplesView::PropertyFromIndex(unsigned long) const",
+          "cpu_ms": 37.036,
+          "percent": 0.14852159536318754
+        },
+        {
+          "name": "std::__1::vector<int, gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)10>>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 32.148,
+          "percent": 0.12891976044215772
+        },
+        {
+          "name": "_platform_memset",
+          "cpu_ms": 30.157,
+          "percent": 0.1209354614798479
+        },
+        {
+          "name": "std::__1::vector<int, gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)10>>::data[abi:nqe220106]()",
+          "cpu_ms": 18.588,
+          "percent": 0.07454151135681311
+        },
+        {
+          "name": "_platform_memmove",
+          "cpu_ms": 17.822,
+          "percent": 0.07146970171084158
+        },
+        {
+          "name": "std::__1::vector<gjxl::modular_internal::(anonymous namespace)::CostInfo, gjxl::resource_budget_internal::ManagedAllocator<gjxl::modular_internal::(anonymous namespace)::CostInfo, (gjxl::resource_budget_internal::ResourceClass)10>>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 14.239,
+          "percent": 0.057101171734972124
+        },
+        {
+          "name": "void gjxl::modular_internal::(anonymous namespace)::SplitTreeSamples<true, false>(gjxl::modular_internal::(anonymous namespace)::SamplesView&, unsigned long, unsigned long, unsigned long, unsigned long, unsigned int, gjxl::modular_internal::HistogramNodeBucket*)",
+          "cpu_ms": 10.748,
+          "percent": 0.043101579732248076
+        },
+        {
+          "name": "__bzero",
+          "cpu_ms": 8.709,
+          "percent": 0.034924791392645003
+        },
+        {
+          "name": "gjxl::modular_internal::ValidateHistogramTrainingSamples(gjxl::modular_internal::HistogramTrainingSamples const&, gjxl::modular_internal::HistogramTreeLearningOptions)",
+          "cpu_ms": 7.833,
+          "percent": 0.031411860257043095
+        },
+        {
+          "name": "gjxl::modular_internal::LearnHistogramTree(gjxl::modular_internal::HistogramTrainingSamples&, gjxl::modular_internal::DecisionTree*, gjxl::modular_internal::HistogramTreeLearningOptions)",
+          "cpu_ms": 6.809,
+          "percent": 0.027305420208120317
+        },
+        {
+          "name": "std::__1::vector<unsigned long, gjxl::resource_budget_internal::ManagedAllocator<unsigned long, (gjxl::resource_budget_internal::ResourceClass)10>>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 4.893,
+          "percent": 0.01962188589783121
+        },
+        {
+          "name": "std::__1::vector<unsigned char, gjxl::resource_budget_internal::ManagedAllocator<unsigned char, (gjxl::resource_budget_internal::ResourceClass)10>>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 4.884,
+          "percent": 0.019585794139588726
+        },
+        {
+          "name": "std::__1::vector<unsigned short, gjxl::resource_budget_internal::ManagedAllocator<unsigned short, (gjxl::resource_budget_internal::ResourceClass)10>>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 4.791,
+          "percent": 0.019212845971083043
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::CostInfo::Cost() const",
+          "cpu_ms": 4.753,
+          "percent": 0.01906045854739255
+        },
+        {
+          "name": "0x48270c",
+          "cpu_ms": 4.722,
+          "percent": 0.018936142491223988
+        },
+        {
+          "name": "std::__1::enable_if<is_move_constructible<gjxl::modular_internal::HistogramResidualToken>::value && is_move_assignable<gjxl::modular_internal::HistogramResidualToken>::value, void>::type std::__1::swap[abi:nqe220106]<gjxl::modular_internal::HistogramResidualToken>(gjxl::modular_internal::HistogramResidualToken&, gjxl::modular_internal::HistogramResidualToken&)",
+          "cpu_ms": 3.943,
+          "percent": 0.015812200305568867
+        },
+        {
+          "name": "gjxl::modular_internal::ValidateTree(gjxl::modular_internal::DecisionTree const&, gjxl::modular_internal::TreeLayout*)",
+          "cpu_ms": 3.033,
+          "percent": 0.012162922527717567
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::SamplesView::PredictorFromIndex(unsigned long) const",
+          "cpu_ms": 2.789,
+          "percent": 0.011184434859810187
+        },
+        {
+          "name": "0x482838",
+          "cpu_ms": 2.761,
+          "percent": 0.011072149389722456
+        },
+        {
+          "name": "std::__1::vector<gjxl::modular_internal::DecisionNode, gjxl::resource_budget_internal::ManagedAllocator<gjxl::modular_internal::DecisionNode, (gjxl::resource_budget_internal::ResourceClass)10>>::empty[abi:nqe220106]() const",
+          "cpu_ms": 2.164,
+          "percent": 0.008678062759637593
+        },
+        {
+          "name": "std::__1::vector<int, gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)10>>::begin[abi:nqe220106]()",
+          "cpu_ms": 1.975,
+          "percent": 0.007920135836545399
+        },
+        {
+          "name": "gjxl::Status gjxl::modular_internal::(anonymous namespace)::FindBestSplit<false>(gjxl::modular_internal::(anonymous namespace)::SamplesView&, gjxl::modular_internal::(anonymous namespace)::Workspace&, gjxl::modular_internal::HistogramTreeLearningOptions, float, std::__1::span<gjxl::modular_internal::HistogramMultiplierRange const, 18446744073709551615ul>, std::__1::array<std::__1::array<unsigned int, 2ul>, 2ul>, float, gjxl::modular_internal::DecisionTree*, gjxl::modular_internal::HistogramFittingProfile*, gjxl::modular_internal::HistogramFitRecord*)::SplitInfo::Cost() const",
+          "cpu_ms": 1.974,
+          "percent": 0.007916125641185124
+        },
+        {
+          "name": "0x482834",
+          "cpu_ms": 1.856,
+          "percent": 0.007442922588672537
+        },
+        {
+          "name": "std::__1::array<std::__1::vector<gjxl::modular_internal::HistogramResidualToken, gjxl::resource_budget_internal::ManagedAllocator<gjxl::modular_internal::HistogramResidualToken, (gjxl::resource_budget_internal::ResourceClass)10>>, 14ul>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 1.084,
+          "percent": 0.004347051770539349
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::SamplesView::Token(unsigned long, unsigned long) const",
+          "cpu_ms": 0.99,
+          "percent": 0.00397009340667339
+        },
+        {
+          "name": "std::__1::vector<gjxl::modular_internal::HistogramResidualToken, gjxl::resource_budget_internal::ManagedAllocator<gjxl::modular_internal::HistogramResidualToken, (gjxl::resource_budget_internal::ResourceClass)10>>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 0.988,
+          "percent": 0.003962073015952838
+        },
+        {
+          "name": "std::__1::__wrap_iter<int*> std::__1::__fill_n[abi:nqe220106]<std::__1::__wrap_iter<int*>, unsigned long, int, 0>(std::__1::__wrap_iter<int*>, unsigned long, int const&)",
+          "cpu_ms": 0.983,
+          "percent": 0.003942022039151457
+        },
+        {
+          "name": "bool std::__1::__less<void, void>::operator()[abi:nqe220106]<int, int>(int const&, int const&) const",
+          "cpu_ms": 0.983,
+          "percent": 0.003942022039151457
+        },
+        {
+          "name": "gjxl::modular_internal::DecisionNode::DecisionNode()",
+          "cpu_ms": 0.981,
+          "percent": 0.003934001648430905
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::Padded(unsigned long)",
+          "cpu_ms": 0.013,
+          "percent": 5.2132539683589974e-05
+        }
+      ],
+      "inclusive": [
+        {
+          "name": "gjxl::modular_internal::LearnPreparedHistogramTree(gjxl::modular_internal::PreparedHistogramSamples&, gjxl::modular_internal::DecisionTree*, unsigned long, unsigned long)",
+          "cpu_ms": 24936.441,
+          "percent": 100.0
+        },
+        {
+          "name": "gjxl::modular_internal::PrepareReferenceModularFrame(gjxl::modular_internal::PackedModularImageView, gjxl::modular_internal::ReferenceWorkflowOptions const&, gjxl::resource_budget_internal::ResourceBudget const&, gjxl::modular_internal::ReferenceModularFrame*)",
+          "cpu_ms": 24936.441,
+          "percent": 100.0
+        },
+        {
+          "name": "start",
+          "cpu_ms": 24936.441,
+          "percent": 100.0
+        },
+        {
+          "name": "gjxl::modular_internal::LearnHistogramTree(gjxl::modular_internal::HistogramTrainingSamples&, gjxl::modular_internal::DecisionTree*, gjxl::modular_internal::HistogramTreeLearningOptions)",
+          "cpu_ms": 24936.441,
+          "percent": 100.0
+        },
+        {
+          "name": "gjxl::modular_internal::EncodeReferenceModularImage(gjxl::modular_internal::PackedModularImageView, gjxl::modular_internal::ReferenceWorkflowOptions const&, gjxl::resource_budget_internal::ResourceBudget const&, gjxl::resource_budget_internal::PublicationVector<unsigned char>*, gjxl::modular_internal::ReferenceWorkflowStats*)",
+          "cpu_ms": 24936.441,
+          "percent": 100.0
+        },
+        {
+          "name": "gjxl::modular_internal::reference_workflow_internal::(anonymous namespace)::Learn(std::__1::span<gjxl::modular_internal::HistogramTrainingImage const, (unsigned long)18446744073709551615>, unsigned long, gjxl::modular_internal::ReferenceWorkflowOptions const&, gjxl::resource_budget_internal::ResourceBudget const&, gjxl::modular_internal::ReferenceWorkflowStats*, gjxl::modular_internal::ReferenceModularStream*)",
+          "cpu_ms": 24936.441,
+          "percent": 100.0
+        },
+        {
+          "name": "gjxl::modular_internal::reference_workflow_internal::LearnReferenceModularScopes(std::__1::span<gjxl::modular_internal::ReferenceModularStream, (unsigned long)18446744073709551615>, std::__1::span<gjxl::modular_internal::PreparedModularStreamView, (unsigned long)18446744073709551615>, unsigned long long, gjxl::modular_internal::ReferenceWorkflowOptions const&, gjxl::resource_budget_internal::ResourceBudget const&, gjxl::modular_internal::ReferenceWorkflowStats*, std::__1::vector<std::__1::unique_ptr<gjxl::modular_gpu_internal::PreparedGpuModularTokens, std::__1::default_delete<gjxl::modular_gpu_internal::PreparedGpuModularTokens> >, gjxl::resource_budget_internal::ManagedAllocator<std::__1::unique_ptr<gjxl::modular_gpu_internal::PreparedGpuModularTokens, std::__1::default_delete<gjxl::modular_gpu_internal::PreparedGpuModularTokens> >, (gjxl::resource_budget_internal::ResourceClass)10> >*)",
+          "cpu_ms": 24936.441,
+          "percent": 100.0
+        },
+        {
+          "name": "main",
+          "cpu_ms": 24936.441,
+          "percent": 100.0
+        },
+        {
+          "name": "gjxl::Status gjxl::modular_internal::(anonymous namespace)::FindBestSplit<false>(gjxl::modular_internal::(anonymous namespace)::SamplesView&, gjxl::modular_internal::(anonymous namespace)::Workspace&, gjxl::modular_internal::HistogramTreeLearningOptions, float, std::__1::span<gjxl::modular_internal::HistogramMultiplierRange const, 18446744073709551615ul>, std::__1::array<std::__1::array<unsigned int, 2ul>, 2ul>, float, gjxl::modular_internal::DecisionTree*, gjxl::modular_internal::HistogramFittingProfile*, gjxl::modular_internal::HistogramFitRecord*)",
+          "cpu_ms": 24850.775,
+          "percent": 99.65646260426658
+        },
+        {
+          "name": "void gjxl::modular_internal::(anonymous namespace)::CollectExtraBitsIncrease<false>(gjxl::modular_internal::(anonymous namespace)::SamplesView const&, std::__1::vector<gjxl::modular_internal::HistogramResidualToken, gjxl::resource_budget_internal::ManagedAllocator<gjxl::modular_internal::HistogramResidualToken, (gjxl::resource_budget_internal::ResourceClass)10>> const&, std::__1::vector<int, gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)10>>&, std::__1::vector<unsigned long, gjxl::resource_budget_internal::ManagedAllocator<unsigned long, (gjxl::resource_budget_internal::ResourceClass)10>>&, unsigned long, unsigned long, unsigned long, unsigned long)",
+          "cpu_ms": 8068.56,
+          "percent": 32.356501876109746
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::EstimateBits(int const*, unsigned long)",
+          "cpu_ms": 5898.764,
+          "percent": 23.655196024163992
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::FastLog2(__simd128_float32_t)",
+          "cpu_ms": 2194.712,
+          "percent": 8.801223879542393
+        },
+        {
+          "name": "void gjxl::modular_internal::(anonymous namespace)::SplitTreeSamples<false, false>(gjxl::modular_internal::(anonymous namespace)::SamplesView&, unsigned long, unsigned long, unsigned long, unsigned long, unsigned int, gjxl::modular_internal::HistogramNodeBucket*)",
+          "cpu_ms": 1888.062,
+          "percent": 7.571497472313712
+        },
+        {
+          "name": "void gjxl::modular_internal::(anonymous namespace)::CollectExtraBitsIncrease<true>(gjxl::modular_internal::(anonymous namespace)::SamplesView const&, std::__1::vector<gjxl::modular_internal::HistogramResidualToken, gjxl::resource_budget_internal::ManagedAllocator<gjxl::modular_internal::HistogramResidualToken, (gjxl::resource_budget_internal::ResourceClass)10>> const&, std::__1::vector<int, gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)10>>&, std::__1::vector<unsigned long, gjxl::resource_budget_internal::ManagedAllocator<unsigned long, (gjxl::resource_budget_internal::ResourceClass)10>>&, unsigned long, unsigned long, unsigned long, unsigned long)",
+          "cpu_ms": 1384.014,
+          "percent": 5.550166521357238
+        },
+        {
+          "name": "gjxl::modular_internal::HistogramTrainingSamples::Swap(unsigned long, unsigned long)",
+          "cpu_ms": 1129.662,
+          "percent": 4.530165311080278
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::SamplesView::Swap(unsigned long, unsigned long)",
+          "cpu_ms": 1129.662,
+          "percent": 4.530165311080278
+        },
+        {
+          "name": "unsigned long gjxl::modular_internal::(anonymous namespace)::SamplesView::Property<false>(unsigned long, unsigned long) const",
+          "cpu_ms": 867.232,
+          "percent": 3.4777697426830074
+        },
+        {
+          "name": "std::__1::enable_if<is_move_constructible<unsigned char>::value && is_move_assignable<unsigned char>::value, void>::type std::__1::swap[abi:nqe220106]<unsigned char>(unsigned char&, unsigned char&)",
+          "cpu_ms": 366.623,
+          "percent": 1.4702298535705236
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::SamplesView::Count(unsigned long) const",
+          "cpu_ms": 219.462,
+          "percent": 0.8800854941569248
+        },
+        {
+          "name": "std::__1::__wrap_iter<gjxl::modular_internal::(anonymous namespace)::CostInfo*> std::__1::__fill_n[abi:nqe220106]<std::__1::__wrap_iter<gjxl::modular_internal::(anonymous namespace)::CostInfo*>, unsigned long, gjxl::modular_internal::(anonymous namespace)::CostInfo, 0>(std::__1::__wrap_iter<gjxl::modular_internal::(anonymous namespace)::CostInfo*>, unsigned long, gjxl::modular_internal::(anonymous namespace)::CostInfo const&)",
+          "cpu_ms": 112.163,
+          "percent": 0.449795542194654
+        },
+        {
+          "name": "std::__1::__wrap_iter<gjxl::modular_internal::(anonymous namespace)::CostInfo*> std::__1::fill_n[abi:nqe220106]<std::__1::__wrap_iter<gjxl::modular_internal::(anonymous namespace)::CostInfo*>, unsigned long, gjxl::modular_internal::(anonymous namespace)::CostInfo>(std::__1::__wrap_iter<gjxl::modular_internal::(anonymous namespace)::CostInfo*>, unsigned long, gjxl::modular_internal::(anonymous namespace)::CostInfo const&)",
+          "cpu_ms": 112.163,
+          "percent": 0.449795542194654
+        },
+        {
+          "name": "unsigned long gjxl::modular_internal::(anonymous namespace)::SamplesView::Property<true>(unsigned long, unsigned long) const",
+          "cpu_ms": 81.991,
+          "percent": 0.328799927784402
+        },
+        {
+          "name": "std::__1::enable_if<is_move_constructible<unsigned short>::value && is_move_assignable<unsigned short>::value, void>::type std::__1::swap[abi:nqe220106]<unsigned short>(unsigned short&, unsigned short&)",
+          "cpu_ms": 54.039,
+          "percent": 0.21670694707396296
+        },
+        {
+          "name": "std::__1::enable_if<is_move_constructible<unsigned int>::value && is_move_assignable<unsigned int>::value, void>::type std::__1::swap[abi:nqe220106]<unsigned int>(unsigned int&, unsigned int&)",
+          "cpu_ms": 44.557,
+          "percent": 0.1786822746678245
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::SamplesView::PropertyFromIndex(unsigned long) const",
+          "cpu_ms": 37.036,
+          "percent": 0.14852159536318754
+        },
+        {
+          "name": "std::__1::vector<int, gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)10>>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 32.148,
+          "percent": 0.12891976044215772
+        },
+        {
+          "name": "_platform_memset",
+          "cpu_ms": 30.157,
+          "percent": 0.1209354614798479
+        },
+        {
+          "name": "void gjxl::modular_internal::(anonymous namespace)::SplitTreeSamples<true, false>(gjxl::modular_internal::(anonymous namespace)::SamplesView&, unsigned long, unsigned long, unsigned long, unsigned long, unsigned int, gjxl::modular_internal::HistogramNodeBucket*)",
+          "cpu_ms": 25.535,
+          "percent": 0.10240033852465154
+        },
+        {
+          "name": "std::__1::vector<int, gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)10>>::data[abi:nqe220106]()",
+          "cpu_ms": 18.588,
+          "percent": 0.07454151135681311
+        },
+        {
+          "name": "_platform_memmove",
+          "cpu_ms": 17.822,
+          "percent": 0.07146970171084158
+        },
+        {
+          "name": "std::__1::vector<gjxl::modular_internal::(anonymous namespace)::CostInfo, gjxl::resource_budget_internal::ManagedAllocator<gjxl::modular_internal::(anonymous namespace)::CostInfo, (gjxl::resource_budget_internal::ResourceClass)10>>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 14.239,
+          "percent": 0.057101171734972124
+        },
+        {
+          "name": "gjxl::modular_internal::ValidateHistogramTrainingSamples(gjxl::modular_internal::HistogramTrainingSamples const&, gjxl::modular_internal::HistogramTreeLearningOptions)",
+          "cpu_ms": 8.816,
+          "percent": 0.03535388229619455
+        },
+        {
+          "name": "__bzero",
+          "cpu_ms": 8.709,
+          "percent": 0.034924791392645003
+        },
+        {
+          "name": "std::__1::vector<unsigned long, gjxl::resource_budget_internal::ManagedAllocator<unsigned long, (gjxl::resource_budget_internal::ResourceClass)10>>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 4.893,
+          "percent": 0.01962188589783121
+        },
+        {
+          "name": "std::__1::vector<unsigned char, gjxl::resource_budget_internal::ManagedAllocator<unsigned char, (gjxl::resource_budget_internal::ResourceClass)10>>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 4.884,
+          "percent": 0.019585794139588726
+        },
+        {
+          "name": "std::__1::vector<unsigned short, gjxl::resource_budget_internal::ManagedAllocator<unsigned short, (gjxl::resource_budget_internal::ResourceClass)10>>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 4.791,
+          "percent": 0.019212845971083043
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::CostInfo::Cost() const",
+          "cpu_ms": 4.753,
+          "percent": 0.01906045854739255
+        },
+        {
+          "name": "0x48270c",
+          "cpu_ms": 4.722,
+          "percent": 0.018936142491223988
+        },
+        {
+          "name": "std::__1::enable_if<is_move_constructible<gjxl::modular_internal::HistogramResidualToken>::value && is_move_assignable<gjxl::modular_internal::HistogramResidualToken>::value, void>::type std::__1::swap[abi:nqe220106]<gjxl::modular_internal::HistogramResidualToken>(gjxl::modular_internal::HistogramResidualToken&, gjxl::modular_internal::HistogramResidualToken&)",
+          "cpu_ms": 3.943,
+          "percent": 0.015812200305568867
+        },
+        {
+          "name": "gjxl::modular_internal::ValidateTree(gjxl::modular_internal::DecisionTree const&, gjxl::modular_internal::TreeLayout*)",
+          "cpu_ms": 3.033,
+          "percent": 0.012162922527717567
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::SamplesView::PredictorFromIndex(unsigned long) const",
+          "cpu_ms": 2.789,
+          "percent": 0.011184434859810187
+        },
+        {
+          "name": "0x482838",
+          "cpu_ms": 2.761,
+          "percent": 0.011072149389722456
+        },
+        {
+          "name": "gjxl::modular_internal::InlineStorage<gjxl::modular_internal::DecisionNode, 31ul>::data()",
+          "cpu_ms": 2.164,
+          "percent": 0.008678062759637593
+        },
+        {
+          "name": "std::__1::vector<gjxl::modular_internal::DecisionNode, gjxl::resource_budget_internal::ManagedAllocator<gjxl::modular_internal::DecisionNode, (gjxl::resource_budget_internal::ResourceClass)10>>::empty[abi:nqe220106]() const",
+          "cpu_ms": 2.164,
+          "percent": 0.008678062759637593
+        },
+        {
+          "name": "gjxl::modular_internal::InlineStorage<gjxl::modular_internal::DecisionNode, 31ul>::operator[](unsigned long)",
+          "cpu_ms": 2.164,
+          "percent": 0.008678062759637593
+        },
+        {
+          "name": "std::__1::vector<int, gjxl::resource_budget_internal::ManagedAllocator<int, (gjxl::resource_budget_internal::ResourceClass)10>>::begin[abi:nqe220106]()",
+          "cpu_ms": 1.975,
+          "percent": 0.007920135836545399
+        },
+        {
+          "name": "gjxl::Status gjxl::modular_internal::(anonymous namespace)::FindBestSplit<false>(gjxl::modular_internal::(anonymous namespace)::SamplesView&, gjxl::modular_internal::(anonymous namespace)::Workspace&, gjxl::modular_internal::HistogramTreeLearningOptions, float, std::__1::span<gjxl::modular_internal::HistogramMultiplierRange const, 18446744073709551615ul>, std::__1::array<std::__1::array<unsigned int, 2ul>, 2ul>, float, gjxl::modular_internal::DecisionTree*, gjxl::modular_internal::HistogramFittingProfile*, gjxl::modular_internal::HistogramFitRecord*)::SplitInfo::Cost() const",
+          "cpu_ms": 1.974,
+          "percent": 0.007916125641185124
+        },
+        {
+          "name": "0x482834",
+          "cpu_ms": 1.856,
+          "percent": 0.007442922588672537
+        },
+        {
+          "name": "gjxl::modular_internal::(anonymous namespace)::SamplesView::RTokens(unsigned long) const",
+          "cpu_ms": 1.084,
+          "percent": 0.004347051770539349
+        },
+        {
+          "name": "std::__1::array<std::__1::vector<gjxl::modular_internal::HistogramResidualToken, gjxl::resource_budget_internal::ManagedAllocator<gjxl::modular_internal::HistogramResidualToken, (gjxl::resource_budget_internal::ResourceClass)10>>, 14ul>::operator[][abi:nqe220106](unsigned long)",
+          "cpu_ms": 1.084,
+          "percent": 0.004347051770539349
+        }
+      ],
+      "leaf_source_lines": [
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:204",
+          "cpu_ms": 6663.058,
+          "percent": 26.720164276850895
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:461",
+          "cpu_ms": 3327.112,
+          "percent": 13.342369105519108
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:63",
+          "cpu_ms": 1643.706,
+          "percent": 6.591582174858072
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:200",
+          "cpu_ms": 1109.964,
+          "percent": 4.451172482873559
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:129",
+          "cpu_ms": 867.232,
+          "percent": 3.4777697426830074
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:203",
+          "cpu_ms": 839.639,
+          "percent": 3.367116422106908
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:46",
+          "cpu_ms": 666.486,
+          "percent": 2.672739064889011
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:52",
+          "cpu_ms": 610.808,
+          "percent": 2.4494594076195555
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:41",
+          "cpu_ms": 599.369,
+          "percent": 2.4035867828933566
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:57",
+          "cpu_ms": 571.371,
+          "percent": 2.291309333196345
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:506",
+          "cpu_ms": 562.625,
+          "percent": 2.2562361645753697
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:662",
+          "cpu_ms": 556.318,
+          "percent": 2.230943862438108
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:356",
+          "cpu_ms": 538.093,
+          "percent": 2.157858051997075
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:453",
+          "cpu_ms": 515.738,
+          "percent": 2.068210134718102
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:47",
+          "cpu_ms": 509.245,
+          "percent": 2.042171936243829
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:0",
+          "cpu_ms": 486.462,
+          "percent": 1.9508076553506573
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:499",
+          "cpu_ms": 379.079,
+          "percent": 1.5201808469781233
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:62",
+          "cpu_ms": 356.245,
+          "percent": 1.4286120461215777
+        },
+        {
+          "name": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__utility/swap.h:44",
+          "cpu_ms": 305.077,
+          "percent": 1.2234183699269676
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:59",
+          "cpu_ms": 283.508,
+          "percent": 1.1369224662011712
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:45",
+          "cpu_ms": 259.374,
+          "percent": 1.0401404113762667
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:108",
+          "cpu_ms": 219.462,
+          "percent": 0.8800854941569248
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:199",
+          "cpu_ms": 194.394,
+          "percent": 0.7795579168655222
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:185",
+          "cpu_ms": 177.085,
+          "percent": 0.7101454453745023
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:502",
+          "cpu_ms": 173.518,
+          "percent": 0.6958410785243972
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:539",
+          "cpu_ms": 150.135,
+          "percent": 0.6020706804150601
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:182",
+          "cpu_ms": 146.596,
+          "percent": 0.5878785990350427
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:532",
+          "cpu_ms": 144.965,
+          "percent": 0.5813379704024323
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:43",
+          "cpu_ms": 112.645,
+          "percent": 0.4517284563583071
+        },
+        {
+          "name": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__algorithm/fill_n.h:51",
+          "cpu_ms": 100.262,
+          "percent": 0.40207020721200754
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:184",
+          "cpu_ms": 98.826,
+          "percent": 0.39631156667465095
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:51",
+          "cpu_ms": 94.543,
+          "percent": 0.3791358999465882
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:58",
+          "cpu_ms": 93.481,
+          "percent": 0.37487707247397495
+        },
+        {
+          "name": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__utility/swap.h:43",
+          "cpu_ms": 87.36,
+          "percent": 0.3503306666737246
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:552",
+          "cpu_ms": 83.318,
+          "percent": 0.3341214570274884
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:127",
+          "cpu_ms": 81.991,
+          "percent": 0.328799927784402
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:569",
+          "cpu_ms": 78.147,
+          "percent": 0.3133847368195004
+        },
+        {
+          "name": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__utility/swap.h:45",
+          "cpu_ms": 76.725,
+          "percent": 0.3076822390171877
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:507",
+          "cpu_ms": 68.205,
+          "percent": 0.2735153745476349
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:538",
+          "cpu_ms": 67.132,
+          "percent": 0.2692124349260586
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:533",
+          "cpu_ms": 63.391,
+          "percent": 0.2542102940832655
+        },
+        {
+          "name": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/c++/v1/__vector/vector.h:415",
+          "cpu_ms": 61.943,
+          "percent": 0.24840353120158568
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:557",
+          "cpu_ms": 58.866,
+          "percent": 0.23606416007801595
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:335",
+          "cpu_ms": 55.612,
+          "percent": 0.22301498437567735
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:352",
+          "cpu_ms": 52.098,
+          "percent": 0.20892315787966695
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:551",
+          "cpu_ms": 48.949,
+          "percent": 0.19629505269015735
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:37",
+          "cpu_ms": 45.622,
+          "percent": 0.18295313272651859
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:658",
+          "cpu_ms": 44.209,
+          "percent": 0.17728672668244838
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:505",
+          "cpu_ms": 39.334,
+          "percent": 0.15773702430110215
+        },
+        {
+          "name": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/src/codec/modular/histogram_tree_learning.cpp:508",
+          "cpu_ms": 39.264,
+          "percent": 0.1574563106258828
+        }
+      ]
+    }
+  },
+  "capture_manifest": {
+    "schema": 1,
+    "scope": "Auxiliary main-thread sampled CPU attribution. One full-resolution 1029 auto-hybrid encode with fitting instrumentation disabled. Excluded from paired wall-time medians.",
+    "source_base_revision": "e5378fbb04e671e25f24512b9fb0fc83732f427d",
+    "binary_sha256": "ed4eba6c73a47d20eec701a8fc3a3524478f763f5a78092da2a6161ca4493b7d",
+    "fitter_source_sha256": "d4a12fc2f23cd80a358761b1665172e512ab8eb2831dbaa5f15644d27f3353d5",
+    "sampler_command": [
+      "samply",
+      "record",
+      "--save-only",
+      "--main-thread-only",
+      "--unstable-presymbolicate",
+      "--rate",
+      "1000",
+      "--output",
+      "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/build/histogram-samply-20261015/1029.json.gz",
+      "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/build/histogram-samply-20261015/hybrid_profile",
+      "/Users/yunhocho/GitHub/gjxl-modular/build/modular-token-performance-20261010/inputs/photo-large-1029.pam",
+      "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/build/histogram-samply-20261015/output",
+      "auto",
+      "auto",
+      "best",
+      "fit-off"
+    ],
+    "samply_version": "samply 0.13.1",
+    "symbolizer_version": "llvm-symbolizer\nHomebrew LLVM version 23.1.2\n  Optimized build.",
+    "analysis_command": [
+      "python3",
+      "tools/modular_reference_learning/analyze_fitting_samply.py",
+      "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/build/histogram-samply-20261015/1029.json.gz",
+      "--binary",
+      "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/build/histogram-samply-20261015/hybrid_profile",
+      "--symbolizer",
+      "/opt/homebrew/opt/llvm/bin/llvm-symbolizer",
+      "--output",
+      "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/build/histogram-samply-20261015/analysis.json"
+    ],
+    "power_note": "AC power observed around capture. No per-call before/after environment snapshot was recorded for this auxiliary run; the snapshot below is from provenance finalization during the separate paired study.",
+    "environment_at_provenance_finalization": {
+      "platform": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+      "load_average": [
+        5.14453125,
+        5.7236328125,
+        7.052734375
+      ],
+      "power": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=35782755)\t61%; charging; 4:19 remaining present: true",
+      "cpu": "Apple M4 Pro",
+      "physical_memory_bytes": 51539607552,
+      "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+      "top_processes": [
+        "68839 100.0 /Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/build/histogram-fitting-attribution-20261015/hybrid_profile",
+        "35588  87.6 /System/Library/Frameworks/CoreSpotlight.framework/spotlightknowledged",
+        "69219  14.0 /opt/homebrew/Cellar/python@3.14/3.14.8/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+        "  602  11.6 /System/Library/PrivateFrameworks/SkyLight.framework/Resources/WindowServer",
+        " 1688   8.6 /Applications/Orca.app/Contents/Frameworks/Orca Helper (Renderer).app/Contents/MacOS/Orca Helper (Renderer)",
+        "  698   6.5 /usr/libexec/syspolicyd",
+        "  655   4.5 /usr/libexec/trustd",
+        " 1560   3.7 /Applications/Orca.app/Contents/Frameworks/Orca Helper.app/Contents/MacOS/Orca Helper",
+        "79804   3.5 codex",
+        " 1322   3.2 /System/Library/CoreServices/Finder.app/Contents/MacOS/Finder",
+        " 1316   2.9 /Applications/Orca.app/Contents/MacOS/Orca",
+        "19429   2.8 /Applications/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/155.0.8059.40/Helpers/Google Chrome Helper (Aperitif Renderer).app/Contents/MacOS/Google Chrome Helper (Aperitif Renderer)"
+      ]
+    },
+    "exact_decode": true,
+    "output_sha256": "2cfd2402384ff6670fd8357e1e5e626aded66c7a91f7293f8ba54ec945a367ad",
+    "artifact_sha256": {
+      "1029.json.gz": "8e1788e7e257575619d122c49cf591da01e4f22e3c60934a6ea899c1557b69ad",
+      "1029.json.syms.json": "1306b03395d3687aeeae4046d179bfb17a6e76be7cf7a7b0c91df1077a324fb3",
+      "analysis.json": "88d964a729a6ed6c4ad7a39514e979371730d2fbfe610846b9510eb6642b3250",
+      "capture.stderr": "26b00a71d9cde46f051f58daaebad030ac4af902aea4baa3a30bb3b807d7bfa8",
+      "capture.stdout": "e3bcc278b1e471762b0128832c409fa6f8d6462839c5d94fee19599887ebb498",
+      "hybrid_profile": "ed4eba6c73a47d20eec701a8fc3a3524478f763f5a78092da2a6161ca4493b7d",
+      "hybrid_profile.dSYM/Contents/Info.plist": "257a80c5328ad3ce0d728724367d1c406e348e1d2818cb0757eff1f5ededd9b2",
+      "hybrid_profile.dSYM/Contents/Resources/DWARF/hybrid_profile": "9e3e6cbf6f4abdb47e07720590b6f6d45ec575985a4e5dd607c5f945d0a5112f",
+      "hybrid_profile.dSYM/Contents/Resources/Relocations/aarch64/hybrid_profile.yml": "cbaba1cf5f0439f86ba94f24c38acf3ed3d7723c1926e9b75be6b4d71b4dcf43",
+      "output/output.jxl": "2cfd2402384ff6670fd8357e1e5e626aded66c7a91f7293f8ba54ec945a367ad",
+      "output/result.json": "3e7ffc8aa8cb3e0cfd22293913016b08515f754c81f3c42b7b79e5e851b04da4"
+    },
+    "source_archive_note": "Binary matches the paired study frozen binary; its source archive and manifest reside in /Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/build/histogram-fitting-attribution-20261015."
+  },
+  "capture_manifest_sha256": "d884131ff579e1a11051ec443c5b703aa331c4e8636691eaf5951e227a02e0ba",
+  "artifact_directory": "/Users/yunhocho/GitHub/gjxl-histogram-fitting-attribution/build/histogram-samply-20261015"
+}
