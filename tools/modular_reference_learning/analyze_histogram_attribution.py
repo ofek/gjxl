@@ -79,10 +79,18 @@ def markdown(report):
              "candidate_evaluation": "Prefix updates + entropy/predictor evaluation",
              "split_selection": "Choose threshold within each property", "partition": "Partition sample rows",
              "output": "Validate/publish tree", "control_cleanup_and_probe_overhead": "Other control, cleanup, probe overhead"}
+    if any(x["profile"]["schema"] >= 2 for x in images):
+        names["property_population"] = "Bin endpoints + occupancy/cost initialization"
+        names["joint_histograms"] = "Joint histograms + fused property occupancy"
     for key, title in names.items():
         lines.append("| " + title + " | " + " | ".join(
             f"{x['stages'][key]:.3f} s ({100*x['stages'][key]/x['selected_fitter_seconds']:.1f}%)" for x in images) + " |")
     lines.append("| **Fitter envelope** | " + " | ".join(f"**{x['selected_fitter_seconds']:.3f} s**" for x in images) + " |")
+    if any(x["profile"]["schema"] >= 2 for x in images):
+        lines += ["", "Schema 2 includes first-predictor occupancy in the joint-histogram phase. "
+                  "Physical property/histogram row passes are property_row_visits + "
+                  "joint_histogram_row_visits - fused_property_row_visits; these counters "
+                  "must not be added without subtracting the shared visits."]
     lines += ["", "## Node-size distribution", "",
               "Rows are distinct weighted training rows, not image pixels. Time is inclusive node "
               "processing time as a share of each image's fitter envelope. Node counts combine the selected images. "

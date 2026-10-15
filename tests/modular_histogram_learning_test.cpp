@@ -333,6 +333,66 @@ void ProfiledParity() {
   Check(unchanged == saved && failed.calls == 1 && failed.successes == 0,
         "Failed profiled fit changed output or counters");
 }
+
+void ConstantColumnsAndSparseBins() {
+  for (size_t predictors : {size_t{1}, size_t{2}, kHistogramPredictors}) {
+    for (bool weighted : {false, true}) {
+      auto minimal = Separated(weighted);
+      minimal.predictor_count = predictors;
+      // Keep the original predictor first; equal alternatives exercise ties.
+      size_t next = 1;
+      for (size_t p = 0; next < predictors; ++p) {
+        if (static_cast<Predictor>(p) != Predictor::kGradient)
+          minimal.predictors[next++] = static_cast<Predictor>(p);
+      }
+      for (auto &token : minimal.residuals[0]) token.extra_bits = 3;
+      for (size_t p = 1; p < predictors; ++p)
+        minimal.residuals[p] = minimal.residuals[0];
+      // Exercise sparse endpoints, including bin 255 and symbol padding that
+      // shrinks in the children. Extra bits keep leaf base costs above zero.
+      minimal.thresholds[0].resize(255);
+      std::iota(minimal.thresholds[0].begin(), minimal.thresholds[0].end(), -127);
+      for (auto &value : minimal.values[0]) value *= 255;
+
+      auto augmented = minimal;
+      augmented.property_count = 4;
+      augmented.static_property_count = 1;
+      augmented.properties = {0, 10, 9, 15};
+      augmented.values[1] = minimal.values[0];
+      augmented.values[0].assign(minimal.weights.size(), 255);
+      augmented.values[2].assign(minimal.weights.size(), 0);
+      augmented.static_values[0].assign(minimal.weights.size(), 65535);
+      augmented.thresholds[0].resize(65535);
+      std::iota(augmented.thresholds[0].begin(), augmented.thresholds[0].end(), 0);
+      augmented.thresholds[1] = augmented.thresholds[2] = minimal.thresholds[0];
+      augmented.thresholds[3].clear();
+      HistogramTreeLearningOptions options;
+      options.maximum_samples = kHistogramMaximumSamples;
+      options.maximum_leaves = 16;
+      DecisionTree expected, actual;
+      Ok(LearnHistogramTree(minimal, &expected, options));
+      HistogramFittingProfile profile;
+      {
+        HistogramFittingProfileSession session(&profile);
+        Ok(LearnHistogramTree(augmented, &actual, options));
+      }
+      Check(expected.size == 3 && actual == expected &&
+                augmented.weights == minimal.weights &&
+                augmented.residuals == minimal.residuals &&
+                augmented.values[1] == minimal.values[0],
+            "Constant or sparse properties changed the tree or row partition");
+      const auto &root = profile.by_rows[7].work;
+      const auto &leaves = profile.by_rows[6].work;
+      Check(root.constant_properties == 3 && root.skipped_constant_properties == 1 &&
+                root.property_row_visits == 3 * 128 &&
+                root.fused_property_row_visits == root.property_row_visits &&
+                root.joint_histogram_row_visits == (2 + predictors) * 128 &&
+                leaves.constant_properties == 8 && leaves.skipped_constant_properties == 6 &&
+                leaves.property_row_visits == 128 && leaves.joint_histogram_row_visits == 128,
+            "Constant properties were rescanned or occupancy lost distinct-row counts");
+    }
+  }
+}
 } // namespace
 int main() try {
   DecisionsAndWeights();
@@ -346,6 +406,7 @@ int main() try {
   }
   ValidationAndFailures();
   ProfiledParity();
+  ConstantColumnsAndSparseBins();
   std::cout << "Histogram learning decisions, weights, limits, storage and "
                "failure checks passed\n";
   return 0;

@@ -43,7 +43,7 @@ size_t RunNativeDifferentialTests() {
       jxl::Predictor::Zero};
   constexpr std::array<float, 5> thresholds{0, 2, 25, 89, 1000};
   constexpr std::array<size_t, 4> bin_limits{8, 32, 96, 256};
-  constexpr size_t cases = 128;
+  constexpr size_t cases = 256;
   for (size_t test = 0; test < cases; ++test) {
     try {
       Random random{static_cast<uint32_t>(test + 1)};
@@ -79,16 +79,30 @@ size_t RunNativeDifferentialTests() {
       jxl::Properties props(16);
       std::array<jxl::pixel_type_w, 14> predictions{};
       for (size_t row = 0; row < rows; ++row) {
-        props[0] = row % 4;
+        props[0] = test >= 128 && test % 3 == 0 ? 0 : row % 4;
         props[1] = (row / 4) % 3;
-        for (size_t p = 2; p < props.size(); ++p)
-          props[p] =
-              test % 7 == 0 ? static_cast<int>(row % 3) - 1 : random.Signed();
+        for (size_t p = 2; p < props.size(); ++p) {
+          if (test < 128) {
+            props[p] = test % 7 == 0 ? static_cast<int>(row % 3) - 1 : random.Signed();
+          } else {
+            // Constant first/last bins and properties that become constant
+            // in only one subtree. A child's mask must not leak to siblings.
+            switch (p % 4) {
+            case 0: props[p] = -1048576; break;
+            case 1: props[p] = 1048576; break;
+            case 2: props[p] = (row % 8) * 10000 - 35000; break;
+            default: props[p] = row % 8 < 4 ? 0 : random.Signed(); break;
+            }
+          }
+        }
         const jxl::pixel_type_w pixel = random.Signed();
         for (size_t p = 0; p < predictions.size(); ++p) {
           // Equal predictor costs, zero-entropy sides, or diverse signed and
           // high-bit-depth residuals. Structured cases encourage deep splits.
-          if (test % 7 == 0)
+          if (test >= 128)
+            predictions[p] = pixel - (test % 2 ? (row % 8) * 27
+                                              : (row % 8 + p % 3) * 9);
+          else if (test % 7 == 0)
             predictions[p] = pixel - (row % 3 == 0 ? 0 : 27);
           else if (test % 7 == 1)
             predictions[p] = pixel - (p == row % 14 ? 0 : row % (p + 1) * 9);

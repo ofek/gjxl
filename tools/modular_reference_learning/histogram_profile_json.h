@@ -24,6 +24,8 @@ inline void WriteHistogramWork(std::ostream &out,
       << ",\"parent_histogram_row_visits\":" << work.parent_histogram_row_visits
       << ",\"property_row_visits\":" << work.property_row_visits
       << ",\"joint_histogram_row_visits\":" << work.joint_histogram_row_visits
+      << ",\"fused_property_row_visits\":" << work.fused_property_row_visits
+      << ",\"skipped_constant_properties\":" << work.skipped_constant_properties
       << ",\"properties\":" << work.properties
       << ",\"constant_properties\":" << work.constant_properties
       << ",\"active_bins\":" << work.active_bins
@@ -52,7 +54,7 @@ void WriteHistogramDistribution(std::ostream &out, const Array &values,
 inline void WriteHistogramProfile(std::ostream &out,
                                   const HistogramFittingProfile &p,
                                   bool enabled) {
-  out << "{\"schema\":1,\"enabled\":" << (enabled ? "true" : "false");
+  out << "{\"schema\":2,\"enabled\":" << (enabled ? "true" : "false");
   if (!enabled) {
     out << '}';
     return;

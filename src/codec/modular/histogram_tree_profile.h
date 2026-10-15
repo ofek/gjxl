@@ -51,6 +51,9 @@ struct HistogramNodeWork {
   uint64_t nodes = 0, splits = 0, forced_splits = 0, rows = 0;
   uint64_t symbol_row_visits = 0, parent_histogram_row_visits = 0;
   uint64_t property_row_visits = 0, joint_histogram_row_visits = 0;
+  // Occupancy and first-predictor histograms share these visits. Physical
+  // passes = property_row_visits + joint_histogram_row_visits - fused visits.
+  uint64_t fused_property_row_visits = 0, skipped_constant_properties = 0;
   uint64_t properties = 0, constant_properties = 0, active_bins = 0,
            bin_span = 0;
   uint64_t candidate_thresholds = 0, entropy_evaluations = 0, symbol_terms = 0;
@@ -109,6 +112,8 @@ inline void MergeHistogramFittingProfile(HistogramFittingProfile &to,
                        &HistogramNodeWork::parent_histogram_row_visits,
                        &HistogramNodeWork::property_row_visits,
                        &HistogramNodeWork::joint_histogram_row_visits,
+                       &HistogramNodeWork::fused_property_row_visits,
+                       &HistogramNodeWork::skipped_constant_properties,
                        &HistogramNodeWork::properties, &HistogramNodeWork::constant_properties,
                        &HistogramNodeWork::active_bins, &HistogramNodeWork::bin_span,
                        &HistogramNodeWork::candidate_thresholds,

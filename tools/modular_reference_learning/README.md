@@ -95,6 +95,14 @@ evaluation combines prefix histogram updates, entropy costs and predictor
 comparison; no clock runs per threshold. Diagnostic arrays are caller-owned,
 allocated outside the encoder timer, and excluded from codec admission.
 
+Histogram profile schema 2 includes fused first-predictor occupancy in
+`joint_histograms`. Physical property/histogram row passes are
+`property_row_visits + joint_histogram_row_visits - fused_property_row_visits`;
+`skipped_constant_properties` counts inherited/one-bin constants needing no row
+scan. Logical property/bin/candidate counters retain their previous meanings.
+The reader also accepts historical schema 1. See the
+[implementation and matched measurements](../../docs/modular-fitter-work-reduction.md).
+
 ```sh
 python3 tools/modular_reference_learning/run_histogram_attribution.py \
   --binary build/release/gjxl_modular_hybrid_profile \

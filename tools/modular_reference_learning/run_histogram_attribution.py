@@ -34,7 +34,7 @@ def snapshot():
 
 def validate_profile(result):
     p = result["histogram_fitting"]
-    require(p["enabled"] and p["schema"] == 1, "Missing fitting profile")
+    require(p["enabled"] and p["schema"] in (1, 2), "Missing fitting profile")
     require(p["calls"] == p["successes"] == result["work"]["fits"] == len(p["fits"])
             and not p["records_dropped"], "Incomplete fit coverage")
     require(all(f["success"] for f in p["fits"]), "Failed fit included")
@@ -58,6 +58,11 @@ def validate_profile(result):
         w = b["work"]
         require(w["active_bins"] == w["candidate_thresholds"] + w["properties"],
                 "Active bins and candidate thresholds disagree")
+        if p["schema"] >= 2:
+            require(w["fused_property_row_visits"] == w["property_row_visits"]
+                    <= w["joint_histogram_row_visits"], "Invalid fused histogram visits")
+            require(w["skipped_constant_properties"] <= w["constant_properties"]
+                    <= w["properties"], "Invalid constant-property skips")
     for key in p["stages"]:
         require(abs(sum(f["stages"][key] for f in p["fits"]) - p["stages"][key]) < 1e-6,
                 "Fit-stage records do not sum")

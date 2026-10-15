@@ -6,6 +6,10 @@ fitting time across the three photographs. Candidate evaluation takes
 **17–31%**, and sample partitioning **8–10%**. Workspace allocation/setup is
 below 0.1%. Fitting remains **69–72% of complete hybrid encoder time**.
 
+The subsequent [fitter work reduction](modular-fitter-work-reduction.md) combines
+occupancy and histogram passes and reuses constant-property information across
+descendants. The serial measurements below describe the earlier implementation.
+
 This profiles the serial CPU fitter inside the qualified automatic hybrid
 pipeline, with Metal feature/token work retained. Property and residual columns
 are already prepared when the fitter begins; their preparation is outside the
