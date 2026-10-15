@@ -16,11 +16,15 @@ struct ReferenceWorkflowOptions {
   PreparedModularEntropyOptions entropy{
       PreparedModularEntropyPolicy::kDirectRateAns,
       AnsSelectionMode::kEstimated, 64};
-  // Optional private hybrid route. Null preserves the scalar CPU control.
+  // Optional private hybrid route. Null selects CPU features and tokens.
   // Backend outlives a prepared frame and its completed token owners.
   GpuBackend *gpu = nullptr;
   WeightedFeatureBackend feature_producer = WeightedFeatureBackend::kAuto;
   size_t feature_cpu_participants = 4;
+  // Local prepare-and-fit jobs only. Zero uses the caller's CPU allowance;
+  // one is the serial control. Global fitting stays serial. Additional workers
+  // require CPU participation and managed-memory admission before launch.
+  size_t learning_cpu_participants = 0;
 };
 struct ReferenceLearningStats {
   size_t first_group = 0, stop_group = 0;
@@ -40,11 +44,14 @@ struct ReferenceWorkflowStats {
          gpu_feature_samples = 0, cpu_feature_batches = 0;
   size_t token_batches = 0, token_samples = 0;
   size_t peak_feature_samples = 0, peak_feature_bytes = 0;
-  // Caller wall intervals. Preparation includes sample-admission planning;
-  // fitting includes fit planning/compaction. Feature time includes its stage
-  // planning/admission and publication. GPU token time includes handoff.
-  double sample_preparation_seconds = 0, fitting_seconds = 0,
-         feature_seconds = 0, token_seconds = 0;
+  size_t learning_peak_participants = 0, learning_waves = 0,
+         learning_memory_limited_waves = 0;
+  // Sums of per-job wall time (overlap when local jobs run concurrently).
+  // Preparation includes sample planning; fitting includes compaction.
+  double sample_preparation_seconds = 0, fitting_seconds = 0;
+  // Caller-wall intervals. Learning includes admission, preparation, fitting,
+  // joins and diagnostic reduction. Features and GPU tokens are separate.
+  double learning_seconds = 0, feature_seconds = 0, token_seconds = 0;
 };
 // A lossless source has at most four normal planes. One reference palette pass
 // adds at most four metadata planes; local passes start without global meta.

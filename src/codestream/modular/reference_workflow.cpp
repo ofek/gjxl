@@ -58,6 +58,7 @@ Status PrepareReferenceModularFrame(PackedModularImageView input,
                                     const ResourceBudget &budget,
                                     ReferenceModularFrame *out) try {
   if (!out ||
+      options.learning_cpu_participants > 256 ||
       (options.buffering != ReferenceBuffering::kAutomatic &&
        options.buffering != ReferenceBuffering::kBuffered) ||
       (options.predictors != ReferencePredictors::kBest &&

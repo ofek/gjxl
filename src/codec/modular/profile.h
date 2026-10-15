@@ -11,8 +11,9 @@
 
 namespace gjxl::modular_internal {
 // Private, opt-in caller-wall and process-CPU instrumentation. Workers are
-// deliberately not given the sink: tokenization/emission measure the caller's
-// joined interval, with process CPU including joined workers' work.
+// never share the caller's sink: stages measure the caller's joined interval,
+// with process CPU including joined workers' work. Local tree jobs use private
+// sinks for feature counters; their top-level timers are not merged.
 enum class ProfileStage {
   kInput,
   kTransforms,

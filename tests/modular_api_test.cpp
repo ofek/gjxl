@@ -110,8 +110,10 @@ void Case(ModularPixelFormat format, bool big, Extent2D extent, ModularEntropy e
             snapshot.active_reservations == 0 && snapshot.live_capacity_bytes == 0 &&
             snapshot.peak_committed_bytes <= memory_limit,
         "Leaked CPU or reservation");
-  if (learned)
-    Check(snapshot.peak_cpu_protected_slots == 1, "Learned path violated serial participation");
+  if (learned) {
+    if (((extent.width + 255) / 256) * ((extent.height + 255) / 256) <= 8)
+      Check(snapshot.peak_cpu_protected_slots == 1, "Global learned fit fanned out");
+  }
   else if (extent.width > 256)
     Check(snapshot.peak_cpu_protected_slots > 1, "Parallel path did not execute");
   GJXLContextOptions context_options;
@@ -178,6 +180,34 @@ void LaunchFailures() {
               "Launch failure leaked capacity");
         Ok(EncodeModularImage(image, options, &output));
       }
+}
+void ParallelLearnedPublic() {
+  using namespace thread_budget_internal;
+  constexpr size_t width = 2049, height = 17;
+  std::vector<uint8_t> pixels(width * height * 3);
+  for (size_t i = 0; i < pixels.size(); ++i)
+    pixels[i] = static_cast<uint8_t>((i * 37) ^ (i / 17));
+  ModularImageView image{pixels, {width, height}, width * 3};
+  ModularEncodingOptions options;
+  Ok(ExecutionDomain::Create({.cpu_participant_limit = 4}, &options.execution_domain));
+  options.cpu_thread_count = 1;
+  std::vector<uint8_t> serial, parallel;
+  Ok(EncodeModularImage(image, options, &serial));
+  options.cpu_thread_count = 0;
+  Ok(EncodeModularImage(image, options, &parallel));
+  Check(serial == parallel && options.execution_domain->snapshot().peak_cpu_participants > 1 &&
+            options.execution_domain->snapshot().peak_cpu_protected_slots <= 4,
+        "Public learned default did not use the bounded parallel path");
+  for (size_t before : {size_t{0}, size_t{1}}) {
+    WorkerLaunchFaultForTesting fault{WorkerLaunchSite::kModularTreeLearning, before};
+    WorkerLaunchFaultScopeForTesting scope(&fault);
+    const auto status = EncodeModularImage(image, options, &parallel);
+    const auto state = options.execution_domain->snapshot();
+    Check(!status.ok() && fault.triggered && fault.launched_in_group == before &&
+              parallel == serial && !state.active_cpu_participants && !state.reserved_cpu_workers &&
+              !state.active_reservations && !state.live_capacity_bytes,
+          "Public learned failure changed output or leaked workers/storage");
+  }
 }
 void MixedDomain() {
   constexpr size_t limit = 512 * 1024 * 1024;
@@ -416,6 +446,7 @@ int main(int argc, char **argv) try {
   Prefixes();
   DefaultFailures();
   LaunchFailures();
+  ParallelLearnedPublic();
   MixedDomain();
   PublicationFailures();
   for (auto format :

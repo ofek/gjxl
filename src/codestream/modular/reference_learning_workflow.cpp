@@ -2,7 +2,9 @@
 // Copyright (c) 2026 Yunho Cho
 // SPDX-License-Identifier: BSD-3-Clause
 #include "codec/modular/profile.h"
+#include "codec/modular/histogram_tree_profile.h"
 #include "codestream/modular/reference_workflow_internal.h"
+#include "core/parallel_work_internal.h"
 
 namespace gjxl::modular_internal::reference_workflow_internal {
 namespace {
@@ -24,8 +26,17 @@ HistogramSamplingOptions SamplingOptions(const ReferenceWorkflowOptions &options
 }
 Status Learn(std::span<const HistogramTrainingImage> images, size_t maximum_leaves,
              const ReferenceWorkflowOptions &options, const ResourceBudget &budget,
-             ReferenceWorkflowStats *stats, ReferenceModularStream *record) {
+             ReferenceWorkflowStats *stats, ReferenceModularStream *record,
+             bool admitted = false) {
   ProfileScope profile(ProfileStage::kTraining);
+  // A parallel job has already reserved its entire preparation/fit/compaction
+  // lifetime. Serial/global learning retains the tighter per-stage admission.
+  const auto stage = [&](size_t bytes, auto &&function) {
+    if (!admitted)
+      return Stage(budget, bytes, stats, function);
+    stats->maximum_stage_bytes = std::max(stats->maximum_stage_bytes, bytes);
+    return function();
+  };
   const auto sampling = SamplingOptions(options);
   HostStorageBound bound;
   PreparedHistogramSamples prepared;
@@ -33,7 +44,7 @@ Status Learn(std::span<const HistogramTrainingImage> images, size_t maximum_leav
     Seconds timer(stats->sample_preparation_seconds);
     if (auto s = ComputeHistogramSamplePreparationStorageBound(images, sampling, &bound); !s.ok())
       return s;
-    if (auto s = Stage(budget, bound.peak_bytes, stats,
+    if (auto s = stage(bound.peak_bytes,
                        [&] { return PrepareHistogramSamples(images, &prepared, sampling); });
         !s.ok())
       return s;
@@ -53,8 +64,8 @@ Status Learn(std::span<const HistogramTrainingImage> images, size_t maximum_leav
     if (auto s = ComputeHistogramTreeLearningStorageBound(prepared.samples(), fitting, &bound);
         !s.ok())
       return s;
-    if (auto s = Stage(
-            budget, bound.peak_bytes, stats,
+    if (auto s = stage(
+            bound.peak_bytes,
             [&] { return LearnPreparedHistogramTree(prepared, &record->tree, maximum_leaves); });
         !s.ok())
       return s;
@@ -69,7 +80,7 @@ Status Learn(std::span<const HistogramTrainingImage> images, size_t maximum_leav
     HostStorageBound compact;
     if (!compact.AddVector<DecisionNode>(record->tree.size, VectorCapacityPolicy::kFreshExact))
       return Invalid();
-    if (auto s = Stage(budget, compact.peak_bytes, stats,
+    if (auto s = stage(compact.peak_bytes,
                        [&] {
                          record->tree.nodes.resize(record->tree.size);
                          return Status::Ok();
@@ -82,24 +93,216 @@ Status Learn(std::span<const HistogramTrainingImage> images, size_t maximum_leav
 }
 
 using ChannelFeatures = std::array<WeightedFeatureView, kReferenceStreamChannels>;
+size_t LocalTreeLeaves(const PreparedModularStreamView &stream) {
+  size_t coded_samples = 0;
+  for (auto v : stream.channels)
+    coded_samples += v.descriptor.extent.width * v.descriptor.extent.height;
+  return std::min(kMaximumTreeLeaves, (1024 + coded_samples + 1) / 2);
+}
 Status LearnLocal(ReferenceModularStream &record, const PreparedModularStreamView &stream,
                   const ReferenceWorkflowOptions &options, const ResourceBudget &budget,
                   ReferenceWorkflowStats *stats,
-                  std::span<const WeightedFeatureView> features = {}) {
+                  std::span<const WeightedFeatureView> features = {}, bool admitted = false) {
   if (!record.channel_count)
     return Status::Ok();
   const HistogramTrainingImage image{record.learning_extent, record.training_channels(),
                                      record.metadata_channels, stream.weighted, features};
-  size_t coded_samples = 0;
-  for (auto v : stream.channels)
-    coded_samples += v.descriptor.extent.width * v.descriptor.extent.height;
-  const size_t leaves = std::min(kMaximumTreeLeaves, (1024 + coded_samples + 1) / 2);
-  return Learn({&image, 1}, leaves, options, budget, stats, &record);
+  return Learn({&image, 1}, LocalTreeLeaves(stream), options, budget, stats, &record, admitted);
+}
+
+// One reservation per whole job: selected rows are bounded without reading
+// pixels; no other worker can consume this job's admitted fit workspace.
+Status LocalLearningBound(const ReferenceModularStream &record,
+                          const PreparedModularStreamView &stream,
+                          const ReferenceWorkflowOptions &options,
+                          std::span<const WeightedFeatureView> features, size_t *bytes) {
+  *bytes = 1;
+  if (!record.channel_count)
+    return Status::Ok();
+  const HistogramTrainingImage image{record.learning_extent, record.training_channels(),
+                                     record.metadata_channels, stream.weighted, features};
+  const auto sampling = SamplingOptions(options);
+  HostStorageBound bound, fit;
+  if (auto s = ComputeHistogramSamplePreparationStorageBound({&image, 1}, sampling, &bound);
+      !s.ok())
+    return s;
+  const size_t leaves = LocalTreeLeaves(stream);
+  // This workflow has no multiplier boxes. Both static quantization and the
+  // dynamic properties have at most maximum_property_values cuts (WP has 15).
+  if (auto s = ComputeHistogramTreeWorkspaceStorageBound(
+          sampling.predictor_count, sampling.maximum_property_values + 1, leaves,
+          kMaximumTreeDepth, &fit); !s.ok())
+    return s;
+  if (!bound.Add(fit) ||
+      !bound.AddVector<DecisionNode>(2 * leaves - 1, VectorCapacityPolicy::kFreshExact))
+    return Invalid();
+  // Includes overlap with the maximum-size tree during compaction. Released
+  // preparation scratch makes this conservative, including on tiny images.
+  *bytes = bound.peak_bytes;
+  return Status::Ok();
+}
+struct LocalLearningJob {
+  ResourceReservation reservation;
+  ReferenceWorkflowStats stats;
+  HistogramFitRecord fit;
+  size_t computed_features = 0, reused_features = 0;
+};
+template <typename T> using LearningStorage = ManagedVector<T, ResourceClass::kPreparation>;
+void MergeLearningStats(ReferenceWorkflowStats &to, const ReferenceWorkflowStats &from) {
+  for (auto member : {&ReferenceWorkflowStats::learning_calls, &ReferenceWorkflowStats::fits,
+                     &ReferenceWorkflowStats::empty_learning_calls,
+                     &ReferenceWorkflowStats::scanned_pixels,
+                     &ReferenceWorkflowStats::selected_samples,
+                     &ReferenceWorkflowStats::distinct_samples, &ReferenceWorkflowStats::tree_nodes})
+    to.*member += from.*member;
+  to.maximum_stage_bytes = std::max(to.maximum_stage_bytes, from.maximum_stage_bytes);
+  to.sample_preparation_seconds += from.sample_preparation_seconds;
+  to.fitting_seconds += from.fitting_seconds;
+}
+Status LearnLocalScopes(std::span<ReferenceModularStream> records,
+                        std::span<const PreparedModularStreamView> streams,
+                        const ReferenceWorkflowOptions &options, const ResourceBudget &budget,
+                        ReferenceWorkflowStats *stats,
+                        std::span<const ChannelFeatures> features = {}) {
+  using namespace thread_budget_internal;
+  ProfileScope profile(ProfileStage::kTraining);
+  Seconds wall(stats->learning_seconds);
+  const auto feature = [&](size_t i) -> std::span<const WeightedFeatureView> {
+    return features.empty() ? std::span<const WeightedFeatureView>{}
+                            : std::span(features[i]).first(records[i].channel_count);
+  };
+  const auto serial = [&](size_t first, size_t stop) {
+    ++stats->learning_waves;
+    stats->learning_peak_participants = std::max(size_t{1}, stats->learning_peak_participants);
+    for (size_t i = first; i < stop; ++i)
+      if (auto s = LearnLocal(records[i], streams[i], options, budget, stats, feature(i)); !s.ok())
+        return s;
+    return Status::Ok();
+  };
+  size_t desired = options.learning_cpu_participants;
+  if (!desired)
+    desired = std::max(size_t{1}, size_t{std::thread::hardware_concurrency()});
+  if (CpuThreadCount())
+    desired = std::min(desired, CpuThreadCount());
+  desired = std::min({desired, records.size(), size_t{256}});
+  if (desired < 2 || !HasCpuParticipation() || InExplicitParallelScope())
+    return serial(0, records.size());
+  desired = std::min({desired, current_cpu_execution.job.limit(),
+                      current_cpu_execution.domain.limit()});
+  if (desired < 2)
+    return serial(0, records.size());
+
+  auto *const parent_profile = active_modular_profile;
+  auto *const parent_fit_profile = active_histogram_fitting_profile;
+  HostStorageBound metadata;
+  if (!metadata.AddVector<LocalLearningJob>(desired, VectorCapacityPolicy::kFreshExact) ||
+      !metadata.AddVector<Status>(desired, VectorCapacityPolicy::kFreshExact) ||
+      !metadata.AddVector<std::thread>(desired - 1, VectorCapacityPolicy::kFreshExact) ||
+      (parent_fit_profile && !metadata.AddVector<HistogramFittingProfile>(
+                                 desired, VectorCapacityPolicy::kFreshExact)))
+    return Invalid();
+  ResourceReservation metadata_reservation;
+  if (auto s = budget.TryReserve(metadata.peak_bytes, &metadata_reservation); !s.ok()) {
+    if (s.code() != StatusCode::kUnavailable && s.code() != StatusCode::kOutOfMemory)
+      return s;
+    ++stats->learning_memory_limited_waves;
+    return serial(0, records.size());
+  }
+  stats->maximum_stage_bytes = std::max(stats->maximum_stage_bytes, metadata.peak_bytes);
+  auto context = CurrentResourceContext();
+  context.reservation = &metadata_reservation;
+  context.resource_class = ResourceClass::kPreparation;
+  ResourceContextScope metadata_scope(context);
+  LearningStorage<LocalLearningJob> jobs(desired);
+  LearningStorage<HistogramFittingProfile> profiles(parent_fit_profile ? desired : 0);
+  constexpr ParallelWorkErrors errors{
+      "Local tree worker allocation failed", "Local tree worker failed",
+      StatusCode::kInvalidArgument, "Local tree worker storage overflow",
+      "Local tree worker launch allocation failed", LaunchFailureAction::kReturnError,
+      "Unable to start local tree workers"};
+  size_t first = 0;
+  while (first < records.size()) {
+    size_t count = 0;
+    for (; count < desired && first + count < records.size(); ++count) {
+      const size_t i = first + count;
+      size_t bytes;
+      if (auto s = LocalLearningBound(records[i], streams[i], options, feature(i), &bytes); !s.ok())
+        return s;
+      if (auto s = budget.TryReserve(bytes, &jobs[count].reservation); !s.ok()) {
+        if (s.code() != StatusCode::kUnavailable && s.code() != StatusCode::kOutOfMemory)
+          return s;
+        ++stats->learning_memory_limited_waves;
+        break;
+      }
+      stats->maximum_stage_bytes = std::max(stats->maximum_stage_bytes, bytes);
+    }
+    if (!count) {
+      // The conservative whole-job envelope may not fit while the original
+      // prepare/fit stage envelopes do. Drop even the scheduler metadata so
+      // the tighter serial route has its original capacity available.
+      jobs = LearningStorage<LocalLearningJob>{};
+      profiles = LearningStorage<HistogramFittingProfile>{};
+      metadata_reservation.Reset();
+      return serial(first, records.size());
+    }
+    CpuWorkerGroup group(count);
+    ++stats->learning_waves;
+    stats->learning_peak_participants = std::max(stats->learning_peak_participants,
+                                                group.participants());
+    const auto run = [&](size_t index, size_t) {
+      const size_t i = first + index;
+      auto &job = jobs[index];
+      auto resources = CurrentResourceContext();
+      resources.reservation = &job.reservation;
+      ResourceContextScope scope(resources);
+      ModularProfile worker_profile;
+      ProfileSession session(parent_profile ? &worker_profile : nullptr);
+      auto *fit_profile = parent_fit_profile ? &profiles[index] : nullptr;
+      if (fit_profile)
+        fit_profile->records = {&job.fit, 1};
+      HistogramFittingProfileSession fitting_session(fit_profile);
+      const auto status = LearnLocal(records[i], streams[i], options, budget, &job.stats,
+                                    feature(i), true);
+      job.computed_features = worker_profile.training_work.weighted_prediction_samples;
+      job.reused_features = worker_profile.training_work.reused_prediction_samples;
+      return status;
+    };
+    Status status;
+    if (group.participants() > 1) {
+      status = RunParallelWork<LearningStorage>(count, group, group.participants() - 1,
+                                                WorkerLaunchSite::kModularTreeLearning,
+                                                errors, run);
+    } else {
+      for (size_t i = 0; i < count && status.ok(); ++i)
+        status = run(i, 0);
+    }
+    // All workers are joined before reading counters, releasing reservations,
+    // publishing trees to tokenization, or returning a failure.
+    for (size_t i = 0; i < count; ++i) {
+      MergeLearningStats(*stats, jobs[i].stats);
+      if (parent_profile) {
+        parent_profile->training_work.weighted_prediction_samples += jobs[i].computed_features;
+        parent_profile->training_work.reused_prediction_samples += jobs[i].reused_features;
+      }
+      if (parent_fit_profile) {
+        MergeHistogramFittingProfile(*parent_fit_profile, profiles[i]);
+        profiles[i] = {};
+      }
+      jobs[i] = {};
+    }
+    if (!status.ok())
+      return status;
+    first += count;
+  }
+  return Status::Ok();
 }
 Status LearnGlobal(std::span<ReferenceModularStream> records,
                    std::span<const PreparedModularStreamView> streams, uint64_t population,
                    const ReferenceWorkflowOptions &options, const ResourceBudget &budget,
                    ReferenceWorkflowStats *stats, std::span<const ChannelFeatures> features = {}) {
+  Seconds wall(stats->learning_seconds);
+  stats->learning_peak_participants = 1;
+  ++stats->learning_waves;
   // Preserve excluded global descriptors, canonical ID holes, and the first
   // image's population contribution, exactly as in the scalar workflow.
   size_t stop = 1;
@@ -350,11 +553,11 @@ struct HybridLearning {
       next = batch.stop;
       ++count;
       if (stats->local_trees) {
-        for (size_t i = batch.first; i < batch.stop; ++i)
-          if (auto s = LearnLocal(records[i], streams[i], options, budget, stats,
-                                  std::span(features[i]).first(records[i].channel_count));
-              !s.ok())
-            return s;
+        const size_t length = batch.stop - batch.first;
+        if (auto s = LearnLocalScopes(records.subspan(batch.first, length),
+                                      streams.subspan(batch.first, length), options, budget, stats,
+                                      std::span(features).subspan(batch.first, length)); !s.ok())
+          return s;
         if (auto s = Tokenize(batch); !s.ok())
           return s;
       }
@@ -386,10 +589,7 @@ Status LearnReferenceModularScopes(std::span<ReferenceModularStream> records,
     return HybridLearning{records, streams, options, budget, stats, *op, *tokens}.Run(population);
   }
   if (stats->local_trees) {
-    for (size_t i = 0; i < records.size(); ++i)
-      if (auto s = LearnLocal(records[i], streams[i], options, budget, stats); !s.ok())
-        return s;
-    return Status::Ok();
+    return LearnLocalScopes(records, streams, options, budget, stats);
   }
   return LearnGlobal(records, streams, population, options, budget, stats);
 }

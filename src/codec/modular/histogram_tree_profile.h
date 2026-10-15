@@ -11,8 +11,9 @@
 namespace gjxl::modular_internal {
 // Private opt-in diagnostics for the native histogram fitter, independent of
 // the original learner's profile. All backing is caller-owned; fitting never
-// allocates for diagnostics. Times are nested caller-wall intervals, not CPU
-// work sums or additional encoder stages. The current fitter is serial.
+// allocates for diagnostics. Each fit is serial. Times are sums of per-fit
+// wall intervals, overlapping when a workflow runs independent fits in
+// parallel; they are neither process CPU time nor additional encoder stages.
 enum class HistogramFitStage {
   kValidation,
   kSetup,
@@ -87,6 +88,53 @@ struct HistogramFittingProfile {
   std::span<HistogramFitRecord> records;
   size_t records_written = 0, records_dropped = 0;
 };
+// Reduce only after joining workers, in canonical stream order. Each source
+// owns its counters/records; no hot-loop atomic updates or shared sink writes.
+inline void MergeHistogramFittingProfile(HistogramFittingProfile &to,
+                                         const HistogramFittingProfile &from) {
+  to.fit_seconds += from.fit_seconds;
+  to.calls += from.calls;
+  to.successes += from.successes;
+  for (size_t i = 0; i < to.seconds.size(); ++i)
+    to.seconds[i] += from.seconds[i];
+  for (size_t i = 0; i < to.by_rows.size(); ++i) {
+    auto &a = to.by_rows[i];
+    const auto &b = from.by_rows[i];
+    a.node_seconds += b.node_seconds;
+    for (size_t j = 0; j < a.seconds.size(); ++j)
+      a.seconds[j] += b.seconds[j];
+    for (auto member : {&HistogramNodeWork::nodes, &HistogramNodeWork::splits,
+                       &HistogramNodeWork::forced_splits, &HistogramNodeWork::rows,
+                       &HistogramNodeWork::symbol_row_visits,
+                       &HistogramNodeWork::parent_histogram_row_visits,
+                       &HistogramNodeWork::property_row_visits,
+                       &HistogramNodeWork::joint_histogram_row_visits,
+                       &HistogramNodeWork::properties, &HistogramNodeWork::constant_properties,
+                       &HistogramNodeWork::active_bins, &HistogramNodeWork::bin_span,
+                       &HistogramNodeWork::candidate_thresholds,
+                       &HistogramNodeWork::entropy_evaluations, &HistogramNodeWork::symbol_terms,
+                       &HistogramNodeWork::partition_rows, &HistogramNodeWork::row_swaps})
+      a.work.*member += b.work.*member;
+  }
+  for (size_t i = 0; i < to.by_depth.size(); ++i) {
+    to.by_depth[i].nodes += from.by_depth[i].nodes;
+    to.by_depth[i].rows += from.by_depth[i].rows;
+    to.by_depth[i].seconds += from.by_depth[i].seconds;
+  }
+  for (size_t i = 0; i < to.nodes_by_symbol_span.size(); ++i)
+    to.nodes_by_symbol_span[i] += from.nodes_by_symbol_span[i];
+  for (size_t i = 0; i < to.properties_by_active_bins.size(); ++i) {
+    to.properties_by_active_bins[i] += from.properties_by_active_bins[i];
+    to.properties_by_bin_span[i] += from.properties_by_bin_span[i];
+  }
+  to.records_dropped += from.records_dropped;
+  for (size_t i = 0; i < from.records_written; ++i) {
+    if (to.records_written < to.records.size())
+      to.records[to.records_written++] = from.records[i];
+    else
+      ++to.records_dropped;
+  }
+}
 inline thread_local HistogramFittingProfile *active_histogram_fitting_profile =
     nullptr;
 class HistogramFittingProfileSession {

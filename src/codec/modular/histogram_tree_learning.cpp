@@ -719,20 +719,33 @@ Status ComputeHistogramTreeLearningStorageBound(
     return Status::InvalidArgument("Null histogram learning storage output");
   if (auto status = ValidateShape(s, options); !status.ok())
     return status;
+  return ComputeHistogramTreeWorkspaceStorageBound(
+      s.predictor_count, MaximumBins(s), options.maximum_leaves,
+      options.maximum_depth, out);
+}
+
+Status ComputeHistogramTreeWorkspaceStorageBound(
+    size_t predictor_count, size_t bins, size_t maximum_leaves,
+    size_t maximum_depth, resource_budget_internal::HostStorageBound *out) {
+  if (!out || !predictor_count || predictor_count > kHistogramPredictors ||
+      !bins || bins > kHistogramMaximumStaticBins || !maximum_leaves ||
+      maximum_leaves > kMaximumTreeLeaves || !maximum_depth ||
+      maximum_depth > kMaximumTreeDepth)
+    return Status::InvalidArgument("Invalid histogram workspace capacity");
   using namespace resource_budget_internal;
   HostStorageBound bound;
-  const size_t bins = MaximumBins(s), nodes = 2 * options.maximum_leaves - 1;
+  const size_t nodes = 2 * maximum_leaves - 1;
   if (!bound.AddVector<Workspace>(1, VectorCapacityPolicy::kFreshExact) ||
-      !bound.AddVector<NodeInfo>(options.maximum_depth,
+      !bound.AddVector<NodeInfo>(maximum_depth,
                                  VectorCapacityPolicy::kFreshExact) ||
-      !bound.AddVector<int32_t>(kSymbols * s.predictor_count,
+      !bound.AddVector<int32_t>(kSymbols * predictor_count,
                                 VectorCapacityPolicy::kFreshExact) ||
       !bound.AddVector<int32_t>(kSymbols, VectorCapacityPolicy::kFreshExact,
                                 2) ||
       !bound.AddVector<int32_t>(bins, VectorCapacityPolicy::kFreshExact) ||
       !bound.AddVector<int32_t>(bins * kSymbols,
                                 VectorCapacityPolicy::kFreshExact) ||
-      !bound.AddVector<uint32_t>(s.predictor_count,
+      !bound.AddVector<uint32_t>(predictor_count,
                                  VectorCapacityPolicy::kFreshExact) ||
       !bound.AddVector<size_t>(bins, VectorCapacityPolicy::kFreshExact) ||
       !bound.AddVector<CostInfo>(bins, VectorCapacityPolicy::kFreshExact, 2) ||

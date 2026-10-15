@@ -43,9 +43,16 @@ template <typename T> void Array(std::ostream &out, const T &a) {
 }
 } // namespace
 int main(int argc, char **argv) try {
-  Check(argc == 6 || argc == 7, "hybrid_profile INPUT OUT cpu|shared-cpu|hybrid|auto auto|buffered "
-                                "best|all [fit-off|fit-on]");
-  const std::string fitting_mode = argc == 7 ? argv[6] : "fit-off";
+  Check(argc >= 6 && argc <= 9, "hybrid_profile INPUT OUT cpu|shared-cpu|hybrid|auto auto|buffered "
+                                "best|all [fit-off|fit-on [learning-participants [cpu-ceiling]]]");
+  const std::string fitting_mode = argc >= 7 ? argv[6] : "fit-off";
+  // Preserve the serial control and schema used by the older paired studies.
+  // Supplying a participant argument opts into explicit wall/work schema 2.
+  const bool parallel_diagnostics = argc >= 8;
+  const size_t learning_participants = argc >= 8 ? std::stoull(argv[7]) : 1;
+  const size_t cpu_ceiling = argc >= 9 ? std::stoull(argv[8]) : 4;
+  Check(learning_participants <= 256 && cpu_ceiling > 0 && cpu_ceiling <= 256,
+        "Invalid participant limit");
   Check(fitting_mode == "fit-off" || fitting_mode == "fit-on", "Invalid fitting profile mode");
   const bool fitting_profile_enabled = fitting_mode == "fit-on";
   const std::string route = argv[3], buffering = argv[4], predictors = argv[5];
@@ -76,6 +83,7 @@ int main(int argc, char **argv) try {
                                      : (uint16_t(view.bytes[pos]) << 8) | view.bytes[pos + 1]);
     }
   ReferenceWorkflowOptions options;
+  options.learning_cpu_participants = learning_participants;
   options.buffering =
       buffering == "auto" ? ReferenceBuffering::kAutomatic : ReferenceBuffering::kBuffered;
   options.predictors =
@@ -94,17 +102,16 @@ int main(int argc, char **argv) try {
     throw std::runtime_error("This build has no Metal backend");
 #endif
   }
-  // Same domain/CPU ceiling for every route. The ordinary histogram algorithm
-  // is serial; the shared CPU feature producer may use four participants.
+  // Keep feature production fixed at four while varying local learning.
   std::shared_ptr<const ExecutionDomain> domain;
-  Ok(ExecutionDomain::Create({size_t{8} << 30, 4}, &domain));
+  Ok(ExecutionDomain::Create({size_t{8} << 30, cpu_ceiling}, &domain));
   const auto &budget = codestream_internal::WorkflowAdmission::Budget(*domain);
   auto context = CurrentResourceContext();
   context.domain = domain.get();
   ResourceContextScope resource_context(context);
   thread_budget_internal::CpuExecutionScope cpu;
-  Ok(cpu.Start(domain, 4));
-  thread_budget_internal::EncodeScope participation(4);
+  Ok(cpu.Start(domain, cpu_ceiling));
+  thread_budget_internal::EncodeScope participation(cpu_ceiling);
   ReferenceWorkflowStats stats;
   ModularProfile profile;
   HistogramFittingProfile fitting_profile;
@@ -156,7 +163,8 @@ int main(int argc, char **argv) try {
         "Completed encode leaked managed storage");
   std::ofstream out(directory / "result.json");
   out.exceptions(std::ios::failbit | std::ios::badbit);
-  out << std::setprecision(17) << std::boolalpha << "{\"schema\":1,\"route\":" << std::quoted(route)
+  out << std::setprecision(17) << std::boolalpha << "{\"schema\":" << (parallel_diagnostics ? 2 : 1)
+      << ",\"route\":" << std::quoted(route)
       << ",\"device\":" << std::quoted(device) << ",\"buffering\":" << std::quoted(buffering)
       << ",\"predictors\":" << std::quoted(predictors) << ",\"width\":" << view.extent.width
       << ",\"height\":" << view.extent.height << ",\"channels\":" << format.channel_count
@@ -184,10 +192,19 @@ int main(int argc, char **argv) try {
       << profile.adaptive_gpu.feature_preparation.peak_participants
       << ",\"learning_reused_features\":" << profile.training_work.reused_prediction_samples
       << ",\"learning_computed_features\":" << profile.training_work.weighted_prediction_samples
-      << "},\"detail_wall\":{\"sample_preparation\":" << stats.sample_preparation_seconds
-      << ",\"fitting\":" << stats.fitting_seconds << ",\"features\":" << stats.feature_seconds
-      << ",\"gpu_tokens\":" << stats.token_seconds
-      << "},\"memory\":{\"peak_backing_bytes\":" << memory.peak_backing_bytes
+      << "},\"learning\":{\"requested_participants\":" << learning_participants
+      << ",\"cpu_ceiling\":" << cpu_ceiling
+      << ",\"peak_participants\":" << stats.learning_peak_participants
+      << ",\"waves\":" << stats.learning_waves
+      << ",\"memory_limited_waves\":" << stats.learning_memory_limited_waves
+      << "},\"detail_work\":{\"sample_preparation\":" << stats.sample_preparation_seconds
+      << ",\"fitting\":" << stats.fitting_seconds
+      << "},\"detail_wall\":{\"learning\":" << stats.learning_seconds
+      << ",\"features\":" << stats.feature_seconds << ",\"gpu_tokens\":" << stats.token_seconds;
+  if (!parallel_diagnostics)
+    out << ",\"sample_preparation\":" << stats.sample_preparation_seconds
+        << ",\"fitting\":" << stats.fitting_seconds;
+  out << "},\"memory\":{\"peak_backing_bytes\":" << memory.peak_backing_bytes
       << ",\"peak_committed_bytes\":" << memory.peak_committed_bytes
       << ",\"maximum_stage_bytes\":" << stats.maximum_stage_bytes
       << ",\"peak_feature_samples\":" << stats.peak_feature_samples

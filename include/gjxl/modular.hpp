@@ -44,7 +44,9 @@ struct ModularEncodingSummary {
 // Atomic output and summary replacement. Input layout and format are validated
 // before admission. GPU requests are unsupported; no float conversion occurs.
 // Learned uses staged, nonblocking memory admission: a busy domain can return
-// Unavailable. It currently executes serially within the requested CPU limit.
+// Unavailable. Independent local sample preparation/fits use the requested CPU
+// limit and shared domain; global fitting stays serial. Memory admission may
+// reduce local concurrency without changing encoding decisions.
 [[nodiscard]] Status EncodeModularImage(ModularImageView input, ModularEncodingOptions options,
                                         std::vector<uint8_t> *output,
                                         ModularEncodingSummary *summary = nullptr);

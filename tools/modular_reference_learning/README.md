@@ -60,6 +60,30 @@ for ownership, admission, routing and validation boundaries.
 The [2026-10-14 qualification](../../docs/gpu-histogram-learner-qualification.md)
 records matched full-resolution and crossover results on Apple M4 Pro.
 
+## Parallel local learning
+
+Append explicit learning participants and a fixed CPU ceiling after the fitting
+profile mode to measure local CPU preparation/fitting concurrency:
+
+```sh
+build/release/gjxl_modular_hybrid_profile INPUT.pam OUT auto auto best fit-off 14 14
+python3 tools/modular_reference_learning/run_parallel_learning.py \
+  --binary build/release/gjxl_modular_hybrid_profile \
+  --input INPUT.pam --out build/parallel-learning-qualification \
+  --reference docs/gpu-histogram-learner-integration-results.json \
+  --participants 1 4 14 --cpu-ceiling 14
+```
+
+The runner freezes the executable and tracked/untracked build sources, rotates
+participant counts, requires AC power on macOS, and checks complete bytes
+against the earlier qualification. Supply `--input` once per photograph. Each
+configuration has one warmup and three measured repetitions by default.
+
+Explicit participant arguments select schema 2: `detail_wall.learning` is
+elapsed preparation/fitting time; `detail_work` contains overlapping per-job
+time sums. Feature and token routing remain fixed. Older invocations keep
+serial learning and schema 1. See the [implementation and results](../../docs/parallel-tree-fitting.md).
+
 ## Histogram fitting attribution
 
 The same driver accepts an optional final `fit-off|fit-on` argument (default

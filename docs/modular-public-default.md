@@ -48,10 +48,13 @@ profile limits.
 
 ## Resources
 
-The learned workflow currently executes serially, within the requested CPU and
-shared-domain participation limits. A higher thread limit does not imply a
-speedup. The existing parallel tokenization/emission path remains available in
-the legacy policies.
+The learned workflow parallelizes independent local sample preparation and tree
+fits within the requested CPU and shared-domain participation limits. A limit
+of one selects serial execution; zero uses the available allowance. Global fits
+remain serial. Memory admission can reduce local concurrency, including falling
+back to serial per-stage admission, without changing compression decisions.
+See [parallel tree fitting](parallel-tree-fitting.md) for ownership, diagnostics
+and qualification. Legacy policies retain their parallel tokenization/emission.
 
 Each learned stage uses its checked storage bound and nonblocking `TryReserve`
 in the public execution domain. Retained planes, trees and output backing stay
@@ -89,8 +92,9 @@ Every learned case also matches the private qualified workflow byte for byte;
 its limited domain admits the measured private peak without bypassing accounting.
 The tests cover default/null/4/8/12/full-size C options, initializer canaries,
 invalid options, tiny/busy shared C/C++ domains, mixed VarDCT calls, forced GPU
-rejection, and atomic output/summary replacement. The learned implementation
-uses one CPU participant even with a limit of four.
+rejection, and atomic output/summary replacement. At the original qualification
+below, learning used one CPU participant even with a limit of four. The parallel
+extension and its additional checks are recorded in the linked fitting report.
 
 All 1,197 C++ managed-allocation failure positions and 513 C publication-path
 failure positions pass, including cleanup/accounting checks. The CLI independently

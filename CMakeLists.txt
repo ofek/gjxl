@@ -2447,6 +2447,10 @@ if(GJXL_BUILD_TESTS)
   add_test(NAME modular_reference_workflow COMMAND gjxl_modular_reference_workflow_test
     "${CMAKE_CURRENT_BINARY_DIR}/modular-reference-workflow")
   set_tests_properties(modular_reference_workflow PROPERTIES TIMEOUT 600)
+  add_executable(gjxl_modular_parallel_learning_test tests/modular_parallel_learning_test.cpp)
+  target_link_libraries(gjxl_modular_parallel_learning_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_parallel_learning COMMAND gjxl_modular_parallel_learning_test)
+  set_tests_properties(modular_parallel_learning PROPERTIES TIMEOUT 180)
 
   add_executable(gjxl_modular_histogram_learning_test tests/modular_histogram_learning_test.cpp)
   target_link_libraries(gjxl_modular_histogram_learning_test PRIVATE gjxl_codestream)

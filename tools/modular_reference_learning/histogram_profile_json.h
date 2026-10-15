@@ -57,7 +57,8 @@ inline void WriteHistogramProfile(std::ostream &out,
     out << '}';
     return;
   }
-  out << ",\"calls\":" << p.calls << ",\"successes\":" << p.successes
+  out << ",\"timing\":\"sum_of_fit_wall_intervals\",\"calls\":" << p.calls
+      << ",\"successes\":" << p.successes
       << ",\"fit_seconds\":" << p.fit_seconds << ",\"stages\":";
   WriteHistogramSeconds(out, p.seconds);
   out << ",\"by_rows\":[";

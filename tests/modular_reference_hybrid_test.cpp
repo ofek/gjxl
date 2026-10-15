@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 Yunho Cho
 #include "codec/modular/profile.h"
+#include "codestream/workflow_admission_scope.h"
+#include "core/thread_budget.h"
+#include "core/worker_launch_internal.h"
 #include "gpu/metal/metal_backend.h"
 #include "modular_reference_workflow_fixture.h"
 #include <algorithm>
@@ -74,20 +77,32 @@ void Encode(const ReferenceModularFrame &frame, const PreparedModularEntropyOpti
 }
 void Case(GpuBackend &gpu, Fixture f, ReferenceWorkflowOptions options,
           WeightedFeatureBackend producer, bool multi_batch = false, bool wide_palette = false) {
-  ResourceBudget budget(size_t{2} << 30);
+  std::shared_ptr<const ExecutionDomain> domain;
+  Ok(ExecutionDomain::Create({size_t{2} << 30, 4}, &domain));
+  const auto &budget = codestream_internal::WorkflowAdmission::Budget(*domain);
+  auto resources = CurrentResourceContext();
+  resources.domain = domain.get();
+  ResourceContextScope context(resources);
+  thread_budget_internal::CpuExecutionScope execution;
+  Ok(execution.Start(domain, 4));
+  thread_budget_internal::EncodeScope participation(4);
   ReferenceModularFrame cpu, hybrid;
   ModularProfile cpu_profile, gpu_profile;
+  options.learning_cpu_participants = 1;
   {
     ProfileSession session(&cpu_profile);
     Ok(PrepareReferenceModularFrame(f.view(), options, budget, &cpu));
   }
   options.gpu = &gpu;
+  options.learning_cpu_participants = 4;
   options.feature_producer = producer;
   {
     ProfileSession session(&gpu_profile);
     Ok(PrepareReferenceModularFrame(f.view(), options, budget, &hybrid));
   }
   SameDecisions(cpu, hybrid);
+  Check(hybrid.stats().learning_peak_participants == (hybrid.stats().local_trees ? 4 : 1),
+        "Hybrid learning did not use the expected local/global concurrency");
   Check(cpu_profile.training_work.weighted_prediction_samples == cpu.stats().scanned_pixels &&
             cpu_profile.training_work.reused_prediction_samples == 0 &&
             gpu_profile.training_work.reused_prediction_samples == hybrid.stats().scanned_pixels &&
@@ -200,6 +215,24 @@ void Failures(GpuBackend &gpu) {
             output.view().data() == old_bytes,
         "Busy hybrid workflow waited or published");
   busy = {};
+  {
+    using namespace thread_budget_internal;
+    CpuExecutionScope execution;
+    Ok(execution.Start({}, 4));
+    EncodeScope participation(4);
+    const auto local = Make({2049, 17}, 3, 8, 3);
+    WorkerLaunchFaultForTesting fault{WorkerLaunchSite::kModularTreeLearning, 1};
+    WorkerLaunchFaultScopeForTesting inject(&fault);
+    ReferenceWorkflowStats stats;
+    stats.fits = 777;
+    const auto before = budget.snapshot().committed_bytes();
+    const auto status = EncodeReferenceModularImage(local.view(), options, budget, &output, &stats);
+    Check(!status.ok() && fault.triggered && fault.launched_in_group == 1 &&
+              output.view().data() == old_bytes && stats.fits == 777 &&
+              budget.snapshot().committed_bytes() == before,
+          "Parallel hybrid failure did not join before releasing feature ownership");
+    ++faults;
+  }
   frame = {};
   output = {};
   Released(budget);
@@ -224,6 +257,9 @@ int main(int argc, char **argv) try {
     buffered.buffering = ReferenceBuffering::kBuffered;
     buffered.predictors = ReferencePredictors::kAll;
     Case(*gpu, Make({2049, 1}, 3, 16, 1), buffered, WeightedFeatureBackend::kCpu);
+    auto local_all = buffered;
+    local_all.buffering = ReferenceBuffering::kAutomatic;
+    Case(*gpu, Make({2049, 17}, 4, 16, 1), local_all, WeightedFeatureBackend::kGpu);
     Case(*gpu, Make({257, 257}, 4, 8, 1), {}, WeightedFeatureBackend::kAuto);
     Case(*gpu, Make({2049, 1537}, 3, 8, 3), {}, WeightedFeatureBackend::kAuto, true);
     Failures(*gpu);
