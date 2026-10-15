@@ -392,7 +392,7 @@ int main(int argc, char **argv) try {
     csv << "case,kind,round,cpu_first,backend,width,height,format,rct,entropy,threads,jobs,stride,"
          "byte_order,ns,bytes,domain_capacity,peak_backing,cpu_peak,submissions,allocations,"
          "fingerprint,split_tree,route_order,input_ns,transforms_ns,training_ns,tokens_ns,model_ns,"
-         "emission_ns,assembly_ns,gpu_input_tokens_ns";
+         "emission_ns,assembly_ns,gpu_input_tokens_ns,stream_encoding_ns";
   EntropyHeader(csv);
   csv << '\n';
   std::unique_ptr<GpuBackend> gpu;

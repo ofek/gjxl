@@ -43,8 +43,11 @@ template <typename T> void Array(std::ostream &out, const T &a) {
 }
 } // namespace
 int main(int argc, char **argv) try {
-  Check(argc >= 6 && argc <= 9, "hybrid_profile INPUT OUT cpu|shared-cpu|hybrid|auto auto|buffered "
-                                "best|all [fit-off|fit-on [learning-participants [cpu-ceiling]]]");
+  Check(argc >= 6 && argc <= 10, "hybrid_profile INPUT OUT cpu|shared-cpu|hybrid|auto auto|buffered "
+                                "best|all [fit-off|fit-on [learning-participants [cpu-ceiling [entropy-participants]]]]");
+  const bool entropy_diagnostics = argc >= 10;
+  const size_t entropy_participants = entropy_diagnostics ? std::stoull(argv[9]) : 1;
+  Check(entropy_participants <= 256, "Invalid entropy participant limit");
   const std::string fitting_mode = argc >= 7 ? argv[6] : "fit-off";
   // Preserve the serial control and schema used by the older paired studies.
   // Supplying a participant argument opts into explicit wall/work schema 2.
@@ -102,6 +105,7 @@ int main(int argc, char **argv) try {
     throw std::runtime_error("This build has no Metal backend");
 #endif
   }
+  options.entropy.cpu_participants = entropy_participants;
   // Keep feature production fixed at four while varying local learning.
   std::shared_ptr<const ExecutionDomain> domain;
   Ok(ExecutionDomain::Create({size_t{8} << 30, cpu_ceiling}, &domain));
@@ -163,7 +167,7 @@ int main(int argc, char **argv) try {
         "Completed encode leaked managed storage");
   std::ofstream out(directory / "result.json");
   out.exceptions(std::ios::failbit | std::ios::badbit);
-  out << std::setprecision(17) << std::boolalpha << "{\"schema\":" << (parallel_diagnostics ? 2 : 1)
+  out << std::setprecision(17) << std::boolalpha << "{\"schema\":" << (entropy_diagnostics ? 3 : parallel_diagnostics ? 2 : 1)
       << ",\"route\":" << std::quoted(route)
       << ",\"device\":" << std::quoted(device) << ",\"buffering\":" << std::quoted(buffering)
       << ",\"predictors\":" << std::quoted(predictors) << ",\"width\":" << view.extent.width
@@ -171,9 +175,9 @@ int main(int argc, char **argv) try {
       << ",\"bits\":" << unsigned(format.metadata.bits) << ",\"bytes\":" << bytes
       << ",\"exact_decode\":true,\"total\":{\"wall\":" << wall << ",\"cpu\":" << process_cpu
       << "},\"profile_wall\":";
-  Array(out, profile.seconds);
+  Array(out, std::span(profile.seconds).first(entropy_diagnostics ? profile.seconds.size() : 8));
   out << ",\"profile_cpu\":";
-  Array(out, profile.cpu_seconds);
+  Array(out, std::span(profile.cpu_seconds).first(entropy_diagnostics ? profile.cpu_seconds.size() : 8));
   out << ",\"work\":{\"local_trees\":" << stats.local_trees
       << ",\"selection_calls\":" << stats.selection_calls
       << ",\"learning_calls\":" << stats.learning_calls << ",\"fits\":" << stats.fits
@@ -197,6 +201,14 @@ int main(int argc, char **argv) try {
       << ",\"peak_participants\":" << stats.learning_peak_participants
       << ",\"waves\":" << stats.learning_waves
       << ",\"memory_limited_waves\":" << stats.learning_memory_limited_waves
+      << "},\"entropy\":{\"requested_participants\":" << entropy_participants
+      << ",\"admitted_participants\":" << stats.entropy_cpu_participants
+      << ",\"memory_reductions\":" << stats.entropy_memory_reductions
+      << ",\"peak_stream_participants\":" << profile.parallel_entropy.peak_participants
+      << ",\"stream_jobs\":" << profile.parallel_entropy.stream_jobs
+      << ",\"parallel_calls\":" << profile.parallel_entropy.parallel_calls
+      << ",\"model_work_seconds\":" << profile.parallel_entropy.model_work_seconds
+      << ",\"emission_work_seconds\":" << profile.parallel_entropy.emission_work_seconds
       << "},\"detail_work\":{\"sample_preparation\":" << stats.sample_preparation_seconds
       << ",\"fitting\":" << stats.fitting_seconds
       << "},\"detail_wall\":{\"learning\":" << stats.learning_seconds

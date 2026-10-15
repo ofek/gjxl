@@ -32,6 +32,7 @@ struct ReferenceLearningStats {
   size_t distinct_samples = 0, tree_nodes = 0;
 };
 struct ReferenceWorkflowStats {
+  size_t entropy_cpu_participants = 1, entropy_memory_reductions = 0;
   bool local_trees = false;
   size_t selection_calls = 0, learning_calls = 0, fits = 0,
          empty_learning_calls = 0;

@@ -56,6 +56,13 @@ back to serial per-stage admission, without changing compression decisions.
 See [parallel tree fitting](parallel-tree-fitting.md) for ownership, diagnostics
 and qualification. Legacy policies retain their parallel tokenization/emission.
 
+The learned path also parallelizes independent local entropy models and their
+payload emission, with one writer per section. Shared-model ANS configuration
+search can use the existing cluster workers. Outer stream jobs suppress nested
+ANS teams. The same CPU and memory limits apply; admission reduces entropy
+concurrency before encoding if necessary. See
+[parallel entropy modeling](parallel-entropy-modeling.md).
+
 Each learned stage uses its checked storage bound and nonblocking `TryReserve`
 in the public execution domain. Retained planes, trees and output backing stay
 charged while subsequent stages run. The C adapter reserves its final output

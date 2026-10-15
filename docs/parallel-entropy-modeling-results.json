@@ -1,0 +1,134 @@
+{
+  "schema": 1,
+  "input": "/Users/yunhocho/GitHub/gjxl-modular/build/modular-token-performance-20261010/inputs/photo-large-1029.pam",
+  "input_sha256": "a1c487b0160d8f3e8cb86753131b919ac3de28e908fde757050ebccdb4407b6d",
+  "binary_sha256": "e529a58a9b50544ceb1a560829f31c0c182fe63dda8ccfce05a80e8ab51ce147",
+  "revision": "654e517ff6cc9161decde4bc234f1c5804f6c8b9",
+  "threads": 14,
+  "repetitions": 3,
+  "route": "cpu",
+  "boundary": "Complete encoder call; input loading, backend setup, independent decode and file I/O excluded. Local learning and CPU ceiling fixed; only entropy participation changes. One unmeasured warmup per mode; alternating measured order; active desktop.",
+  "medians": {
+    "1": {
+      "complete_seconds": 12.373806625,
+      "model_and_emission_seconds": 2.679005847000001,
+      "peak_backing_bytes": 823593449,
+      "peak_committed_bytes": 1686504032
+    },
+    "14": {
+      "complete_seconds": 10.866513542,
+      "model_and_emission_seconds": 1.1189837079999998,
+      "peak_backing_bytes": 847238052,
+      "peak_committed_bytes": 1891701896
+    }
+  },
+  "output_sha256": "2cfd2402384ff6670fd8357e1e5e626aded66c7a91f7293f8ba54ec945a367ad",
+  "output_artifact": "warmup-entropy-14/output.jxl",
+  "status": "complete",
+  "artifact_directory": "/Users/yunhocho/GitHub/gjxl-parallel-entropy-modeling/build/parallel-entropy-comparison",
+  "manifest_sha256": "cceda3676f981fa682aaad9540216d29aea33960cf0b731d253d49db301e2170",
+  "frozen_binary": "hybrid_profile",
+  "runner_sha256": "a9495db9bfff49d003f614ca0cb8fc98d195fa67c2c50ca04de04ec9df3bfdaa",
+  "test_source_sha256": "39bb43c1fac5cbd020e3f7451638429ffccd800f70c99f12d4824cee838fee19",
+  "source_diff_sha256": "21272a00c8f8fac18e55239dcfe6379370fa3d66164425781a259708e121d8db",
+  "validation": {
+    "focused_suites_passed": 9,
+    "parallel_exact_decode_files": 108,
+    "existing_prepared_reference_files": 648,
+    "existing_workflow_files": 98,
+    "thread_sanitizer": "passed full dedicated suite without oracle; no races reported",
+    "parent_retained_photo_output_identical": true
+  },
+  "speedup_model_and_emission": 2.3941419592142994,
+  "speedup_complete": 1.138709907016099,
+  "runs": [
+    {
+      "measured": false,
+      "repetition": -1,
+      "participants": 14,
+      "wall_seconds": 10.813040041,
+      "model_and_emission_seconds": 1.140354,
+      "peak_participants": 14,
+      "memory_reductions": 0,
+      "power_before": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=35782755)\t65%; charging; 5:07 remaining present: true",
+      "power_after": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=35782755)\t65%; charging; 5:09 remaining present: true"
+    },
+    {
+      "measured": false,
+      "repetition": -1,
+      "participants": 1,
+      "wall_seconds": 12.326501833,
+      "model_and_emission_seconds": 2.6780259090000014,
+      "peak_participants": 0,
+      "memory_reductions": 0,
+      "power_before": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=35782755)\t65%; charging; 5:09 remaining present: true",
+      "power_after": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=35782755)\t65%; charging; 5:09 remaining present: true"
+    },
+    {
+      "measured": true,
+      "repetition": 0,
+      "participants": 1,
+      "wall_seconds": 12.323068417,
+      "model_and_emission_seconds": 2.6842003210000005,
+      "peak_participants": 0,
+      "memory_reductions": 0,
+      "power_before": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=35782755)\t65%; charging; 5:09 remaining present: true",
+      "power_after": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=35782755)\t65%; charging; 5:09 remaining present: true"
+    },
+    {
+      "measured": true,
+      "repetition": 0,
+      "participants": 14,
+      "wall_seconds": 10.915990125,
+      "model_and_emission_seconds": 1.1189837079999998,
+      "peak_participants": 14,
+      "memory_reductions": 0,
+      "power_before": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=35782755)\t65%; charging; 5:09 remaining present: true",
+      "power_after": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=35782755)\t65%; charging; 5:09 remaining present: true"
+    },
+    {
+      "measured": true,
+      "repetition": 1,
+      "participants": 14,
+      "wall_seconds": 10.866513542,
+      "model_and_emission_seconds": 1.117728125,
+      "peak_participants": 14,
+      "memory_reductions": 0,
+      "power_before": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=35782755)\t65%; charging; 5:09 remaining present: true",
+      "power_after": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=35782755)\t65%; charging; (no estimate) present: true"
+    },
+    {
+      "measured": true,
+      "repetition": 1,
+      "participants": 1,
+      "wall_seconds": 12.406503959,
+      "model_and_emission_seconds": 2.679005847000001,
+      "peak_participants": 0,
+      "memory_reductions": 0,
+      "power_before": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=35782755)\t65%; charging; (no estimate) present: true",
+      "power_after": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=35782755)\t65%; charging; (no estimate) present: true"
+    },
+    {
+      "measured": true,
+      "repetition": 2,
+      "participants": 1,
+      "wall_seconds": 12.373806625,
+      "model_and_emission_seconds": 2.671309539,
+      "peak_participants": 0,
+      "memory_reductions": 0,
+      "power_before": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=35782755)\t65%; charging; (no estimate) present: true",
+      "power_after": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=35782755)\t65%; charging; (no estimate) present: true"
+    },
+    {
+      "measured": true,
+      "repetition": 2,
+      "participants": 14,
+      "wall_seconds": 10.823463834,
+      "model_and_emission_seconds": 1.1256577079999999,
+      "peak_participants": 14,
+      "memory_reductions": 0,
+      "power_before": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=35782755)\t65%; charging; (no estimate) present: true",
+      "power_after": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=35782755)\t65%; charging; (no estimate) present: true"
+    }
+  ]
+}

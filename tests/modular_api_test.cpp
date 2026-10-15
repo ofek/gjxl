@@ -102,7 +102,15 @@ void Case(ModularPixelFormat format, bool big, Extent2D extent, ModularEntropy e
        .cpu_participant_limit = 4},
       &options.execution_domain));
   options.cpu_thread_count = 4;
-  Ok(EncodeModularImage(input, options, &parallel));
+  if (learned && ((extent.width + 255) / 256) * ((extent.height + 255) / 256) <= 8) {
+    using namespace thread_budget_internal;
+    WorkerLaunchFaultForTesting fault{WorkerLaunchSite::kModularTreeLearning, 0};
+    WorkerLaunchFaultScopeForTesting scope(&fault);
+    Ok(EncodeModularImage(input, options, &parallel));
+    Check(!fault.triggered, "Global learned fit fanned out");
+  } else {
+    Ok(EncodeModularImage(input, options, &parallel));
+  }
   Check(serial == parallel && ref::DecodeLossless(parallel) == expected,
         "Parallel/native decode mismatch");
   auto snapshot = options.execution_domain->snapshot();
@@ -110,11 +118,7 @@ void Case(ModularPixelFormat format, bool big, Extent2D extent, ModularEntropy e
             snapshot.active_reservations == 0 && snapshot.live_capacity_bytes == 0 &&
             snapshot.peak_committed_bytes <= memory_limit,
         "Leaked CPU or reservation");
-  if (learned) {
-    if (((extent.width + 255) / 256) * ((extent.height + 255) / 256) <= 8)
-      Check(snapshot.peak_cpu_protected_slots == 1, "Global learned fit fanned out");
-  }
-  else if (extent.width > 256)
+  if (!learned && extent.width > 256)
     Check(snapshot.peak_cpu_protected_slots > 1, "Parallel path did not execute");
   GJXLContextOptions context_options;
   Check(gjxl_context_options_init(&context_options, sizeof(context_options)) == GJXL_OK,

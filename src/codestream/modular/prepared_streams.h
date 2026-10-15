@@ -68,15 +68,20 @@ struct PreparedModularEntropyOptions {
   // Direct rate ANS only, in [1, kMaximumAnsClusters]. Other policies require
   // this default value. The optimizer and storage planner share this limit.
   size_t maximum_ans_clusters = kDefaultDirectAnsClusters;
+  // Zero uses the admitted caller's CPU allowance; one is the serial control.
+  // Unadmitted or explicitly nested calls stay serial. Local streams use outer
+  // workers; a shared/single model may use the existing ANS cluster workers.
+  size_t cpu_participants = 0;
 };
 [[nodiscard]] Status ValidatePreparedModularEntropyOptions(const PreparedModularEntropyOptions &options);
 // Allocation-free validation/planning. Borrowed samples, views, trees, prior
 // outputs and their lifetimes remain the caller's responsibility. Managed
 // bounds exclude borrowed completed tokens and cover fresh tokenization,
-// serial modeling/emission, assembly and
+// modeling/emission at the resolved CPU allowance, assembly and
 // publication. Global transforms define full-image shape before grouping; group
 // transforms define each tile's shape after grouping. All provided descriptors
-// must match.
+// must match. Plan and encode must use the same options and CPU scope. The
+// returned participants is the resolved allowance, not a guaranteed grant.
 [[nodiscard]] Status
 ComputePreparedModularStreamsStoragePlan(const PreparedModularStreamsView &input,
                                          EntropyCodingMode mode, ModularWorkflowStoragePlan *out);

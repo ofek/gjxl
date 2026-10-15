@@ -239,17 +239,33 @@ Status EncodeReferenceModularImage(PackedModularImageView input,
       !s.ok())
     return s;
   ModularWorkflowStoragePlan plan;
-  if (auto s = ComputePreparedModularStreamsStoragePlan(prepared.view(),
-                                                        options.entropy, &plan);
-      !s.ok())
-    return s;
   auto result_stats = prepared.stats();
+  auto entropy = options.entropy;
+  ResourceReservation reservation;
+  for (;;) {
+    if (auto s = ComputePreparedModularStreamsStoragePlan(prepared.view(), entropy, &plan);
+        !s.ok())
+      return s;
+    const auto status = budget.TryReserve(std::max(size_t{1}, plan.working.peak_bytes), &reservation);
+    if (status.ok())
+      break;
+    if (plan.participants == 1 ||
+        (status.code() != StatusCode::kUnavailable && status.code() != StatusCode::kOutOfMemory))
+      return status;
+    // Retry admission only, before any model or output is built. Tight budgets
+    // retain the original serial envelope and identical compression decisions.
+    entropy.cpu_participants = std::max(size_t{1}, plan.participants / 2);
+    ++result_stats.entropy_memory_reductions;
+  }
+  result_stats.entropy_cpu_participants = plan.participants;
+  result_stats.maximum_stage_bytes = std::max(result_stats.maximum_stage_bytes,
+                                              plan.working.peak_bytes);
+  auto context = CurrentResourceContext();
+  context.reservation = &reservation;
+  context.resource_class = ResourceClass::kPreparation;
+  ResourceContextScope resources(context);
   codestream_internal::CodestreamBuffer result;
-  if (auto s = Stage(budget, plan.working.peak_bytes, &result_stats,
-                     [&] {
-                       return EncodePreparedModularStreams(
-                           prepared.view(), options.entropy, &result);
-                     });
+  if (auto s = EncodePreparedModularStreams(prepared.view(), entropy, &result);
       !s.ok())
     return s;
   *out = std::move(result);

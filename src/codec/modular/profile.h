@@ -10,7 +10,7 @@
 #include <ctime>
 
 namespace gjxl::modular_internal {
-// Private, opt-in caller-wall and process-CPU instrumentation. Workers are
+// Private, opt-in caller-wall and process-CPU instrumentation. Workers
 // never share the caller's sink: stages measure the caller's joined interval,
 // with process CPU including joined workers' work. Local tree jobs use private
 // sinks for feature counters; their top-level timers are not merged.
@@ -23,6 +23,9 @@ enum class ProfileStage {
   kEmission,
   kAssembly,
   kGpuInputTokens,
+  // Joined local-stream model + emission interval. These operations overlap
+  // across workers and cannot be separated into additive caller-wall stages.
+  kStreamEncoding,
   kCount
 };
 // Disjoint nested attribution within kTraining. These are caller-wall intervals,
@@ -79,10 +82,15 @@ struct AdaptiveGpuWorkProfile {
 struct ModularProfile {
   std::array<double, static_cast<size_t>(ProfileStage::kCount)> seconds{};
   std::array<double, static_cast<size_t>(ProfileStage::kCount)> cpu_seconds{};
-  // Nested diagnostics within kModel, not additional caller-wall stages.
-  // Accumulates across candidates. Modular currently models serially; the
-  // shared counter type retains its work-time semantics if that changes.
+  // Nested diagnostics within kModel/kStreamEncoding, not extra wall stages.
+  // Accumulates across candidates/workers; these are work times, not wall time.
   codestream_internal::EntropyWorkProfile entropy_work;
+  struct ParallelEntropy {
+    size_t stream_jobs = 0, parallel_calls = 0, peak_participants = 0;
+    // Summed worker wall intervals, nested in kStreamEncoding, not additive
+    // to caller-wall stages. Each worker owns its profile until the join.
+    double model_work_seconds = 0, emission_work_seconds = 0;
+  } parallel_entropy;
   TrainingWorkProfile training_work;
   AdaptiveGpuWorkProfile adaptive_gpu;
   // A large winning tree retains its managed backing after the encoder call.
