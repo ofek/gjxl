@@ -76,8 +76,10 @@ sample until token generation finishes. The completed split token arena uses
 4-byte values and 2-byte contexts, plus alignment. These buffers, descriptors,
 tree tables and stage scratch are admitted in the same managed domain as the
 CPU stages. Features are released before entropy coding; token backing survives
-through encoding. This integration adds retained memory and has not established
-an end-to-end performance win; Automatic awaits performance qualification.
+through encoding. The [end-to-end and forced-producer qualification](modular-learned-metal-qualification.md)
+measures about 6% less aggregate elapsed time for explicit Metal on 17 inputs
+on an M4 Pro. The 12 MP case uses about 1.5x the CPU path's managed peak backing.
+Automatic remains CPU, and the existing feature-producer cutoff is unchanged.
 
 `metal_modular_reference_workflow` checks exact trees, all tokens, ANS/prefix
 codestream parity and pinned-decoder samples across all six formats, padded and

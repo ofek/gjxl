@@ -77,6 +77,13 @@ if(WIN32)
     ENVIRONMENT_MODIFICATION "PATH=path_list_prepend:${GJXL_MODULAR_ORACLE_BUILD}/tools")
 endif()
 if(GJXL_BUILD_BENCHMARKS)
+  if(TARGET gjxl_metal)
+    add_executable(gjxl_modular_metal_workflow_profile
+      tools/modular_reference_learning/metal_workflow_profile.cpp src/io/pnm.cpp)
+    target_include_directories(gjxl_modular_metal_workflow_profile PRIVATE tests)
+    target_link_libraries(gjxl_modular_metal_workflow_profile PRIVATE
+      gjxl_codestream gjxl_modular_reference gjxl_metal)
+  endif()
   add_executable(gjxl_modular_search_profile tools/modular_training_study/profile.cpp src/io/pnm.cpp)
   target_include_directories(gjxl_modular_search_profile PRIVATE tests)
   target_link_libraries(gjxl_modular_search_profile PRIVATE gjxl_codestream gjxl_modular_reference)
