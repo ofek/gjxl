@@ -1,0 +1,223 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2026 Yunho Cho
+#pragma once
+#include <array>
+#include <bit>
+#include <chrono>
+#include <cstddef>
+#include <cstdint>
+#include <span>
+
+namespace gjxl::modular_internal {
+// Private opt-in diagnostics for the native histogram fitter, independent of
+// the original learner's profile. All backing is caller-owned; fitting never
+// allocates for diagnostics. Times are nested caller-wall intervals, not CPU
+// work sums or additional encoder stages. The current fitter is serial.
+enum class HistogramFitStage {
+  kValidation,
+  kSetup,
+  kSymbolRange,
+  kParentHistograms,
+  kPropertyPopulation,
+  kJointHistograms,
+  kCandidateEvaluation,
+  kSplitSelection,
+  kPartition,
+  kOutput,
+  kCount
+};
+inline constexpr std::array<const char *, 10> kHistogramFitStageNames{
+    "validation",
+    "setup",
+    "symbol_range",
+    "parent_histograms",
+    "property_population",
+    "joint_histograms",
+    "candidate_evaluation",
+    "split_selection",
+    "partition",
+    "output"};
+using HistogramFitSeconds =
+    std::array<double, size_t(HistogramFitStage::kCount)>;
+// Bucket zero is 0..1; bucket i>0 is (2^(i-1), 2^i]. The input contract caps
+// populations at 2^24 and bins at 2^16. Last buckets are saturating, not lost.
+inline constexpr size_t kHistogramRowBuckets = 25, kHistogramBinBuckets = 17;
+inline size_t HistogramProfileBucket(size_t value, size_t buckets) {
+  const size_t index = value <= 1 ? 0 : std::bit_width(value - 1);
+  return index < buckets ? index : buckets - 1;
+}
+struct HistogramNodeWork {
+  uint64_t nodes = 0, splits = 0, forced_splits = 0, rows = 0;
+  uint64_t symbol_row_visits = 0, parent_histogram_row_visits = 0;
+  uint64_t property_row_visits = 0, joint_histogram_row_visits = 0;
+  uint64_t properties = 0, constant_properties = 0, active_bins = 0,
+           bin_span = 0;
+  uint64_t candidate_thresholds = 0, entropy_evaluations = 0, symbol_terms = 0;
+  uint64_t partition_rows = 0, row_swaps = 0;
+  bool operator==(const HistogramNodeWork &) const = default;
+};
+struct HistogramNodeBucket {
+  HistogramNodeWork work;
+  HistogramFitSeconds seconds{};
+  double node_seconds = 0;
+};
+struct HistogramDepthBucket {
+  uint64_t nodes = 0, rows = 0;
+  double seconds = 0;
+};
+struct HistogramFitRecord {
+  size_t rows = 0, population = 0, predictors = 0, properties = 0;
+  size_t nodes = 0, maximum_depth = 0;
+  bool success = false;
+  double seconds = 0;
+  HistogramFitSeconds stages{};
+};
+struct HistogramFittingProfile {
+  HistogramFitSeconds seconds{};
+  double fit_seconds = 0;
+  uint64_t calls = 0, successes = 0;
+  std::array<HistogramNodeBucket, kHistogramRowBuckets> by_rows{};
+  // Depth is one-based. The final entry also records any larger depth.
+  std::array<HistogramDepthBucket, 2048> by_depth{};
+  // Padded maximum symbol+1, as actually scanned by EstimateBits. This is
+  // symbol-axis length, NOT the number of nonzero residual-symbol bins.
+  std::array<uint64_t, 257> nodes_by_symbol_span{};
+  std::array<uint64_t, kHistogramBinBuckets> properties_by_active_bins{};
+  std::array<uint64_t, kHistogramBinBuckets> properties_by_bin_span{};
+  std::span<HistogramFitRecord> records;
+  size_t records_written = 0, records_dropped = 0;
+};
+inline thread_local HistogramFittingProfile *active_histogram_fitting_profile =
+    nullptr;
+class HistogramFittingProfileSession {
+public:
+  explicit HistogramFittingProfileSession(HistogramFittingProfile *profile)
+      : previous_(active_histogram_fitting_profile) {
+    active_histogram_fitting_profile = profile;
+  }
+  ~HistogramFittingProfileSession() {
+    active_histogram_fitting_profile = previous_;
+  }
+  HistogramFittingProfileSession(const HistogramFittingProfileSession &) =
+      delete;
+  HistogramFittingProfileSession &
+  operator=(const HistogramFittingProfileSession &) = delete;
+
+private:
+  HistogramFittingProfile *previous_;
+};
+
+namespace histogram_profile_internal {
+using Clock = std::chrono::steady_clock;
+inline double Elapsed(Clock::time_point start) {
+  return std::chrono::duration<double>(Clock::now() - start).count();
+}
+// Compile-time disabled probes remove clocks/counters from the hot loops.
+template <bool Enabled> class Phase {
+public:
+  Phase(HistogramFittingProfile *profile, HistogramFitStage stage,
+        HistogramNodeBucket *node = nullptr)
+      : profile_(profile), node_(node), stage_(stage) {
+    if constexpr (Enabled) {
+      if (profile_)
+        start_ = Clock::now();
+    }
+  }
+  ~Phase() { Stop(); }
+  void Stop() {
+    if constexpr (Enabled) {
+      if (!profile_)
+        return;
+      const double seconds = Elapsed(start_);
+      profile_->seconds[size_t(stage_)] += seconds;
+      if (node_)
+        node_->seconds[size_t(stage_)] += seconds;
+      profile_ = nullptr;
+    }
+  }
+  Phase(const Phase &) = delete;
+  Phase &operator=(const Phase &) = delete;
+
+private:
+  HistogramFittingProfile *profile_;
+  HistogramNodeBucket *node_;
+  HistogramFitStage stage_;
+  Clock::time_point start_{};
+};
+template <bool Enabled> class Node {
+public:
+  Node(HistogramFittingProfile *profile, size_t rows, size_t depth,
+       HistogramFitRecord *record) {
+    if constexpr (Enabled) {
+      bucket =
+          &profile->by_rows[HistogramProfileBucket(rows, kHistogramRowBuckets)];
+      depth_ = &profile->by_depth[depth < profile->by_depth.size()
+                                      ? depth
+                                      : profile->by_depth.size() - 1];
+      ++bucket->work.nodes;
+      bucket->work.rows += rows;
+      ++depth_->nodes;
+      depth_->rows += rows;
+      if (record && record->maximum_depth < depth)
+        record->maximum_depth = depth;
+      start_ = Clock::now();
+    }
+  }
+  ~Node() {
+    if constexpr (Enabled) {
+      const double seconds = Elapsed(start_);
+      bucket->node_seconds += seconds;
+      depth_->seconds += seconds;
+    }
+  }
+  HistogramNodeBucket *bucket = nullptr;
+
+private:
+  HistogramDepthBucket *depth_ = nullptr;
+  Clock::time_point start_{};
+};
+// Declared before fitting storage so the envelope includes its destruction.
+class Fit {
+public:
+  explicit Fit(HistogramFittingProfile *profile) : profile_(profile) {
+    if (!profile_)
+      return;
+    start_ = Clock::now();
+    before_ = profile_->seconds;
+    ++profile_->calls;
+    if (profile_->records_written < profile_->records.size()) {
+      record = &profile_->records[profile_->records_written++];
+      *record = {};
+    } else {
+      ++profile_->records_dropped;
+    }
+  }
+  ~Fit() {
+    if (!profile_)
+      return;
+    const double seconds = Elapsed(start_);
+    profile_->fit_seconds += seconds;
+    if (record) {
+      record->seconds = seconds;
+      for (size_t i = 0; i < before_.size(); ++i)
+        record->stages[i] = profile_->seconds[i] - before_[i];
+    }
+  }
+  void Success(size_t nodes) {
+    if (!profile_)
+      return;
+    ++profile_->successes;
+    if (record) {
+      record->success = true;
+      record->nodes = nodes;
+    }
+  }
+  HistogramFitRecord *record = nullptr;
+
+private:
+  HistogramFittingProfile *profile_;
+  HistogramFitSeconds before_{};
+  Clock::time_point start_{};
+};
+} // namespace histogram_profile_internal
+} // namespace gjxl::modular_internal

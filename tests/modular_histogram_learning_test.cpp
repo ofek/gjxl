@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 Yunho Cho
 #include "codec/modular/histogram_tree_learning.h"
+#include "codec/modular/histogram_tree_profile.h"
+#include <cmath>
 #include <iostream>
 #include <limits>
+#include <numeric>
 #include <stdexcept>
 
 namespace {
@@ -225,11 +228,124 @@ void ValidationAndFailures() {
   Check(short_budget.snapshot().total.backing_count == 0,
         "Rejected fitting leaked admitted storage");
 }
+
+void ProfiledParity() {
+  for (bool weighted : {false, true}) {
+    auto plain = Separated(weighted), measured = plain;
+    HistogramTreeLearningOptions options;
+    options.maximum_samples = kHistogramMaximumSamples;
+    DecisionTree expected, actual;
+    Ok(LearnHistogramTree(plain, &expected, options));
+    HistogramFittingProfile profile;
+    std::array<HistogramFitRecord, 1> records;
+    profile.records = records;
+    {
+      HistogramFittingProfileSession session(&profile);
+      {
+        HistogramFittingProfileSession disabled(nullptr);
+        Check(!active_histogram_fitting_profile,
+              "Nested profile did not disable");
+      }
+      Check(active_histogram_fitting_profile == &profile,
+            "Nested profile did not restore");
+      Ok(LearnHistogramTree(measured, &actual, options));
+    }
+    Check(!active_histogram_fitting_profile && actual == expected &&
+              plain.weights == measured.weights &&
+              plain.residuals == measured.residuals &&
+              plain.values == measured.values,
+          "Profiling changed tree or partition order");
+    Check(profile.calls == 1 && profile.successes == 1 &&
+              profile.records_written == 1 && !profile.records_dropped &&
+              records[0].nodes == 3 && records[0].rows == 128 &&
+              records[0].population == measured.total_samples &&
+              records[0].maximum_depth == 2,
+          "Profile lost fitting envelope or record");
+    const auto &root = profile.by_rows[7].work;
+    const auto &leaves = profile.by_rows[6].work;
+    Check(root.nodes == 1 && leaves.nodes == 2 && root.rows == 128 &&
+              leaves.rows == 128 && root.splits == 1 && root.properties == 1 &&
+              root.active_bins == 2 && root.joint_histogram_row_visits == 128 &&
+              root.candidate_thresholds == 1 && root.entropy_evaluations == 2 &&
+              root.symbol_terms == 40 && root.partition_rows == 128 &&
+              root.row_swaps == 32 && leaves.properties == 0 &&
+              profile.by_depth[1].nodes == 1 &&
+              profile.by_depth[2].nodes == 2 &&
+              profile.nodes_by_symbol_span[20] == 2 &&
+              profile.nodes_by_symbol_span[4] == 1,
+          "Histogram work attribution is inconsistent");
+    double node_seconds = 0;
+    for (const auto &bucket : profile.by_rows) {
+      node_seconds += bucket.node_seconds;
+      Check(std::accumulate(bucket.seconds.begin(), bucket.seconds.end(),
+                            0.0) <= bucket.node_seconds + 1e-9,
+            "Node phase times overlap");
+    }
+    Check(std::isfinite(profile.fit_seconds) && profile.fit_seconds > 0 &&
+              std::accumulate(profile.seconds.begin(), profile.seconds.end(),
+                              0.0) <= profile.fit_seconds &&
+              node_seconds <= profile.fit_seconds,
+          "Fitting attribution exceeds its envelope");
+  }
+  // Exercise predictor ties, heterogeneous symbols/bins, weighted rows, and
+  // different growth shapes through both compiled implementations.
+  for (size_t seed = 1; seed <= 8; ++seed) {
+    auto plain = Separated();
+    plain.predictor_count = seed % 2 ? 2 : 14;
+    for (size_t p = 0; p < plain.predictor_count; ++p) {
+      plain.predictors[p] = static_cast<Predictor>(p);
+      plain.residuals[p].resize(128);
+      for (size_t r = 0; r < 128; ++r)
+        plain.residuals[p][r] = {uint8_t((r * (p + 1) + seed) % (4 + 7 * seed)),
+                                 uint8_t((r + p) % 3)};
+    }
+    plain.properties[0] = 9;
+    plain.thresholds[0] = {-7, 0, 7};
+    plain.total_samples = 0;
+    for (size_t r = 0; r < 128; ++r) {
+      plain.values[0][r] = r % 4;
+      plain.weights[r] = 1 + r % 7;
+      plain.total_samples += plain.weights[r];
+    }
+    auto measured = plain;
+    DecisionTree expected, actual;
+    Ok(LearnHistogramTree(plain, &expected));
+    HistogramFittingProfile profile;
+    {
+      HistogramFittingProfileSession session(&profile);
+      Ok(LearnHistogramTree(measured, &actual));
+    }
+    Check(actual == expected && plain.residuals == measured.residuals &&
+              profile.calls == 1 && profile.successes == 1 &&
+              profile.records_dropped == 1,
+          "Profile changed generated fit or hid a dropped record");
+  }
+  // Profiling is diagnostic on failure and does not publish an incomplete tree.
+  auto invalid = Separated();
+  invalid.weights.back() = 0;
+  DecisionTree unchanged, saved = unchanged;
+  HistogramFittingProfile failed;
+  {
+    HistogramFittingProfileSession session(&failed);
+    Check(!LearnHistogramTree(invalid, &unchanged).ok(),
+          "Invalid profiled fit succeeded");
+  }
+  Check(unchanged == saved && failed.calls == 1 && failed.successes == 0,
+        "Failed profiled fit changed output or counters");
+}
 } // namespace
 int main() try {
   DecisionsAndWeights();
   MultipliersAndLimits();
+  {
+    HistogramFittingProfile profile;
+    HistogramFittingProfileSession session(&profile);
+    MultipliersAndLimits();
+    Check(profile.by_rows[7].work.forced_splits > 0,
+          "Forced multiplier splits were not profiled");
+  }
   ValidationAndFailures();
+  ProfiledParity();
   std::cout << "Histogram learning decisions, weights, limits, storage and "
                "failure checks passed\n";
   return 0;

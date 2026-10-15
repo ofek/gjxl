@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 Yunho Cho
-// Complete-call comparison of the same histogram policy through explicit routes.
+// Complete-call comparison of the same histogram policy through explicit
+// routes.
 #include "codec/modular/profile.h"
 #include "codestream/modular/reference_workflow.h"
 #include "codestream/workflow_admission_scope.h"
 #include "core/thread_budget.h"
+#include "histogram_profile_json.h"
 #include "io/pnm.h"
 #include "modular_reference.h"
 #if GJXL_HYBRID_PROFILE_METAL
@@ -41,7 +43,11 @@ template <typename T> void Array(std::ostream &out, const T &a) {
 }
 } // namespace
 int main(int argc, char **argv) try {
-  Check(argc == 6, "hybrid_profile INPUT OUT cpu|shared-cpu|hybrid|auto auto|buffered best|all");
+  Check(argc == 6 || argc == 7, "hybrid_profile INPUT OUT cpu|shared-cpu|hybrid|auto auto|buffered "
+                                "best|all [fit-off|fit-on]");
+  const std::string fitting_mode = argc == 7 ? argv[6] : "fit-off";
+  Check(fitting_mode == "fit-off" || fitting_mode == "fit-on", "Invalid fitting profile mode");
+  const bool fitting_profile_enabled = fitting_mode == "fit-on";
   const std::string route = argv[3], buffering = argv[4], predictors = argv[5];
   Check(route == "cpu" || route == "shared-cpu" || route == "hybrid" || route == "auto",
         "Invalid route");
@@ -101,10 +107,21 @@ int main(int argc, char **argv) try {
   thread_budget_internal::EncodeScope participation(4);
   ReferenceWorkflowStats stats;
   ModularProfile profile;
+  HistogramFittingProfile fitting_profile;
+  // Diagnostic backing is allocated before timing and outside codec admission.
+  // There is at most one fit per local group plus the global stream.
+  std::vector<HistogramFitRecord> fitting_records;
+  if (fitting_profile_enabled) {
+    fitting_records.resize(((view.extent.width + 255) / 256) * ((view.extent.height + 255) / 256) +
+                           1);
+    fitting_profile.records = fitting_records;
+  }
   codestream_internal::CodestreamBuffer encoded;
   double wall, process_cpu;
   {
     ProfileSession session(&profile);
+    HistogramFittingProfileSession fitting_session(fitting_profile_enabled ? &fitting_profile
+                                                                           : nullptr);
     const auto start = std::chrono::steady_clock::now();
     const auto cpu_start = std::clock();
     Ok(EncodeReferenceModularImage(view, options, budget, &encoded, &stats));
@@ -112,6 +129,10 @@ int main(int argc, char **argv) try {
     process_cpu = double(std::clock() - cpu_start) / CLOCKS_PER_SEC;
   }
   Check(reference::DecodeLossless(encoded.view()) == expected, "Exact independent decode differs");
+  if (fitting_profile_enabled)
+    Check(fitting_profile.calls == stats.fits && fitting_profile.successes == stats.fits &&
+              !fitting_profile.records_dropped,
+          "Histogram fitting attribution missed a fit");
   if (route == "cpu")
     Check(!stats.feature_batches && !stats.token_batches && !gpu,
           "CPU control used the hybrid route");
@@ -170,7 +191,9 @@ int main(int argc, char **argv) try {
       << ",\"peak_committed_bytes\":" << memory.peak_committed_bytes
       << ",\"maximum_stage_bytes\":" << stats.maximum_stage_bytes
       << ",\"peak_feature_samples\":" << stats.peak_feature_samples
-      << ",\"peak_feature_bytes\":" << stats.peak_feature_bytes << "}}\n";
+      << ",\"peak_feature_bytes\":" << stats.peak_feature_bytes << "},\"histogram_fitting\":";
+  WriteHistogramProfile(out, fitting_profile, fitting_profile_enabled);
+  out << "}\n";
   out.close();
   std::cout << route << ": " << wall << " s, " << bytes << " bytes, " << stats.gpu_feature_batches
             << " GPU feature batches; exact decode\n";

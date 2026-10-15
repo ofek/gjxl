@@ -60,6 +60,56 @@ for ownership, admission, routing and validation boundaries.
 The [2026-10-14 qualification](../../docs/gpu-histogram-learner-qualification.md)
 records matched full-resolution and crossover results on Apple M4 Pro.
 
+## Histogram fitting attribution
+
+The same driver accepts an optional final `fit-off|fit-on` argument (default
+`fit-off`). The private histogram profile has allocation-free counters and
+exclusive wall phases inside `LearnHistogramTree`, plus inclusive node times
+by distinct-row count/depth, bin/symbol-span distributions and per-fit records.
+It does not reuse the original sort-based learner's attribution. Candidate
+evaluation combines prefix histogram updates, entropy costs and predictor
+comparison; no clock runs per threshold. Diagnostic arrays are caller-owned,
+allocated outside the encoder timer, and excluded from codec admission.
+
+```sh
+python3 tools/modular_reference_learning/run_histogram_attribution.py \
+  --binary build/release/gjxl_modular_hybrid_profile \
+  --input /path/to/photo-large-1029.pam \
+  --input /path/to/photo-large-1039.pam \
+  --input /path/to/photo-large-1049.pam \
+  --reference docs/gpu-histogram-learner-integration-results.json \
+  --out build/histogram-fitting-attribution --warmups 1 --repeats 3
+python3 tools/modular_reference_learning/analyze_histogram_attribution.py \
+  build/histogram-fitting-attribution \
+  --json docs/modular-histogram-fitting-profile-results.json \
+  --markdown docs/modular-histogram-fitting-profile.md
+```
+
+This runner compares attribution on/off through the same automatic hybrid
+policy and binary. It checks exact decoding, bytes, routing and work counters,
+freezes the executable, archives/hashes all build/tool sources including local
+edits, and rejects source/input/dependency changes during capture. Unlike the
+older route-qualification runner, it records a source snapshot rather than
+requiring a commit. Its base revision alone does not identify that snapshot.
+Before/after power, load and thermal observations accompany every call.
+
+The analyzer rejects an image cohort whose observed power source changes.
+Repeat that entire input cohort under stable power, then pass the completed
+capture with `--replacement build/replacement-capture`. The replacement must
+use the identical frozen binary and input. All original calls remain in the
+JSON; only the complete replacement cohort supplies timing medians. Reports
+label power per image and keep node-time shares separate across images.
+
+For a separate sampling diagnostic, build with `-O3 -g -DNDEBUG`, retain a
+matching `dsymutil` bundle, and record the driver directly with
+`samply record --save-only --main-thread-only --unstable-presymbolicate` using
+`fit-off`. `analyze_fitting_samply.py PROFILE.json.gz --binary BINARY --output
+ANALYSIS.json` resolves the native fitter and its inline source frames using
+`llvm-symbolizer`. It checks symbol coverage and reports both current-stack
+and preceding-stack assignments of sampled CPU deltas. These CPU samples are
+not additive wall-clock phases and the sampled run is excluded from paired
+timing medians.
+
 ## Conditional native WP search
 
 The optional root-CMake target `gjxl_modular_reference_wp_sweep` accepts
