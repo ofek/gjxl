@@ -2463,6 +2463,11 @@ if(GJXL_BUILD_TESTS)
   add_test(NAME modular_parallel_selection COMMAND gjxl_modular_parallel_selection_test)
   set_tests_properties(modular_parallel_selection PROPERTIES TIMEOUT 180)
 
+  add_executable(gjxl_modular_parallel_prepared_tokenization_test tests/modular_parallel_prepared_tokenization_test.cpp)
+  target_link_libraries(gjxl_modular_parallel_prepared_tokenization_test PRIVATE gjxl_codestream)
+  add_test(NAME modular_parallel_prepared_tokenization COMMAND gjxl_modular_parallel_prepared_tokenization_test)
+  set_tests_properties(modular_parallel_prepared_tokenization PROPERTIES TIMEOUT 180)
+
   add_executable(gjxl_modular_histogram_learning_test tests/modular_histogram_learning_test.cpp)
   target_link_libraries(gjxl_modular_histogram_learning_test PRIVATE gjxl_codestream)
   add_test(NAME modular_histogram_learning COMMAND gjxl_modular_histogram_learning_test)

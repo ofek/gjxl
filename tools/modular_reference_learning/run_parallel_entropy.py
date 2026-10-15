@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bounded, paired complete-call check of parallel entropy or stream selection."""
+"""Bounded, paired complete-call check of entropy, selection or CPU tokenization."""
 import argparse
 import hashlib
 import json
@@ -34,7 +34,7 @@ def main():
     parser.add_argument("--threads", type=int, default=4)
     parser.add_argument("--repetitions", type=int, default=3)
     parser.add_argument("--route", choices=["cpu", "shared-cpu", "hybrid", "auto"], default="cpu")
-    parser.add_argument("--phase", choices=["entropy", "selection"], default="entropy")
+    parser.add_argument("--phase", choices=["entropy", "selection", "tokenization"], default="entropy")
     args = parser.parse_args()
     if not 2 <= args.threads <= 256 or args.repetitions < 1:
         parser.error("threads must be 2..256 and repetitions positive")
@@ -70,14 +70,16 @@ def main():
                 command = [str(binary), str(source), str(directory), args.route, "auto", "best", "fit-off",
                            str(args.threads), str(args.threads),
                            str(participants if args.phase == "entropy" else args.threads)]
-                if args.phase == "selection":
+                if args.phase in ("selection", "tokenization"):
+                    command.append(str(participants if args.phase == "selection" else args.threads))
+                if args.phase == "tokenization":
                     command.append(str(participants))
                 before = environment()
                 with open(output / f"{name}.log", "w") as log:
                     subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, check=True)
                 after = environment()
                 result = json.loads((directory / "result.json").read_text())
-                assert result["schema"] == (4 if args.phase == "selection" else 3) and result["exact_decode"]
+                assert result["schema"] == {"entropy": 3, "selection": 4, "tokenization": 5}[args.phase] and result["exact_decode"]
                 assert len(result["profile_wall"]) == 9
                 assert all(value >= -1e-6 for value in result["profile_wall"])
                 encoded = directory / "output.jxl"
@@ -102,8 +104,10 @@ def main():
             runs = [r["result"] for r in manifest["runs"] if r["measured"] and r["participants"] == participants]
             manifest["medians"][str(participants)] = {
                 "complete_seconds": statistics.median(r["total"]["wall"] for r in runs),
-                ("selection_seconds" if args.phase == "selection" else "model_and_emission_seconds"): statistics.median(
+                {"selection": "selection_seconds", "tokenization": "tokenization_seconds",
+                 "entropy": "model_and_emission_seconds"}[args.phase]: statistics.median(
                     r["profile_wall"][1] if args.phase == "selection" else
+                    r["profile_wall"][3] if args.phase == "tokenization" else
                     r["profile_wall"][4] + r["profile_wall"][5] + r["profile_wall"][8] for r in runs),
                 "peak_backing_bytes": max(r["memory"]["peak_backing_bytes"] for r in runs),
                 "peak_committed_bytes": max(r["memory"]["peak_committed_bytes"] for r in runs)}

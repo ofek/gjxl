@@ -14,7 +14,7 @@ enum class WorkerLaunchSite { kColorRows, kInitialQuantization, kForwardTransfor
                               kCoefficientOrders, kSerializerSections, kBatchDriver,
                               kAnsConfigSearch, kModularTokenization, kModularEmission,
                               kModularWeightedFeatures, kModularTreeLearning,
-                              kModularEntropy, kModularSelection };
+                              kModularEntropy, kModularSelection, kModularPreparedTokenization };
 enum class WorkerLaunchFailureKind { kSystemError, kBadAlloc };
 
 // Deterministic fault at a real thread-construction boundary. The earlier

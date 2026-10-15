@@ -1,0 +1,539 @@
+{
+  "schema": 1,
+  "base_revision": "c24f812d5540ed9a6f8e4c5c1c733158c5abfb29",
+  "threads": 14,
+  "repetitions": 3,
+  "validation": {
+    "release_suites_passed": 11,
+    "parallel_tokenization_exact_decode_files": 54,
+    "prepared_stream_reference_files": 648,
+    "public_api_cases": 112,
+    "learned_workflow_files": 98,
+    "hybrid_files": 58,
+    "thread_sanitizer": "Full dedicated suite passed without Metal or external decoder; no race reports"
+  },
+  "routes": {
+    "cpu": {
+      "input": "/Users/yunhocho/GitHub/gjxl-modular/build/modular-token-performance-20261010/inputs/photo-large-1029.pam",
+      "input_sha256": "a1c487b0160d8f3e8cb86753131b919ac3de28e908fde757050ebccdb4407b6d",
+      "binary": "/Users/yunhocho/GitHub/gjxl-parallel-prepared-tokenization/build/tokenization-provenance/hybrid_profile",
+      "binary_sha256": "5d9eeef00d0868a5a5f208a6588bc361f5e5277fcb6afe2cc5d58f39be3ebbc6",
+      "source_diff_sha256": "36d4483434e6e56b18f5d359f23086621289bf630b08f31867901bc8c4dc8c27",
+      "boundary": "Complete encoder call; input loading, backend setup, independent decode and file I/O excluded. Learning and CPU ceiling fixed; only tokenization participation changes. One unmeasured warmup per mode; alternating measured order; active desktop.",
+      "medians": {
+        "1": {
+          "complete_seconds": 11.1274735,
+          "tokenization_seconds": 2.983943041,
+          "peak_backing_bytes": 846676814,
+          "peak_committed_bytes": 1891702456
+        },
+        "14": {
+          "complete_seconds": 8.06560425,
+          "tokenization_seconds": 0.289105958,
+          "peak_backing_bytes": 847364607,
+          "peak_committed_bytes": 1891702456
+        }
+      },
+      "output_sha256": "2cfd2402384ff6670fd8357e1e5e626aded66c7a91f7293f8ba54ec945a367ad",
+      "output_artifact": "warmup-tokenization-14/output.jxl",
+      "artifact_directory": "/Users/yunhocho/GitHub/gjxl-parallel-prepared-tokenization/build/parallel-prepared-tokenization-cpu",
+      "manifest_sha256": "9b185755b48f124c99f57e49f8bf908802bb3dcc8127fa803f0a495383da8d62",
+      "tokenization_speedup": 10.321278266427148,
+      "complete_speedup": 1.3796205659359,
+      "battery_power_all_snapshots": true,
+      "parent_output_match": true,
+      "runs": [
+        {
+          "measured": false,
+          "participants": 14,
+          "complete_seconds": 8.806517791,
+          "tokenization_seconds": 0.300242959,
+          "tokenization": {
+            "requested_participants": 14,
+            "admitted_participants": 14,
+            "memory_reductions": 0,
+            "peak_participants": 14,
+            "stream_jobs": 192,
+            "parallel_calls": 1,
+            "generated_tokens": 36000000,
+            "borrowed_tokens": 0
+          },
+          "routing": {
+            "feature_batches": 0,
+            "feature_samples": 0,
+            "gpu_feature_batches": 0,
+            "gpu_feature_samples": 0,
+            "cpu_feature_batches": 0,
+            "token_batches": 0,
+            "token_samples": 0,
+            "cpu_feature_peak_participants": 0,
+            "learning_reused_features": 0,
+            "learning_computed_features": 36000000
+          }
+        },
+        {
+          "measured": false,
+          "participants": 1,
+          "complete_seconds": 10.88789225,
+          "tokenization_seconds": 2.970645958,
+          "tokenization": {
+            "requested_participants": 1,
+            "admitted_participants": 1,
+            "memory_reductions": 0,
+            "peak_participants": 1,
+            "stream_jobs": 192,
+            "parallel_calls": 0,
+            "generated_tokens": 36000000,
+            "borrowed_tokens": 0
+          },
+          "routing": {
+            "feature_batches": 0,
+            "feature_samples": 0,
+            "gpu_feature_batches": 0,
+            "gpu_feature_samples": 0,
+            "cpu_feature_batches": 0,
+            "token_batches": 0,
+            "token_samples": 0,
+            "cpu_feature_peak_participants": 0,
+            "learning_reused_features": 0,
+            "learning_computed_features": 36000000
+          }
+        },
+        {
+          "measured": true,
+          "participants": 1,
+          "complete_seconds": 10.708982167,
+          "tokenization_seconds": 2.988193583,
+          "tokenization": {
+            "requested_participants": 1,
+            "admitted_participants": 1,
+            "memory_reductions": 0,
+            "peak_participants": 1,
+            "stream_jobs": 192,
+            "parallel_calls": 0,
+            "generated_tokens": 36000000,
+            "borrowed_tokens": 0
+          },
+          "routing": {
+            "feature_batches": 0,
+            "feature_samples": 0,
+            "gpu_feature_batches": 0,
+            "gpu_feature_samples": 0,
+            "cpu_feature_batches": 0,
+            "token_batches": 0,
+            "token_samples": 0,
+            "cpu_feature_peak_participants": 0,
+            "learning_reused_features": 0,
+            "learning_computed_features": 36000000
+          }
+        },
+        {
+          "measured": true,
+          "participants": 14,
+          "complete_seconds": 8.669003417,
+          "tokenization_seconds": 0.289105958,
+          "tokenization": {
+            "requested_participants": 14,
+            "admitted_participants": 14,
+            "memory_reductions": 0,
+            "peak_participants": 14,
+            "stream_jobs": 192,
+            "parallel_calls": 1,
+            "generated_tokens": 36000000,
+            "borrowed_tokens": 0
+          },
+          "routing": {
+            "feature_batches": 0,
+            "feature_samples": 0,
+            "gpu_feature_batches": 0,
+            "gpu_feature_samples": 0,
+            "cpu_feature_batches": 0,
+            "token_batches": 0,
+            "token_samples": 0,
+            "cpu_feature_peak_participants": 0,
+            "learning_reused_features": 0,
+            "learning_computed_features": 36000000
+          }
+        },
+        {
+          "measured": true,
+          "participants": 14,
+          "complete_seconds": 8.06560425,
+          "tokenization_seconds": 0.32743425,
+          "tokenization": {
+            "requested_participants": 14,
+            "admitted_participants": 14,
+            "memory_reductions": 0,
+            "peak_participants": 14,
+            "stream_jobs": 192,
+            "parallel_calls": 1,
+            "generated_tokens": 36000000,
+            "borrowed_tokens": 0
+          },
+          "routing": {
+            "feature_batches": 0,
+            "feature_samples": 0,
+            "gpu_feature_batches": 0,
+            "gpu_feature_samples": 0,
+            "cpu_feature_batches": 0,
+            "token_batches": 0,
+            "token_samples": 0,
+            "cpu_feature_peak_participants": 0,
+            "learning_reused_features": 0,
+            "learning_computed_features": 36000000
+          }
+        },
+        {
+          "measured": true,
+          "participants": 1,
+          "complete_seconds": 11.1274735,
+          "tokenization_seconds": 2.980346583,
+          "tokenization": {
+            "requested_participants": 1,
+            "admitted_participants": 1,
+            "memory_reductions": 0,
+            "peak_participants": 1,
+            "stream_jobs": 192,
+            "parallel_calls": 0,
+            "generated_tokens": 36000000,
+            "borrowed_tokens": 0
+          },
+          "routing": {
+            "feature_batches": 0,
+            "feature_samples": 0,
+            "gpu_feature_batches": 0,
+            "gpu_feature_samples": 0,
+            "cpu_feature_batches": 0,
+            "token_batches": 0,
+            "token_samples": 0,
+            "cpu_feature_peak_participants": 0,
+            "learning_reused_features": 0,
+            "learning_computed_features": 36000000
+          }
+        },
+        {
+          "measured": true,
+          "participants": 1,
+          "complete_seconds": 11.226506792,
+          "tokenization_seconds": 2.983943041,
+          "tokenization": {
+            "requested_participants": 1,
+            "admitted_participants": 1,
+            "memory_reductions": 0,
+            "peak_participants": 1,
+            "stream_jobs": 192,
+            "parallel_calls": 0,
+            "generated_tokens": 36000000,
+            "borrowed_tokens": 0
+          },
+          "routing": {
+            "feature_batches": 0,
+            "feature_samples": 0,
+            "gpu_feature_batches": 0,
+            "gpu_feature_samples": 0,
+            "cpu_feature_batches": 0,
+            "token_batches": 0,
+            "token_samples": 0,
+            "cpu_feature_peak_participants": 0,
+            "learning_reused_features": 0,
+            "learning_computed_features": 36000000
+          }
+        },
+        {
+          "measured": true,
+          "participants": 14,
+          "complete_seconds": 7.846543792,
+          "tokenization_seconds": 0.289011542,
+          "tokenization": {
+            "requested_participants": 14,
+            "admitted_participants": 14,
+            "memory_reductions": 0,
+            "peak_participants": 14,
+            "stream_jobs": 192,
+            "parallel_calls": 1,
+            "generated_tokens": 36000000,
+            "borrowed_tokens": 0
+          },
+          "routing": {
+            "feature_batches": 0,
+            "feature_samples": 0,
+            "gpu_feature_batches": 0,
+            "gpu_feature_samples": 0,
+            "cpu_feature_batches": 0,
+            "token_batches": 0,
+            "token_samples": 0,
+            "cpu_feature_peak_participants": 0,
+            "learning_reused_features": 0,
+            "learning_computed_features": 36000000
+          }
+        }
+      ]
+    },
+    "auto": {
+      "input": "/Users/yunhocho/GitHub/gjxl-modular/build/modular-token-performance-20261010/inputs/photo-large-1029.pam",
+      "input_sha256": "a1c487b0160d8f3e8cb86753131b919ac3de28e908fde757050ebccdb4407b6d",
+      "binary": "/Users/yunhocho/GitHub/gjxl-parallel-prepared-tokenization/build/tokenization-provenance/hybrid_profile",
+      "binary_sha256": "5d9eeef00d0868a5a5f208a6588bc361f5e5277fcb6afe2cc5d58f39be3ebbc6",
+      "source_diff_sha256": "7abc3c4e8a6a159b7a363fbcecd9527602766240dbed841a89bcd8c0e6563a49",
+      "boundary": "Complete encoder call; input loading, backend setup, independent decode and file I/O excluded. Learning and CPU ceiling fixed; only tokenization participation changes. One unmeasured warmup per mode; alternating measured order; active desktop.",
+      "medians": {
+        "1": {
+          "complete_seconds": 8.453597833,
+          "tokenization_seconds": 0.118686125,
+          "peak_backing_bytes": 774412936,
+          "peak_committed_bytes": 1902505608
+        },
+        "14": {
+          "complete_seconds": 8.442859625,
+          "tokenization_seconds": 0.127973999,
+          "peak_backing_bytes": 776192075,
+          "peak_committed_bytes": 1902505608
+        }
+      },
+      "output_sha256": "2cfd2402384ff6670fd8357e1e5e626aded66c7a91f7293f8ba54ec945a367ad",
+      "output_artifact": "warmup-tokenization-14/output.jxl",
+      "artifact_directory": "/Users/yunhocho/GitHub/gjxl-parallel-prepared-tokenization/build/parallel-prepared-tokenization-auto",
+      "manifest_sha256": "2a6c117a06a0237b79437141ff781db7bf64da5637594bc8cfc4ae9d7b347072",
+      "tokenization_speedup": 0.9274237417555421,
+      "complete_speedup": 1.0012718685939304,
+      "battery_power_all_snapshots": true,
+      "parent_output_match": true,
+      "runs": [
+        {
+          "measured": false,
+          "participants": 14,
+          "complete_seconds": 8.788959958,
+          "tokenization_seconds": 0.128294626,
+          "tokenization": {
+            "requested_participants": 14,
+            "admitted_participants": 1,
+            "memory_reductions": 0,
+            "peak_participants": 1,
+            "stream_jobs": 0,
+            "parallel_calls": 0,
+            "generated_tokens": 0,
+            "borrowed_tokens": 36000000
+          },
+          "routing": {
+            "feature_batches": 5,
+            "feature_samples": 36000000,
+            "gpu_feature_batches": 4,
+            "gpu_feature_samples": 33079296,
+            "cpu_feature_batches": 1,
+            "token_batches": 5,
+            "token_samples": 36000000,
+            "cpu_feature_peak_participants": 4,
+            "learning_reused_features": 36000000,
+            "learning_computed_features": 0
+          }
+        },
+        {
+          "measured": false,
+          "participants": 1,
+          "complete_seconds": 8.785627458,
+          "tokenization_seconds": 0.12019800000000001,
+          "tokenization": {
+            "requested_participants": 1,
+            "admitted_participants": 1,
+            "memory_reductions": 0,
+            "peak_participants": 1,
+            "stream_jobs": 0,
+            "parallel_calls": 0,
+            "generated_tokens": 0,
+            "borrowed_tokens": 36000000
+          },
+          "routing": {
+            "feature_batches": 5,
+            "feature_samples": 36000000,
+            "gpu_feature_batches": 4,
+            "gpu_feature_samples": 33079296,
+            "cpu_feature_batches": 1,
+            "token_batches": 5,
+            "token_samples": 36000000,
+            "cpu_feature_peak_participants": 4,
+            "learning_reused_features": 36000000,
+            "learning_computed_features": 0
+          }
+        },
+        {
+          "measured": true,
+          "participants": 1,
+          "complete_seconds": 8.252137792,
+          "tokenization_seconds": 0.131423291,
+          "tokenization": {
+            "requested_participants": 1,
+            "admitted_participants": 1,
+            "memory_reductions": 0,
+            "peak_participants": 1,
+            "stream_jobs": 0,
+            "parallel_calls": 0,
+            "generated_tokens": 0,
+            "borrowed_tokens": 36000000
+          },
+          "routing": {
+            "feature_batches": 5,
+            "feature_samples": 36000000,
+            "gpu_feature_batches": 4,
+            "gpu_feature_samples": 33079296,
+            "cpu_feature_batches": 1,
+            "token_batches": 5,
+            "token_samples": 36000000,
+            "cpu_feature_peak_participants": 4,
+            "learning_reused_features": 36000000,
+            "learning_computed_features": 0
+          }
+        },
+        {
+          "measured": true,
+          "participants": 14,
+          "complete_seconds": 8.160516209,
+          "tokenization_seconds": 0.12128016800000001,
+          "tokenization": {
+            "requested_participants": 14,
+            "admitted_participants": 1,
+            "memory_reductions": 0,
+            "peak_participants": 1,
+            "stream_jobs": 0,
+            "parallel_calls": 0,
+            "generated_tokens": 0,
+            "borrowed_tokens": 36000000
+          },
+          "routing": {
+            "feature_batches": 5,
+            "feature_samples": 36000000,
+            "gpu_feature_batches": 4,
+            "gpu_feature_samples": 33079296,
+            "cpu_feature_batches": 1,
+            "token_batches": 5,
+            "token_samples": 36000000,
+            "cpu_feature_peak_participants": 4,
+            "learning_reused_features": 36000000,
+            "learning_computed_features": 0
+          }
+        },
+        {
+          "measured": true,
+          "participants": 14,
+          "complete_seconds": 8.442859625,
+          "tokenization_seconds": 0.127973999,
+          "tokenization": {
+            "requested_participants": 14,
+            "admitted_participants": 1,
+            "memory_reductions": 0,
+            "peak_participants": 1,
+            "stream_jobs": 0,
+            "parallel_calls": 0,
+            "generated_tokens": 0,
+            "borrowed_tokens": 36000000
+          },
+          "routing": {
+            "feature_batches": 5,
+            "feature_samples": 36000000,
+            "gpu_feature_batches": 4,
+            "gpu_feature_samples": 33079296,
+            "cpu_feature_batches": 1,
+            "token_batches": 5,
+            "token_samples": 36000000,
+            "cpu_feature_peak_participants": 4,
+            "learning_reused_features": 36000000,
+            "learning_computed_features": 0
+          }
+        },
+        {
+          "measured": true,
+          "participants": 1,
+          "complete_seconds": 8.453597833,
+          "tokenization_seconds": 0.118686125,
+          "tokenization": {
+            "requested_participants": 1,
+            "admitted_participants": 1,
+            "memory_reductions": 0,
+            "peak_participants": 1,
+            "stream_jobs": 0,
+            "parallel_calls": 0,
+            "generated_tokens": 0,
+            "borrowed_tokens": 36000000
+          },
+          "routing": {
+            "feature_batches": 5,
+            "feature_samples": 36000000,
+            "gpu_feature_batches": 4,
+            "gpu_feature_samples": 33079296,
+            "cpu_feature_batches": 1,
+            "token_batches": 5,
+            "token_samples": 36000000,
+            "cpu_feature_peak_participants": 4,
+            "learning_reused_features": 36000000,
+            "learning_computed_features": 0
+          }
+        },
+        {
+          "measured": true,
+          "participants": 1,
+          "complete_seconds": 10.773856292,
+          "tokenization_seconds": 0.11847879099999999,
+          "tokenization": {
+            "requested_participants": 1,
+            "admitted_participants": 1,
+            "memory_reductions": 0,
+            "peak_participants": 1,
+            "stream_jobs": 0,
+            "parallel_calls": 0,
+            "generated_tokens": 0,
+            "borrowed_tokens": 36000000
+          },
+          "routing": {
+            "feature_batches": 5,
+            "feature_samples": 36000000,
+            "gpu_feature_batches": 4,
+            "gpu_feature_samples": 33079296,
+            "cpu_feature_batches": 1,
+            "token_batches": 5,
+            "token_samples": 36000000,
+            "cpu_feature_peak_participants": 4,
+            "learning_reused_features": 36000000,
+            "learning_computed_features": 0
+          }
+        },
+        {
+          "measured": true,
+          "participants": 14,
+          "complete_seconds": 9.467614625,
+          "tokenization_seconds": 0.13084712399999998,
+          "tokenization": {
+            "requested_participants": 14,
+            "admitted_participants": 1,
+            "memory_reductions": 0,
+            "peak_participants": 1,
+            "stream_jobs": 0,
+            "parallel_calls": 0,
+            "generated_tokens": 0,
+            "borrowed_tokens": 36000000
+          },
+          "routing": {
+            "feature_batches": 5,
+            "feature_samples": 36000000,
+            "gpu_feature_batches": 4,
+            "gpu_feature_samples": 33079296,
+            "cpu_feature_batches": 1,
+            "token_batches": 5,
+            "token_samples": 36000000,
+            "cpu_feature_peak_participants": 4,
+            "learning_reused_features": 36000000,
+            "learning_computed_features": 0
+          }
+        }
+      ]
+    }
+  },
+  "validation_logs": {
+    "build/release/tokenization-focused.log": "b5779ee868e73a80fd04e658cc96431c667519b244ae65484e0d88bcb3322d92",
+    "build/release/tokenization-regression.log": "53b662b69262a18cecd942d704fb628d931e2d100c6ab62e69e0f857f92d9e42",
+    "build/release/Testing/Temporary/LastTest.log": "bafb4b45a2c1059d5c64b87ac57d5f5629f75e2fd7dd634315168cbc10027718",
+    "build/tsan/parallel-prepared-tokenization.log": "bcbe81264a27247248d0b294d8aa43e4ffdb0b6a3b66e2e9876305e8d06941fa",
+    "build/tokenization-profiler-compatibility/compatibility.json": "4dc3a6f9316dfac941dea31d36169574534b5325d09150d1fe622c0b91f28182"
+  },
+  "runner_sha256": "e96c8630b36af79dc3679c684e6ac878ca332fde1efe6ae976f5ec68295ef605",
+  "selection_archive_manifest_sha256": "3ee43ab53e1e66226b54d67572a439f0115cff45b8aaccfc544c225ad423e864",
+  "limitations": "One-image paired pilot on battery power and an active desktop; not a corpus or libjxl speed comparison. Hybrid token timing includes existing GPU work. Compare current pairs, not prior AC-powered studies."
+}

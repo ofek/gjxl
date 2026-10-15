@@ -43,8 +43,11 @@ template <typename T> void Array(std::ostream &out, const T &a) {
 }
 } // namespace
 int main(int argc, char **argv) try {
-  Check(argc >= 6 && argc <= 11, "hybrid_profile INPUT OUT cpu|shared-cpu|hybrid|auto auto|buffered "
-                                "best|all [fit-off|fit-on [learning-participants [cpu-ceiling [entropy-participants [selection-participants]]]]]");
+  Check(argc >= 6 && argc <= 12, "hybrid_profile INPUT OUT cpu|shared-cpu|hybrid|auto auto|buffered "
+                                "best|all [fit-off|fit-on [learning-participants [cpu-ceiling [entropy-participants [selection-participants [tokenization-participants]]]]]]");
+  const bool tokenization_diagnostics = argc >= 12;
+  const size_t tokenization_participants = tokenization_diagnostics ? std::stoull(argv[11]) : 1;
+  Check(tokenization_participants <= 256, "Invalid tokenization participant limit");
   const bool selection_diagnostics = argc >= 11;
   const size_t selection_participants = selection_diagnostics ? std::stoull(argv[10]) : 1;
   Check(selection_participants <= 256, "Invalid selection participant limit");
@@ -110,6 +113,7 @@ int main(int argc, char **argv) try {
 #endif
   }
   options.entropy.cpu_participants = entropy_participants;
+  options.tokenization.cpu_participants = tokenization_participants;
   // Keep feature production fixed at four while varying local learning.
   std::shared_ptr<const ExecutionDomain> domain;
   Ok(ExecutionDomain::Create({size_t{8} << 30, cpu_ceiling}, &domain));
@@ -171,7 +175,7 @@ int main(int argc, char **argv) try {
         "Completed encode leaked managed storage");
   std::ofstream out(directory / "result.json");
   out.exceptions(std::ios::failbit | std::ios::badbit);
-  out << std::setprecision(17) << std::boolalpha << "{\"schema\":" << (selection_diagnostics ? 4 : entropy_diagnostics ? 3 : parallel_diagnostics ? 2 : 1)
+  out << std::setprecision(17) << std::boolalpha << "{\"schema\":" << (tokenization_diagnostics ? 5 : selection_diagnostics ? 4 : entropy_diagnostics ? 3 : parallel_diagnostics ? 2 : 1)
       << ",\"route\":" << std::quoted(route)
       << ",\"device\":" << std::quoted(device) << ",\"buffering\":" << std::quoted(buffering)
       << ",\"predictors\":" << std::quoted(predictors) << ",\"width\":" << view.extent.width
@@ -219,6 +223,14 @@ int main(int argc, char **argv) try {
       << ",\"memory_limited_waves\":" << stats.selection_memory_limited_waves
       << ",\"wall_seconds\":" << stats.selection_seconds
       << ",\"work_seconds\":" << stats.selection_work_seconds
+      << "},\"tokenization\":{\"requested_participants\":" << tokenization_participants
+      << ",\"admitted_participants\":" << stats.tokenization_cpu_participants
+      << ",\"memory_reductions\":" << stats.tokenization_memory_reductions
+      << ",\"peak_participants\":" << profile.parallel_tokenization.peak_participants
+      << ",\"stream_jobs\":" << profile.parallel_tokenization.stream_jobs
+      << ",\"parallel_calls\":" << profile.parallel_tokenization.parallel_calls
+      << ",\"generated_tokens\":" << profile.parallel_tokenization.generated_tokens
+      << ",\"borrowed_tokens\":" << profile.parallel_tokenization.borrowed_tokens
       << "},\"detail_work\":{\"sample_preparation\":" << stats.sample_preparation_seconds
       << ",\"fitting\":" << stats.fitting_seconds
       << "},\"detail_wall\":{\"learning\":" << stats.learning_seconds

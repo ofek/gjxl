@@ -37,6 +37,7 @@ Status PrepareReferenceModularFrame(PackedModularImageView input,
   if (!out ||
       options.learning_cpu_participants > 256 ||
       options.selection_cpu_participants > 256 ||
+      options.tokenization.cpu_participants > 256 ||
       (options.buffering != ReferenceBuffering::kAutomatic &&
        options.buffering != ReferenceBuffering::kBuffered) ||
       (options.predictors != ReferencePredictors::kBest &&
@@ -198,7 +199,7 @@ Status PrepareReferenceModularFrame(PackedModularImageView input,
   // publishing this self-contained result, without allocating coding backing.
   ModularWorkflowStoragePlan coding;
   if (auto s = ComputePreparedModularStreamsStoragePlan(
-          result.view(), options.entropy, &coding);
+          result.view(), options.entropy, &coding, options.tokenization);
       !s.ok())
     return s;
   *out = std::move(result);
@@ -225,23 +226,33 @@ Status EncodeReferenceModularImage(PackedModularImageView input,
   ModularWorkflowStoragePlan plan;
   auto result_stats = prepared.stats();
   auto entropy = options.entropy;
+  auto tokenization = options.tokenization;
   ResourceReservation reservation;
   for (;;) {
-    if (auto s = ComputePreparedModularStreamsStoragePlan(prepared.view(), entropy, &plan);
+    if (auto s = ComputePreparedModularStreamsStoragePlan(prepared.view(), entropy, &plan, tokenization);
         !s.ok())
       return s;
     const auto status = budget.TryReserve(std::max(size_t{1}, plan.working.peak_bytes), &reservation);
     if (status.ok())
       break;
-    if (plan.participants == 1 ||
+    if ((plan.participants == 1 && plan.tokenization_participants == 1) ||
         (status.code() != StatusCode::kUnavailable && status.code() != StatusCode::kOutOfMemory))
       return status;
-    // Retry admission only, before any model or output is built. Tight budgets
+    // Retry admission only, before tokenization or any model/output is built.
+    // Reduce the larger parallel stage first. Tight budgets
     // retain the original serial envelope and identical compression decisions.
-    entropy.cpu_participants = std::max(size_t{1}, plan.participants / 2);
-    ++result_stats.entropy_memory_reductions;
+    if (plan.tokenization_participants > 1 &&
+        (plan.participants == 1 ||
+         plan.preparation.peak_bytes >= std::max(plan.modeling.peak_bytes, plan.emission.peak_bytes))) {
+      tokenization.cpu_participants = std::max(size_t{1}, plan.tokenization_participants / 2);
+      ++result_stats.tokenization_memory_reductions;
+    } else {
+      entropy.cpu_participants = std::max(size_t{1}, plan.participants / 2);
+      ++result_stats.entropy_memory_reductions;
+    }
   }
   result_stats.entropy_cpu_participants = plan.participants;
+  result_stats.tokenization_cpu_participants = plan.tokenization_participants;
   result_stats.maximum_stage_bytes = std::max(result_stats.maximum_stage_bytes,
                                               plan.working.peak_bytes);
   auto context = CurrentResourceContext();
@@ -249,7 +260,7 @@ Status EncodeReferenceModularImage(PackedModularImageView input,
   context.resource_class = ResourceClass::kPreparation;
   ResourceContextScope resources(context);
   codestream_internal::CodestreamBuffer result;
-  if (auto s = EncodePreparedModularStreams(prepared.view(), entropy, &result);
+  if (auto s = EncodePreparedModularStreams(prepared.view(), entropy, &result, tokenization);
       !s.ok())
     return s;
   *out = std::move(result);

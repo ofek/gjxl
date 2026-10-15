@@ -91,6 +91,11 @@ struct ModularProfile {
     // to caller-wall stages. Each worker owns its profile until the join.
     double model_work_seconds = 0, emission_work_seconds = 0;
   } parallel_entropy;
+  struct ParallelTokenization {
+    size_t stream_jobs = 0, parallel_calls = 0, peak_participants = 0;
+    size_t generated_tokens = 0, borrowed_tokens = 0;
+    // Joined wall and process CPU remain in kTokens; workers share no sink.
+  } parallel_tokenization;
   TrainingWorkProfile training_work;
   AdaptiveGpuWorkProfile adaptive_gpu;
   // A large winning tree retains its managed backing after the encoder call.

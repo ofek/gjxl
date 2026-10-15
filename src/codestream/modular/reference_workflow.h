@@ -16,6 +16,7 @@ struct ReferenceWorkflowOptions {
   PreparedModularEntropyOptions entropy{
       PreparedModularEntropyPolicy::kDirectRateAns,
       AnsSelectionMode::kEstimated, 64};
+  PreparedModularTokenizationOptions tokenization;
   // Optional private hybrid route. Null selects CPU features and tokens.
   // Backend outlives a prepared frame and its completed token owners.
   GpuBackend *gpu = nullptr;
@@ -41,6 +42,7 @@ struct ReferenceWorkflowStats {
   // Joined caller wall versus summed job wall; work is not an additive stage.
   double selection_seconds = 0, selection_work_seconds = 0;
   size_t entropy_cpu_participants = 1, entropy_memory_reductions = 0;
+  size_t tokenization_cpu_participants = 1, tokenization_memory_reductions = 0;
   bool local_trees = false;
   size_t selection_calls = 0, learning_calls = 0, fits = 0,
          empty_learning_calls = 0;

@@ -8,6 +8,8 @@ namespace gjxl::modular_internal {
 struct ModularWorkflowStoragePlan {
   ModularFrameGeometry geometry;
   size_t participants = 1;
+  // Prepared-stream CPU tokenization, independently of entropy participation.
+  size_t tokenization_participants = 1;
   size_t tokens = 0, streams = 0;
   size_t maximum_global_bits = 0, maximum_group_bits = 0;
   size_t maximum_codestream_bytes = 0;

@@ -55,6 +55,12 @@ struct PreparedModularStreamTokens {
   PreparedModularStreamTokens(PreparedModularStreamTokens &&) noexcept = default;
   PreparedModularStreamTokens &operator=(PreparedModularStreamTokens &&) noexcept = default;
 };
+struct PreparedModularTokenizationOptions {
+  // Zero inherits the admitted CPU allowance; one is the serial control.
+  // Streams own disjoint output ranges and private raster predictor state.
+  // Unadmitted/nested calls and completed-token-only inputs stay serial.
+  size_t cpu_participants = 0;
+};
 enum class PreparedModularEntropyPolicy {
   kPrefix,
   kAnsFromPrefix,
@@ -81,16 +87,21 @@ struct PreparedModularEntropyOptions {
 // publication. Global transforms define full-image shape before grouping; group
 // transforms define each tile's shape after grouping. All provided descriptors
 // must match. Plan and encode must use the same options and CPU scope. The
-// returned participants is the resolved allowance, not a guaranteed grant.
+// Returned participants and tokenization_participants are resolved allowances,
+// not guaranteed grants. The preparation bound also covers standalone token
+// generation with the same tokenization options and CPU scope.
 [[nodiscard]] Status
 ComputePreparedModularStreamsStoragePlan(const PreparedModularStreamsView &input,
-                                         EntropyCodingMode mode, ModularWorkflowStoragePlan *out);
+                                         EntropyCodingMode mode, ModularWorkflowStoragePlan *out,
+                                         PreparedModularTokenizationOptions tokenization = {});
 [[nodiscard]] Status
 ComputePreparedModularStreamsStoragePlan(const PreparedModularStreamsView &input,
                                          const PreparedModularEntropyOptions &options,
-                                         ModularWorkflowStoragePlan *out);
+                                         ModularWorkflowStoragePlan *out,
+                                         PreparedModularTokenizationOptions tokenization = {});
 [[nodiscard]] Status TokenizePreparedModularStreams(const PreparedModularStreamsView &input,
-                                                    PreparedModularStreamTokens *out);
+                                                    PreparedModularStreamTokens *out,
+                                                    PreparedModularTokenizationOptions options = {});
 // Complete private CPU encode with prescribed decisions; no transform search,
 // sample fitting, pixel copy or GPU work. The caller owns admission. All
 // borrows must stay immutable/live until return. Failure preserves the previous
@@ -98,8 +109,10 @@ ComputePreparedModularStreamsStoragePlan(const PreparedModularStreamsView &input
 [[nodiscard]] Status
 EncodePreparedModularStreams(const PreparedModularStreamsView &input, EntropyCodingMode mode,
                              codestream_internal::CodestreamBuffer *out,
-                             AnsSelectionMode selection = AnsSelectionMode::kExact);
+                             AnsSelectionMode selection = AnsSelectionMode::kExact,
+                             PreparedModularTokenizationOptions tokenization = {});
 [[nodiscard]] Status EncodePreparedModularStreams(const PreparedModularStreamsView &input,
                                                   const PreparedModularEntropyOptions &options,
-                                                  codestream_internal::CodestreamBuffer *out);
+                                                  codestream_internal::CodestreamBuffer *out,
+                                                  PreparedModularTokenizationOptions tokenization = {});
 } // namespace gjxl::modular_internal

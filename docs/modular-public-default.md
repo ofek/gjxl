@@ -69,6 +69,13 @@ Its scratch and selected image are admitted per job; memory pressure reduces
 concurrency down to the serial envelope. Global selection precedes stream
 placement. See [parallel selection](parallel-selection.md).
 
+Prepared-stream CPU tokenization also runs across independent streams, with
+private predictor state and fixed output ranges. Completed GPU tokens remain
+borrowed; inputs needing no CPU sample tokens launch no tokenization workers.
+Tokenization and entropy participation are independently bounded by the same
+CPU domain and storage admission. See
+[parallel prepared-stream tokenization](parallel-prepared-tokenization.md).
+
 Each learned stage uses its checked storage bound and nonblocking `TryReserve`
 in the public execution domain. Retained planes, trees and output backing stay
 charged while subsequent stages run. The C adapter reserves its final output
